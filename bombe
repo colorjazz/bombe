@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Désamorce la bombe</title>
+  <!-- React and ReactDOM -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <!-- Babel for JSX -->
+  <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      text-align: center;
+      background-color: #0a0a0a;
+    }
+    
+    /* CodeSandbox overrides */
+    div[class*="CodeSandbox-OpenInCodeSandbox"],
+    button[class*="OpenInCodeSandbox"],
+    .csb-open-sandbox-button {
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
+
+    @keyframes flicker {
+      0% { opacity: 0.8; }
+      50% { opacity: 0.2; }
+      100% { opacity: 1; }
+    }
+    
+    @keyframes pulse {
+      0% { transform: scale(1); box-shadow: 0 0 25px rgba(51, 255, 51, 0.4); }
+      50% { transform: scale(1.02); box-shadow: 0 0 35px rgba(51, 255, 51, 0.7); }
+      100% { transform: scale(1); box-shadow: 0 0 25px rgba(51, 255, 51, 0.4); }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useCallback, useRef } = React;
+
+    // ==========================================
+    // AUDIO HELPER UTILITY
+    // ==========================================
+    const createAudioContext = () => {
+      return new (window.AudioContext || window.webkitAudioContext)();
+    };
+
+    let globalAudioCtx = null;
+
+    const playTone = (freq, type = "sine", duration = 0.1) => {
+      try {
+        if (!globalAudioCtx) {
+          globalAudioCtx = createAudioContext();
+        }
+        if (globalAudioCtx.state === "suspended") {
+          globalAudioCtx.resume();
+        }
+        const osc = globalAudioCtx.createOscillator();
+        const gain = globalAudioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, globalAudioCtx.currentTime);
+        osc.connect(gain);
+        gain.connect(globalAudioCtx.destination);
+        osc.start();
+        gain.gain.exponentialRampToValueAtTime(0.001, globalAudioCtx.currentTime + duration);
+        osc.stop(globalAudioCtx.currentTime + duration);
+      } catch (e) {
+        console.error("Audio error:", e);
+      }
+    };
+
+    // ==========================================
+    // LOCKOUT OVERLAY (Pénalité de 15s)
+    // ==========================================
+    const LockoutOverlay = ({ time }) => {
+      if (time <= 0) return null;
+      return (
+        <div style={{
+          position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: "rgba(220, 0, 0, 0.9)",
+          display: "flex", flexDirection: "column",
+          justifyContent: "center", alignItems: "center",
+          zIndex: 50, borderRadius: "inherit"
+        }}>
+          <div style={{ color: "#fff", fontSize: "28px", fontWeight: "900", letterSpacing: "2px" }}>SYSTÈME VERROUILLÉ</div>
+          <div style={{ color: "#ffaaaa", fontSize: "60px", fontWeight: "bold", marginTop: "10px" }}>{time}s</div>
+        </div>
+      );
+    };
+
+    // ==========================================
+    // 1. FILS MODULE (CIRCUITS COMPLEXES)
+    // ==========================================
+    const FilsModule = ({ disabled, onDefuse, onStrike }) => {
+      const initialWires = [
+        { id: 1, color: "#cc3333", name: "Rouge", isCut: false, isTarget: true },
+        { id: 2, color: "#eeeeee", name: "Blanc", isCut: false, isTarget: false },
+        { id: 3, color: "#3366cc", name: "Bleu", isCut: false, isTarget: true },
+        { id: 4, color: "#222222", name: "Noir", isCut: false, isTarget: false },
+        { id: 5, color: "#ccaa33", name: "Jaune", isCut: false, isTarget: true },
+        { id: 6, color: "#339933", name: "Vert", isCut: false, isTarget: false },
+      ];
+
+      const [wires, setWires] = useState(initialWires.map(w => ({...w})));
+      const [errors, setErrors] = useState(0);
+      const [isDefused, setIsDefused] = useState(false);
+      const [isFlashing, setIsFlashing] = useState(false);
+      const [lockoutTime, setLockoutTime] = useState(0);
+
+      useEffect(() => {
+        if (lockoutTime > 0) {
+          const timer = setTimeout(() => setLockoutTime(l => l - 1), 1000);
+          return () => clearTimeout(timer);
+        }
+      }, [lockoutTime]);
+
+      const triggerError = () => {
+        playTone(150, "sawtooth", 0.5);
+        setErrors((prev) => prev + 1);
+        setIsFlashing(true);
+        setTimeout(() => setIsFlashing(false), 300);
+        setLockoutTime(15);
+        if (onStrike) onStrike();
+        setWires(initialWires.map(w => ({...w})));
+      };
+
+      const handleCut = (index) => {
+        if (disabled || isDefused || lockoutTime > 0 || wires[index].isCut) return;
+
+        playTone(1200, "triangle", 0.05);
+
+        const newWires = [...wires];
+        newWires[index].isCut = true;
+        setWires(newWires);
+
+        if (!newWires[index].isTarget) {
+          triggerError();
+          return;
+        }
+
+        const allTargetsCut = newWires.every((w) => !w.isTarget || w.isCut);
+        if (allTargetsCut && !isDefused) {
+          setIsDefused(true);
+          playTone(800, "square", 0.5);
+          if (onDefuse) onDefuse();
+        }
+      };
+
+      const styles = {
+        container: {
+          backgroundColor: isFlashing ? "#ff3333" : "#1e2124", padding: "25px", borderRadius: "12px", border: "6px solid #111",
+          width: "360px", boxShadow: "inset 0 0 30px #000, 0 15px 25px rgba(0,0,0,0.8)", fontFamily: '"Courier New", Courier, monospace',
+          transition: "background-color 0.15s", position: "relative", boxSizing: "border-box"
+        },
+        header: {
+          display: "flex", justifyContent: "space-between", alignItems: "center", color: "#ff4444", fontSize: "14px", fontWeight: "bold",
+          marginBottom: "20px", backgroundColor: "#0a0a0a", padding: "10px 15px", borderRadius: "6px", border: "2px solid #2a2a2a"
+        },
+        wiresArea: {
+          display: "flex", flexDirection: "column", gap: "18px", backgroundColor: "#111", padding: "20px", borderRadius: "8px", border: "2px inset #333"
+        },
+        wireRow: { display: "flex", alignItems: "center", position: "relative", height: "26px" },
+        number: { color: "#888", fontSize: "16px", fontWeight: "bold", marginRight: "12px", width: "18px" },
+        connector: { width: "14px", height: "22px", backgroundColor: "#b5a642", border: "2px solid #5a5321", borderRadius: "3px", zIndex: 2 },
+        wireBody: (color, isCut) => ({
+          flex: 1, height: "14px", backgroundColor: color, margin: "0 -2px", borderTop: "3px solid rgba(255,255,255,0.3)",
+          borderBottom: "3px solid rgba(0,0,0,0.5)", boxShadow: "0 4px 8px rgba(0,0,0,0.6)",
+          cursor: disabled || isCut || isDefused || lockoutTime > 0 ? "not-allowed" : "pointer", opacity: isCut ? 0 : 1, transition: "opacity 0.1s", zIndex: 1
+        }),
+        cutWireLeft: (color, isCut) => ({
+          position: "absolute", left: "32px", width: "38%", height: "14px", backgroundColor: color, borderTop: "3px solid rgba(255,255,255,0.3)",
+          borderBottom: "3px solid rgba(0,0,0,0.5)", display: isCut ? "block" : "none", transform: "rotate(-6deg)", transformOrigin: "left center"
+        }),
+        cutWireRight: (color, isCut) => ({
+          position: "absolute", right: "12px", width: "38%", height: "14px", backgroundColor: color, borderTop: "3px solid rgba(255,255,255,0.3)",
+          borderBottom: "3px solid rgba(0,0,0,0.5)", display: isCut ? "block" : "none", transform: "rotate(6deg)", transformOrigin: "right center"
+        }),
+        spark: { position: "absolute", left: "48%", color: "#ffffaa", fontSize: "20px", fontWeight: "bold", textShadow: "0 0 10px #ffff00", pointerEvents: "none" },
+        defused: {
+          position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%) rotate(-5deg)", color: "#33ff33", fontSize: "32px",
+          fontWeight: "bold", border: "5px solid #33ff33", padding: "10px 20px", backgroundColor: "rgba(0,0,0,0.92)", zIndex: 10,
+          textShadow: "0 0 15px #33ff33", boxShadow: "0 0 25px rgba(51, 255, 51, 0.4)"
+        }
+      };
+
+      return (
+        <div style={styles.container}>
+          <LockoutOverlay time={lockoutTime} />
+          <div style={styles.header}>
+            <span>CIRCUITS COMPLEXES</span>
+            <span>ERREURS : {errors}</span>
+          </div>
+          <div style={styles.wiresArea}>
+            {wires.map((wire, index) => (
+              <div key={wire.id} style={styles.wireRow}>
+                <div style={styles.number}>{wire.id}</div>
+                <div style={styles.connector} />
+                <div style={styles.wireBody(wire.color, wire.isCut)} onClick={() => handleCut(index)} title={`Couper le fil ${wire.name}`} />
+                <div style={styles.cutWireLeft(wire.color, wire.isCut)} />
+                {wire.isCut && !isDefused && <div style={styles.spark}>⚡</div>}
+                <div style={styles.cutWireRight(wire.color, wire.isCut)} />
+                <div style={styles.connector} />
+              </div>
+            ))}
+          </div>
+          {isDefused && <div style={styles.defused}>DÉSAMORCÉ</div>}
+        </div>
+      );
+    };
+
+    // ==========================================
+    // 2. PIANO MODULE
+    // ==========================================
+    const PianoModule = ({ disabled, onDefuse, onStrike }) => {
+      const [errors, setErrors] = useState(0);
+      const [progress, setProgress] = useState(0); 
+      const [isDefused, setIsDefused] = useState(false);
+      const [isFlashing, setIsFlashing] = useState(false);
+      const [lockoutTime, setLockoutTime] = useState(0);
+
+      const symbols = ["♭", "♮", "♯", "Δ"];
+      const secretSequence = [0, 4, 7, 11];
+
+      const notes = [
+        { id: 0, freq: 261.63, type: "white" }, 
+        { id: 1, freq: 277.18, type: "black" }, 
+        { id: 2, freq: 293.66, type: "white" }, 
+        { id: 3, freq: 311.13, type: "black" }, 
+        { id: 4, freq: 329.63, type: "white" }, 
+        { id: 5, freq: 349.23, type: "white" }, 
+        { id: 6, freq: 369.99, type: "black" }, 
+        { id: 7, freq: 392.0, type: "white" }, 
+        { id: 8, freq: 415.3, type: "black" }, 
+        { id: 9, freq: 440.0, type: "white" }, 
+        { id: 10, freq: 466.16, type: "black" }, 
+        { id: 11, freq: 493.88, type: "white" }, 
+      ];
+
+      useEffect(() => {
+        if (lockoutTime > 0) {
+          const timer = setTimeout(() => setLockoutTime(l => l - 1), 1000);
+          return () => clearTimeout(timer);
+        }
+      }, [lockoutTime]);
+
+      const triggerError = () => {
+        playTone(100, "sawtooth", 0.8);
+        setErrors((prev) => prev + 1);
+        setProgress(0);
+        setIsFlashing(true);
+        setTimeout(() => setIsFlashing(false), 300);
+        setLockoutTime(15);
+        if (onStrike) onStrike();
+      };
+
+      const handleKeyPress = (noteId, freq) => {
+        if (disabled || isDefused || lockoutTime > 0) return;
+        playTone(freq, "sine", 0.5);
+
+        const expectedNote = secretSequence[progress];
+        if (noteId === expectedNote) {
+          const newProgress = progress + 1;
+          setProgress(newProgress);
+          if (newProgress === secretSequence.length) {
+            setIsDefused(true);
+            if (onDefuse) onDefuse();
+          }
+        } else {
+          triggerError();
+        }
+      };
+
+      const styles = {
+        container: {
+          backgroundColor: isFlashing ? "#ff3333" : "#2c2f33", padding: "20px", borderRadius: "8px", border: "4px solid #1a1a1a",
+          boxShadow: "inset 0 0 20px #000, 0 10px 30px rgba(0,0,0,0.8)", width: "400px", fontFamily: "monospace", transition: "background-color 0.1s",
+          position: "relative", boxSizing: "border-box"
+        },
+        header: {
+          display: "flex", justifyContent: "space-between", color: "#ff4444", fontSize: "18px", fontWeight: "bold", marginBottom: "15px",
+          borderBottom: "2px solid #1a1a1a", paddingBottom: "10px"
+        },
+        screen: {
+          backgroundColor: "#0a1a0a", border: "4px solid #111", borderRadius: "8px", height: "80px", display: "flex", justifyContent: "space-around",
+          alignItems: "center", boxShadow: "inset 0 0 15px rgba(0,255,0,0.2)", marginBottom: "20px"
+        },
+        symbol: (isActive) => ({
+          color: isActive ? "#33ff33" : "#1a3a1a", fontSize: "36px", textShadow: isActive ? "0 0 10px #33ff33" : "none", transition: "color 0.3s, text-shadow 0.3s"
+        }),
+        keyboard: { position: "relative", height: "150px", backgroundColor: "#111", border: "2px solid #000", borderRadius: "4px", display: "flex" },
+        whiteKey: { flex: 1, backgroundColor: "#f0f0f0", border: "1px solid #ccc", borderBottom: "4px solid #bbb", borderRadius: "0 0 4px 4px", cursor: disabled || isDefused || lockoutTime > 0 ? "default" : "pointer", zIndex: 1 },
+        blackKey: { position: "absolute", width: "8%", height: "60%", backgroundColor: "#1a1a1a", border: "1px solid #000", borderBottom: "3px solid #333", borderRadius: "0 0 3px 3px", cursor: disabled || isDefused || lockoutTime > 0 ? "default" : "pointer", zIndex: 2 },
+        defusedText: {
+          position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%) rotate(-5deg)", color: "#33ff33", fontSize: "40px",
+          fontWeight: "bold", textShadow: "0 0 20px #33ff33", border: "4px solid #33ff33", padding: "10px 20px", backgroundColor: "rgba(0,0,0,0.8)", zIndex: 10
+        }
+      };
+
+      const getBlackKeyLeft = (index) => ["10%", "24%", "53%", "67%", "81%"][index];
+      let blackKeyIndex = 0;
+
+      return (
+        <div style={styles.container}>
+          <LockoutOverlay time={lockoutTime} />
+          <div style={styles.header}>
+            <span>CLAVIER HARMONIQUE</span>
+            <span>ERREURS : {errors}</span>
+          </div>
+          <div style={styles.screen}>
+            {symbols.map((sym, index) => (
+              <span key={index} style={styles.symbol(index < progress || isDefused)}>{sym}</span>
+            ))}
+          </div>
+          <div style={styles.keyboard}>
+            {notes.map((note) => {
+              if (note.type === "white") {
+                return <div key={note.id} style={styles.whiteKey} onMouseDown={() => handleKeyPress(note.id, note.freq)} />;
+              } else {
+                const leftPos = getBlackKeyLeft(blackKeyIndex);
+                blackKeyIndex++;
+                return <div key={note.id} style={{ ...styles.blackKey, left: leftPos }} onMouseDown={() => handleKeyPress(note.id, note.freq)} />;
+              }
+            })}
+          </div>
+          {isDefused && <div style={styles.defusedText}>DÉSAMORCÉ</div>}
+        </div>
+      );
+    };
+
+    // ==========================================
+    // 3. MORSE MODULE
+    // ==========================================
+    const MorseModule = ({ disabled, onDefuse, onStrike }) => {
+      const MORSE_DICT = {
+        A: ".-", B: "-...", C: "-.-.", D: "-..", E: ".", F: "..-.", G: "--.", H: "....", I: "..", J: ".---", K: "-.-", L: ".-..", M: "--",
+        N: "-.", O: "---", P: ".--.", Q: "--.-", R: ".-.", S: "...", T: "-", U: "..-", V: "...-", W: ".--", X: "-..-", Y: "-.--", Z: "--.."
+      };
+
+      const WORDS_DATA = [
+        { word: "ROSES", freq: 3.505 }, { word: "JAUNES", freq: 3.51 }, { word: "ORANGES", freq: 3.515 }, { word: "SURVIVOR", freq: 3.52 },
+        { word: "STEX", freq: 3.525 }, { word: "IMMUNITE", freq: 3.53 }, { word: "CONSEILS", freq: 3.535 }, { word: "TRIBUS", freq: 3.54 },
+        { word: "VICTOIRE", freq: 3.545 }, { word: "TRAHISONS", freq: 3.55 }, { word: "VOTES", freq: 3.555 }, { word: "FLAMME", freq: 3.56 },
+        { word: "CHALLENGE", freq: 3.565 }, { word: "GARDIENS", freq: 3.57 }, { word: "GROUPE", freq: 3.575 }, { word: "RIRES", freq: 3.58 },
+        { word: "JOIE", freq: 3.585 }, { word: "OLYMPIQUE", freq: 3.59 }, { word: "IRITATION", freq: 3.595 }, { word: "FLOUER", freq: 3.6 },
+      ];
+
+      const [targetData] = useState(() => WORDS_DATA[Math.floor(Math.random() * WORDS_DATA.length)]);
+      const [frequency, setFrequency] = useState(3.5);
+      const [isLedOn, setIsLedOn] = useState(false);
+      const [errors, setErrors] = useState(0);
+      const [isDefused, setIsDefused] = useState(false);
+      const [isFlashing, setIsFlashing] = useState(false);
+      const [lockoutTime, setLockoutTime] = useState(0);
+      
+      const [isMuted, setIsMuted] = useState(false);
+      const isMutedRef = useRef(false);
+
+      const toggleMute = () => {
+        isMutedRef.current = !isMutedRef.current;
+        setIsMuted(isMutedRef.current);
+      };
+
+      useEffect(() => {
+        if (lockoutTime > 0) {
+          const timer = setTimeout(() => setLockoutTime(l => l - 1), 1000);
+          return () => clearTimeout(timer);
+        }
+      }, [lockoutTime]);
+
+      const generateMorseSequence = useCallback((word) => {
+        const sequence = [];
+        const DOT = 200, DASH = 600, PAUSE_PART = 200, PAUSE_CHAR = 600, PAUSE_WORD = 2000;
+        for (let i = 0; i < word.length; i++) {
+          const char = word[i];
+          const morseChar = MORSE_DICT[char];
+          if(morseChar) {
+             for (let j = 0; j < morseChar.length; j++) {
+              const symbol = morseChar[j];
+              sequence.push({ on: true, duration: symbol === "." ? DOT : DASH });
+              sequence.push({ on: false, duration: PAUSE_PART });
+            }
+            sequence[sequence.length - 1].duration = PAUSE_CHAR;
+          }
+        }
+        if(sequence.length > 0) {
+           sequence[sequence.length - 1].duration = PAUSE_WORD;
+        }
+        return sequence;
+      }, []);
+
+      useEffect(() => {
+        if (isDefused || disabled) {
+          setIsLedOn(false);
+          return;
+        }
+        const sequence = generateMorseSequence(targetData.word);
+        if(sequence.length === 0) return;
+        
+        let currentIndex = 0;
+        let timeoutId;
+        let isCancelled = false;
+
+        const runSequence = () => {
+          if (isCancelled) return;
+          const currentStep = sequence[currentIndex];
+          setIsLedOn(currentStep.on);
+          
+          if (currentStep.on && !isMutedRef.current) {
+            playTone(700, "sine", currentStep.duration / 1000);
+          }
+          
+          timeoutId = setTimeout(() => {
+            if (!isCancelled) {
+              currentIndex = (currentIndex + 1) % sequence.length;
+              runSequence();
+            }
+          }, currentStep.duration);
+        };
+        runSequence();
+        return () => {
+          isCancelled = true;
+          clearTimeout(timeoutId);
+        };
+      }, [targetData, isDefused, disabled, generateMorseSequence]);
+
+      const handleFreqUp = () => {
+        if (disabled || isDefused || lockoutTime > 0) return;
+        setFrequency((prev) => (prev < 3.6 ? +(prev + 0.005).toFixed(3) : 3.6));
+      };
+
+      const handleFreqDown = () => {
+        if (disabled || isDefused || lockoutTime > 0) return;
+        setFrequency((prev) => (prev > 3.5 ? +(prev - 0.005).toFixed(3) : 3.5));
+      };
+
+      const handleTransmit = () => {
+        if (disabled || isDefused || lockoutTime > 0) return;
+        if (Math.abs(frequency - targetData.freq) < 0.001) {
+          setIsDefused(true);
+          playTone(800, "square", 0.5);
+          if (onDefuse) onDefuse();
+        } else {
+          setErrors((prev) => prev + 1);
+          playTone(150, "sawtooth", 0.5);
+          setIsFlashing(true);
+          setTimeout(() => setIsFlashing(false), 300);
+          setLockoutTime(15);
+          if (onStrike) onStrike();
+        }
+      };
+
+      const styles = {
+        container: {
+          backgroundColor: isFlashing ? "#ff3333" : "#22252a", padding: "30px", borderRadius: "12px", border: "6px solid #111",
+          width: "350px", boxShadow: "inset 0 0 30px #000, 0 15px 25px rgba(0,0,0,0.8)", fontFamily: "monospace", display: "flex", flexDirection: "column",
+          alignItems: "center", position: "relative", color: "#ddd", boxSizing: "border-box"
+        },
+        header: {
+          display: "flex", justifyContent: "space-between", width: "100%", color: "#ff4444", fontSize: "18px", fontWeight: "bold",
+          marginBottom: "30px", borderBottom: "2px solid #111", paddingBottom: "10px"
+        },
+        controlsPanel: {
+          display: "flex", flexDirection: "column", alignItems: "center", backgroundColor: "#15171a", padding: "25px", borderRadius: "8px",
+          border: "2px solid #000", width: "100%", boxSizing: "border-box", boxShadow: "inset 0 0 15px rgba(0,0,0,0.5)"
+        },
+        light: {
+          width: "50px", height: "50px", borderRadius: "50%", backgroundColor: isLedOn ? "#ffcc00" : "#332200",
+          boxShadow: isLedOn ? "0 0 35px #ffcc00, inset 0 0 15px #fff" : "inset 0 0 10px #000", border: "5px solid #111", marginBottom: "30px"
+        },
+        display: {
+          backgroundColor: "#1a0a00", color: "#ff3333", fontSize: "36px", padding: "10px 15px", border: "4px inset #333", borderRadius: "6px",
+          marginBottom: "20px", textShadow: "0 0 10px #ff0000", textAlign: "center"
+        },
+        buttonRow: { display: "flex", gap: "15px", marginBottom: "25px" },
+        smallBtn: {
+          backgroundColor: "#444", border: "2px solid #222", color: "#eee", fontSize: "24px", width: "50px", height: "50px", borderRadius: "6px",
+          cursor: disabled || isDefused || lockoutTime > 0 ? "default" : "pointer", boxShadow: "0 3px 0 #111"
+        },
+        transmitBtn: {
+          backgroundColor: "#882222", border: "2px solid #441111", color: "#fff", fontSize: "18px", fontWeight: "bold", padding: "15px 30px", borderRadius: "8px",
+          cursor: disabled || isDefused || lockoutTime > 0 ? "default" : "pointer", boxShadow: "0 5px 0 #220000", textTransform: "uppercase"
+        },
+        muteBtn: {
+          backgroundColor: isMuted ? "#4a2222" : "#224a22", color: "#fff", border: "2px solid #000", padding: "8px 15px", borderRadius: "5px",
+          fontWeight: "bold", cursor: "pointer", marginBottom: "20px", fontSize: "14px", fontFamily: "inherit"
+        },
+        defused: {
+          position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%) rotate(-5deg)", color: "#33ff33", fontSize: "36px", fontWeight: "bold", border: "4px solid #33ff33",
+          padding: "10px 20px", backgroundColor: "rgba(0,0,0,0.9)", textShadow: "0 0 15px #33ff33", zIndex: 10
+        }
+      };
+
+      return (
+        <div style={styles.container}>
+          <LockoutOverlay time={lockoutTime} />
+          <div style={styles.header}>
+            <span>RÉCEPTEUR MORSE</span>
+            <span>ERR: {errors}</span>
+          </div>
+          <div style={styles.controlsPanel}>
+            <button onClick={toggleMute} style={styles.muteBtn}>
+              {isMuted ? "🔇 SON MORSE : DÉSACTIVÉ" : "🔊 SON MORSE : ACTIVÉ"}
+            </button>
+            <div style={styles.light} />
+            <div style={styles.display}>{frequency.toFixed(3)}</div>
+            <div style={styles.buttonRow}>
+              <button style={styles.smallBtn} onMouseDown={handleFreqDown}>-</button>
+              <button style={styles.smallBtn} onMouseDown={handleFreqUp}>+</button>
+            </div>
+            <button style={styles.transmitBtn} onMouseDown={handleTransmit}>Transmettre</button>
+          </div>
+          {isDefused && <div style={styles.defused}>DÉSAMORCÉ</div>}
+        </div>
+      );
+    };
+
+    // ==========================================
+    // 4. LABYRINTHE MODULE
+    // ==========================================
+    const LabyrintheModule = ({ disabled, onDefuse, onStrike }) => {
+      const GRID_SIZE = 6;
+      const START_POS = { r: 5, c: 0 };
+      const EXIT_POS = { r: 0, c: 5 };
+      const MARKERS = ["5,3", "2,4"];
+      const WALLS = [
+        "0,0", "0,1", "0,2", "0,3", "1,5", "2,1", "2,2", "2,3", "2,4", "2,5",
+        "3,1", "3,2", "3,3", "3,4", "3,5", "4,1", "4,2", "4,3", "4,4", "4,5",
+        "5,1", "5,2", "5,3", "5,4", "5,5",
+      ];
+
+      const [playerPos, setPlayerPos] = useState(START_POS);
+      const [errors, setErrors] = useState(0);
+      const [isDefused, setIsDefused] = useState(false);
+      const [isFlashing, setIsFlashing] = useState(false);
+      const [lockoutTime, setLockoutTime] = useState(0);
+
+      useEffect(() => {
+        if (lockoutTime > 0) {
+          const timer = setTimeout(() => setLockoutTime(l => l - 1), 1000);
+          return () => clearTimeout(timer);
+        }
+      }, [lockoutTime]);
+
+      useEffect(() => {
+        const handleKeyDown = (e) => {
+          if (disabled || isDefused || lockoutTime > 0) return;
+          switch (e.key) {
+            case "ArrowUp": movePlayer(-1, 0); break;
+            case "ArrowDown": movePlayer(1, 0); break;
+            case "ArrowLeft": movePlayer(0, -1); break;
+            case "ArrowRight": movePlayer(0, 1); break;
+            default: break;
+          }
+        };
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+      }, [playerPos, disabled, isDefused, lockoutTime]);
+
+      const triggerError = () => {
+        playTone(150, "sawtooth", 0.4);
+        setErrors((prev) => prev + 1);
+        setPlayerPos(START_POS);
+        setIsFlashing(true);
+        setTimeout(() => setIsFlashing(false), 300);
+        setLockoutTime(15); 
+        if (onStrike) onStrike();
+      };
+
+      const movePlayer = (dr, dc) => {
+        if (disabled || isDefused || lockoutTime > 0) return;
+        const newR = playerPos.r + dr;
+        const newC = playerPos.c + dc;
+        const posString = `${newR},${newC}`;
+
+        if (newR < 0 || newR >= GRID_SIZE || newC < 0 || newC >= GRID_SIZE || WALLS.includes(posString)) {
+          triggerError();
+          return;
+        }
+
+        playTone(600, "sine", 0.05);
+        setPlayerPos({ r: newR, c: newC });
+
+        if (newR === EXIT_POS.r && newC === EXIT_POS.c) {
+          setIsDefused(true);
+          playTone(800, "square", 0.5);
+          if (onDefuse) onDefuse();
+        }
+      };
+
+      const styles = {
+        container: {
+          backgroundColor: isFlashing ? "#421" : "#1a1c1f", padding: "20px", borderRadius: "12px", border: "6px solid #111", width: "420px",
+          fontFamily: "monospace", display: "flex", flexDirection: "column", position: "relative", boxSizing: "border-box", overflow: "hidden"
+        },
+        header: {
+          display: "flex", justifyContent: "space-between", color: "#ff4444", fontSize: "18px", fontWeight: "bold", marginBottom: "15px",
+          borderBottom: "2px solid #333", paddingBottom: "10px"
+        },
+        screen: {
+          backgroundColor: "#050a05", border: "4px solid #333", borderRadius: "8px", padding: "10px", display: "grid", gridTemplateColumns: "repeat(6, 32px)",
+          gridTemplateRows: "repeat(6, 32px)", gap: "2px"
+        },
+        cell: { width: "32px", height: "32px", display: "flex", justifyContent: "center", alignItems: "center" },
+        player: { width: "22px", height: "22px", backgroundColor: "#fff", boxShadow: "0 0 10px #fff", borderRadius: "2px" },
+        exit: { width: "0", height: "0", borderLeft: "10px solid transparent", borderRight: "10px solid transparent", borderBottom: "20px solid #ff3333", filter: "drop-shadow(0 0 5px #ff3333)" },
+        marker: { width: "14px", height: "14px", backgroundColor: "#33ff33", borderRadius: "50%", boxShadow: "0 0 10px #33ff33" },
+        dpad: { display: "grid", gridTemplateColumns: "repeat(3, 45px)", gap: "5px" },
+        btn: {
+          width: "45px", height: "45px", backgroundColor: "#333", border: "2px solid #111", borderRadius: "5px", color: "#fff",
+          cursor: disabled || isDefused || lockoutTime > 0 ? "default" : "pointer", fontSize: "18px"
+        },
+        defused: {
+          position: "absolute", top: "40%", left: "10%", transform: "rotate(-5deg)", color: "#33ff33", fontSize: "36px", fontWeight: "bold", border: "4px solid #33ff33",
+          padding: "10px 20px", backgroundColor: "rgba(0,0,0,0.9)", zIndex: 10
+        }
+      };
+
+      return (
+        <div style={styles.container}>
+          <LockoutOverlay time={lockoutTime} />
+          <div style={styles.header}>
+            <span>SÉQUENCE ALPHA-6</span>
+            <span>ERREURS : {errors}</span>
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={styles.screen}>
+              {Array.from({ length: GRID_SIZE }).map((_, r) =>
+                Array.from({ length: GRID_SIZE }).map((_, c) => (
+                  <div key={`${r}-${c}`} style={styles.cell}>
+                    {r === playerPos.r && c === playerPos.c && <div style={styles.player} />}
+                    {r === EXIT_POS.r && c === EXIT_POS.c && <div style={styles.exit} />}
+                    {MARKERS.includes(`${r},${c}`) && !(r === playerPos.r && c === playerPos.c) && <div style={styles.marker} />}
+                  </div>
+                ))
+              )}
+            </div>
+            <div style={styles.dpad}>
+              <div />
+              <button style={styles.btn} onClick={() => movePlayer(-1, 0)}>▲</button>
+              <div />
+              <button style={styles.btn} onClick={() => movePlayer(0, -1)}>◄</button>
+              <div />
+              <button style={styles.btn} onClick={() => movePlayer(0, 1)}>►</button>
+              <div />
+              <button style={styles.btn} onClick={() => movePlayer(1, 0)}>▼</button>
+              <div />
+            </div>
+          </div>
+          {isDefused && <div style={styles.defused}>DÉSAMORCÉ</div>}
+        </div>
+      );
+    };
+
+    // ==========================================
+    // 5. LIGHTS OUT MODULE
+    // ==========================================
+    const LightsOutModule = ({ disabled, onDefuse, onStrike }) => {
+      const initialGrid = [[true, false, false], [false, false, false], [true, false, false]];
+      const [grid, setGrid] = useState(initialGrid);
+      const [timeLeft, setTimeLeft] = useState(40);
+      const [isActive, setIsActive] = useState(false);
+      const [errors, setErrors] = useState(0);
+      const [isDefused, setIsDefused] = useState(false);
+      const [isFlashing, setIsFlashing] = useState(false);
+
+      useEffect(() => {
+        let timer;
+        if (isActive && timeLeft > 0 && !isDefused && !disabled) {
+          timer = setInterval(() => setTimeLeft((prev) => prev - 1), 1000);
+        } else if (timeLeft === 0 && !isDefused && !disabled) {
+          handleTimeout();
+        }
+        return () => clearInterval(timer);
+      }, [isActive, timeLeft, isDefused, disabled]);
+
+      const handleTimeout = () => {
+        setErrors((prev) => prev + 1);
+        setIsFlashing(true);
+        playTone(100, "sawtooth", 0.5);
+        if (onStrike) onStrike();
+        setGrid(Array(3).fill().map(() => Array(3).fill(false))); 
+        setTimeLeft(40);
+        setIsActive(false);
+        setTimeout(() => setIsFlashing(false), 300);
+      };
+
+      const toggleLight = (r, c, currentGrid) => {
+        const newGrid = currentGrid.map((row) => [...row]);
+        [[r, c], [r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]].forEach(([row, col]) => {
+          if (row >= 0 && row < 3 && col >= 0 && col < 3) newGrid[row][col] = !newGrid[row][col];
+        });
+        return newGrid;
+      };
+
+      const handlePress = (r, c) => {
+        if (disabled || isDefused) return;
+        if (!isActive) setIsActive(true);
+        playTone(400, "sine", 0.1);
+        const nextGrid = toggleLight(r, c, grid);
+        setGrid(nextGrid);
+        if (nextGrid.every((row) => row.every((cell) => !cell))) {
+          setIsDefused(true);
+          playTone(800, "sine", 0.5);
+          if (onDefuse) onDefuse();
+        }
+      };
+
+      const styles = {
+        panel: {
+          backgroundColor: isFlashing ? "#551111" : "#1a1d21", width: "380px", padding: "30px", borderRadius: "15px", border: "6px solid #111", position: "relative",
+          fontFamily: '"Courier New", Courier, monospace', boxShadow: "inset 0 0 40px #000, 0 20px 50px rgba(0,0,0,0.9)", color: "#eee", transition: "background-color 0.2s", boxSizing: "border-box"
+        },
+        header: {
+          display: "flex", justifyContent: "space-between", marginBottom: "20px", padding: "10px", backgroundColor: "#000", borderRadius: "5px", border: "2px solid #333"
+        },
+        display: { color: "#ff3333", fontSize: "24px", textShadow: "0 0 10px #ff0000" },
+        grid: {
+          display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "15px", backgroundColor: "#111", padding: "20px", borderRadius: "10px", border: "2px solid #333",
+          backgroundImage: "radial-gradient(#222 1px, transparent 1px)", backgroundSize: "10px 10px"
+        },
+        button: (isOn) => ({
+          height: "80px", borderRadius: "12px", border: isOn ? "3px solid #ffa500" : "3px solid #444", backgroundColor: isOn ? "#3a2a0a" : "#222", cursor: disabled || isDefused ? "default" : "pointer",
+          display: "flex", justifyContent: "center", alignItems: "center", boxShadow: isOn ? "0 0 15px rgba(255,165,0,0.4), inset 0 0 10px #000" : "inset 0 0 10px #000", transition: "all 0.1s"
+        }),
+        dot: (isOn) => ({ width: "12px", height: "12px", borderRadius: "50%", backgroundColor: isOn ? "#ffaa00" : "#333", boxShadow: isOn ? "0 0 15px #ffaa00" : "none" }),
+        screw: { position: "absolute", width: "15px", height: "15px", backgroundColor: "#555", borderRadius: "50%", border: "2px solid #333", display: "flex", justifyContent: "center", alignItems: "center" },
+        screwSlot: { width: "10px", height: "2px", backgroundColor: "#222", transform: "rotate(45deg)" },
+        defused: {
+          position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%) rotate(-10deg)", color: "#33ff33", fontSize: "42px", fontWeight: "bold", border: "5px solid #33ff33",
+          padding: "10px 30px", backgroundColor: "rgba(0,0,0,0.9)", zIndex: 10, textShadow: "0 0 20px #33ff33"
+        }
+      };
+
+      return (
+        <div style={styles.panel}>
+          <div style={{ ...styles.screw, top: 10, left: 10 }}><div style={styles.screwSlot}></div></div>
+          <div style={{ ...styles.screw, top: 10, right: 10 }}><div style={styles.screwSlot}></div></div>
+          <div style={{ ...styles.screw, bottom: 10, left: 10 }}><div style={styles.screwSlot}></div></div>
+          <div style={{ ...styles.screw, bottom: 10, right: 10 }}><div style={styles.screwSlot}></div></div>
+          <div style={styles.header}>
+            <div style={styles.display}>TEMPS: {timeLeft}s</div>
+            <div style={styles.display}>ERR: {errors}</div>
+          </div>
+          <div style={styles.grid}>
+            {grid.map((row, r) => row.map((cell, c) => (
+              <div key={`${r}-${c}`} style={styles.button(cell)} onMouseDown={() => handlePress(r, c)}>
+                <div style={styles.dot(cell)}></div>
+              </div>
+            )))}
+          </div>
+          <div style={{ textAlign: "center", marginTop: "15px", fontSize: "12px", color: "#555" }}>SYSTÈME ST-EX - EXTINCTION TOTALE</div>
+          {isDefused && <div style={styles.defused}>DÉSAMORCÉ</div>}
+        </div>
+      );
+    };
+
+    // ==========================================
+    // MAIN APP
+    // ==========================================
+    const App = () => {
+      const INITIAL_TIME = 1200; // 20 minutes
+      const [globalTime, setGlobalTime] = useState(INITIAL_TIME);
+      const [exploded, setExploded] = useState(false);
+      const [strikes, setStrikes] = useState(0);
+
+      const [status, setStatus] = useState({ piano: false, lights: false, lab: false, fils: false, morse: false });
+      const allDefused = Object.values(status).every((val) => val === true);
+
+      useEffect(() => {
+        if (globalTime > 0 && !exploded && !allDefused) {
+          const timer = setInterval(() => setGlobalTime((t) => Math.max(0, t - 1)), 1000);
+          return () => clearInterval(timer);
+        } else if (globalTime <= 0 && !allDefused) {
+          setExploded(true);
+        }
+      }, [globalTime, exploded, allDefused]);
+
+      const handleStrike = (timePenaltySeconds = 30) => {
+        if (exploded || allDefused) return;
+        setStrikes((prev) => prev + 1);
+        setGlobalTime((prev) => {
+          const newTime = prev - timePenaltySeconds;
+          if (newTime <= 0) {
+            setExploded(true);
+            return 0;
+          }
+          return newTime;
+        });
+      };
+
+      const handleReset = () => {
+        setGlobalTime(INITIAL_TIME);
+        setExploded(false);
+        setStrikes(0);
+        setStatus({ piano: false, lights: false, lab: false, fils: false, morse: false });
+      };
+
+      const formatTime = (seconds) => {
+        const m = Math.floor(seconds / 60);
+        const s = seconds % 60;
+        return `${m < 10 ? "0" : ""}${m}:${s < 10 ? "0" : ""}${s}`;
+      };
+
+      const styles = {
+        appContainer: {
+          minHeight: "100vh", padding: "30px 15px", color: "white", display: "flex", flexDirection: "column", alignItems: "center", boxSizing: "border-box"
+        },
+        header: {
+          backgroundColor: "#1a1d21", padding: "30px 40px", borderRadius: "12px", border: "6px solid #222", boxShadow: "0 10px 30px rgba(0,0,0,0.8)",
+          marginBottom: "30px", textAlign: "center", width: "100%", maxWidth: "900px", boxSizing: "border-box"
+        },
+        title: {
+          margin: 0,
+          color: "#ffffff",
+          fontSize: "42px",
+          fontWeight: "900",
+          letterSpacing: "4px",
+          textTransform: "uppercase",
+          textShadow: "0 0 15px rgba(255, 255, 255, 0.2)"
+        },
+        timer: {
+          fontSize: "72px", fontWeight: "bold", margin: "10px 0", letterSpacing: "2px", fontFamily: '"Courier New", Courier, monospace',
+          color: allDefused ? "#33ff33" : exploded ? "#555" : "#ff3333", textShadow: allDefused ? "0 0 20px #33ff33" : exploded ? "none" : "0 0 30px #ff0000"
+        },
+        strikeContainer: { fontSize: "20px", color: "#ff3333", fontWeight: "bold", letterSpacing: "3px", marginTop: "5px", fontFamily: '"Courier New", Courier, monospace' },
+        victoryScreen: {
+          backgroundColor: "#002200", border: "5px solid #33ff33", padding: "30px", borderRadius: "15px", textAlign: "center", marginTop: "20px", animation: "pulse 2s infinite"
+        },
+        secretPhrase: { fontSize: "32px", color: "#33ff33", fontWeight: "bold", textTransform: "uppercase", marginTop: "15px", display: "block", letterSpacing: "2px" },
+        resetButton: {
+          marginTop: "20px", padding: "10px 20px", backgroundColor: "#222", color: "#aaa", border: "2px solid #444", borderRadius: "6px", cursor: "pointer", fontFamily: "inherit", fontSize: "14px"
+        }
+      };
+
+      return (
+        <div style={styles.appContainer}>
+          <div style={styles.header}>
+            <h1 style={styles.title}>DÉSAMORCE LA BOMBE</h1>
+            <div style={styles.timer}>{allDefused ? "DÉSAMORCÉ" : formatTime(globalTime)}</div>
+            <div style={styles.strikeContainer}>ERREURS : {strikes} {strikes > 0 ? "❌".repeat(Math.min(strikes, 5)) : ""}</div>
+            {allDefused && (
+              <div style={styles.victoryScreen}>
+                <span style={{ fontSize: "18px", fontFamily: '"Courier New", Courier, monospace' }}>COMMUNIQUEZ CETTE PHRASE À L'ORGANISATEUR :</span>
+                <span style={styles.secretPhrase}>"J'AI LA SOIF DE VAINCRE"</span>
+              </div>
+            )}
+            {(allDefused || exploded) && <button style={styles.resetButton} onClick={handleReset}>🔄 RECOMMENCER</button>}
+          </div>
+
+          {!allDefused && (
+            <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "30px", width: "100%", maxWidth: "1200px" }}>
+              <FilsModule disabled={exploded} onDefuse={() => setStatus((s) => ({ ...s, fils: true }))} onStrike={() => handleStrike(30)} />
+              <PianoModule disabled={exploded} onDefuse={() => setStatus((s) => ({ ...s, piano: true }))} onStrike={() => handleStrike(30)} />
+              <MorseModule disabled={exploded} onDefuse={() => setStatus((s) => ({ ...s, morse: true }))} onStrike={() => handleStrike(30)} />
+              <LabyrintheModule disabled={exploded} onDefuse={() => setStatus((s) => ({ ...s, lab: true }))} onStrike={() => handleStrike(30)} />
+              <LightsOutModule disabled={exploded} onDefuse={() => setStatus((s) => ({ ...s, lights: true }))} onStrike={() => handleStrike(30)} />
+            </div>
+          )}
+
+          {exploded && !allDefused && (
+            <div style={{
+              position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(150,0,0,0.95)", display: "flex", flexDirection: "column",
+              justifyContent: "center", alignItems: "center", fontSize: "60px", fontWeight: "bold", zIndex: 100, color: "#ffffff", textShadow: "0 0 20px #000"
+            }}>
+              <div style={{ fontFamily: '"Courier New", Courier, monospace' }}>TEMPS ÉCOULÉ</div>
+              <button onClick={handleReset} style={{ ...styles.resetButton, backgroundColor: "#fff", color: "#900", fontSize: "20px", fontWeight: "bold", marginTop: "30px", padding: "15px 30px" }}>REESSAYER</button>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<App />);
+  </script>
+</body>
+</html>
