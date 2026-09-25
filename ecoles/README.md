@@ -15,11 +15,8 @@ la probabilité (%) que les écoles ferment un jour donné à cause de la mété
 3. **IA** : une régression logistique calcule une probabilité par modèle météo, puis un
    ensemble pondéré (GEM 35 %, ECMWF 30 %, ICON 20 %, GFS 15 %) les combine.
    L'écart entre les modèles donne l'intervalle et le niveau de confiance.
-4. **Apprentissage** : les poids de départ viennent de règles d'expert (≈15 cm la nuit ≈ 65 %,
-   ≈10 mm de verglas ≈ 85 %). Quand vous indiquez si les écoles ont réellement fermé,
-   le modèle est réentraîné (descente de gradient régularisée vers les poids de départ).
-   L'exactitude et le score de Brier sont affichés. Les données restent dans le navigateur
-   et peuvent être exportées ou importées en JSON.
+4. **Poids du modèle** : fixés à partir de règles d'expert (≈15 cm la nuit ≈ 65 %,
+   ≈10 mm de verglas ≈ 85 %).
 
 ## Régions et carte
 
@@ -34,9 +31,8 @@ la probabilité (%) que les écoles ferment un jour donné à cause de la mété
 
 ## Précision
 
-Sans historique local, les pourcentages sont des estimations raisonnables, pas des
-certitudes. La précision augmente avec le nombre de journées enregistrées (idéalement
-une ou deux saisons d'hiver pour votre centre de services scolaire).
+Les pourcentages sont des estimations raisonnables, pas des certitudes : les poids n'ont
+pas encore été calibrés sur des fermetures réelles.
 
 ## Utilisation
 

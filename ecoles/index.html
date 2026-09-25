@@ -123,7 +123,7 @@
 <body>
 <main>
   <h1>❄️ Fermeture des écoles : prédiction par IA</h1>
-  <p class="sub">Probabilité que les écoles ferment, calculée à partir de 4 modèles météo (GEM, ECMWF, GFS, ICON) et d'un modèle d'apprentissage qui se recalibre avec les fermetures réelles que vous enregistrez.</p>
+  <p class="sub">Probabilité que les écoles ferment, calculée à partir de 4 modèles météo (GEM, ECMWF, GFS, ICON) et d'un modèle d'IA (régression logistique) qui combine neige, verglas, froid et vent.</p>
 
   <section class="card">
     <h2>1. Région</h2>
@@ -153,7 +153,6 @@
         <p class="verdict" id="verdict"></p>
         <p class="meta" id="range"></p>
         <p class="meta" id="confidence"></p>
-        <p class="meta" id="modelInfo"></p>
       </div>
     </div>
   </section>
@@ -201,23 +200,6 @@
     <p class="note">Les centres de services scolaires ruraux (longs trajets d'autobus, routes secondaires) ferment plus facilement que ceux en ville.</p>
   </section>
 
-  <section class="card">
-    <h2>3. Apprentissage : que s'est-il vraiment passé ?</h2>
-    <p class="note">Chaque prédiction est mémorisée dans ce navigateur. Indiquez si les écoles ont fermé : l'IA réajuste ses poids (régression logistique) pour votre région. Plus vous enregistrez de journées, plus la précision augmente.</p>
-    <div id="pending"></div>
-    <p class="meta" id="stats"></p>
-    <div class="row" style="margin-top:8px">
-      <button type="button" id="exportBtn">Exporter les données</button>
-      <button type="button" id="importBtn">Importer</button>
-      <input type="file" id="importFile" accept="application/json" class="hidden">
-      <button type="button" id="resetBtn">Réinitialiser l'IA</button>
-    </div>
-    <details style="margin-top:12px">
-      <summary>Historique</summary>
-      <div class="scroll"><table id="history"></table></div>
-    </details>
-  </section>
-
   <p class="note">Données météo : <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> (CC BY 4.0). Estimation indicative : la décision officielle revient au centre de services scolaire.</p>
 </main>
 
@@ -236,21 +218,20 @@ const WEATHER_MODELS = [
 const HOURLY_VARS = ["temperature_2m", "apparent_temperature", "precipitation", "rain", "snowfall", "weather_code", "wind_gusts_10m"];
 const FREEZING_CODES = new Set([56, 57, 66, 67]);
 
-// Features fed to the model. The prior weights encode expert knowledge
-// (≈15 cm overnight ≈ 65 %, ≈10 mm freezing rain ≈ 85 %) and are then
-// refined by gradient descent on the outcomes the user records.
+// Features fed to the logistic model. Weights encode expert knowledge
+// (≈15 cm overnight ≈ 65 %, ≈10 mm freezing rain ≈ 85 %).
 const FEATURES = [
-  { key: "bias",      label: "Base",                                prior: -6.0 },
-  { key: "snowNight", label: "Neige 18 h – 7 h",                    prior: 2.2 },
-  { key: "snowDay",   label: "Neige 7 h – 15 h",                    prior: 1.0 },
-  { key: "peakRate",  label: "Intensité max 4 h – 8 h",             prior: 0.8 },
-  { key: "freezing",  label: "Pluie verglaçante",                   prior: 3.0 },
-  { key: "cold",      label: "Froid extrême (refroidissement éolien)", prior: 2.5 },
-  { key: "wind",      label: "Rafales",                             prior: 1.0 },
-  { key: "snowPrev",  label: "Neige de la veille",                  prior: 0.6 },
-  { key: "rural",     label: "Territoire rural",                    prior: 1.0 },
+  { key: "bias",      label: "Base",                                weight: -6.0 },
+  { key: "snowNight", label: "Neige 18 h – 7 h",                    weight: 2.2 },
+  { key: "snowDay",   label: "Neige 7 h – 15 h",                    weight: 1.0 },
+  { key: "peakRate",  label: "Intensité max 4 h – 8 h",             weight: 0.8 },
+  { key: "freezing",  label: "Pluie verglaçante",                   weight: 3.0 },
+  { key: "cold",      label: "Froid extrême (refroidissement éolien)", weight: 2.5 },
+  { key: "wind",      label: "Rafales",                             weight: 1.0 },
+  { key: "snowPrev",  label: "Neige de la veille",                  weight: 0.6 },
+  { key: "rural",     label: "Territoire rural",                    weight: 1.0 },
 ];
-const PRIOR = FEATURES.map(f => f.prior);
+const WEIGHTS = FEATURES.map(f => f.weight);
 
 // Quebec's 17 administrative regions. Each city is a forecast point for
 // the map; the first one is the default for the region. `rural` is the
@@ -276,7 +257,6 @@ const REGIONS = [
 ];
 const POINTS = REGIONS.flatMap(r => r.cities.map(([name, lat, lon], ci) => ({ name, lat, lon, regionId: r.id, ci })));
 const regionById = id => REGIONS.find(r => r.id === id);
-const PRIOR_STRENGTH = 3;   // how many "pseudo-days" anchor the weights to the prior
 
 // ==========================================================
 // STORAGE (per-browser; always guarded)
@@ -284,17 +264,14 @@ const PRIOR_STRENGTH = 3;   // how many "pseudo-days" anchor the weights to the 
 const store = {
   get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
-  del(k) { try { localStorage.removeItem(k); } catch {} },
 };
-const K = { place: "fe.place2", rural: "fe.ruralByRegion", hist: "fe.history", weights: "fe.weights" };
+const K = { place: "fe.place2", rural: "fe.ruralByRegion" };
 
 let state = {
   place: store.get(K.place, { name: "Montréal", admin: "Montréal", country: "Québec", lat: 45.51, lon: -73.59, regionId: "06", ci: 0 }),
   ruralByRegion: store.get(K.rural, {}),
   rural: 0.3,
   mapData: null,
-  history: store.get(K.hist, []),
-  weights: store.get(K.weights, null) || PRIOR.slice(),
   forecast: null,
   day: null,
 };
@@ -317,37 +294,6 @@ function featureVector(f, rural) {
     Math.log1p(f.snowPrev),
     rural,
   ];
-}
-
-// Regularized logistic regression, full-batch gradient descent.
-// Penalty pulls the weights toward the expert prior, so a handful of
-// examples nudges the model without letting it overfit.
-function train(samples) {
-  const w = PRIOR.slice();
-  if (!samples.length) return w;
-  const n = samples.length, lr = 0.15;
-  for (let it = 0; it < 1500; it++) {
-    const g = new Array(w.length).fill(0);
-    for (const s of samples) {
-      const err = sigmoid(dot(w, s.x)) - s.y;
-      for (let j = 0; j < w.length; j++) g[j] += err * s.x[j];
-    }
-    for (let j = 0; j < w.length; j++) {
-      g[j] = (g[j] + PRIOR_STRENGTH * (w[j] - PRIOR[j])) / (n + PRIOR_STRENGTH);
-      w[j] -= lr * g[j];
-    }
-  }
-  return w;
-}
-
-function labeledSamples() {
-  return state.history.filter(h => h.outcome === 0 || h.outcome === 1)
-    .map(h => ({ x: featureVector(h.features, h.rural ?? state.rural), y: h.outcome, p: h.p }));
-}
-
-function retrain() {
-  state.weights = train(labeledSamples());
-  store.set(K.weights, state.weights);
 }
 
 // ==========================================================
@@ -453,7 +399,7 @@ function predict(data, day, rural = state.rural) {
 
   const perModel = active.map(m => {
     const f = extractFeatures(data, m.id, day);
-    const p = sigmoid(dot(state.weights, featureVector(f, rural)));
+    const p = sigmoid(dot(WEIGHTS, featureVector(f, rural)));
     return { ...m, f, p };
   });
   const wsum = perModel.reduce((s, m) => s + m.weight, 0);
@@ -464,7 +410,7 @@ function predict(data, day, rural = state.rural) {
   const keys = Object.keys(perModel[0].f);
   const f = Object.fromEntries(keys.map(k => [k, perModel.reduce((s, m) => s + m.weight * m.f[k], 0) / wsum]));
   const x = featureVector(f, rural);
-  const contrib = FEATURES.map((ft, j) => ({ ...ft, value: state.weights[j] * x[j] }));
+  const contrib = FEATURES.map((ft, j) => ({ ...ft, value: WEIGHTS[j] * x[j] }));
 
   const leadDays = Math.round((d0 - dayMs(todayStr())) / 864e5);
   return { p, sd, perModel, f, contrib, active, leadDays, lo: Math.max(0, p - 1.5 * sd), hi: Math.min(1, p + 1.5 * sd) };
@@ -540,10 +486,6 @@ function renderPrediction() {
   const u = r.sd + leadPenalty;
   const conf = u < 0.07 ? "élevée" : u < 0.16 ? "moyenne" : "faible";
   $("confidence").innerHTML = `Confiance : <span class="pill">${conf}</span> · écart entre modèles ±${Math.round(r.sd * 100)} pts · échéance J+${Math.max(0, r.leadDays)}`;
-  const n = labeledSamples().length;
-  $("modelInfo").textContent = n
-    ? `IA recalibrée sur ${n} journée${n > 1 ? "s" : ""} observée${n > 1 ? "s" : ""}.`
-    : "IA non encore recalibrée : enregistrez les fermetures réelles pour l'améliorer.";
 
   // Factors
   const f = r.f;
@@ -568,16 +510,6 @@ function renderPrediction() {
     `</tbody>` + (r.active.length < WEATHER_MODELS.length ? `<caption class="note" style="caption-side:bottom;text-align:left">Modèles sans données à cette échéance : ${WEATHER_MODELS.filter(m => !r.active.includes(m)).map(m => m.name).join(", ")}</caption>` : "");
 
   renderChart(hourlyMean(state.forecast, state.day, r.active));
-
-  // Remember this prediction so the user can label it later.
-  const id = `${state.place.lat.toFixed(2)},${state.place.lon.toFixed(2)}|${state.day}`;
-  const existing = state.history.find(h => h.id === id);
-  const entry = { id, day: state.day, place: placeText(state.place), p: r.p, features: r.f, rural: state.rural, at: Date.now(), outcome: existing ? existing.outcome : null };
-  if (!existing) state.history.push(entry);
-  else if (existing.outcome == null) Object.assign(existing, entry);
-  state.history = state.history.slice(-500);
-  store.set(K.hist, state.history);
-  renderLearning();
 }
 
 function renderChart(rows) {
@@ -637,30 +569,6 @@ function renderChart(rows) {
 }
 
 function ruralText(v) { return v < 0.25 ? "urbain" : v < 0.6 ? "mixte" : v < 0.85 ? "rural" : "très rural"; }
-
-function renderLearning() {
-  const today = todayStr();
-  const pending = state.history.filter(h => h.outcome == null && h.day <= today && !isWeekend(h.day)).slice(-5).reverse();
-  $("pending").innerHTML = pending.length
-    ? pending.map(h => `<div class="row" style="margin:6px 0"><span style="flex:1 1 220px">${esc(fmtDay(h.day))}, ${esc(h.place)} (prédit ${pct(h.p)})</span>
-        <button type="button" data-id="${esc(h.id)}" data-o="1">Fermé</button>
-        <button type="button" data-id="${esc(h.id)}" data-o="0">Ouvert</button>
-        <button type="button" data-id="${esc(h.id)}" data-o="x" title="Supprimer">✕</button></div>`).join("")
-    : `<p class="meta">Aucune journée en attente de résultat.</p>`;
-
-  const s = labeledSamples();
-  if (s.length) {
-    const brier = s.reduce((a, x) => a + (x.p - x.y) ** 2, 0) / s.length;
-    const acc = s.filter(x => (x.p >= 0.5) === (x.y === 1)).length / s.length;
-    $("stats").textContent = `${s.length} journée(s) enregistrée(s) · exactitude des prédictions : ${Math.round(acc * 100)} % · score de Brier : ${brier.toFixed(3)} (0 = parfait)`;
-  } else $("stats").textContent = "";
-
-  const rows = state.history.slice().reverse().slice(0, 60);
-  $("history").innerHTML = rows.length
-    ? `<thead><tr><th>Jour</th><th>Lieu</th><th class="num">Prédit</th><th>Résultat</th></tr></thead><tbody>` +
-      rows.map(h => `<tr><td>${esc(h.day)}</td><td>${esc(h.place)}</td><td class="num">${pct(h.p)}</td><td>${h.outcome === 1 ? "Fermé" : h.outcome === 0 ? "Ouvert" : "–"}</td></tr>`).join("") + "</tbody>"
-    : `<tbody><tr><td class="note">Aucun historique.</td></tr></tbody>`;
-}
 
 // ==========================================================
 // MAP
@@ -894,56 +802,6 @@ $("regionSel").addEventListener("change", e => {
 });
 $("citySel").addEventListener("change", e => selectPlace(pointPlace(state.place.regionId, +e.target.value)));
 
-$("pending").addEventListener("click", e => {
-  const b = e.target.closest("button[data-id]");
-  if (!b) return;
-  const i = state.history.findIndex(h => h.id === b.dataset.id);
-  if (i < 0) return;
-  if (b.dataset.o === "x") state.history.splice(i, 1);
-  else state.history[i].outcome = +b.dataset.o;
-  store.set(K.hist, state.history);
-  retrain();
-  renderLearning();
-  renderPrediction();
-  renderMap();
-});
-
-$("exportBtn").addEventListener("click", () => {
-  const blob = new Blob([JSON.stringify({ version: 1, rural: state.rural, history: state.history }, null, 2)], { type: "application/json" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "fermetures-ecoles.json";
-  a.click();
-  URL.revokeObjectURL(a.href);
-});
-$("importBtn").addEventListener("click", () => $("importFile").click());
-$("importFile").addEventListener("change", async e => {
-  const file = e.target.files[0];
-  if (!file) return;
-  try {
-    const data = JSON.parse(await file.text());
-    const byId = new Map(state.history.map(h => [h.id, h]));
-    for (const h of data.history || []) if (h && h.id && h.features) byId.set(h.id, h);
-    state.history = [...byId.values()].sort((a, b) => a.day.localeCompare(b.day));
-    store.set(K.hist, state.history);
-    retrain();
-    renderLearning();
-    renderPrediction();
-    renderMap();
-  } catch { alert("Fichier invalide."); }
-  e.target.value = "";
-});
-$("resetBtn").addEventListener("click", () => {
-  if (!confirm("Effacer l'historique et remettre l'IA à zéro ?")) return;
-  state.history = [];
-  state.weights = PRIOR.slice();
-  store.del(K.hist); store.del(K.weights);
-  renderLearning();
-  renderPrediction();
-  renderMap();
-});
-
-renderLearning();
 syncSelectors();
 syncRuralSlider();
 loadMapData().then(() => selectPlace(state.place));
