@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prédicteur de fermeture</title>
+<meta name="description" content="Probabilité de fermeture des écoles calculée par IA à partir de plusieurs modèles météo (GEM, ECMWF, GFS, ICON).">
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #f4f5f7;
+    --surface: #fcfcfb;
+    --border: #e1e1dc;
+    --text: #0b0b0b;
+    --text-2: #52514e;
+    --muted: #8a8984;
+    --accent: #2a78d6;
+    --snow: #2a78d6;
+    --ice: #eb6834;
+    --good: #1a8a4a;
+    --warn: #b77900;
+    --crit: #c8322f;
+    --track: #e8e8e4;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #111110;
+      --surface: #1a1a19;
+      --border: #2e2e2c;
+      --text: #ffffff;
+      --text-2: #c3c2b7;
+      --muted: #8f8e86;
+      --accent: #3987e5;
+      --snow: #3987e5;
+      --ice: #d95926;
+      --good: #3fb56f;
+      --warn: #d9a022;
+      --crit: #e66767;
+      --track: #2a2a28;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #111110; --surface: #1a1a19; --border: #2e2e2c; --text: #ffffff;
+    --text-2: #c3c2b7; --muted: #8f8e86; --accent: #3987e5; --snow: #3987e5;
+    --ice: #d95926; --good: #3fb56f; --warn: #d9a022; --crit: #e66767; --track: #2a2a28;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.45;
+  }
+  main { max-width: 960px; margin: 0 auto; padding: 24px 16px 64px; }
+  h1 { font-size: 1.6rem; margin: 0 0 4px; }
+  h2 { font-size: 1.05rem; margin: 0 0 12px; }
+  .sub { color: var(--text-2); margin: 0 0 20px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px; margin-bottom: 16px;
+  }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  input[type=text], select {
+    font: inherit; padding: 8px 10px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--bg); color: var(--text);
+    min-width: 0;
+  }
+  input[type=text] { flex: 1 1 200px; }
+  button {
+    font: inherit; padding: 8px 14px; border-radius: 8px; cursor: pointer;
+    border: 1px solid var(--border); background: var(--bg); color: var(--text);
+  }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button:disabled { opacity: .5; cursor: default; }
+  .results { list-style: none; padding: 0; margin: 8px 0 0; }
+  .results li button { width: 100%; text-align: left; margin-top: 4px; }
+  .days { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .days button[aria-pressed=true] { border-color: var(--accent); outline: 2px solid var(--accent); }
+  .hero { display: grid; grid-template-columns: 180px 1fr; gap: 20px; align-items: center; }
+  @media (max-width: 600px) { .hero { grid-template-columns: 1fr; justify-items: center; text-align: center; } }
+  .gauge { width: 180px; height: 180px; }
+  .verdict { font-size: 1.25rem; font-weight: 600; margin: 0 0 6px; }
+  .meta { color: var(--text-2); font-size: .92rem; margin: 2px 0; }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: .82rem; border: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+  th { color: var(--text-2); font-weight: 500; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .scroll { overflow-x: auto; }
+  .bar { height: 8px; border-radius: 4px; background: var(--track); position: relative; min-width: 80px; }
+  .bar > span { position: absolute; top: 0; bottom: 0; border-radius: 4px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid2 > * { min-width: 0; }
+  @media (max-width: 700px) { .grid2 { grid-template-columns: 1fr; } }
+  .legend { display: flex; gap: 14px; font-size: .85rem; color: var(--text-2); margin-bottom: 6px; flex-wrap: wrap; }
+  .sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+  .chart-wrap { position: relative; }
+  .tip {
+    position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 6px 8px; font-size: .82rem; box-shadow: 0 4px 14px rgba(0,0,0,.15);
+    white-space: nowrap; display: none; z-index: 2;
+  }
+  .note { font-size: .85rem; color: var(--muted); }
+  .error { color: var(--crit); }
+  label.slider { display: flex; flex-direction: column; gap: 4px; font-size: .92rem; }
+  input[type=range] { width: 100%; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <h1>❄️ Fermeture des écoles : prédiction par IA</h1>
+  <p class="sub">Probabilité que les écoles ferment, calculée à partir de 4 modèles météo (GEM, ECMWF, GFS, ICON) et d'un modèle d'apprentissage qui se recalibre avec les fermetures réelles que vous enregistrez.</p>
+
+  <section class="card">
+    <h2>1. Localisation</h2>
+    <form id="searchForm" class="row">
+      <input type="text" id="q" placeholder="Ville (ex. Québec, Rimouski, Sherbrooke)" autocomplete="off" aria-label="Ville">
+      <button class="primary" type="submit">Rechercher</button>
+      <button type="button" id="geoBtn">📍 Ma position</button>
+    </form>
+    <ul class="results" id="results"></ul>
+    <p class="meta" id="placeLabel"></p>
+    <div class="days" id="days"></div>
+  </section>
+
+  <section class="card hidden" id="predCard">
+    <div class="hero">
+      <svg class="gauge" viewBox="0 0 120 120" role="img" aria-labelledby="gaugeText">
+        <circle cx="60" cy="60" r="50" fill="none" stroke="var(--track)" stroke-width="12"/>
+        <circle id="gaugeArc" cx="60" cy="60" r="50" fill="none" stroke="var(--accent)" stroke-width="12"
+                stroke-linecap="round" transform="rotate(-90 60 60)" stroke-dasharray="0 314.16"/>
+        <text id="gaugeText" x="60" y="66" text-anchor="middle" font-size="26" font-weight="700" fill="var(--text)">–</text>
+      </svg>
+      <div>
+        <p class="verdict" id="verdict"></p>
+        <p class="meta" id="range"></p>
+        <p class="meta" id="confidence"></p>
+        <p class="meta" id="modelInfo"></p>
+      </div>
+    </div>
+  </section>
+
+  <div class="grid2 hidden" id="detailGrid">
+    <section class="card">
+      <h2>Facteurs déterminants</h2>
+      <div class="scroll"><table id="factors"></table></div>
+      <p class="note">Contribution de chaque facteur au score de l'IA (en points de log-cote). Positif = pousse vers la fermeture.</p>
+    </section>
+    <section class="card">
+      <h2>Accord entre les modèles météo</h2>
+      <div class="scroll"><table id="models"></table></div>
+    </section>
+  </div>
+
+  <section class="card hidden" id="chartCard">
+    <h2>Précipitations heure par heure (moyenne des modèles)</h2>
+    <div class="legend">
+      <span><span class="sw" style="background:var(--snow)"></span>Neige (cm)</span>
+      <span><span class="sw" style="background:var(--ice)"></span>Pluie verglaçante (mm)</span>
+      <span><span class="sw" style="background:var(--track);border:1px solid var(--border)"></span>Zone 6 h – 9 h (transport scolaire)</span>
+    </div>
+    <div class="chart-wrap" id="chartWrap"><div class="tip" id="tip"></div></div>
+  </section>
+
+  <section class="card">
+    <h2>2. Réglages locaux</h2>
+    <label class="slider">
+      <span>Territoire de l'école : <strong id="ruralLbl"></strong></span>
+      <input type="range" id="rural" min="0" max="1" step="0.1">
+    </label>
+    <p class="note">Les centres de services scolaires ruraux (longs trajets d'autobus, routes secondaires) ferment plus facilement que ceux en ville.</p>
+  </section>
+
+  <section class="card">
+    <h2>3. Apprentissage : que s'est-il vraiment passé ?</h2>
+    <p class="note">Chaque prédiction est mémorisée dans ce navigateur. Indiquez si les écoles ont fermé : l'IA réajuste ses poids (régression logistique) pour votre région. Plus vous enregistrez de journées, plus la précision augmente.</p>
+    <div id="pending"></div>
+    <p class="meta" id="stats"></p>
+    <div class="row" style="margin-top:8px">
+      <button type="button" id="exportBtn">Exporter les données</button>
+      <button type="button" id="importBtn">Importer</button>
+      <input type="file" id="importFile" accept="application/json" class="hidden">
+      <button type="button" id="resetBtn">Réinitialiser l'IA</button>
+    </div>
+    <details style="margin-top:12px">
+      <summary>Historique</summary>
+      <div class="scroll"><table id="history"></table></div>
+    </details>
+  </section>
+
+  <p class="note">Données météo : <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> (CC BY 4.0). Estimation indicative : la décision officielle revient au centre de services scolaire.</p>
+</main>
+
+<script>
+"use strict";
+
+// ==========================================================
+// CONFIGURATION
+// ==========================================================
+const WEATHER_MODELS = [
+  { id: "gem_seamless",  name: "GEM (Canada)",       weight: 0.35 },
+  { id: "ecmwf_ifs025",  name: "ECMWF (Europe)",     weight: 0.30 },
+  { id: "icon_seamless", name: "ICON (Allemagne)",   weight: 0.20 },
+  { id: "gfs_seamless",  name: "GFS (États-Unis)",   weight: 0.15 },
+];
+const HOURLY_VARS = ["temperature_2m", "apparent_temperature", "precipitation", "rain", "snowfall", "weather_code", "wind_gusts_10m"];
+const FREEZING_CODES = new Set([56, 57, 66, 67]);
+
+// Features fed to the model. The prior weights encode expert knowledge
+// (≈15 cm overnight ≈ 65 %, ≈10 mm freezing rain ≈ 85 %) and are then
+// refined by gradient descent on the outcomes the user records.
+const FEATURES = [
+  { key: "bias",      label: "Base",                                prior: -6.0 },
+  { key: "snowNight", label: "Neige 18 h – 7 h",                    prior: 2.2 },
+  { key: "snowDay",   label: "Neige 7 h – 15 h",                    prior: 1.0 },
+  { key: "peakRate",  label: "Intensité max 4 h – 8 h",             prior: 0.8 },
+  { key: "freezing",  label: "Pluie verglaçante",                   prior: 3.0 },
+  { key: "cold",      label: "Froid extrême (refroidissement éolien)", prior: 2.5 },
+  { key: "wind",      label: "Rafales",                             prior: 1.0 },
+  { key: "snowPrev",  label: "Neige de la veille",                  prior: 0.6 },
+  { key: "rural",     label: "Territoire rural",                    prior: 1.0 },
+];
+const PRIOR = FEATURES.map(f => f.prior);
+const PRIOR_STRENGTH = 3;   // how many "pseudo-days" anchor the weights to the prior
+
+// ==========================================================
+// STORAGE (per-browser; always guarded)
+// ==========================================================
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+  del(k) { try { localStorage.removeItem(k); } catch {} },
+};
+const K = { place: "fe.place", rural: "fe.rural", hist: "fe.history", weights: "fe.weights" };
+
+let state = {
+  place: store.get(K.place, { name: "Montréal", admin: "Québec", country: "Canada", lat: 45.5088, lon: -73.5878 }),
+  rural: store.get(K.rural, 0.3),
+  history: store.get(K.hist, []),
+  weights: store.get(K.weights, null) || PRIOR.slice(),
+  forecast: null,
+  day: null,
+};
+
+// ==========================================================
+// MATH / AI
+// ==========================================================
+const sigmoid = z => 1 / (1 + Math.exp(-z));
+const dot = (w, x) => w.reduce((s, wi, i) => s + wi * x[i], 0);
+
+function featureVector(f, rural) {
+  return [
+    1,
+    Math.log1p(f.snowNight),
+    Math.log1p(f.snowDay),
+    f.peakRate,
+    Math.log1p(f.freezing),
+    Math.max(0, -25 - f.windchill) / 10,
+    Math.max(0, f.gust - 50) / 20,
+    Math.log1p(f.snowPrev),
+    rural,
+  ];
+}
+
+// Regularized logistic regression, full-batch gradient descent.
+// Penalty pulls the weights toward the expert prior, so a handful of
+// examples nudges the model without letting it overfit.
+function train(samples) {
+  const w = PRIOR.slice();
+  if (!samples.length) return w;
+  const n = samples.length, lr = 0.15;
+  for (let it = 0; it < 1500; it++) {
+    const g = new Array(w.length).fill(0);
+    for (const s of samples) {
+      const err = sigmoid(dot(w, s.x)) - s.y;
+      for (let j = 0; j < w.length; j++) g[j] += err * s.x[j];
+    }
+    for (let j = 0; j < w.length; j++) {
+      g[j] = (g[j] + PRIOR_STRENGTH * (w[j] - PRIOR[j])) / (n + PRIOR_STRENGTH);
+      w[j] -= lr * g[j];
+    }
+  }
+  return w;
+}
+
+function labeledSamples() {
+  return state.history.filter(h => h.outcome === 0 || h.outcome === 1)
+    .map(h => ({ x: featureVector(h.features, h.rural ?? state.rural), y: h.outcome, p: h.p }));
+}
+
+function retrain() {
+  state.weights = train(labeledSamples());
+  store.set(K.weights, state.weights);
+}
+
+// ==========================================================
+// WEATHER
+// ==========================================================
+async function fetchJSON(url) {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  return r.json();
+}
+
+async function loadForecast(place) {
+  const u = new URL("https://api.open-meteo.com/v1/forecast");
+  u.search = new URLSearchParams({
+    latitude: place.lat, longitude: place.lon,
+    hourly: HOURLY_VARS.join(","),
+    models: WEATHER_MODELS.map(m => m.id).join(","),
+    timezone: "auto", past_days: "2", forecast_days: "7",
+  });
+  return fetchJSON(u);
+}
+
+// Local timestamps are handled as naive UTC to avoid DST surprises.
+const toMs = t => Date.parse(t + ":00Z");
+const H = 3600e3;
+const dayMs = d => Date.parse(d + "T00:00:00Z");
+
+function series(data, v, model) {
+  return data.hourly[`${v}_${model}`] || data.hourly[v] || [];
+}
+
+function modelHasData(data, model, idx) {
+  const s = series(data, "snowfall", model), t = series(data, "temperature_2m", model);
+  return idx.some(i => s[i] != null && t[i] != null);
+}
+
+function indicesBetween(times, start, end) {
+  const out = [];
+  times.forEach((t, i) => { const ms = toMs(t); if (ms >= start && ms < end) out.push(i); });
+  return out;
+}
+
+function extractFeatures(data, model, day) {
+  const times = data.hourly.time, d0 = dayMs(day);
+  const win = (a, b) => indicesBetween(times, d0 + a * H, d0 + b * H);
+  const sn = series(data, "snowfall", model), pr = series(data, "precipitation", model);
+  const ra = series(data, "rain", model), tt = series(data, "temperature_2m", model);
+  const at = series(data, "apparent_temperature", model), wc = series(data, "weather_code", model);
+  const gu = series(data, "wind_gusts_10m", model);
+  const sum = (arr, idx) => idx.reduce((s, i) => s + (arr[i] || 0), 0);
+  const max = (arr, idx, d = 0) => idx.reduce((m, i) => arr[i] == null ? m : Math.max(m, arr[i]), d);
+  const min = (arr, idx, d = 0) => { const v = idx.map(i => arr[i]).filter(x => x != null); return v.length ? Math.min(...v) : d; };
+
+  const freezingAt = i => {
+    if (FREEZING_CODES.has(wc[i])) return pr[i] || 0;
+    if ((ra[i] || 0) > 0.1 && tt[i] != null && tt[i] <= 0.5) return ra[i];
+    return 0;
+  };
+  const frzIdx = win(-6, 10);
+  const windIdx = win(-6, 9);
+  const morning = win(5, 9);
+
+  return {
+    snowNight: sum(sn, win(-6, 7)),
+    snowDay: sum(sn, win(7, 15)),
+    peakRate: max(sn, win(4, 8)),
+    freezing: frzIdx.reduce((s, i) => s + freezingAt(i), 0),
+    windchill: min(at, morning, 0),
+    gust: max(gu, windIdx),
+    snowPrev: sum(sn, win(-30, -6)),
+    tempMorning: min(tt, morning, 0),
+  };
+}
+
+function hourlyMean(data, day, models) {
+  const times = data.hourly.time, d0 = dayMs(day);
+  const idx = indicesBetween(times, d0 - 6 * H, d0 + 15 * H);
+  return idx.map(i => {
+    const vals = models.map(m => {
+      const sn = series(data, "snowfall", m.id)[i] || 0;
+      const wc = series(data, "weather_code", m.id)[i];
+      const ra = series(data, "rain", m.id)[i] || 0;
+      const t = series(data, "temperature_2m", m.id)[i];
+      const pr = series(data, "precipitation", m.id)[i] || 0;
+      const frz = FREEZING_CODES.has(wc) ? pr : (ra > 0.1 && t != null && t <= 0.5 ? ra : 0);
+      return { sn, frz, t };
+    });
+    const avg = k => vals.reduce((s, v) => s + (v[k] ?? 0), 0) / vals.length;
+    return { time: times[i], snow: avg("sn"), frz: avg("frz"), temp: avg("t") };
+  });
+}
+
+// ==========================================================
+// PREDICTION
+// ==========================================================
+function predict(data, day) {
+  const d0 = dayMs(day);
+  const winIdx = indicesBetween(data.hourly.time, d0 - 6 * H, d0 + 15 * H);
+  const active = WEATHER_MODELS.filter(m => modelHasData(data, m.id, winIdx));
+  if (!active.length) throw new Error("Aucun modèle ne couvre cette date.");
+
+  const perModel = active.map(m => {
+    const f = extractFeatures(data, m.id, day);
+    const p = sigmoid(dot(state.weights, featureVector(f, state.rural)));
+    return { ...m, f, p };
+  });
+  const wsum = perModel.reduce((s, m) => s + m.weight, 0);
+  const p = perModel.reduce((s, m) => s + m.weight * m.p, 0) / wsum;
+  const sd = Math.sqrt(perModel.reduce((s, m) => s + m.weight * (m.p - p) ** 2, 0) / wsum);
+
+  // Weighted-mean features: used for explanations and for learning.
+  const keys = Object.keys(perModel[0].f);
+  const f = Object.fromEntries(keys.map(k => [k, perModel.reduce((s, m) => s + m.weight * m.f[k], 0) / wsum]));
+  const x = featureVector(f, state.rural);
+  const contrib = FEATURES.map((ft, j) => ({ ...ft, value: state.weights[j] * x[j] }));
+
+  const leadDays = Math.round((d0 - dayMs(todayStr())) / 864e5);
+  return { p, sd, perModel, f, contrib, active, leadDays, lo: Math.max(0, p - 1.5 * sd), hi: Math.min(1, p + 1.5 * sd) };
+}
+
+// ==========================================================
+// UI HELPERS
+// ==========================================================
+const $ = id => document.getElementById(id);
+const pct = p => Math.round(p * 100) + " %";
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+const fmtDay = d => new Date(d + "T12:00:00").toLocaleDateString("fr-CA", { weekday: "long", day: "numeric", month: "long" });
+const isWeekend = d => { const w = new Date(d + "T12:00:00").getDay(); return w === 0 || w === 6; };
+const riskColor = p => p >= 0.6 ? "var(--crit)" : p >= 0.3 ? "var(--warn)" : "var(--good)";
+
+function verdictText(p) {
+  if (p >= 0.8) return "Fermeture très probable";
+  if (p >= 0.6) return "Fermeture probable";
+  if (p >= 0.4) return "Incertain : à surveiller";
+  if (p >= 0.15) return "Fermeture peu probable";
+  return "Écoles ouvertes (très probable)";
+}
+
+function placeText(p) { return [p.name, p.admin, p.country].filter(Boolean).join(", "); }
+
+// ==========================================================
+// RENDERING
+// ==========================================================
+function renderDays() {
+  const el = $("days");
+  el.innerHTML = "";
+  if (!state.forecast) return;
+  const today = todayStr();
+  const allDays = [...new Set(state.forecast.hourly.time.map(t => t.slice(0, 10)))].filter(d => d >= today);
+  // Need the 15 h mark of the day to be covered.
+  const lastMs = toMs(state.forecast.hourly.time.at(-1));
+  const days = allDays.filter(d => dayMs(d) + 15 * H <= lastMs + H).slice(0, 6);
+  if (!state.day || !days.includes(state.day)) {
+    state.day = days.find(d => d > today && !isWeekend(d)) || days[0];
+  }
+  for (const d of days) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = (d === today ? "Aujourd'hui" : fmtDay(d)) + (isWeekend(d) ? " (fin de semaine)" : "");
+    b.setAttribute("aria-pressed", d === state.day);
+    b.onclick = () => { state.day = d; renderDays(); renderPrediction(); };
+    el.appendChild(b);
+  }
+}
+
+function renderPrediction() {
+  if (!state.forecast || !state.day) return;
+  let r;
+  try { r = predict(state.forecast, state.day); }
+  catch (e) { $("verdict").textContent = e.message; return; }
+
+  ["predCard", "detailGrid", "chartCard"].forEach(id => $(id).classList.remove("hidden"));
+  const C = 2 * Math.PI * 50;
+  $("gaugeArc").setAttribute("stroke-dasharray", `${(r.p * C).toFixed(1)} ${C.toFixed(1)}`);
+  $("gaugeArc").setAttribute("stroke", riskColor(r.p));
+  $("gaugeText").textContent = pct(r.p);
+
+  const weekend = isWeekend(state.day);
+  $("verdict").textContent = (weekend ? "Fin de semaine. Si c'était un jour d'école : " : "") + verdictText(r.p);
+  $("range").textContent = `${fmtDay(state.day)} · intervalle probable : ${pct(r.lo)} à ${pct(r.hi)}`;
+
+  // Confidence mixes model disagreement and forecast lead time.
+  const leadPenalty = Math.max(0, r.leadDays - 1) * 0.05;
+  const u = r.sd + leadPenalty;
+  const conf = u < 0.07 ? "élevée" : u < 0.16 ? "moyenne" : "faible";
+  $("confidence").innerHTML = `Confiance : <span class="pill">${conf}</span> · écart entre modèles ±${Math.round(r.sd * 100)} pts · échéance J+${Math.max(0, r.leadDays)}`;
+  const n = labeledSamples().length;
+  $("modelInfo").textContent = n
+    ? `IA recalibrée sur ${n} journée${n > 1 ? "s" : ""} observée${n > 1 ? "s" : ""}.`
+    : "IA non encore recalibrée : enregistrez les fermetures réelles pour l'améliorer.";
+
+  // Factors
+  const f = r.f;
+  const shown = {
+    snowNight: `${f.snowNight.toFixed(1)} cm`, snowDay: `${f.snowDay.toFixed(1)} cm`,
+    peakRate: `${f.peakRate.toFixed(1)} cm/h`, freezing: `${f.freezing.toFixed(1)} mm`,
+    cold: `${Math.round(f.windchill)} °C`, wind: `${Math.round(f.gust)} km/h`,
+    snowPrev: `${f.snowPrev.toFixed(1)} cm`, rural: ruralText(state.rural), bias: "",
+  };
+  const maxAbs = Math.max(1, ...r.contrib.filter(c => c.key !== "bias").map(c => Math.abs(c.value)));
+  $("factors").innerHTML = `<thead><tr><th>Facteur</th><th class="num">Valeur</th><th>Effet</th></tr></thead><tbody>` +
+    r.contrib.filter(c => c.key !== "bias").sort((a, b) => b.value - a.value).map(c => {
+      const w = Math.min(100, Math.abs(c.value) / maxAbs * 100);
+      const col = c.value >= 0 ? "var(--crit)" : "var(--good)";
+      return `<tr><td>${esc(c.label)}</td><td class="num">${esc(shown[c.key])}</td>
+        <td><div class="bar" title="${c.value >= 0 ? "+" : ""}${c.value.toFixed(2)}"><span style="left:0;width:${w}%;background:${col}"></span></div></td></tr>`;
+    }).join("") + "</tbody>";
+
+  $("models").innerHTML = `<thead><tr><th>Modèle</th><th class="num">Neige nuit</th><th class="num">Verglas</th><th class="num">Fermeture</th></tr></thead><tbody>` +
+    r.perModel.map(m => `<tr><td>${esc(m.name)}</td><td class="num">${m.f.snowNight.toFixed(1)} cm</td>
+      <td class="num">${m.f.freezing.toFixed(1)} mm</td><td class="num"><strong style="color:${riskColor(m.p)}">${pct(m.p)}</strong></td></tr>`).join("") +
+    `</tbody>` + (r.active.length < WEATHER_MODELS.length ? `<caption class="note" style="caption-side:bottom;text-align:left">Modèles sans données à cette échéance : ${WEATHER_MODELS.filter(m => !r.active.includes(m)).map(m => m.name).join(", ")}</caption>` : "");
+
+  renderChart(hourlyMean(state.forecast, state.day, r.active));
+
+  // Remember this prediction so the user can label it later.
+  const id = `${state.place.lat.toFixed(2)},${state.place.lon.toFixed(2)}|${state.day}`;
+  const existing = state.history.find(h => h.id === id);
+  const entry = { id, day: state.day, place: placeText(state.place), p: r.p, features: r.f, rural: state.rural, at: Date.now(), outcome: existing ? existing.outcome : null };
+  if (!existing) state.history.push(entry);
+  else if (existing.outcome == null) Object.assign(existing, entry);
+  state.history = state.history.slice(-500);
+  store.set(K.hist, state.history);
+  renderLearning();
+}
+
+function renderChart(rows) {
+  const wrap = $("chartWrap");
+  wrap.querySelector("svg")?.remove();
+  const W = 720, Hh = 200, m = { l: 36, r: 8, t: 10, b: 26 };
+  const iw = W - m.l - m.r, ih = Hh - m.t - m.b;
+  const maxV = Math.max(1, ...rows.map(r => r.snow + r.frz));
+  const bw = iw / rows.length;
+  const y = v => m.t + ih - (v / maxV) * ih;
+  const ns = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(ns, "svg");
+  svg.setAttribute("viewBox", `0 0 ${W} ${Hh}`);
+  svg.setAttribute("width", "100%");
+  svg.setAttribute("role", "img");
+  svg.setAttribute("aria-label", "Neige et pluie verglaçante par heure");
+  let h = "";
+  // School-commute band (6 h–9 h of target day).
+  rows.forEach((r, i) => {
+    const hr = +r.time.slice(11, 13);
+    if (r.time.slice(0, 10) === state.day && hr >= 6 && hr < 9)
+      h += `<rect x="${m.l + i * bw}" y="${m.t}" width="${bw}" height="${ih}" fill="var(--track)"/>`;
+  });
+  for (let k = 0; k <= 4; k++) {
+    const v = maxV * k / 4, yy = y(v);
+    h += `<line x1="${m.l}" x2="${W - m.r}" y1="${yy}" y2="${yy}" stroke="var(--border)" stroke-width="1"/>`;
+    h += `<text x="${m.l - 6}" y="${yy + 4}" text-anchor="end" font-size="10" fill="var(--muted)">${v.toFixed(1)}</text>`;
+  }
+  rows.forEach((r, i) => {
+    const x = m.l + i * bw + 1, w = Math.max(1, bw - 2);
+    if (r.snow > 0.01) h += `<rect x="${x}" y="${y(r.snow)}" width="${w}" height="${m.t + ih - y(r.snow)}" rx="2" fill="var(--snow)"/>`;
+    if (r.frz > 0.01) {
+      const base = y(r.snow) - 2;
+      h += `<rect x="${x}" y="${base - (m.t + ih - y(r.frz))}" width="${w}" height="${m.t + ih - y(r.frz)}" rx="2" fill="var(--ice)"/>`;
+    }
+    const hr = +r.time.slice(11, 13);
+    if (hr % 3 === 0) h += `<text x="${x + w / 2}" y="${Hh - 8}" text-anchor="middle" font-size="10" fill="var(--muted)">${hr}h</text>`;
+    h += `<rect class="hit" data-i="${i}" x="${m.l + i * bw}" y="${m.t}" width="${bw}" height="${ih}" fill="transparent"/>`;
+  });
+  svg.innerHTML = h;
+  wrap.appendChild(svg);
+
+  const tip = $("tip");
+  svg.addEventListener("pointermove", e => {
+    const t = e.target.closest(".hit");
+    if (!t) { tip.style.display = "none"; return; }
+    const r = rows[+t.dataset.i];
+    tip.innerHTML = `<strong>${r.time.slice(0, 10) === state.day ? "" : "Veille "}${r.time.slice(11, 16)}</strong><br>Neige : ${r.snow.toFixed(1)} cm<br>Verglas : ${r.frz.toFixed(1)} mm<br>Temp. : ${Math.round(r.temp)} °C`;
+    tip.style.display = "block";
+    const box = wrap.getBoundingClientRect();
+    let left = e.clientX - box.left + 12;
+    if (left + tip.offsetWidth > box.width) left = e.clientX - box.left - tip.offsetWidth - 12;
+    tip.style.left = left + "px";
+    tip.style.top = Math.max(0, e.clientY - box.top - 30) + "px";
+  });
+  svg.addEventListener("pointerleave", () => { tip.style.display = "none"; });
+}
+
+function ruralText(v) { return v < 0.25 ? "urbain" : v < 0.6 ? "mixte" : v < 0.85 ? "rural" : "très rural"; }
+
+function renderLearning() {
+  const today = todayStr();
+  const pending = state.history.filter(h => h.outcome == null && h.day <= today && !isWeekend(h.day)).slice(-5).reverse();
+  $("pending").innerHTML = pending.length
+    ? pending.map(h => `<div class="row" style="margin:6px 0"><span style="flex:1 1 220px">${esc(fmtDay(h.day))}, ${esc(h.place)} (prédit ${pct(h.p)})</span>
+        <button type="button" data-id="${esc(h.id)}" data-o="1">Fermé</button>
+        <button type="button" data-id="${esc(h.id)}" data-o="0">Ouvert</button>
+        <button type="button" data-id="${esc(h.id)}" data-o="x" title="Supprimer">✕</button></div>`).join("")
+    : `<p class="meta">Aucune journée en attente de résultat.</p>`;
+
+  const s = labeledSamples();
+  if (s.length) {
+    const brier = s.reduce((a, x) => a + (x.p - x.y) ** 2, 0) / s.length;
+    const acc = s.filter(x => (x.p >= 0.5) === (x.y === 1)).length / s.length;
+    $("stats").textContent = `${s.length} journée(s) enregistrée(s) · exactitude des prédictions : ${Math.round(acc * 100)} % · score de Brier : ${brier.toFixed(3)} (0 = parfait)`;
+  } else $("stats").textContent = "";
+
+  const rows = state.history.slice().reverse().slice(0, 60);
+  $("history").innerHTML = rows.length
+    ? `<thead><tr><th>Jour</th><th>Lieu</th><th class="num">Prédit</th><th>Résultat</th></tr></thead><tbody>` +
+      rows.map(h => `<tr><td>${esc(h.day)}</td><td>${esc(h.place)}</td><td class="num">${pct(h.p)}</td><td>${h.outcome === 1 ? "Fermé" : h.outcome === 0 ? "Ouvert" : "–"}</td></tr>`).join("") + "</tbody>"
+    : `<tbody><tr><td class="note">Aucun historique.</td></tr></tbody>`;
+}
+
+// ==========================================================
+// ACTIONS
+// ==========================================================
+async function selectPlace(place) {
+  state.place = place;
+  store.set(K.place, place);
+  $("results").innerHTML = "";
+  $("placeLabel").textContent = "Chargement des modèles météo pour " + placeText(place) + "…";
+  try {
+    state.forecast = await loadForecast(place);
+    $("placeLabel").textContent = `${placeText(place)} (${place.lat.toFixed(2)}, ${place.lon.toFixed(2)})`;
+    renderDays();
+    renderPrediction();
+  } catch (e) {
+    $("placeLabel").innerHTML = `<span class="error">Impossible de charger les prévisions (${esc(e.message)}).</span>`;
+  }
+}
+
+$("searchForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const q = $("q").value.trim();
+  if (!q) return;
+  const list = $("results");
+  list.innerHTML = "<li class='meta'>Recherche…</li>";
+  try {
+    const u = new URL("https://geocoding-api.open-meteo.com/v1/search");
+    u.search = new URLSearchParams({ name: q, count: "6", language: "fr", format: "json" });
+    const data = await fetchJSON(u);
+    const res = data.results || [];
+    list.innerHTML = res.length ? "" : "<li class='meta'>Aucun résultat.</li>";
+    for (const r of res) {
+      const place = { name: r.name, admin: r.admin1, country: r.country, lat: r.latitude, lon: r.longitude };
+      const li = document.createElement("li");
+      const b = document.createElement("button");
+      b.type = "button";
+      b.textContent = placeText(place);
+      b.onclick = () => selectPlace(place);
+      li.appendChild(b);
+      list.appendChild(li);
+    }
+  } catch (err) {
+    list.innerHTML = `<li class="error">Erreur de recherche (${esc(err.message)}).</li>`;
+  }
+});
+
+$("geoBtn").addEventListener("click", () => {
+  if (!navigator.geolocation) return;
+  navigator.geolocation.getCurrentPosition(
+    pos => selectPlace({ name: "Ma position", lat: pos.coords.latitude, lon: pos.coords.longitude }),
+    () => { $("placeLabel").innerHTML = `<span class="error">Position refusée ou indisponible.</span>`; });
+});
+
+$("rural").value = state.rural;
+$("ruralLbl").textContent = ruralText(state.rural);
+$("rural").addEventListener("input", e => {
+  state.rural = +e.target.value;
+  store.set(K.rural, state.rural);
+  $("ruralLbl").textContent = ruralText(state.rural);
+  renderPrediction();
+});
+
+$("pending").addEventListener("click", e => {
+  const b = e.target.closest("button[data-id]");
+  if (!b) return;
+  const i = state.history.findIndex(h => h.id === b.dataset.id);
+  if (i < 0) return;
+  if (b.dataset.o === "x") state.history.splice(i, 1);
+  else state.history[i].outcome = +b.dataset.o;
+  store.set(K.hist, state.history);
+  retrain();
+  renderLearning();
+  renderPrediction();
+});
+
+$("exportBtn").addEventListener("click", () => {
+  const blob = new Blob([JSON.stringify({ version: 1, rural: state.rural, history: state.history }, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "fermetures-ecoles.json";
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+$("importBtn").addEventListener("click", () => $("importFile").click());
+$("importFile").addEventListener("change", async e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  try {
+    const data = JSON.parse(await file.text());
+    const byId = new Map(state.history.map(h => [h.id, h]));
+    for (const h of data.history || []) if (h && h.id && h.features) byId.set(h.id, h);
+    state.history = [...byId.values()].sort((a, b) => a.day.localeCompare(b.day));
+    store.set(K.hist, state.history);
+    retrain();
+    renderLearning();
+    renderPrediction();
+  } catch { alert("Fichier invalide."); }
+  e.target.value = "";
+});
+$("resetBtn").addEventListener("click", () => {
+  if (!confirm("Effacer l'historique et remettre l'IA à zéro ?")) return;
+  state.history = [];
+  state.weights = PRIOR.slice();
+  store.del(K.hist); store.del(K.weights);
+  renderLearning();
+  renderPrediction();
+});
+
+renderLearning();
+selectPlace(state.place);
+</script>
+</body>
+</html>
