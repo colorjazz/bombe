@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Prédicteur de fermeture</title>
+<title>SOS Congé</title>
 <meta name="description" content="Probabilité de fermeture des écoles calculée par IA à partir de plusieurs modèles météo (GEM, ECMWF, GFS, ICON).">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -55,7 +55,8 @@
     line-height: 1.45;
   }
   main { max-width: 960px; margin: 0 auto; padding: 24px 16px 64px; }
-  h1 { font-size: 1.6rem; margin: 0 0 4px; }
+  h1 { font-size: 1.8rem; margin: 0; }
+  .tagline { font-weight: 600; color: var(--text-2); margin: 2px 0 6px; }
   h2 { font-size: 1.05rem; margin: 0 0 12px; }
   .sub { color: var(--text-2); margin: 0 0 20px; }
   .card {
@@ -122,7 +123,8 @@
 </head>
 <body>
 <main>
-  <h1>❄️ Fermeture des écoles : prédiction par IA</h1>
+  <h1>❄️ SOS Congé</h1>
+  <p class="tagline">Prédiction par IA de la fermeture des écoles</p>
   <p class="sub">Probabilité que les écoles ferment, calculée à partir de 4 modèles météo (GEM, ECMWF, GFS, ICON) et d'un modèle d'IA (régression logistique) qui combine neige, verglas, froid et vent.</p>
 
   <section class="card">

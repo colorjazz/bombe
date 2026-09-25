@@ -1,4 +1,6 @@
-# Prédicteur de fermeture des écoles
+# SOS Congé
+
+Prédiction par IA de la fermeture des écoles.
 
 Application web autonome (un seul fichier, `index.html`, sans installation) qui estime
 la probabilité (%) que les écoles ferment un jour donné à cause de la météo.
