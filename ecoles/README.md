@@ -21,6 +21,17 @@ la probabilité (%) que les écoles ferment un jour donné à cause de la mété
    L'exactitude et le score de Brier sont affichés. Les données restent dans le navigateur
    et peuvent être exportées ou importées en JSON.
 
+## Régions et carte
+
+- Choisissez l'une des **17 régions administratives du Québec**, puis une ville de la région
+  (ou « Autre lieu » pour chercher n'importe quelle ville).
+- La **carte** (Leaflet + OpenStreetMap) montre la probabilité de fermeture pour le jour choisi :
+  ~45 villes sont calculées en une seule requête, puis un dégradé de couleur (jaune pâle → rouge
+  foncé) est interpolé entre elles. Les zones sans risque restent transparentes.
+- Cliquer sur une ville de la carte ou sur une ligne du tableau par région affiche le détail.
+- Chaque région a un réglage urbain/rural par défaut (ex. Montréal urbain, Gaspésie très rural),
+  modifiable avec le curseur et mémorisé par région.
+
 ## Précision
 
 Sans historique local, les pourcentages sont des estimations raisonnables, pas des

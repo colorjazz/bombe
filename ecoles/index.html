@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Prédicteur de fermeture</title>
 <meta name="description" content="Probabilité de fermeture des écoles calculée par IA à partir de plusieurs modèles météo (GEM, ECMWF, GFS, ICON).">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
   :root {
     color-scheme: light;
@@ -106,6 +108,16 @@
   label.slider { display: flex; flex-direction: column; gap: 4px; font-size: .92rem; }
   input[type=range] { width: 100%; }
   .hidden { display: none !important; }
+  #map { height: 480px; border-radius: 8px; border: 1px solid var(--border); background: var(--track); z-index: 0; }
+  @media (max-width: 600px) { #map { height: 380px; } }
+  .ramp { height: 10px; border-radius: 4px; flex: 1 1 160px; max-width: 320px;
+    background: linear-gradient(90deg, #fff5c4, #fdd66a, #f9a13f, #ec6a2c, #d23a26, #9e1a1a, #5f0a14); }
+  .ramp-row { display: flex; align-items: center; gap: 8px; font-size: .85rem; color: var(--text-2); margin: 8px 0; flex-wrap: wrap; }
+  .map-label { background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 6px;
+    padding: 1px 5px; font-size: 11px; font-weight: 600; white-space: nowrap; box-shadow: 0 1px 4px rgba(0,0,0,.2); }
+  .leaflet-tooltip.map-label::before { display: none; }
+  tr.sel td { font-weight: 600; }
+  tr.clickable { cursor: pointer; }
 </style>
 </head>
 <body>
@@ -114,8 +126,12 @@
   <p class="sub">Probabilité que les écoles ferment, calculée à partir de 4 modèles météo (GEM, ECMWF, GFS, ICON) et d'un modèle d'apprentissage qui se recalibre avec les fermetures réelles que vous enregistrez.</p>
 
   <section class="card">
-    <h2>1. Localisation</h2>
-    <form id="searchForm" class="row">
+    <h2>1. Région</h2>
+    <div class="row">
+      <select id="regionSel" aria-label="Région" style="flex:1 1 240px"></select>
+      <select id="citySel" aria-label="Ville de la région" style="flex:1 1 180px"></select>
+    </div>
+    <form id="searchForm" class="row hidden" style="margin-top:8px">
       <input type="text" id="q" placeholder="Ville (ex. Québec, Rimouski, Sherbrooke)" autocomplete="off" aria-label="Ville">
       <button class="primary" type="submit">Rechercher</button>
       <button type="button" id="geoBtn">📍 Ma position</button>
@@ -140,6 +156,18 @@
         <p class="meta" id="modelInfo"></p>
       </div>
     </div>
+  </section>
+
+  <section class="card" id="mapCard">
+    <h2 id="mapTitle">Carte des probabilités de fermeture</h2>
+    <div id="map" role="img" aria-label="Carte du Québec colorée selon la probabilité de fermeture des écoles"></div>
+    <div class="ramp-row"><span>0 %</span><span class="ramp"></span><span>100 %</span>
+      <span class="note" id="mapStatus"></span></div>
+    <p class="note">Couleurs interpolées à partir des prévisions de ~45 villes. Cliquez sur une ville pour voir le détail.</p>
+    <details>
+      <summary>Tableau par région</summary>
+      <div class="scroll"><table id="regionTable"></table></div>
+    </details>
   </section>
 
   <div class="grid2 hidden" id="detailGrid">
@@ -223,6 +251,31 @@ const FEATURES = [
   { key: "rural",     label: "Territoire rural",                    prior: 1.0 },
 ];
 const PRIOR = FEATURES.map(f => f.prior);
+
+// Quebec's 17 administrative regions. Each city is a forecast point for
+// the map; the first one is the default for the region. `rural` is the
+// default transport/territory factor (0 = urban, 1 = very rural).
+const REGIONS = [
+  { id: "01", name: "Bas-Saint-Laurent", rural: 0.8, cities: [["Rimouski", 48.45, -68.52], ["Rivière-du-Loup", 47.83, -69.54], ["Matane", 48.85, -67.53], ["Amqui", 48.46, -67.43]] },
+  { id: "02", name: "Saguenay–Lac-Saint-Jean", rural: 0.6, cities: [["Saguenay", 48.43, -71.07], ["Alma", 48.55, -71.65], ["Roberval", 48.52, -72.23], ["Dolbeau-Mistassini", 48.88, -72.23]] },
+  { id: "03", name: "Capitale-Nationale", rural: 0.3, cities: [["Québec", 46.81, -71.21], ["Baie-Saint-Paul", 47.44, -70.50], ["Saint-Raymond", 46.90, -71.83], ["La Malbaie", 47.65, -70.15]] },
+  { id: "04", name: "Mauricie", rural: 0.5, cities: [["Trois-Rivières", 46.35, -72.55], ["Shawinigan", 46.57, -72.75], ["La Tuque", 47.43, -72.78]] },
+  { id: "05", name: "Estrie", rural: 0.5, cities: [["Sherbrooke", 45.40, -71.89], ["Magog", 45.27, -72.15], ["Lac-Mégantic", 45.58, -70.88], ["Coaticook", 45.13, -71.80]] },
+  { id: "06", name: "Montréal", rural: 0.05, cities: [["Montréal", 45.51, -73.59]] },
+  { id: "07", name: "Outaouais", rural: 0.5, cities: [["Gatineau", 45.48, -75.70], ["Maniwaki", 46.38, -75.97], ["Shawville", 45.60, -76.49], ["Papineauville", 45.62, -75.02]] },
+  { id: "08", name: "Abitibi-Témiscamingue", rural: 0.7, cities: [["Rouyn-Noranda", 48.24, -79.02], ["Val-d'Or", 48.10, -77.78], ["Amos", 48.57, -78.12], ["Ville-Marie", 47.33, -79.43], ["La Sarre", 48.80, -79.20]] },
+  { id: "09", name: "Côte-Nord", rural: 0.7, cities: [["Baie-Comeau", 49.22, -68.15], ["Sept-Îles", 50.22, -66.38], ["Forestville", 48.74, -69.08], ["Havre-Saint-Pierre", 50.24, -63.60]] },
+  { id: "10", name: "Nord-du-Québec", rural: 0.8, cities: [["Chibougamau", 49.91, -74.37], ["Matagami", 49.75, -77.63], ["Lebel-sur-Quévillon", 49.05, -76.98]] },
+  { id: "11", name: "Gaspésie–Îles-de-la-Madeleine", rural: 0.9, cities: [["Gaspé", 48.83, -64.48], ["Sainte-Anne-des-Monts", 49.12, -66.49], ["Carleton-sur-Mer", 48.10, -66.13], ["Chandler", 48.35, -64.68], ["Îles-de-la-Madeleine", 47.38, -61.86]] },
+  { id: "12", name: "Chaudière-Appalaches", rural: 0.6, cities: [["Lévis", 46.80, -71.18], ["Saint-Georges", 46.12, -70.67], ["Thetford Mines", 46.09, -71.30], ["Montmagny", 46.98, -70.55]] },
+  { id: "13", name: "Laval", rural: 0.05, cities: [["Laval", 45.57, -73.69]] },
+  { id: "14", name: "Lanaudière", rural: 0.4, cities: [["Joliette", 46.02, -73.44], ["Terrebonne", 45.70, -73.65], ["Saint-Michel-des-Saints", 46.68, -73.92]] },
+  { id: "15", name: "Laurentides", rural: 0.5, cities: [["Saint-Jérôme", 45.78, -74.00], ["Mont-Tremblant", 46.12, -74.60], ["Mont-Laurier", 46.55, -75.50]] },
+  { id: "16", name: "Montérégie", rural: 0.4, cities: [["Longueuil", 45.53, -73.52], ["Saint-Hyacinthe", 45.63, -72.96], ["Granby", 45.40, -72.73], ["Saint-Jean-sur-Richelieu", 45.31, -73.26], ["Salaberry-de-Valleyfield", 45.26, -74.13]] },
+  { id: "17", name: "Centre-du-Québec", rural: 0.5, cities: [["Drummondville", 45.88, -72.48], ["Victoriaville", 46.05, -71.96], ["Nicolet", 46.23, -72.62]] },
+];
+const POINTS = REGIONS.flatMap(r => r.cities.map(([name, lat, lon], ci) => ({ name, lat, lon, regionId: r.id, ci })));
+const regionById = id => REGIONS.find(r => r.id === id);
 const PRIOR_STRENGTH = 3;   // how many "pseudo-days" anchor the weights to the prior
 
 // ==========================================================
@@ -233,11 +286,13 @@ const store = {
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
   del(k) { try { localStorage.removeItem(k); } catch {} },
 };
-const K = { place: "fe.place", rural: "fe.rural", hist: "fe.history", weights: "fe.weights" };
+const K = { place: "fe.place2", rural: "fe.ruralByRegion", hist: "fe.history", weights: "fe.weights" };
 
 let state = {
-  place: store.get(K.place, { name: "Montréal", admin: "Québec", country: "Canada", lat: 45.5088, lon: -73.5878 }),
-  rural: store.get(K.rural, 0.3),
+  place: store.get(K.place, { name: "Montréal", admin: "Montréal", country: "Québec", lat: 45.51, lon: -73.59, regionId: "06", ci: 0 }),
+  ruralByRegion: store.get(K.rural, {}),
+  rural: 0.3,
+  mapData: null,
   history: store.get(K.hist, []),
   weights: store.get(K.weights, null) || PRIOR.slice(),
   forecast: null,
@@ -304,10 +359,12 @@ async function fetchJSON(url) {
   return r.json();
 }
 
-async function loadForecast(place) {
+// Accepts one place or an array; Open-Meteo returns an array for several points.
+async function loadForecast(places) {
+  const list = Array.isArray(places) ? places : [places];
   const u = new URL("https://api.open-meteo.com/v1/forecast");
   u.search = new URLSearchParams({
-    latitude: place.lat, longitude: place.lon,
+    latitude: list.map(p => p.lat).join(","), longitude: list.map(p => p.lon).join(","),
     hourly: HOURLY_VARS.join(","),
     models: WEATHER_MODELS.map(m => m.id).join(","),
     timezone: "auto", past_days: "2", forecast_days: "7",
@@ -388,7 +445,7 @@ function hourlyMean(data, day, models) {
 // ==========================================================
 // PREDICTION
 // ==========================================================
-function predict(data, day) {
+function predict(data, day, rural = state.rural) {
   const d0 = dayMs(day);
   const winIdx = indicesBetween(data.hourly.time, d0 - 6 * H, d0 + 15 * H);
   const active = WEATHER_MODELS.filter(m => modelHasData(data, m.id, winIdx));
@@ -396,7 +453,7 @@ function predict(data, day) {
 
   const perModel = active.map(m => {
     const f = extractFeatures(data, m.id, day);
-    const p = sigmoid(dot(state.weights, featureVector(f, state.rural)));
+    const p = sigmoid(dot(state.weights, featureVector(f, rural)));
     return { ...m, f, p };
   });
   const wsum = perModel.reduce((s, m) => s + m.weight, 0);
@@ -406,7 +463,7 @@ function predict(data, day) {
   // Weighted-mean features: used for explanations and for learning.
   const keys = Object.keys(perModel[0].f);
   const f = Object.fromEntries(keys.map(k => [k, perModel.reduce((s, m) => s + m.weight * m.f[k], 0) / wsum]));
-  const x = featureVector(f, state.rural);
+  const x = featureVector(f, rural);
   const contrib = FEATURES.map((ft, j) => ({ ...ft, value: state.weights[j] * x[j] }));
 
   const leadDays = Math.round((d0 - dayMs(todayStr())) / 864e5);
@@ -435,7 +492,7 @@ function verdictText(p) {
   return "Écoles ouvertes (très probable)";
 }
 
-function placeText(p) { return [p.name, p.admin, p.country].filter(Boolean).join(", "); }
+function placeText(p) { return [...new Set([p.name, p.admin, p.country].filter(Boolean))].join(", "); }
 
 // ==========================================================
 // RENDERING
@@ -457,7 +514,7 @@ function renderDays() {
     b.type = "button";
     b.textContent = (d === today ? "Aujourd'hui" : fmtDay(d)) + (isWeekend(d) ? " (fin de semaine)" : "");
     b.setAttribute("aria-pressed", d === state.day);
-    b.onclick = () => { state.day = d; renderDays(); renderPrediction(); };
+    b.onclick = () => { state.day = d; renderDays(); renderPrediction(); renderMap(); };
     el.appendChild(b);
   }
 }
@@ -606,18 +663,176 @@ function renderLearning() {
 }
 
 // ==========================================================
+// MAP
+// ==========================================================
+// Sequential warm ramp (light → dark), same stops as the CSS legend.
+const RAMP = ["#fff5c4", "#fdd66a", "#f9a13f", "#ec6a2c", "#d23a26", "#9e1a1a", "#5f0a14"].map(h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)));
+function rampRGB(p) {
+  const t = Math.min(1, Math.max(0, p)) * (RAMP.length - 1), i = Math.min(RAMP.length - 2, Math.floor(t)), f = t - i;
+  return RAMP[i].map((c, k) => Math.round(c + (RAMP[i + 1][k] - c) * f));
+}
+const rampHex = p => "#" + rampRGB(p).map(c => c.toString(16).padStart(2, "0")).join("");
+
+const MAP_BOUNDS = [[44.8, -80.2], [51.2, -60.8]];
+let map = null, overlay = null, markerLayer = null, mapPreds = [];
+
+function initMap() {
+  if (map || !window.L) return;
+  map = L.map("map", { zoomSnap: 0.25, scrollWheelZoom: false }).fitBounds(MAP_BOUNDS);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 12, attribution: "© OpenStreetMap",
+  }).addTo(map);
+  markerLayer = L.layerGroup().addTo(map);
+}
+
+const km = (a, b, c, d) => {
+  const R = 6371, dLat = (c - a) * Math.PI / 180, dLon = (d - b) * Math.PI / 180;
+  const x = Math.sin(dLat / 2) ** 2 + Math.cos(a * Math.PI / 180) * Math.cos(c * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(x));
+};
+
+// Inverse-distance interpolation between forecast points, drawn on a canvas
+// in Web Mercator rows so it lines up with the tiles. Colour fades out
+// away from any point so only inhabited areas are painted.
+function probabilityImage(preds) {
+  const W = 480, Hc = 300, [[s, w], [n, e]] = MAP_BOUNDS;
+  const merc = lat => Math.log(Math.tan(Math.PI / 4 + lat * Math.PI / 360));
+  const my0 = merc(n), my1 = merc(s);
+  const cv = document.createElement("canvas");
+  cv.width = W; cv.height = Hc;
+  const ctx = cv.getContext("2d"), img = ctx.createImageData(W, Hc);
+  for (let y = 0; y < Hc; y++) {
+    const my = my0 + (my1 - my0) * (y + 0.5) / Hc;
+    const lat = (2 * Math.atan(Math.exp(my)) - Math.PI / 2) * 180 / Math.PI;
+    for (let x = 0; x < W; x++) {
+      const lon = w + (e - w) * (x + 0.5) / W;
+      let num = 0, den = 0, dmin = Infinity;
+      for (const q of preds) {
+        const d = km(lat, lon, q.lat, q.lon);
+        dmin = Math.min(dmin, d);
+        const wt = 1 / Math.max(1, d) ** 2;
+        num += wt * q.p; den += wt;
+      }
+      const p = num / den;
+      const fade = dmin < 70 ? 1 : dmin > 160 ? 0 : 1 - (dmin - 70) / 90;
+      const a = fade * Math.min(0.8, Math.max(0, p - 0.03) * 1.6);
+      const [r, g, b] = rampRGB(p), o = (y * W + x) * 4;
+      img.data[o] = r; img.data[o + 1] = g; img.data[o + 2] = b; img.data[o + 3] = Math.round(a * 255);
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  return cv.toDataURL();
+}
+
+function renderMap() {
+  if (!state.mapData || !state.day) return;
+  $("mapTitle").textContent = `Carte des probabilités de fermeture · ${fmtDay(state.day)}`;
+  mapPreds = POINTS.map((pt, i) => {
+    try { return { ...pt, p: predict(state.mapData[i], state.day, regionRural(pt.regionId)).p }; }
+    catch { return null; }
+  }).filter(Boolean);
+  renderRegionTable();
+  if (!window.L) { $("mapStatus").textContent = "Carte indisponible (Leaflet non chargé)."; return; }
+  initMap();
+  if (overlay) overlay.remove();
+  overlay = L.imageOverlay(probabilityImage(mapPreds), MAP_BOUNDS, { opacity: 1, interactive: false }).addTo(map);
+  markerLayer.clearLayers();
+  // Permanent labels only for the selected city and the most at-risk regions.
+  const labelled = new Set(mapPreds.filter(q => q.ci === 0 && q.p >= 0.3 && q.regionId !== state.place.regionId)
+    .sort((a, b) => b.p - a.p).slice(0, 4).map(q => q.regionId));
+  for (const q of mapPreds) {
+    const sel = q.regionId === state.place.regionId;
+    const isCur = sel && q.ci === state.place.ci;
+    const m = L.circleMarker([q.lat, q.lon], {
+      radius: isCur ? 9 : 6, color: sel ? "#0b0b0b" : "#ffffff", weight: sel ? 2.5 : 1.5,
+      fillColor: rampHex(q.p), fillOpacity: 1,
+    }).addTo(markerLayer);
+    m.bindTooltip(`${esc(q.name)} · ${pct(q.p)}`, { className: "map-label", direction: "top", offset: [0, -6], permanent: isCur || (q.ci === 0 && labelled.has(q.regionId)) });
+    m.on("click", () => selectPlace(pointPlace(q.regionId, q.ci)));
+  }
+}
+
+function renderRegionTable() {
+  const rows = REGIONS.map(r => {
+    const ps = mapPreds.filter(q => q.regionId === r.id);
+    if (!ps.length) return null;
+    const top = ps.reduce((a, b) => b.p > a.p ? b : a);
+    return { r, mean: ps.reduce((s, q) => s + q.p, 0) / ps.length, top };
+  }).filter(Boolean).sort((a, b) => b.mean - a.mean);
+  $("regionTable").innerHTML = `<thead><tr><th>Région</th><th class="num">Moyenne</th><th>Ville la plus touchée</th><th class="num">Max</th></tr></thead><tbody>` +
+    rows.map(({ r, mean, top }) => `<tr class="clickable${r.id === state.place.regionId ? " sel" : ""}" data-r="${r.id}">
+      <td><span class="sw" style="background:${rampHex(mean)};border:1px solid var(--border)"></span>${esc(r.name)}</td>
+      <td class="num">${pct(mean)}</td><td>${esc(top.name)}</td><td class="num">${pct(top.p)}</td></tr>`).join("") + "</tbody>";
+}
+$("regionTable").addEventListener("click", e => {
+  const tr = e.target.closest("tr[data-r]");
+  if (tr) selectPlace(pointPlace(tr.dataset.r, 0));
+});
+
+async function loadMapData() {
+  $("mapStatus").textContent = "Chargement des prévisions pour les 17 régions…";
+  try {
+    const data = await loadForecast(POINTS);
+    state.mapData = Array.isArray(data) ? data : [data];
+    $("mapStatus").textContent = "";
+  } catch (e) {
+    $("mapStatus").textContent = `Carte indisponible (${e.message}).`;
+  }
+}
+
+// ==========================================================
 // ACTIONS
 // ==========================================================
+function regionRural(regionId) {
+  const r = regionById(regionId);
+  return state.ruralByRegion[regionId] ?? (r ? r.rural : 0.3);
+}
+
+function syncRuralSlider() {
+  state.rural = state.place.regionId ? regionRural(state.place.regionId) : (state.ruralByRegion.other ?? 0.3);
+  $("rural").value = state.rural;
+  $("ruralLbl").textContent = ruralText(state.rural);
+}
+
+function syncSelectors() {
+  const rid = state.place.regionId || "other";
+  $("regionSel").value = rid;
+  $("searchForm").classList.toggle("hidden", rid !== "other");
+  const citySel = $("citySel");
+  citySel.classList.toggle("hidden", rid === "other");
+  if (rid !== "other") {
+    citySel.innerHTML = regionById(rid).cities.map(([n], i) => `<option value="${i}">${esc(n)}</option>`).join("");
+    citySel.value = state.place.ci ?? 0;
+  }
+}
+
+function pointPlace(regionId, ci) {
+  const r = regionById(regionId), [name, lat, lon] = r.cities[ci];
+  return { name, admin: r.name, country: "Québec", lat, lon, regionId, ci };
+}
+
+function focusRegion(regionId) {
+  const r = regionById(regionId);
+  if (!map || !r) return;
+  map.flyToBounds(L.latLngBounds(r.cities.map(([, lat, lon]) => [lat, lon])).pad(0.6), { maxZoom: 7, duration: 0.6 });
+}
+
 async function selectPlace(place) {
+  const regionChanged = place.regionId && place.regionId !== state.place.regionId;
   state.place = place;
   store.set(K.place, place);
   $("results").innerHTML = "";
+  syncSelectors();
+  syncRuralSlider();
   $("placeLabel").textContent = "Chargement des modèles météo pour " + placeText(place) + "…";
   try {
-    state.forecast = await loadForecast(place);
+    const pi = POINTS.findIndex(p => p.regionId === place.regionId && p.ci === place.ci);
+    state.forecast = (pi >= 0 && state.mapData) ? state.mapData[pi] : await loadForecast(place);
     $("placeLabel").textContent = `${placeText(place)} (${place.lat.toFixed(2)}, ${place.lon.toFixed(2)})`;
     renderDays();
     renderPrediction();
+    renderMap();
+    if (regionChanged) focusRegion(place.regionId);
   } catch (e) {
     $("placeLabel").innerHTML = `<span class="error">Impossible de charger les prévisions (${esc(e.message)}).</span>`;
   }
@@ -636,7 +851,7 @@ $("searchForm").addEventListener("submit", async e => {
     const res = data.results || [];
     list.innerHTML = res.length ? "" : "<li class='meta'>Aucun résultat.</li>";
     for (const r of res) {
-      const place = { name: r.name, admin: r.admin1, country: r.country, lat: r.latitude, lon: r.longitude };
+      const place = { name: r.name, admin: r.admin1, country: r.country, lat: r.latitude, lon: r.longitude, regionId: null };
       const li = document.createElement("li");
       const b = document.createElement("button");
       b.type = "button";
@@ -653,18 +868,31 @@ $("searchForm").addEventListener("submit", async e => {
 $("geoBtn").addEventListener("click", () => {
   if (!navigator.geolocation) return;
   navigator.geolocation.getCurrentPosition(
-    pos => selectPlace({ name: "Ma position", lat: pos.coords.latitude, lon: pos.coords.longitude }),
+    pos => selectPlace({ name: "Ma position", lat: pos.coords.latitude, lon: pos.coords.longitude, regionId: null }),
     () => { $("placeLabel").innerHTML = `<span class="error">Position refusée ou indisponible.</span>`; });
 });
 
-$("rural").value = state.rural;
-$("ruralLbl").textContent = ruralText(state.rural);
 $("rural").addEventListener("input", e => {
   state.rural = +e.target.value;
-  store.set(K.rural, state.rural);
+  state.ruralByRegion[state.place.regionId || "other"] = state.rural;
+  store.set(K.rural, state.ruralByRegion);
   $("ruralLbl").textContent = ruralText(state.rural);
   renderPrediction();
+  renderMap();
 });
+
+$("regionSel").innerHTML = REGIONS.map(r => `<option value="${r.id}">${r.id} · ${esc(r.name)}</option>`).join("") +
+  `<option value="other">Autre lieu (recherche)</option>`;
+$("regionSel").addEventListener("change", e => {
+  if (e.target.value === "other") {
+    state.place = { ...state.place, regionId: null };
+    syncSelectors();
+    $("q").focus();
+    return;
+  }
+  selectPlace(pointPlace(e.target.value, 0));
+});
+$("citySel").addEventListener("change", e => selectPlace(pointPlace(state.place.regionId, +e.target.value)));
 
 $("pending").addEventListener("click", e => {
   const b = e.target.closest("button[data-id]");
@@ -677,6 +905,7 @@ $("pending").addEventListener("click", e => {
   retrain();
   renderLearning();
   renderPrediction();
+  renderMap();
 });
 
 $("exportBtn").addEventListener("click", () => {
@@ -700,6 +929,7 @@ $("importFile").addEventListener("change", async e => {
     retrain();
     renderLearning();
     renderPrediction();
+    renderMap();
   } catch { alert("Fichier invalide."); }
   e.target.value = "";
 });
@@ -710,10 +940,13 @@ $("resetBtn").addEventListener("click", () => {
   store.del(K.hist); store.del(K.weights);
   renderLearning();
   renderPrediction();
+  renderMap();
 });
 
 renderLearning();
-selectPlace(state.place);
+syncSelectors();
+syncRuralSlider();
+loadMapData().then(() => selectPlace(state.place));
 </script>
 </body>
 </html>
