@@ -54,7 +54,20 @@
     font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     line-height: 1.45;
   }
-  main { max-width: 960px; margin: 0 auto; padding: 24px 16px 64px; }
+  main { max-width: 1260px; margin: 0 auto; padding: 24px 16px 64px; }
+  .layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; align-items: start; }
+  @media (max-width: 1000px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+  .odds h2 { margin-bottom: 2px; }
+  .odds ul { list-style: none; padding: 0; margin: 12px 0 0; }
+  .odds li { padding: 10px 0; border-top: 1px solid var(--border); }
+  .odds li:first-child { border-top: 0; }
+  .odds .what { display: flex; gap: 8px; align-items: baseline; font-size: .92rem; }
+  .odds .what span:first-child { flex: 0 0 auto; }
+  .odds .val { font-weight: 700; font-variant-numeric: tabular-nums; margin: 2px 0 4px 28px; }
+  .odds .why { font-size: .78rem; color: var(--muted); margin: 4px 0 0 28px; }
+  .odds .bar { margin-left: 28px; }
+  .odds li.live { background: var(--bg); border-radius: 8px; padding: 10px 8px; border-top: 0; }
+  .odds li.live + li { border-top: 0; }
   h1 { font-size: 1.8rem; margin: 0; }
   .tagline { font-weight: 600; color: var(--text-2); margin: 2px 0 6px; }
   h2 { font-size: 1.05rem; margin: 0 0 12px; }
@@ -127,6 +140,8 @@
   <p class="tagline">Prédiction par IA de la fermeture des écoles</p>
   <p class="sub">Probabilité que les écoles ferment, calculée à partir de 4 modèles météo (GEM, ECMWF, GFS, ICON) et d'un modèle d'IA (régression logistique) qui combine neige, verglas, froid et vent.</p>
 
+  <div class="layout">
+  <div>
   <section class="card">
     <h2>1. Région</h2>
     <div class="row">
@@ -201,6 +216,16 @@
     </label>
     <p class="note">Les centres de services scolaires ruraux (longs trajets d'autobus, routes secondaires) ferment plus facilement que ceux en ville.</p>
   </section>
+
+  </div>
+
+  <aside class="card odds" aria-labelledby="oddsTitle">
+    <h2 id="oddsTitle">🎲 Et sinon, quelles sont les chances… ?</h2>
+    <p class="note" style="margin:0">…que ça arrive <strong>d'ici demain</strong>. Échelle logarithmique : chaque cran = 10 fois moins probable.</p>
+    <ul id="oddsList"></ul>
+    <p class="note">Ordres de grandeur tirés de statistiques publiques et d'estimations d'experts, pour le plaisir de comparer. Pas de panique.</p>
+  </aside>
+  </div>
 
   <p class="note">Données météo : <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> (CC BY 4.0). Estimation indicative : la décision officielle revient au centre de services scolaire.</p>
 </main>
@@ -512,6 +537,7 @@ function renderPrediction() {
     `</tbody>` + (r.active.length < WEATHER_MODELS.length ? `<caption class="note" style="caption-side:bottom;text-align:left">Modèles sans données à cette échéance : ${WEATHER_MODELS.filter(m => !r.active.includes(m)).map(m => m.name).join(", ")}</caption>` : "");
 
   renderChart(hourlyMean(state.forecast, state.day, r.active));
+  renderOdds({ p: r.p, day: state.day, place: state.place.name });
 }
 
 function renderChart(rows) {
@@ -571,6 +597,51 @@ function renderChart(rows) {
 }
 
 function ruralText(v) { return v < 0.25 ? "urbain" : v < 0.6 ? "mixte" : v < 0.85 ? "rural" : "très rural"; }
+
+// ==========================================================
+// "WHAT ARE THE ODDS" SIDEBAR
+// ==========================================================
+// perYear: estimated yearly probability; converted to "by tomorrow".
+// perEvent: odds for a one-off event (lottery ticket).
+const ODDS = [
+  { icon: "🦠", label: "Pandémie mondiale grave (comme la COVID-19)", perYear: 0.02,
+    why: "≈ 2 % par année selon l'historique des épidémies (Marani et coll., PNAS 2021)." },
+  { icon: "🌍", label: "Troisième guerre mondiale", perYear: 0.01,
+    why: "≈ 1 % par année, ordre de grandeur des prévisionnistes. Très incertain." },
+  { icon: "🎟️", label: "Gagner le gros lot du Lotto Max (1 billet)", perEvent: 1 / 33294800,
+    why: "1 sur 33 294 800 par tirage : probabilité exacte." },
+  { icon: "⚡", label: "Être frappé par la foudre (au Canada)", perYear: 1 / 300000,
+    why: "≈ 100 à 150 personnes frappées par année sur 40 millions." },
+  { icon: "☄️", label: "Impact d'un astéroïde de plus de 1 km", perYear: 1 / 500000,
+    why: "Environ un tous les 500 000 ans (NASA). Aucun connu en route." },
+  { icon: "🫖", label: "Se faire tuer par une bouilloire électrique", perYear: 1 / 40000000,
+    why: "Estimation : moins d'un décès par année au Canada. Aucune statistique fiable." },
+].map(o => ({ ...o, p: o.perEvent ?? 1 - Math.pow(1 - o.perYear, 1 / 365) }));
+
+function fmtOdds(p) {
+  if (p >= 0.01) return pct(p);
+  const n = 1 / p;
+  const big = (v, unit) => `1 chance sur ${v.toLocaleString("fr-CA", { maximumFractionDigits: v < 10 ? 1 : 0 })} ${unit}`;
+  if (n >= 1e9) return big(n / 1e9, "milliards");
+  if (n >= 1e6) return big(n / 1e6, "millions");
+  return "1 chance sur " + Math.round(n).toLocaleString("fr-CA");
+}
+
+// Log scale from 1 (100 %) down to 1e-11.
+const logPos = p => Math.max(2, Math.min(100, (1 + Math.log10(Math.max(p, 1e-11)) / 11) * 100));
+
+function renderOdds(closure) {
+  const items = [...ODDS];
+  if (closure) items.push({ icon: "❄️", live: true, p: closure.p,
+    label: `Congé d'école ${closure.day === todayStr() ? "aujourd'hui" : "le " + fmtDay(closure.day)} à ${closure.place}`,
+    why: "Calculé ci-contre avec les modèles météo." });
+  items.sort((a, b) => b.p - a.p);
+  $("oddsList").innerHTML = items.map(o => `<li class="${o.live ? "live" : ""}">
+      <div class="what"><span aria-hidden="true">${o.icon}</span><span>${esc(o.label)}</span></div>
+      <div class="val">${fmtOdds(o.p)}</div>
+      <div class="bar" aria-hidden="true"><span style="left:0;width:${logPos(o.p)}%;background:var(--accent)"></span></div>
+      <div class="why">${esc(o.why)}</div></li>`).join("");
+}
 
 // ==========================================================
 // MAP
@@ -804,6 +875,7 @@ $("regionSel").addEventListener("change", e => {
 });
 $("citySel").addEventListener("change", e => selectPlace(pointPlace(state.place.regionId, +e.target.value)));
 
+renderOdds(null);
 syncSelectors();
 syncRuralSlider();
 loadMapData().then(() => selectPlace(state.place));

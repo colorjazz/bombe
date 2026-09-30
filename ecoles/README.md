@@ -31,6 +31,13 @@ la probabilité (%) que les écoles ferment un jour donné à cause de la mété
 - Chaque région a un réglage urbain/rural par défaut (ex. Montréal urbain, Gaspésie très rural),
   modifiable avec le curseur et mémorisé par région.
 
+## « Et sinon, quelles sont les chances ? »
+
+Une colonne sur le côté compare la probabilité de congé à celle d'événements rares, d'ici
+demain : pandémie mondiale, troisième guerre mondiale, gros lot du Lotto Max, foudre, impact
+d'astéroïde, bouilloire électrique. Ce sont des ordres de grandeur (statistiques publiques et
+estimations d'experts), affichés sur une échelle logarithmique, pour le plaisir.
+
 ## Précision
 
 Les pourcentages sont des estimations raisonnables, pas des certitudes : les poids n'ont
