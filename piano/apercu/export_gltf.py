@@ -1,5 +1,5 @@
-# Exporte la scène du piano en glTF pour l aperçu web (drivers -> extras, étiquettes -> empties).
-# Puis : convertir piano.glb en piano.json ({"gltf": ..., "bin": base64}) comme le fait le README.
+# Exporte la scène du piano en glTF pour l'aperçu web (drivers -> extras, étiquettes -> empties).
+# piano.glb est ensuite converti en piano.json : {"gltf": <JSON sans uri de buffer>, "bin": <données en base64>}.
 import bpy, json
 bpy.ops.wm.open_mainfile(filepath=__import__("os").path.join(__import__("os").path.dirname(__file__), "..", "piano_a_queue.blend"))
 sc = bpy.context.scene
