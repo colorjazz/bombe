@@ -20,10 +20,29 @@ var EMPREINTES_CODES = [
 
 var DUREE_SESSION = 6 * 60 * 60; // secondes (maximum permis par CacheService)
 
+// Noms acceptés pour le fichier HTML du jeu (le bon est « Index »).
+var NOMS_PAGE = ["Index", "index", "Index.html", "index.html"];
+
 function doGet() {
-  return HtmlService.createHtmlOutputFromFile("Index")
-    .setTitle("La Nuit à St-Ex")
-    .addMetaTag("viewport", "width=device-width, initial-scale=1, viewport-fit=cover");
+  for (var i = 0; i < NOMS_PAGE.length; i++) {
+    try {
+      return HtmlService.createHtmlOutputFromFile(NOMS_PAGE[i])
+        .setTitle("La Nuit à St-Ex")
+        .addMetaTag("viewport", "width=device-width, initial-scale=1, viewport-fit=cover");
+    } catch (e) {
+      // fichier absent sous ce nom : on essaie le suivant
+    }
+  }
+  return HtmlService.createHtmlOutput(
+    "<div style='font-family:sans-serif;max-width:40rem;margin:2rem auto;line-height:1.6'>" +
+      "<h2>La page du jeu est introuvable</h2>" +
+      "<p>Dans l'éditeur Apps Script, il faut un fichier <b>HTML</b> (créé avec + → HTML) " +
+      "qui s'affiche <b>Index.html</b> dans la liste de gauche. Tape seulement « Index » en le créant : " +
+      "Google ajoute « .html » tout seul.</p>" +
+      "<p>Si le fichier existe déjà : Déployer → Gérer les déploiements → crayon (Modifier) → " +
+      "Version : <b>Nouvelle version</b> → Déployer. Un déploiement ne voit pas les fichiers ajoutés après lui.</p>" +
+      "</div>"
+  ).setTitle("La Nuit à St-Ex");
 }
 
 /** À lancer une fois depuis l'éditeur : crée les onglets et retient le classeur. */
