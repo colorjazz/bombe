@@ -1,9 +1,9 @@
 /*
  * La Nuit à St-Ex — moteur d'aventure textuelle (parser).
  *
- * Aucun texte narratif n'est généré : toutes les descriptions et réponses
- * proviennent du document de conception. Seuls de courts messages
- * « système » (commande inconnue, objet absent, etc.) sont propres au moteur.
+ * Aucun texte narratif n'est généré à la volée : toutes les descriptions et
+ * réponses sont écrites ici. Seuls de courts messages « système » (commande
+ * inconnue, objet absent, etc.) sont propres au moteur.
  *
  * Utilisable dans le navigateur (window.NuitStEx) et dans Node (require).
  */
@@ -40,6 +40,33 @@
 
   const TEXTE_COMBINER_REUSSI =
     "Avec des mains tremblantes, tu utilises le ruban adhésif industriel pour fixer la lame lourde au bout du tuyau de métal. C'est grossier, c'est barbare, mais tu as maintenant une arme redoutable.";
+
+  const TEXTE_TABLEAU =
+    "Ils suivent le bruit. Ils ne voient pas dans le noir, mais ils entendent tout. Le courant ne reviendra pas. Si tu lis ceci, marche doucement.";
+
+  const TEXTE_ALLUMER =
+    "Tu plies le bâton entre tes doigts. Un craquement sec, puis une lueur verte, chimique, maladive, éclabousse tes mains. C'est faible. C'est assez.";
+
+  const TEXTE_NOIR_ABSOLU =
+    "Tu tâtonnes dans le noir absolu. Tes doigts ne rencontrent que du métal glacé et des arêtes coupantes. Sans lumière, tu ne trouveras rien ici.";
+
+  const TEXTE_ALERTE =
+    "Puis le silence revient. Mais ce n'est plus le même silence. Quelque part dans les profondeurs de l'école, quelque chose a entendu.";
+
+  const TEXTE_PAS_LOINTAINS =
+    "Des pas. Lointains, irréguliers. Ils traînent sur les tuiles, quelque part du côté de l'auditorium.";
+
+  const TEXTE_PAS_PROCHES =
+    "Les pas se rapprochent. Tu entends maintenant une respiration rauque, mouillée, qui n'a rien d'humain. Il te reste très peu de temps.";
+
+  const TEXTE_MORT = [
+    "Tu n'as pas le temps de te retourner. Une main glacée se referme sur ta nuque. Le sol se dérobe. Le noir t'avale tout entier, et le silence se referme sur toi comme une eau profonde.",
+    "COUPURE AU NOIR.",
+    "LA NUIT T'A PRIS. TAPE REJOUER POUR RECOMMENCER.",
+  ];
+
+  // Tours laissés au joueur entre le fracas du cadenas et l'arrivée de la chose.
+  const DELAI_POURSUITE = 6;
 
   const TEXTE_VICTOIRE = [
     "Le métal de la serrure grince sous tes doigts gelés. Les lourdes chaînes glissent lourdement sur les tuiles. Tu pousses les portes vitrées de toutes tes forces. L'air glacial te frappe de plein fouet. Les rues du quartier Ahuntsic sont méconnaissables. Sous un ciel criblé d'aurores boréales malades, les carcasses de voitures s'étendent à perte de vue. Derrière toi, dans les entrailles sombres de l'école, un cri guttural déchire soudain le silence. Tu te mets à courir vers l'inconnu.",
@@ -93,6 +120,13 @@
       mots: ["CLE", "CLEF", "CLES"],
       prenable: true,
     },
+    baton_lumineux: {
+      nom: "bâton lumineux",
+      enPlace: "un bâton lumineux (tombé de la trousse de premiers soins)",
+      description: "Un bâton lumineux chimique, comme ceux des trousses d'urgence. Il suffit de le plier pour l'allumer.",
+      mots: ["BATON", "LUMINEUX", "LUMIERE", "LAMPE"],
+      prenable: true,
+    },
     arme_artisanale: {
       nom: "arme artisanale",
       enPlace: "une arme artisanale",
@@ -143,24 +177,24 @@
       nom: "Laboratoires de Sciences",
       zone: "2e étage · Bloc B",
       description:
-        "La section « Biol. Chim. Phys. ». La lueur de la lune éclaire violemment les paillasses. Une odeur clinique et âcre de vieux produits chimiques pique le nez. La porte du Dépôt de Sciences est ouverte.",
-      sorties: { OUEST: 3 },
+        "La section « Biol. Chim. Phys. ». La lueur de la lune éclaire violemment les paillasses. Une odeur clinique et âcre de vieux produits chimiques pique le nez. La porte du Dépôt de Sciences est ouverte. Plus loin à l'EST, une passerelle vitrée file vers le Bloc H. À l'OUEST, le retour vers le carrefour.",
+      sorties: { OUEST: 3, EST: 17 },
       objets: ["ruban_adhesif"],
     },
     6: {
       nom: "Carrefour Principal",
       zone: "Rez-de-chaussée · Bloc B",
       description:
-        "Tu as descendu les marches. De minces faisceaux de lumière lunaire traversent la poussière en suspension. Les ombres des piliers s'étirent au sol telles des griffes. L'escalier remonte vers l'étage (HAUT). Autour de toi, trois abysses : le couloir administratif au NORD, l'entrée de l'auditorium au SUD, et les ateliers à l'EST.",
-      sorties: { HAUT: 3, NORD: 10, SUD: 8, EST: 12 },
+        "Tu as descendu les marches. De minces faisceaux de lumière lunaire traversent la poussière en suspension. Les ombres des piliers s'étirent au sol telles des griffes. L'escalier remonte vers l'étage (HAUT). Autour de toi, quatre abysses : le couloir administratif au NORD, l'entrée de l'auditorium au SUD, la place publique à l'OUEST, et, à l'EST, le passage vers le Bloc H et ses ateliers.",
+      sorties: { HAUT: 3, NORD: 10, SUD: 8, OUEST: 18, EST: 12 },
       objets: [],
     },
     7: {
       nom: "La Cafétéria",
       zone: "Rez-de-chaussée · Bloc C",
       description:
-        "Une mer de 600 chaises renversées, formant un chaos géométrique terrifiant. L'immense salle du Bloc C est baignée dans une lueur bleutée maladive. Les comptoirs des cuisines au loin ressemblent à des autels abandonnés. Ton estomac se noue douloureusement. (La sortie est au NORD).",
-      sorties: { NORD: 8 },
+        "Une mer de 600 chaises renversées, formant un chaos géométrique terrifiant. L'immense salle du Bloc C est baignée dans une lueur bleutée maladive. Les comptoirs des cuisines au loin ressemblent à des autels abandonnés. Ton estomac se noue douloureusement. (La sortie est à l'OUEST, vers l'Aile C).",
+      sorties: { OUEST: 19 },
       objets: ["barre_tendre"],
     },
     8: {
@@ -168,7 +202,7 @@
       zone: "Rez-de-chaussée · Bloc B",
       description:
         "La caverne. Une noirceur d'encre engloutit les rangées. Tes pas résonnent avec un écho démesuré qui te donne la nausée. Sur le mur de la scène de l'auditorium de 446 places, tu devines de larges lettres tracées à la hâte.",
-      sorties: { NORD: 6, SUD: 7 },
+      sorties: { NORD: 6 },
       objets: [],
     },
     10: {
@@ -188,28 +222,69 @@
       objets: ["cle_principale"],
     },
     12: {
-      nom: "Carrefour des Ateliers",
-      zone: "Rez-de-chaussée · Bloc B",
+      nom: "Couloir du Bloc H",
+      zone: "Rez-de-chaussée · Bloc H",
       description:
-        "L'air sent la graisse froide et la rouille. C'est le couloir des ateliers. Les bruits de tes pas sont étouffés, comme si les murs de béton absorbaient le son. NORD : L'Atelier de Mécanique. SUD : La Chaufferie. OUEST : Retour vers le carrefour central.",
-      sorties: { OUEST: 6, NORD: 13, SUD: 14 },
+        "L'air sent la graisse froide et la rouille. C'est le couloir du Bloc H, celui des ateliers. Les bruits de tes pas sont étouffés, comme si les murs de béton absorbaient le son. NORD : L'Atelier de Mécanique. SUD : La Chaufferie. HAUT : l'escalier vers l'étage du Bloc H. OUEST : Retour vers le carrefour central.",
+      sorties: { OUEST: 6, NORD: 13, SUD: 14, HAUT: 17 },
       objets: [],
     },
     13: {
       nom: "L'Atelier de Mécanique",
-      zone: "Rez-de-chaussée · Bloc B",
+      zone: "Rez-de-chaussée · Bloc H",
       description:
         "Aveuglant d'obscurité. Aucune fenêtre ne perce l'atelier d'automobile et de mécanique. Seule la sensation du métal glacé des ponts élévateurs t'entoure. C'est le ventre d'une bête morte.",
       sorties: { SUD: 12 },
       objets: ["tuyau_metal"],
+      sombre: true,
     },
     14: {
       nom: "La Chaufferie",
-      zone: "Rez-de-chaussée · Bloc B",
+      zone: "Rez-de-chaussée · Bloc H",
       description:
         "Une salle des machines oppressante. Les gigantesques chaudières sont d'immenses silhouettes fantomatiques. Un silence si lourd qu'il te fait bourdonner les tympans.",
       sorties: { NORD: 12 },
       objets: ["lame_lourde"],
+    },
+    15: {
+      nom: "Couloir du Bloc F",
+      zone: "Rez-de-chaussée · Bloc F",
+      description:
+        "Le couloir C103 te mène jusqu'au Bloc F, une aile basse et étroite accrochée au flanc de l'école. Les portes des classes F101 à F110 sont toutes fermées. Derrière leurs petites fenêtres, les pupitres alignés attendent des élèves qui ne viendront plus. Au bout du couloir, la cage d'escalier en demi-lune monte vers l'étage (HAUT). Au NORD, le retour vers l'Aile C.",
+      sorties: { NORD: 19, HAUT: 16 },
+      objets: [],
+    },
+    16: {
+      nom: "L'Étage du Bloc F",
+      zone: "2e étage · Bloc F",
+      description:
+        "Le couloir F200 est si étroit que tu pourrais toucher les deux murs en écartant les bras. Une odeur d'antiseptique flotte près du local F212. L'armoire de premiers soins pend, ouverte, son contenu éparpillé au sol comme si quelqu'un l'avait fouillée en pleine panique. Dans la classe F209, des mots tracés à la craie accrochent la lueur de la lune au tableau. L'escalier redescend (BAS).",
+      sorties: { BAS: 15 },
+      objets: ["baton_lumineux"],
+    },
+    17: {
+      nom: "L'Étage du Bloc H",
+      zone: "2e étage · Bloc H",
+      description:
+        "La passerelle débouche sur le Bloc H. Par les grandes fenêtres du couloir, le boulevard Robert s'étire, désert, sous un ciel qui ne ressemble à aucun ciel. Des voitures sont arrêtées en plein milieu de la chaussée, portières ouvertes, comme abandonnées en pleine course. Rien ne bouge. L'escalier du bout du couloir descend vers les ateliers (BAS). À l'OUEST, le retour vers les laboratoires.",
+      sorties: { OUEST: 5, BAS: 12 },
+      objets: [],
+    },
+    18: {
+      nom: "La Place Publique",
+      zone: "Rez-de-chaussée · Bloc B",
+      description:
+        "La place publique s'étend à flanc d'auditorium, immense et plate. Le jour, c'est le cœur bruyant de l'école ; cette nuit, c'est une plaine morte. Les rangées de casiers métalliques s'alignent en biais, à perte de vue. Quelques portes pendent, ouvertes, comme des bouches qui auraient voulu crier. Au SUD, le couloir de l'Aile C. À l'EST, le retour vers le carrefour principal.",
+      sorties: { EST: 6, SUD: 19 },
+      objets: [],
+    },
+    19: {
+      nom: "L'Aile C",
+      zone: "Rez-de-chaussée · Bloc C",
+      description:
+        "Un couloir étroit longe le flanc de la cafétéria. Les néons éteints pendent du plafond comme des ossements. Par les portes vitrées, à l'EST, tu devines la grande salle de la cafétéria. Au SUD, le couloir C103 s'enfonce vers le Bloc F. Au NORD, la place publique.",
+      sorties: { NORD: 18, EST: 7, SUD: 15 },
+      objets: [],
     },
   };
 
@@ -217,6 +292,7 @@
   const LIEU_SORTIE = 10;
   const LIEU_SECRETARIAT = 11;
   const LIEU_AUDITORIUM = 8;
+  const LIEU_TABLEAU = 16;
 
   // ==========================================
   // VOCABULAIRE DU PARSER
@@ -244,6 +320,7 @@
     BRISER: "FRAPPER", BRISE: "FRAPPER", CASSER: "FRAPPER", CASSE: "FRAPPER",
     UTILISER: "UTILISER", UTILISE: "UTILISER", U: "UTILISER",
     OUVRIR: "OUVRIR", OUVRE: "OUVRIR", DEVERROUILLER: "OUVRIR", DEVERROUILLE: "OUVRIR",
+    ALLUMER: "ALLUMER", ALLUME: "ALLUMER", PLIER: "ALLUMER", PLIE: "ALLUMER", CRAQUER: "ALLUMER", CRAQUE: "ALLUMER",
     INVENTAIRE: "INVENTAIRE", INV: "INVENTAIRE", I: "INVENTAIRE",
     AIDE: "AIDE", "?": "AIDE", HELP: "AIDE",
   };
@@ -260,6 +337,7 @@
     CHAINE: "CHAINES", CHAINES: "CHAINES", SERRURE: "CHAINES",
     PORTE: "PORTE", PORTES: "PORTE", SORTIE: "PORTE",
     SECRETARIAT: "SECRETARIAT",
+    TABLEAU: "TABLEAU", CRAIE: "TABLEAU", MOTS: "TABLEAU",
   };
 
   function normaliser(texte) {
@@ -311,7 +389,8 @@
       this.inventaire = ["telephone_mort"];
       this.objetsParLieu = {};
       for (const id in LIEUX) this.objetsParLieu[id] = LIEUX[id].objets.slice();
-      this.flags = { a_mange: false, arme_fabriquee: false, cadenas_brise: false };
+      this.flags = { a_mange: false, arme_fabriquee: false, cadenas_brise: false, lumiere: false };
+      this.poursuite = 0; // tours restants avant que la chose n'arrive (0 = pas de poursuite)
       this.tour = 0;
       this.evenementVu = false;
       this.termine = false;
@@ -323,6 +402,10 @@
         ...OUVERTURE.map((t) => ({ type: "ouverture", texte: t })),
         ...this.decrireLieu(),
       ];
+    }
+
+    dansLeNoir() {
+      return Boolean(LIEUX[this.lieu].sombre) && !this.flags.lumiere;
     }
 
     possede(id) {
@@ -350,7 +433,9 @@
         { type: "texte", texte: lieu.description },
       ];
       const ici = this.objetsParLieu[this.lieu];
-      if (ici.length) {
+      if (this.dansLeNoir()) {
+        blocs.push({ type: "objets", texte: "Il fait trop noir pour distinguer quoi que ce soit." });
+      } else if (ici.length) {
         blocs.push({
           type: "objets",
           texte: "Tu distingues ici : " + ici.map((id) => OBJETS[id].enPlace).join(", ") + ".",
@@ -370,7 +455,15 @@
       if (c.verbe === "AIDE") return this.aide();
 
       this.tour += 1;
+      const enPoursuite = this.poursuite > 0;
       const blocs = this.traiter(c);
+
+      if (enPoursuite && !this.termine) {
+        this.poursuite -= 1;
+        if (this.poursuite === 0) return blocs.concat(this.mort());
+        if (this.poursuite === 3) blocs.push({ type: "evenement", texte: TEXTE_PAS_LOINTAINS });
+        if (this.poursuite === 1) blocs.push({ type: "evenement", texte: TEXTE_PAS_PROCHES });
+      }
 
       if (this.tour === TOUR_EVENEMENT && !this.evenementVu && !this.termine) {
         this.evenementVu = true;
@@ -390,6 +483,7 @@
         case "FRAPPER": return this.frapper(c);
         case "UTILISER": return this.utiliser(c);
         case "OUVRIR": return this.ouvrir(c);
+        case "ALLUMER": return this.allumer(c);
         case "INVENTAIRE": return this.afficherInventaire();
         default:
           return [sys("Je ne comprends pas. Tape AIDE pour la liste des commandes.")];
@@ -400,7 +494,7 @@
       return [
         sys(
           "Déplacements : NORD, SUD, EST, OUEST, HAUT, BAS (ou N, S, E, O, H, B). " +
-            "Actions : PRENDRE, REGARDER, LIRE, COMBINER, MANGER, FRAPPER, UTILISER, OUVRIR. " +
+            "Actions : PRENDRE, REGARDER, LIRE, COMBINER, MANGER, FRAPPER, UTILISER, OUVRIR, ALLUMER. " +
             "INVENTAIRE (ou I) pour voir ce que tu portes."
         ),
       ];
@@ -422,6 +516,10 @@
       const blocs = [];
       for (const id of c.objets) {
         const ici = this.objetsParLieu[this.lieu];
+        if (this.dansLeNoir() && ici.includes(id)) {
+          blocs.push({ type: "texte", texte: TEXTE_NOIR_ABSOLU });
+          continue;
+        }
         if (this.possede(id)) {
           blocs.push(sys("Tu as déjà " + OBJETS[id].nom + "."));
         } else if (ici.includes(id)) {
@@ -446,6 +544,7 @@
       }
       const decor = c.decors[0];
       if (decor === "MUR" && this.lieu === LIEU_AUDITORIUM) return this.lire(c);
+      if (decor === "TABLEAU" && this.lieu === LIEU_TABLEAU) return this.lire(c);
       if (this.lieu === LIEU_SORTIE) {
         if (decor === "CADENAS" || decor === "SECRETARIAT") {
           return [{
@@ -465,6 +564,9 @@
     lire(c) {
       if (this.lieu === LIEU_AUDITORIUM && (c.decors.includes("MUR") || c.objets.length === 0)) {
         return [{ type: "mural", texte: TEXTE_MURAL }];
+      }
+      if (this.lieu === LIEU_TABLEAU && (c.decors.includes("TABLEAU") || c.objets.length === 0)) {
+        return [{ type: "mural", texte: TEXTE_TABLEAU }];
       }
       return [sys("Il n'y a rien à lire ici.")];
     }
@@ -505,6 +607,7 @@
     }
 
     frapper(c) {
+      if (c.objets.includes("baton_lumineux")) return this.allumer(c);
       const cible = c.decors.includes("CADENAS") || c.decors.includes("SECRETARIAT") ||
         (c.objets.includes("arme_artisanale") && this.lieu === LIEU_SORTIE);
       if (!cible) {
@@ -523,7 +626,11 @@
       }
       if (!this.flags.a_mange) return [{ type: "texte", texte: TEXTE_FRAPPER_FAIBLE }];
       this.flags.cadenas_brise = true;
-      return [{ type: "choc", texte: TEXTE_FRAPPER_REUSSI }];
+      this.poursuite = DELAI_POURSUITE;
+      return [
+        { type: "choc", texte: TEXTE_FRAPPER_REUSSI },
+        { type: "evenement", texte: TEXTE_ALERTE },
+      ];
     }
 
     utiliser(c) {
@@ -542,6 +649,8 @@
           return [sys("Il n'y a rien à frapper ici.")];
         case "barre_tendre":
           return this.manger(c);
+        case "baton_lumineux":
+          return this.allumer(c);
         case "telephone_mort":
           return [{ type: "texte", texte: this.evenementVu ? "L'écran est mort." : OBJETS.telephone_mort.description }];
         case "tuyau_metal":
@@ -566,8 +675,27 @@
       return [sys("Il n'y a rien à ouvrir ici.")];
     }
 
+    allumer(c) {
+      if (c.objets.length && !c.objets.includes("baton_lumineux")) return [sys("Ça ne s'allume pas.")];
+      if (!this.possede("baton_lumineux")) return [sys("Tu n'as rien pour faire de la lumière.")];
+      if (this.flags.lumiere) return [sys("Le bâton luit déjà dans ta main.")];
+      this.flags.lumiere = true;
+      const blocs = [{ type: "texte", texte: TEXTE_ALLUMER }];
+      if (LIEUX[this.lieu].sombre) blocs.push(...this.decrireLieu());
+      return blocs;
+    }
+
     afficherInventaire() {
       return [sys("Tu portes : " + this.inventaire.map((id) => OBJETS[id].nom).join(", ") + ".")];
+    }
+
+    mort() {
+      this.termine = true;
+      return [
+        { type: "mort", texte: TEXTE_MORT[0] },
+        { type: "coupure", texte: TEXTE_MORT[1] },
+        { type: "finmort", texte: TEXTE_MORT[2] },
+      ];
     }
 
     victoire() {
@@ -586,6 +714,7 @@
         flags: Object.assign({}, this.flags),
         tour: this.tour,
         termine: this.termine,
+        poursuite: this.poursuite,
       };
     }
   }

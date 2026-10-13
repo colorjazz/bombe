@@ -128,7 +128,8 @@
   }
   .choc { color: var(--cendre); font-weight: 400; }
   .victoire { color: var(--cendre); }
-  .coupure, .fin {
+  .mort { color: var(--rouille); font-weight: 400; }
+  .coupure, .fin, .finmort {
     font-family: var(--f-titre);
     letter-spacing: 0.32em;
     text-transform: uppercase;
@@ -138,6 +139,7 @@
   }
   .coupure { margin-top: 2.5rem !important; color: var(--ombre); }
   .fin { color: var(--lune); }
+  .finmort { color: var(--rouille); }
 
   form {
     padding-block: 0.9rem calc(1.1rem + env(safe-area-inset-bottom, 0px));
@@ -257,7 +259,7 @@
 
 <div id="noir" hidden>
   <div>
-    <h2>Tu as survécu à la nuit</h2>
+    <h2 id="verdict">Tu as survécu à la nuit</h2>
     <p>La Nuit à St-Ex</p>
     <button id="rejouer" type="button">Rejouer</button>
   </div>
@@ -300,7 +302,9 @@
           void ecran.offsetWidth;
           ecran.classList.add("secousse");
         }
-        if (b.type === "fin") {
+        if (b.type === "fin" || b.type === "finmort") {
+          document.getElementById("verdict").textContent =
+            b.type === "fin" ? "Tu as survécu à la nuit" : "La nuit t'a pris";
           noir.hidden = false;
           noir.classList.add("actif");
         }

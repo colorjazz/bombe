@@ -1,7 +1,7 @@
 // Tests du moteur : node nuit-st-ex/test.js
 "use strict";
 const assert = require("assert");
-const { Partie, analyser } = require("./moteur.js");
+const { Partie, LIEUX, analyser } = require("./moteur.js");
 
 let n = 0;
 function test(nom, fn) {
@@ -17,6 +17,15 @@ function jouer(partie, commandes) {
 }
 
 const texte = (blocs) => blocs.map((b) => b.texte).join("\n");
+
+// Mène une partie neuve jusque devant le cadenas, armé et rassasié (lieu 10).
+const VERS_LE_CADENAS = [
+  "o", "s", "e", "prendre ruban", "o", "bas",                  // labos -> carrefour principal
+  "o", "s", "e", "manger barre", "o",                          // place publique -> Aile C -> cafétéria
+  "s", "haut", "prendre bâton", "bas", "n", "n", "e",          // Bloc F
+  "e", "n", "allumer bâton", "prendre tuyau", "s",             // Bloc H, mécanique
+  "s", "prendre lame", "n", "combiner tuyau avec lame", "o", "n",
+];
 
 test("ouverture puis description de la classe", () => {
   const p = new Partie();
@@ -34,12 +43,21 @@ test("analyse : accents, articles, abréviations", () => {
   assert.strictEqual(analyser("descendre").direction, "BAS");
 });
 
+test("la carte : chaque sortie a son retour", () => {
+  const inverse = { NORD: "SUD", SUD: "NORD", EST: "OUEST", OUEST: "EST", HAUT: "BAS", BAS: "HAUT" };
+  for (const id in LIEUX) {
+    for (const [d, dest] of Object.entries(LIEUX[id].sorties)) {
+      assert.ok(LIEUX[dest], `${id} ${d} -> ${dest} inexistant`);
+      assert.strictEqual(LIEUX[dest].sorties[inverse[d]], Number(id), `${id} ${d} -> ${dest}`);
+    }
+  }
+});
+
 test("événement du tour 5, une seule fois, peu importe l'action", () => {
   const p = new Partie();
   p.demarrer();
   const r = [1, 2, 3, 4, 5, 6].map((i) => p.executer(i % 2 ? "regarder" : "inventaire"));
   assert.ok(!r.slice(0, 4).some((b) => b.some((x) => x.type === "evenement")));
-  assert.ok(r[4].some((x) => x.type === "evenement"));
   assert.ok(texte(r[4]).includes("Tu n'es pas seul."));
   assert.ok(!r[5].some((x) => x.type === "evenement"));
 });
@@ -57,49 +75,77 @@ test("porte du secrétariat verrouillée tant que le cadenas tient", () => {
   assert.ok(texte(r).includes("verrouillée"));
 });
 
+test("l'atelier de mécanique est trop noir sans le bâton lumineux", () => {
+  const p = new Partie();
+  let r = jouer(p, ["o", "s", "bas", "e", "n"]);
+  assert.ok(texte(r).includes("trop noir"));
+  assert.ok(!texte(r).includes("tuyau"));
+  r = p.executer("prendre tuyau");
+  assert.ok(texte(r).includes("Sans lumière"));
+  assert.ok(!p.possede("tuyau_metal"));
+  p.inventaire.push("baton_lumineux");
+  r = p.executer("plier bâton");
+  assert.ok(texte(r).includes("lueur verte"));
+  assert.ok(texte(r).includes("tuyau de métal"));
+  p.executer("prendre tuyau");
+  assert.ok(p.possede("tuyau_metal"));
+});
+
+test("le tableau du Bloc F et le mur de l'auditorium se lisent", () => {
+  const p = new Partie();
+  assert.ok(texte(p.executer("lire mur")).includes("rien à lire"));
+  p.lieu = 8;
+  assert.ok(texte(p.executer("lire mur")).includes("LE SILENCE EST LEUR ARME"));
+  p.lieu = 16;
+  assert.ok(texte(p.executer("lire tableau")).includes("Ils suivent le bruit"));
+});
+
 test("combiner sans ruban", () => {
   const p = new Partie();
-  const r = jouer(p, [
-    "o", "s", "bas", "e", "n", "prendre tuyau", "s", "s", "prendre lame",
-    "combiner tuyau avec lame",
-  ]);
+  p.inventaire.push("tuyau_metal", "lame_lourde");
+  const r = p.executer("combiner tuyau avec lame");
   assert.ok(texte(r).includes("rien pour les faire tenir ensemble"));
   assert.ok(!p.flags.arme_fabriquee);
 });
 
 test("frapper le cadenas sans avoir mangé, puis après", () => {
   const p = new Partie();
-  jouer(p, [
-    "o", "s", "e", "prendre ruban", "o", "bas",
-    "e", "n", "prendre tuyau", "s", "s", "prendre lame", "n",
-    "combiner tuyau avec lame", "o", "n",
-  ]);
-  assert.ok(p.flags.arme_fabriquee);
-  assert.deepStrictEqual(p.inventaire.sort(), ["arme_artisanale", "telephone_mort"]);
+  p.lieu = 10;
+  p.inventaire.push("arme_artisanale");
   let r = p.executer("frapper cadenas");
   assert.ok(texte(r).includes("Tu es trop faible"));
   assert.ok(!p.flags.cadenas_brise);
-  jouer(p, ["s", "s", "s", "prendre barre", "manger barre tendre", "n", "n", "n"]);
-  assert.ok(p.flags.a_mange);
+  p.flags.a_mange = true;
   r = p.executer("fracasser cadenas");
   assert.ok(texte(r).includes("la charnière explose"));
+  assert.ok(texte(r).includes("quelque chose a entendu"));
   assert.ok(p.flags.cadenas_brise);
 });
 
 test("partie complète jusqu'à la victoire", () => {
   const p = new Partie();
   p.demarrer();
-  const r = jouer(p, [
-    "ouest", "sud", "est", "prendre ruban adhésif", "ouest", "bas",
-    "sud", "lire mur", "sud", "manger barre", "nord", "nord",
-    "est", "nord", "prendre tuyau", "sud", "sud", "prendre lame", "nord",
-    "combiner tuyau avec lame", "ouest", "nord",
-    "frapper cadenas", "est", "prendre clé", "ouest",
-    "utiliser clé sur chaînes",
-  ]);
+  jouer(p, VERS_LE_CADENAS);
+  assert.strictEqual(p.lieu, 10);
+  assert.ok(p.flags.arme_fabriquee && p.flags.a_mange);
+  const r = jouer(p, ["frapper cadenas", "est", "prendre clé", "ouest", "utiliser clé sur chaînes"]);
   assert.ok(p.termine);
   assert.ok(texte(r).includes("FÉLICITATIONS, TU AS SURVÉCU À LA NUIT."));
   assert.ok(texte(p.executer("nord")).includes("REJOUER"));
+});
+
+test("après le fracas, traîner trop longtemps est fatal", () => {
+  const p = new Partie();
+  p.lieu = 10;
+  p.inventaire.push("arme_artisanale");
+  p.flags.a_mange = true;
+  p.tour = 10;
+  p.executer("frapper cadenas");
+  const r = [1, 2, 3, 4, 5, 6].map(() => p.executer("regarder"));
+  assert.ok(texte(r[2]).includes("Des pas"));
+  assert.ok(texte(r[4]).includes("se rapprochent"));
+  assert.ok(p.termine);
+  assert.strictEqual(r[5][r[5].length - 1].type, "finmort");
 });
 
 test("OUVRIR PORTE avec la clé déclenche aussi la victoire", () => {
@@ -109,23 +155,6 @@ test("OUVRIR PORTE avec la clé déclenche aussi la victoire", () => {
   const r = p.executer("ouvrir porte");
   assert.ok(p.termine);
   assert.strictEqual(r[1].texte, "COUPURE AU NOIR. GÉNÉRIQUE.");
-});
-
-test("LIRE MUR seulement dans l'auditorium", () => {
-  const p = new Partie();
-  assert.ok(texte(p.executer("lire mur")).includes("rien à lire"));
-  p.lieu = 8;
-  assert.ok(texte(p.executer("lire mur")).includes("LE SILENCE EST LEUR ARME"));
-});
-
-test("la carte suit les plans : chaque sortie a son retour", () => {
-  const { LIEUX } = require("./moteur.js");
-  const inverse = { NORD: "SUD", SUD: "NORD", EST: "OUEST", OUEST: "EST", HAUT: "BAS", BAS: "HAUT" };
-  for (const id in LIEUX) {
-    for (const [d, dest] of Object.entries(LIEUX[id].sorties)) {
-      assert.strictEqual(LIEUX[dest].sorties[inverse[d]], Number(id), `${id} ${d} -> ${dest}`);
-    }
-  }
 });
 
 console.log(`\n${n} tests réussis.`);

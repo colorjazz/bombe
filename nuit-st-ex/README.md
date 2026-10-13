@@ -2,8 +2,8 @@
 
 Aventure textuelle (parser) dans la Polyvalente Antoine-de-Saint-Exupéry.
 
-- `moteur.js` : moteur du jeu (lieux, objets, inventaire, variables d'état, parser). Tous les textes narratifs viennent du document de conception.
+- `moteur.js` : moteur du jeu (lieux, objets, inventaire, variables d'état, parser). Les textes narratifs partent du document de conception, enrichis (Blocs F et H, bâton lumineux, poursuite après le fracas du cadenas).
 - `index.html` : interface. Ouvrir directement dans un navigateur.
 - `test.js` : tests du moteur, `node nuit-st-ex/test.js`.
 
-Commandes : NORD, SUD, EST, OUEST, HAUT, BAS (N, S, E, O, H, B), PRENDRE, REGARDER, LIRE, COMBINER, MANGER, FRAPPER, UTILISER, OUVRIR, INVENTAIRE (I), AIDE, REJOUER.
+Commandes : NORD, SUD, EST, OUEST, HAUT, BAS (N, S, E, O, H, B), PRENDRE, REGARDER, LIRE, COMBINER, MANGER, FRAPPER, UTILISER, OUVRIR, ALLUMER, INVENTAIRE (I), AIDE, REJOUER.
