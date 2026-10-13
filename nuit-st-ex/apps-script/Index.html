@@ -164,6 +164,14 @@
     border-left: 1px solid var(--ombre);
     padding-left: 1rem;
   }
+  .notes {
+    white-space: pre-line;
+    font-family: var(--f-machine);
+    font-size: 0.85rem;
+    color: var(--cendre);
+    border-left: 1px solid var(--lune);
+    padding-left: 1rem;
+  }
   .recompense { color: var(--cendre); text-align: center; max-width: none !important; margin-top: 1.5rem !important; }
   .phrase, #noir .phrase {
     font-family: var(--f-titre);
@@ -650,6 +658,12 @@
       description: "La clé principale. La clé de la sortie.",
       mots: ["CLE", "CLEF", "CLES"],
     },
+    calepin: {
+      nom: "calepin",
+      enPlace: "un calepin et un crayon (sur le bureau de M. Plante)",
+      description: "Un petit calepin à spirale, avec un crayon glissé dedans. Tape NOTER suivi de ce que tu veux écrire, et NOTES pour relire.",
+      mots: ["CALEPIN", "CARNET", "CRAYON"],
+    },
     baton_lumineux: {
       nom: "bâton lumineux",
       enPlace: "un bâton lumineux",
@@ -691,7 +705,7 @@
       description:
         "Le repaire de M. Plante. Rassurant le jour, absolument terrifiant cette nuit. La faible lueur de la lune découpe la forme de son bureau à l'avant. Dans les ombres, les frises chronologiques et les graphiques d'éducation financière affichés aux murs ressemblent à de longues cicatrices sombres. Au tableau, l'écriture penchée de M. Plante : le problème du jour, que personne n'a fini de recopier. L'air est mort. (Sortie : OUEST).",
       sorties: { OUEST: 2 },
-      objets: ["agenda"],
+      objets: ["agenda", "calepin"],
       lectures: [
         {
           mots: ["TABLEAU", "PROBLEME"],
@@ -705,7 +719,7 @@
       ],
     },
     2: {
-      nom: "Couloir A-211",
+      nom: "Aile A",
       zone: "2e étage · Bloc A",
       description:
         "Le long corridor du Bloc A au deuxième étage. Les casiers métalliques forment une haie d'honneur sinistre qui s'étire dans l'obscurité, se perdant dans le noir absolu. À l'EST, la porte du local A-217. Au SUD, le couloir s'ouvre sur un espace plus vaste.",
@@ -982,7 +996,7 @@
   // Position de chaque lieu sur le plan de l'agenda : [étage, colonne, rangée, nom court].
   // Nord en haut ; une case par lieu.
   const PLAN = {
-    2: ["etage", 2, 0, "Couloir A-211"],
+    2: ["etage", 2, 0, "Aile A"],
     1: ["etage", 3, 0, "A-217"],
     25: ["etage", 1, 1, "Centre péd."],
     3: ["etage", 2, 1, "Carrefour"],
@@ -1174,6 +1188,7 @@
     CARTE: "CARTE", PLAN: "CARTE", M: "CARTE",
     ALLUMER: "ALLUMER", ALLUME: "ALLUMER", PLIER: "ALLUMER", PLIE: "ALLUMER", CRAQUER: "ALLUMER", CRAQUE: "ALLUMER",
     INVENTAIRE: "INVENTAIRE", INV: "INVENTAIRE", I: "INVENTAIRE",
+    NOTES: "NOTES", RELIRE: "NOTES",
     AIDE: "AIDE", "?": "AIDE", HELP: "AIDE",
   };
 
@@ -1203,6 +1218,11 @@
   }
 
   const MOTIF_LOCAL = /^[A-H][0-9]{3}[A-Z]?$/;
+  // « noter … », « écrire … », « prendre note(s) … » : le reste est gardé tel quel.
+  const MOTIF_NOTER = /^\s*(?:noter|note|[ée]crire|[ée]cris|prendre\s+notes?|prends\s+notes?)\b\s*:?\s*(.*)$/i;
+  const MOTIF_EFFACER_NOTES = /^\s*(?:effacer|efface|arracher|arrache)\s+(?:les\s+|mes\s+)?(?:notes?|pages?|calepin)\s*$/i;
+  const NOTES_MAX = 40;
+  const NOTE_LONGUEUR_MAX = 200;
 
   function analyser(commande) {
     const mots = normaliser(commande).split(" ").filter(Boolean);
@@ -1251,6 +1271,7 @@
       for (const id in LIEUX) this.objetsParLieu[id] = (LIEUX[id].objets || []).slice();
       this.flags = { a_mange: false, arme_fabriquee: false, cadenas_brise: false, lumiere: false };
       this.codes = {}; // réponses trouvées, par lieu
+      this.notes = []; // ce que le joueur a écrit dans le calepin
       this.locauxFouilles = [];
       this.visites = new Set([LIEU_DEPART]);
       this.poursuite = 0; // tours restants avant que la chose n'arrive (0 = pas de poursuite)
@@ -1268,6 +1289,7 @@
         objetsParLieu: this.objetsParLieu,
         flags: this.flags,
         codes: this.codes,
+        notes: this.notes,
         locauxFouilles: this.locauxFouilles,
         visites: [...this.visites],
         poursuite: this.poursuite,
@@ -1280,7 +1302,7 @@
 
     static restaurer(d) {
       const p = new Partie();
-      Object.assign(p, d, { visites: new Set(d.visites) });
+      Object.assign(p, d, { visites: new Set(d.visites), notes: d.notes || [] });
       return p;
     }
 
@@ -1345,10 +1367,14 @@
       if (this.termine) {
         return [sys("La nuit est terminée. Tape REJOUER pour recommencer.")];
       }
+      if (MOTIF_EFFACER_NOTES.test(commande)) return this.effacerNotes();
+      const note = MOTIF_NOTER.exec(commande);
+      if (note) return this.noter(note[1]);
       const c = analyser(commande);
       if (!c) return [];
 
       if (c.verbe === "AIDE") return this.aide();
+      if (c.verbe === "NOTES" || (c.verbe === "LIRE" && c.objets.includes("calepin"))) return this.lireNotes();
 
       this.tour += 1;
       const enPoursuite = this.poursuite > 0;
@@ -1397,7 +1423,8 @@
           "Déplacements : NORD, SUD, EST, OUEST, HAUT, BAS (ou N, S, E, O, H, B). " +
             "Pour visiter un local : ENTRER suivi de son numéro (ex. : ENTRER A215). " +
             "Actions : PRENDRE, REGARDER, LIRE, COMBINER, MANGER, FRAPPER, UTILISER, OUVRIR, ALLUMER, COMPOSER (un code). " +
-            "INVENTAIRE (ou I) pour voir ce que tu portes. CARTE pour consulter le plan de ton agenda."
+            "INVENTAIRE (ou I) pour voir ce que tu portes. CARTE pour consulter le plan de ton agenda. " +
+            "Avec un calepin : NOTER suivi de ton texte, NOTES pour relire, EFFACER NOTES pour tout effacer."
         ),
       ];
     }
@@ -1642,6 +1669,8 @@
           return this.allumer(c);
         case "agenda":
           return this.carte();
+        case "calepin":
+          return this.lireNotes();
         case "cle_doree":
           return [{ type: "texte", texte: "Tu essaies la petite clé dorée. Elle n'entre dans aucune serrure ici." }];
         case "telephone_mort":
@@ -1718,6 +1747,29 @@
       const blocs = [{ type: "texte", texte: TEXTE_ALLUMER }];
       if (LIEUX[this.lieu].sombre) blocs.push(...this.decrireLieu());
       return blocs;
+    }
+
+    noter(texte) {
+      texte = texte.trim().slice(0, NOTE_LONGUEUR_MAX);
+      if (!this.possede("calepin")) return [sys("Tu n'as rien pour écrire. Il te faudrait un calepin.")];
+      if (!texte) return [sys("Noter quoi ? Tape NOTER suivi de ton texte (ex. : NOTER auditorium = 446 sièges).")];
+      if (this.dansLeNoir()) return [sys("Il fait trop noir pour écrire.")];
+      if (this.notes.length >= NOTES_MAX) return [sys("Ton calepin est plein. Tape EFFACER NOTES pour arracher les pages.")];
+      this.notes.push(texte);
+      return [sys(`Noté dans ton calepin (${this.notes.length}).`)];
+    }
+
+    effacerNotes() {
+      if (!this.possede("calepin")) return [sys("Tu n'as pas de calepin.")];
+      this.notes = [];
+      return [sys("Tu arraches les pages écrites. Ton calepin est vide.")];
+    }
+
+    lireNotes() {
+      if (!this.possede("calepin")) return [sys("Tu n'as pas de calepin.")];
+      if (this.dansLeNoir()) return [sys("Il fait trop noir pour lire quoi que ce soit.")];
+      if (!this.notes.length) return [sys("Ton calepin est vide. Tape NOTER suivi de ce que tu veux retenir.")];
+      return [{ type: "notes", texte: this.notes.map((n, i) => `${i + 1}. ${n}`).join("\n") }];
     }
 
     afficherInventaire() {

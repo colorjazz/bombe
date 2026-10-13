@@ -246,6 +246,29 @@ test("CARTE fonctionne aussi quand l'agenda est encore sur le pupitre", () => {
   assert.ok(texte(p.executer("carte")).includes("Ton agenda en contient un")); // oublié sur le pupitre
 });
 
+test("calepin : noter, relire, effacer ; gratuit pendant la poursuite ; sauvegardé", () => {
+  const p = new Partie();
+  assert.ok(texte(p.executer("noter 446 sièges")).includes("rien pour écrire"));
+  assert.ok(texte(p.decrireLieu()).includes("calepin"));
+  p.executer("prendre calepin");
+  assert.ok(p.possede("calepin"));
+  const tour = p.tour;
+  assert.ok(texte(p.executer("noter Auditorium : 446 sièges !")).includes("Noté"));
+  p.executer("Écrire : problème de Plante, intérêts composés");
+  p.executer("prendre note coffre = ???");
+  assert.strictEqual(p.tour, tour); // écrire ne coûte pas de tour
+  const r = p.executer("notes");
+  assert.strictEqual(r[0].type, "notes");
+  assert.strictEqual(r[0].texte, "1. Auditorium : 446 sièges !\n2. problème de Plante, intérêts composés\n3. coffre = ???");
+  assert.strictEqual(p.executer("lire calepin")[0].type, "notes");
+  assert.strictEqual(p.executer("utiliser calepin")[0].type, "notes");
+  const q = Partie.restaurer(JSON.parse(JSON.stringify(p.exporter())));
+  assert.strictEqual(q.notes.length, 3);
+  p.executer("effacer notes");
+  assert.ok(texte(p.executer("notes")).includes("vide"));
+  assert.ok(texte(p.executer("noter")).includes("Noter quoi"));
+});
+
 test("sauvegarde et reprise", () => {
   const p = new Partie();
   jouer(p, ["prendre agenda", "o", "s"]);

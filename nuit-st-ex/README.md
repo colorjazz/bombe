@@ -8,6 +8,7 @@ Aventure textuelle (parser) dans la Polyvalente Antoine-de-Saint-Exupéry.
 
 Commandes : NORD, SUD, EST, OUEST, HAUT, BAS (N, S, E, O, H, B), ENTRER <local>, PRENDRE, REGARDER, LIRE,
 COMBINER, MANGER, FRAPPER, UTILISER, OUVRIR, ALLUMER, COMPOSER <code>, CARTE, INVENTAIRE (I), AIDE, REJOUER.
+Avec le calepin (bureau de M. Plante) : NOTER <texte>, NOTES, EFFACER NOTES. Écrire ne coûte pas de tour.
 
 ## Secrets
 
