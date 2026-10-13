@@ -127,7 +127,7 @@
       nom: "Carrefour de l'Étage",
       zone: "2e étage · Bloc B",
       description:
-        "Tu es au cœur du deuxième étage. L'air y est lourd, suffocant. Au centre, la gueule béante de l'escalier principal plonge vers le rez-de-chaussée (BAS). Au SUD, l'obscurité de la partie haute de l'auditorium. À l'EST, le couloir s'enfonce vers les laboratoires de sciences du Bloc E. Au NORD, le retour vers ton couloir.",
+        "Tu es au cœur du deuxième étage. L'air y est lourd, suffocant. Au centre, la gueule béante de l'escalier principal plonge vers le rez-de-chaussée (BAS). Au SUD, l'obscurité de la partie haute de l'auditorium. À l'EST, le couloir s'enfonce vers les laboratoires de sciences. Au NORD, le retour vers ton couloir.",
       sorties: { NORD: 2, SUD: 4, EST: 5, BAS: 6 },
       objets: [],
     },
@@ -141,7 +141,7 @@
     },
     5: {
       nom: "Laboratoires de Sciences",
-      zone: "2e étage · Bloc E",
+      zone: "2e étage · Bloc B",
       description:
         "La section « Biol. Chim. Phys. ». La lueur de la lune éclaire violemment les paillasses. Une odeur clinique et âcre de vieux produits chimiques pique le nez. La porte du Dépôt de Sciences est ouverte.",
       sorties: { OUEST: 3 },
@@ -151,7 +151,7 @@
       nom: "Carrefour Principal",
       zone: "Rez-de-chaussée · Bloc B",
       description:
-        "Tu as descendu les marches. De minces faisceaux de lumière lunaire traversent la poussière en suspension. Les ombres des piliers s'étirent au sol telles des griffes. L'escalier remonte vers l'étage (HAUT). Autour de toi, quatre abysses : le couloir administratif au NORD, l'entrée de l'auditorium au SUD, la cafétéria à l'OUEST, et les ateliers du Bloc E à l'EST.",
+        "Tu as descendu les marches. De minces faisceaux de lumière lunaire traversent la poussière en suspension. Les ombres des piliers s'étirent au sol telles des griffes. L'escalier remonte vers l'étage (HAUT). Autour de toi, quatre abysses : le couloir administratif au NORD, l'entrée de l'auditorium au SUD, la cafétéria à l'OUEST, et les ateliers à l'EST.",
       sorties: { HAUT: 3, NORD: 10, SUD: 8, OUEST: 7, EST: 12 },
       objets: [],
     },
@@ -189,15 +189,15 @@
     },
     12: {
       nom: "Carrefour des Ateliers",
-      zone: "Rez-de-chaussée · Bloc E",
+      zone: "Rez-de-chaussée · Bloc B",
       description:
-        "L'air sent la graisse froide et la rouille. C'est le couloir des ateliers du Bloc E. Les bruits de tes pas sont étouffés, comme si les murs de béton absorbaient le son. NORD : L'Atelier de Mécanique. SUD : La Chaufferie. OUEST : Retour vers le carrefour central.",
+        "L'air sent la graisse froide et la rouille. C'est le couloir des ateliers. Les bruits de tes pas sont étouffés, comme si les murs de béton absorbaient le son. NORD : L'Atelier de Mécanique. SUD : La Chaufferie. OUEST : Retour vers le carrefour central.",
       sorties: { OUEST: 6, NORD: 13, SUD: 14 },
       objets: [],
     },
     13: {
       nom: "L'Atelier de Mécanique",
-      zone: "Rez-de-chaussée · Bloc E",
+      zone: "Rez-de-chaussée · Bloc B",
       description:
         "Aveuglant d'obscurité. Aucune fenêtre ne perce l'atelier d'automobile et de mécanique. Seule la sensation du métal glacé des ponts élévateurs t'entoure. C'est le ventre d'une bête morte.",
       sorties: { SUD: 12 },
@@ -205,7 +205,7 @@
     },
     14: {
       nom: "La Chaufferie",
-      zone: "Rez-de-chaussée · Bloc E",
+      zone: "Rez-de-chaussée · Bloc B",
       description:
         "Une salle des machines oppressante. Les gigantesques chaudières sont d'immenses silhouettes fantomatiques. Un silence si lourd qu'il te fait bourdonner les tympans.",
       sorties: { NORD: 12 },
