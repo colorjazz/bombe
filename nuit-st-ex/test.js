@@ -223,13 +223,27 @@ test("après le fracas, traîner trop longtemps est fatal", () => {
 
 test("l'agenda montre le plan des lieux visités", () => {
   const p = new Partie();
+  p.executer("o");
   assert.ok(texte(p.executer("carte")).includes("Ton agenda en contient un"));
-  jouer(p, ["prendre agenda", "o", "s", "bas"]);
+  jouer(p, ["e", "prendre agenda", "o", "s", "bas"]);
   const plan = p.executer("carte").find((b) => b.type === "carte");
   assert.deepStrictEqual(plan.lieux.map((l) => l.id).sort((a, b) => a - b), [1, 2, 3, 6]);
   assert.strictEqual(plan.lieux.find((l) => l.actuel).id, 6);
   assert.deepStrictEqual(plan.liens, [[1, 2], [2, 3]]);
   assert.ok(p.executer("lire agenda").some((b) => b.type === "carte"));
+});
+
+test("CARTE fonctionne aussi quand l'agenda est encore sur le pupitre", () => {
+  for (const cmd of ["carte", "plan", "lire agenda", "regarder carte", "utiliser agenda", "ouvrir agenda", "regarder le plan"]) {
+    const p = new Partie();
+    const r = p.executer(cmd);
+    assert.ok(r.some((b) => b.type === "carte"), cmd);
+    assert.ok(p.possede("agenda"), cmd);
+    assert.ok(!p.objetsParLieu[1].includes("agenda"), cmd);
+  }
+  const p = new Partie();
+  p.executer("o");
+  assert.ok(texte(p.executer("carte")).includes("Ton agenda en contient un")); // oublié sur le pupitre
 });
 
 test("sauvegarde et reprise", () => {

@@ -1505,7 +1505,7 @@
       if (lu) return [{ type: lu.type || "lecture", texte: lu.texte }];
       if (c.objets.length) {
         const id = c.objets[0];
-        if (id === "agenda" && this.possede(id) && c.mots.some((m) => m === "CARTE" || m === "PLAN")) return this.carte();
+        if (id === "agenda" && c.mots.some((m) => m === "CARTE" || m === "PLAN")) return this.carte();
         if (this.possede(id) || this.objetsParLieu[this.lieu].includes(id)) {
           return [{ type: "texte", texte: OBJETS[id].description }];
         }
@@ -1625,6 +1625,7 @@
       const id = c.objets[0];
       if (!this.possede(id)) {
         if (id === "barre_tendre" && this.objetsParLieu[this.lieu].includes(id)) return this.manger(c);
+        if (id === "agenda" && this.objetsParLieu[this.lieu].includes(id)) return this.carte();
         return [sys("Tu n'as pas " + OBJETS[id].nom + ".")];
       }
       switch (id) {
@@ -1656,6 +1657,7 @@
 
     ouvrir(c) {
       if (c.decors.includes("FENETRE")) return this.mort(MORT_FENETRE);
+      if (c.objets.includes("agenda")) return this.carte();
       if (CODES[this.lieu] && !this.codes[this.lieu]) {
         return [sys("C'est fermé par un code. Tape COMPOSER suivi du code.")];
       }
@@ -1673,7 +1675,16 @@
     }
 
     carte() {
-      if (!this.possede("agenda")) return [sys("Tu n'as pas de plan de l'école. Ton agenda en contient un.")];
+      const blocs = [];
+      if (!this.possede("agenda")) {
+        // L'agenda est à portée de main (sur le pupitre) : on le prend avant de l'ouvrir.
+        if (!this.objetsParLieu[this.lieu].includes("agenda") || this.dansLeNoir()) {
+          return [sys("Tu n'as pas de plan de l'école. Ton agenda en contient un.")];
+        }
+        this.objetsParLieu[this.lieu] = this.objetsParLieu[this.lieu].filter((x) => x !== "agenda");
+        this.inventaire.push("agenda");
+        blocs.push(sys("Pris : agenda."));
+      }
       if (this.dansLeNoir()) return [sys("Il fait trop noir pour lire quoi que ce soit.")];
       const lieux = [...this.visites].filter((id) => PLAN[id]).map((id) => {
         const [etage, x, y, nom] = PLAN[id];
@@ -1689,6 +1700,7 @@
         }
       }
       return [
+        ...blocs,
         { type: "texte", texte: "Tu ouvres ton agenda sur le plan de l'école. Tu n'y repères que les endroits où tu es déjà passé." },
         { type: "carte", texte: "Plan de l'école (lieux visités).", etageActuel: PLAN[this.lieu][0], lieux, liens },
       ];
