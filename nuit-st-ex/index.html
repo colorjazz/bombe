@@ -157,6 +157,24 @@
   }
   .coupure { margin-top: 2.5rem !important; color: var(--ombre); }
   .fin { color: var(--lune); }
+  .lecture {
+    color: var(--cendre);
+    font-style: italic;
+    border-left: 1px solid var(--ombre);
+    padding-left: 1rem;
+  }
+  .recompense { color: var(--cendre); text-align: center; max-width: none !important; margin-top: 1.5rem !important; }
+  .phrase, #noir .phrase {
+    font-family: var(--f-titre);
+    font-size: clamp(1rem, 3.4vw, 1.35rem);
+    letter-spacing: 0.08em;
+    line-height: 1.5;
+    color: var(--ecran);
+    text-align: center;
+    max-width: none !important;
+    text-transform: none;
+  }
+  #noir .phrase { margin: 0 0 2rem; }
   .finmort { color: var(--rouille); }
 
   form {
@@ -278,6 +296,8 @@
 <div id="noir" hidden>
   <div>
     <h2 id="verdict">Tu as survécu à la nuit</h2>
+    <p id="consigne-finale" hidden>Dis cette phrase en personne à M. Plante :</p>
+    <p id="phrase-finale" class="phrase" hidden></p>
     <p>La Nuit à St-Ex</p>
     <button id="rejouer" type="button">Rejouer</button>
   </div>
@@ -380,6 +400,12 @@
           void ecran.offsetWidth;
           ecran.classList.add("secousse");
         }
+        if (b.type === "phrase") {
+          const finale = document.getElementById("phrase-finale");
+          finale.textContent = b.texte;
+          finale.hidden = false;
+          document.getElementById("consigne-finale").hidden = false;
+        }
         if (b.type === "fin" || b.type === "finmort") {
           document.getElementById("verdict").textContent =
             b.type === "fin" ? "Tu as survécu à la nuit" : "La nuit t'a pris";
@@ -390,12 +416,40 @@
       journal.scrollTop = journal.scrollHeight;
     }
 
-    function nouvellePartie() {
+    // Sauvegarde automatique dans ce navigateur, pour reprendre après un rechargement.
+    const CLE_SAUVEGARDE = "nuit-st-ex-partie";
+
+    function sauvegarder() {
+      try {
+        if (partie.termine) localStorage.removeItem(CLE_SAUVEGARDE);
+        else localStorage.setItem(CLE_SAUVEGARDE, JSON.stringify(partie.exporter()));
+      } catch (e) { /* stockage indisponible : on joue sans sauvegarde */ }
+    }
+
+    function partieSauvegardee() {
+      try {
+        const brut = localStorage.getItem(CLE_SAUVEGARDE);
+        return brut ? NuitStEx.Partie.restaurer(JSON.parse(brut)) : null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function nouvellePartie(reprise) {
       journal.textContent = "";
       noir.classList.remove("actif");
       noir.hidden = true;
-      partie = new NuitStEx.Partie();
-      afficher(partie.demarrer());
+      document.getElementById("phrase-finale").hidden = true;
+      document.getElementById("consigne-finale").hidden = true;
+      const sauvee = reprise ? partieSauvegardee() : null;
+      if (sauvee) {
+        partie = sauvee;
+        afficher(partie.reprendre());
+      } else {
+        partie = new NuitStEx.Partie();
+        afficher(partie.demarrer());
+      }
+      sauvegarder();
       champ.focus();
     }
 
@@ -409,6 +463,7 @@
       afficher([{ type: "commande", texte: commande.toUpperCase() }]);
       if (NuitStEx.normaliser(commande) === "REJOUER") return nouvellePartie();
       afficher(partie.executer(commande));
+      sauvegarder();
     });
 
     champ.addEventListener("keydown", function (e) {
@@ -423,12 +478,12 @@
       }
     });
 
-    document.getElementById("rejouer").addEventListener("click", nouvellePartie);
+    document.getElementById("rejouer").addEventListener("click", () => nouvellePartie(false));
     journal.addEventListener("click", function () {
       if (!window.getSelection().toString()) champ.focus();
     });
 
-    nouvellePartie();
+    nouvellePartie(true);
   })();
 </script>
 </body>

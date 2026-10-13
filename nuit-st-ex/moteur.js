@@ -5,13 +5,88 @@
  * réponses sont écrites ici. Seuls de courts messages « système » (commande
  * inconnue, objet absent, etc.) sont propres au moteur.
  *
+ * Les réponses des énigmes ne figurent pas en clair dans ce fichier : seules
+ * leurs empreintes SHA-256 y sont. La phrase de récompense est chiffrée avec
+ * une clé tirée de ces réponses ; elle ne se déchiffre qu'en gagnant.
+ *
  * Utilisable dans le navigateur (window.NuitStEx) et dans Node (require).
  */
 (function (global) {
   "use strict";
 
   // ==========================================
-  // TEXTES DU SCRIPT
+  // SHA-256 (synchrone, pour le navigateur comme pour Node)
+  // ==========================================
+  const SHA = (() => {
+    const k = [];
+    const h = [];
+    const premier = (n) => {
+      for (let f = 2; f * f <= n; f++) if (n % f === 0) return false;
+      return true;
+    };
+    const frac = (x) => ((x - Math.floor(x)) * 4294967296) | 0;
+    for (let n = 2; k.length < 64; n++) {
+      if (!premier(n)) continue;
+      if (h.length < 8) h.push(frac(Math.pow(n, 1 / 2)));
+      k.push(frac(Math.pow(n, 1 / 3)));
+    }
+    return { k, h };
+  })();
+
+  const rotr = (x, n) => (x >>> n) | (x << (32 - n));
+
+  function sha256(octets) {
+    const { k } = SHA;
+    const h = SHA.h.slice();
+    const bits = octets.length * 8;
+    const m = octets.concat([0x80]);
+    while (m.length % 64 !== 56) m.push(0);
+    for (let i = 7; i >= 0; i--) m.push(Math.floor(bits / Math.pow(2, 8 * i)) & 0xff);
+    const w = new Array(64);
+    for (let o = 0; o < m.length; o += 64) {
+      for (let i = 0; i < 16; i++) {
+        w[i] = (m[o + 4 * i] << 24) | (m[o + 4 * i + 1] << 16) | (m[o + 4 * i + 2] << 8) | m[o + 4 * i + 3];
+      }
+      for (let i = 16; i < 64; i++) {
+        const s0 = rotr(w[i - 15], 7) ^ rotr(w[i - 15], 18) ^ (w[i - 15] >>> 3);
+        const s1 = rotr(w[i - 2], 17) ^ rotr(w[i - 2], 19) ^ (w[i - 2] >>> 10);
+        w[i] = (w[i - 16] + s0 + w[i - 7] + s1) | 0;
+      }
+      let [a, b, c, d, e, f, g, hh] = h;
+      for (let i = 0; i < 64; i++) {
+        const t1 = (hh + (rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25)) + ((e & f) ^ (~e & g)) + k[i] + w[i]) | 0;
+        const t2 = ((rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22)) + ((a & b) ^ (a & c) ^ (b & c))) | 0;
+        hh = g; g = f; f = e; e = (d + t1) | 0; d = c; c = b; b = a; a = (t1 + t2) | 0;
+      }
+      h[0] = (h[0] + a) | 0; h[1] = (h[1] + b) | 0; h[2] = (h[2] + c) | 0; h[3] = (h[3] + d) | 0;
+      h[4] = (h[4] + e) | 0; h[5] = (h[5] + f) | 0; h[6] = (h[6] + g) | 0; h[7] = (h[7] + hh) | 0;
+    }
+    const sortie = [];
+    for (const x of h) sortie.push((x >>> 24) & 0xff, (x >>> 16) & 0xff, (x >>> 8) & 0xff, x & 0xff);
+    return sortie;
+  }
+
+  const utf8 = (s) => Array.from(new TextEncoder().encode(s));
+  const hex = (octets) => octets.map((x) => x.toString(16).padStart(2, "0")).join("");
+  const empreinte = (s) => hex(sha256(utf8(s)));
+
+  // Chiffrement symétrique par flux : octet i XOR sha256(cle + ":" + bloc).
+  function chiffrer(octets, cle) {
+    const sortie = [];
+    for (let i = 0; i < octets.length; i++) {
+      const bloc = sha256(utf8(cle + ":" + Math.floor(i / 32)));
+      sortie.push(octets[i] ^ bloc[i % 32]);
+    }
+    return sortie;
+  }
+
+  function dechiffrer(hexa, cle) {
+    const octets = hexa.match(/../g).map((x) => parseInt(x, 16));
+    return new TextDecoder().decode(new Uint8Array(chiffrer(octets, cle)));
+  }
+
+  // ==========================================
+  // TEXTES
   // ==========================================
   const OUVERTURE = [
     "La surface rugueuse et froide du pupitre contre ta joue te sort d'un sommeil de plomb. Tu clignes des yeux. Ta nuque est raide. L'obscurité est presque totale. Tu te redresses en titubant, le cœur battant à tout rompre. Tu reconnais la pièce. Le local A-217. La classe de M. Plante.",
@@ -22,9 +97,6 @@
     "Une vibration soudaine et violente contre ta cuisse te fait sursauter. Ton téléphone s'illumine. La lumière crue blesse tes pupilles dilatées. Batterie : 1%. Un unique message texte non lu apparaît à l'écran : « Ne fais pas de bruit. Surtout, ne les laisse pas t'en... ». L'écran meurt subitement. Le noir total reprend ses droits. Tu n'es pas seul.";
 
   const TOUR_EVENEMENT = 5;
-
-  const TEXTE_MURAL =
-    "ILS ONT COUPÉ L'EAU. ILS ONT COUPÉ LE COURANT. LE SILENCE EST LEUR ARME. LA CLÉ DE LA SORTIE EST AU SECRÉTARIAT. NE SORS PAS SANS TE DÉFENDRE.";
 
   const TEXTE_MANGER =
     "Tu déchires l'emballage frénétiquement et avales la barre. C'est sec, mais le sucre réveille tes muscles engourdis. Tu regagnes un peu de force.";
@@ -41,14 +113,11 @@
   const TEXTE_COMBINER_REUSSI =
     "Avec des mains tremblantes, tu utilises le ruban adhésif industriel pour fixer la lame lourde au bout du tuyau de métal. C'est grossier, c'est barbare, mais tu as maintenant une arme redoutable.";
 
-  const TEXTE_TABLEAU =
-    "Ils suivent le bruit. Ils ne voient pas dans le noir, mais ils entendent tout. Le courant ne reviendra pas. Si tu lis ceci, marche doucement.";
-
   const TEXTE_ALLUMER =
     "Tu plies le bâton entre tes doigts. Un craquement sec, puis une lueur verte, chimique, maladive, éclabousse tes mains. C'est faible. C'est assez.";
 
   const TEXTE_NOIR_ABSOLU =
-    "Tu tâtonnes dans le noir absolu. Tes doigts ne rencontrent que du métal glacé et des arêtes coupantes. Sans lumière, tu ne trouveras rien ici.";
+    "Tu tâtonnes dans le noir absolu. Tes doigts ne rencontrent que du carrelage glacé et des arêtes coupantes. Sans lumière, tu ne trouveras rien ici.";
 
   const TEXTE_ALERTE =
     "Puis le silence revient. Mais ce n'est plus le même silence. Quelque part dans les profondeurs de l'école, quelque chose a entendu.";
@@ -59,20 +128,37 @@
   const TEXTE_PAS_PROCHES =
     "Les pas se rapprochent. Tu entends maintenant une respiration rauque, mouillée, qui n'a rien d'humain. Il te reste très peu de temps.";
 
-  const TEXTE_MORT = [
-    "Tu n'as pas le temps de te retourner. Une main glacée se referme sur ta nuque. Le sol se dérobe. Le noir t'avale tout entier, et le silence se referme sur toi comme une eau profonde.",
-    "COUPURE AU NOIR.",
-    "LA NUIT T'A PRIS. TAPE REJOUER POUR RECOMMENCER.",
-  ];
+  const MORT_POURSUITE =
+    "Tu n'as pas le temps de te retourner. Une main glacée se referme sur ta nuque. Le sol se dérobe. Le noir t'avale tout entier, et le silence se referme sur toi comme une eau profonde.";
+
+  const MORT_PORTE_SECOURS =
+    "Tu pèses de tout ton poids sur la barre de la porte de secours. Elle cède, et l'alarme incendie se déclenche : un hurlement électronique qui remplit chaque couloir, chaque classe, chaque recoin. Dehors, dans la cour, des dizaines de silhouettes se retournent d'un même mouvement. Puis elles courent. Elles ne courent pas comme des gens.";
+
+  const MORT_ALARME =
+    "Tu abaisses la poignée rouge de l'avertisseur. La sonnerie incendie éclate dans toute l'école, stridente, interminable. Tu viens d'allumer un phare dans la nuit. Ils arrivent de partout à la fois.";
+
+  const MORT_FENETRE =
+    "Le verre explose dans un fracas cristallin. L'écho roule dans tout le bâtiment, d'un bout à l'autre. Une seconde de silence. Puis, de partout à la fois, des pas qui accourent.";
+
+  const MORT_GYM6 =
+    "Tu pousses les portes doubles du gymnase 6. Le noir, à l'intérieur, n'est pas vide. Il est plein. Plein de corps debout, immobiles, serrés les uns contre les autres. Des centaines. Lentement, toutes les têtes se tournent vers toi.";
+
+  const TEXTE_FIN_MORT = ["COUPURE AU NOIR.", "LA NUIT T'A PRIS. TAPE REJOUER POUR RECOMMENCER."];
 
   // Tours laissés au joueur entre le fracas du cadenas et l'arrivée de la chose.
-  const DELAI_POURSUITE = 6;
+  const DELAI_POURSUITE = 8;
 
   const TEXTE_VICTOIRE = [
     "Le métal de la serrure grince sous tes doigts gelés. Les lourdes chaînes glissent lourdement sur les tuiles. Tu pousses les portes vitrées de toutes tes forces. L'air glacial te frappe de plein fouet. Les rues du quartier Ahuntsic sont méconnaissables. Sous un ciel criblé d'aurores boréales malades, les carcasses de voitures s'étendent à perte de vue. Derrière toi, dans les entrailles sombres de l'école, un cri guttural déchire soudain le silence. Tu te mets à courir vers l'inconnu.",
     "COUPURE AU NOIR. GÉNÉRIQUE.",
     "FÉLICITATIONS, TU AS SURVÉCU À LA NUIT.",
   ];
+
+  const TEXTE_RECOMPENSE =
+    "Retiens bien cette phrase et va la dire en personne à M. Plante. La première personne qui la lui dit gagne un sac de bonbons :";
+
+  // Phrase de récompense, chiffrée avec les trois réponses (voir CODES).
+  const PHRASE_CHIFFREE = "b77ded5f75eb7bf44491d9055037536788bc5f6b72ecdbaef3a60c7a139e1a";
 
   // ==========================================
   // OBJETS
@@ -83,56 +169,48 @@
       enPlace: "ton téléphone",
       description: "Ton téléphone. Batterie à 1%. Inutile comme source de lumière.",
       mots: ["TELEPHONE", "CELLULAIRE", "CELL", "PORTABLE", "MOBILE"],
-      prenable: false,
-    },
-    ruban_adhesif: {
-      nom: "ruban adhésif",
-      enPlace: "du ruban adhésif (industriel et épais)",
-      description: "Du ruban adhésif, industriel et épais.",
-      mots: ["RUBAN", "ADHESIF", "TAPE", "DUCT"],
-      prenable: true,
-    },
-    barre_tendre: {
-      nom: "barre tendre",
-      enPlace: "une barre tendre (oubliée sur une table)",
-      description: "Une barre tendre, oubliée sur une table.",
-      mots: ["BARRE", "TENDRE"],
-      prenable: true,
-    },
-    tuyau_metal: {
-      nom: "tuyau de métal",
-      enPlace: "un tuyau de métal (arraché au mur des douches)",
-      description: "Un tuyau de métal arraché au mur des douches, lourd et solide.",
-      mots: ["TUYAU", "METAL"],
-      prenable: true,
-    },
-    lame_lourde: {
-      nom: "lame lourde",
-      enPlace: "une lame lourde (un couperet de boucher, tombé au pied du comptoir)",
-      description: "Une lame lourde : un couperet de boucher, épais et tranchant.",
-      mots: ["LAME", "COUPERET", "HACHOIR", "COUTEAU"],
-      prenable: true,
-    },
-    cle_principale: {
-      nom: "clé principale",
-      enPlace: "la clé principale",
-      description: "La clé principale. La clé de la sortie.",
-      mots: ["CLE", "CLEF", "CLES"],
-      prenable: true,
     },
     agenda: {
       nom: "agenda",
       enPlace: "ton agenda (ouvert sur ton pupitre)",
       description: "Ton agenda scolaire, la couverture cornée. À l'intérieur, le plan de l'école. Tape CARTE pour le consulter.",
       mots: ["AGENDA", "CARTE", "PLAN"],
-      prenable: true,
+    },
+    ruban_adhesif: {
+      nom: "ruban adhésif",
+      enPlace: "du ruban adhésif (industriel et épais)",
+      description: "Du ruban adhésif, industriel et épais.",
+      mots: ["RUBAN", "ADHESIF", "TAPE", "DUCT"],
+    },
+    barre_tendre: {
+      nom: "barre tendre",
+      enPlace: "une barre tendre (oubliée sur une table)",
+      description: "Une barre tendre, oubliée sur une table.",
+      mots: ["BARRE", "TENDRE"],
+    },
+    tuyau_metal: {
+      nom: "tuyau de métal",
+      enPlace: "un tuyau de métal (arraché au mur des douches)",
+      description: "Un tuyau de métal arraché au mur des douches, lourd et solide.",
+      mots: ["TUYAU", "METAL"],
+    },
+    lame_lourde: {
+      nom: "lame lourde",
+      enPlace: "une lame lourde (un couperet de boucher, tombé au pied du comptoir)",
+      description: "Une lame lourde : un couperet de boucher, épais et tranchant.",
+      mots: ["LAME", "COUPERET", "HACHOIR", "COUTEAU"],
+    },
+    cle_principale: {
+      nom: "clé principale",
+      enPlace: "la clé principale",
+      description: "La clé principale. La clé de la sortie.",
+      mots: ["CLE", "CLEF", "CLES"],
     },
     baton_lumineux: {
       nom: "bâton lumineux",
-      enPlace: "un bâton lumineux (tombé de la trousse de premiers soins)",
+      enPlace: "un bâton lumineux",
       description: "Un bâton lumineux chimique, comme ceux des trousses d'urgence. Il suffit de le plier pour l'allumer.",
-      mots: ["BATON", "LUMINEUX", "LUMIERE", "LAMPE"],
-      prenable: true,
+      mots: ["BATON", "LUMINEUX"],
     },
     arme_artisanale: {
       nom: "arme artisanale",
@@ -140,21 +218,47 @@
       description:
         "Ton arme de fortune : la lame lourde fixée au bout du tuyau de métal avec le ruban adhésif industriel. C'est grossier, c'est barbare, mais redoutable.",
       mots: ["ARME", "ARMES"],
-      prenable: true,
+    },
+    // Fausses pistes
+    cle_doree: {
+      nom: "clé dorée",
+      enPlace: "une petite clé dorée",
+      description: "Une petite clé dorée, accrochée à un porte-clés en forme d'étoile. Elle n'ouvre rien que tu connaisses.",
+      mots: ["DOREE", "ETOILE"],
+    },
+    lampe_morte: {
+      nom: "lampe de poche",
+      enPlace: "une lampe de poche",
+      description: "Une lampe de poche en plastique jaune. Tu appuies sur le bouton : rien. Les piles sont mortes.",
+      mots: ["LAMPE", "POCHE"],
     },
   };
 
   // ==========================================
   // LIEUX
   // ==========================================
+  // sorties : déplacements possibles. pieges : directions mortelles (portes de secours, etc.).
+  // locaux : numéros des plans visitables depuis ce lieu (ENTRER B243).
+  // lectures : ce qui se lit ici (LIRE <mot>), le premier est lu par défaut.
   const LIEUX = {
     1: {
       nom: "La Classe de M. Plante",
       zone: "2e étage · Bloc A",
       description:
-        "Le repaire de M. Plante. Rassurant le jour, absolument terrifiant cette nuit. La faible lueur de la lune découpe la forme de son bureau à l'avant. Dans les ombres, les frises chronologiques et les graphiques d'éducation financière affichés aux murs ressemblent à de longues cicatrices sombres. L'air est mort. (Sortie : OUEST).",
+        "Le repaire de M. Plante. Rassurant le jour, absolument terrifiant cette nuit. La faible lueur de la lune découpe la forme de son bureau à l'avant. Dans les ombres, les frises chronologiques et les graphiques d'éducation financière affichés aux murs ressemblent à de longues cicatrices sombres. Au tableau, l'écriture penchée de M. Plante : le problème du jour, que personne n'a fini de recopier. L'air est mort. (Sortie : OUEST).",
       sorties: { OUEST: 2 },
       objets: ["agenda"],
+      lectures: [
+        {
+          mots: ["TABLEAU", "PROBLEME"],
+          texte:
+            "« Problème du jour — Tu places 1000 $ dans un compte à intérêt composé de 10 % par année. Combien auras-tu au bout de 2 ans ? Attention : l'intérêt de la 2e année se calcule sur le nouveau montant ! Réponse au prochain cours. » Personne n'a écrit la réponse.",
+        },
+        {
+          mots: ["FRISE", "FRISES", "GRAPHIQUE", "GRAPHIQUES", "AFFICHE", "AFFICHES"],
+          texte: "Une frise chronologique de la Nouvelle-France, des graphiques sur le budget d'un étudiant. Des dates, des pourcentages. Rien qui parle de cette nuit.",
+        },
+      ],
     },
     2: {
       nom: "Couloir A-211",
@@ -162,15 +266,15 @@
       description:
         "Le long corridor du Bloc A au deuxième étage. Les casiers métalliques forment une haie d'honneur sinistre qui s'étire dans l'obscurité, se perdant dans le noir absolu. À l'EST, la porte du local A-217. Au SUD, le couloir s'ouvre sur un espace plus vaste.",
       sorties: { EST: 1, SUD: 3 },
-      objets: [],
+      locaux: ["A201", "A203", "A204", "A205", "A208", "A209", "A210", "A213", "A214", "A215", "A218", "A222", "A225", "A226"],
     },
     3: {
       nom: "Carrefour de l'Étage",
       zone: "2e étage · Bloc B",
       description:
-        "Tu es au cœur du deuxième étage. L'air y est lourd, suffocant. Au centre, la gueule béante de l'escalier principal plonge vers le rez-de-chaussée (BAS). Au SUD, l'obscurité de la partie haute de l'auditorium. À l'EST, le couloir s'enfonce vers les laboratoires de sciences. Au NORD, le retour vers ton couloir.",
-      sorties: { NORD: 2, SUD: 4, EST: 5, BAS: 6 },
-      objets: [],
+        "Tu es au cœur du deuxième étage. L'air y est lourd, suffocant. Au centre, la gueule béante de l'escalier principal plonge vers le rez-de-chaussée (BAS). Au SUD, l'obscurité de la partie haute de l'auditorium. À l'EST, le couloir s'enfonce vers les laboratoires de sciences. À l'OUEST, le centre pédagogique. Au NORD, le retour vers ton couloir.",
+      sorties: { NORD: 2, SUD: 4, EST: 5, OUEST: 25, BAS: 6 },
+      locaux: ["B203", "B203A", "B204", "B259", "B260", "B261", "B263", "B265", "B267", "B268", "B270", "B272", "B272A"],
     },
     4: {
       nom: "Partie Haute de l'Auditorium",
@@ -178,15 +282,27 @@
       description:
         "Tu te tiens sur le balcon de la partie haute de l'auditorium. Tu surplombes la grande salle noire en contrebas. Tu as l'impression vertigineuse que, tout en bas dans cette mer de 446 sièges, quelque chose vient de bouger. Une simple illusion d'optique dans les ténèbres ? Tu n'as pas le courage d'attendre pour vérifier. L'unique issue est derrière toi.",
       sorties: { NORD: 3 },
-      objets: [],
+      locaux: ["B226", "B232"],
     },
     5: {
       nom: "Laboratoires de Sciences",
       zone: "2e étage · Bloc B",
       description:
-        "La section « Biol. Chim. Phys. ». La lueur de la lune éclaire violemment les paillasses. Une odeur clinique et âcre de vieux produits chimiques pique le nez. La porte du Dépôt de Sciences est ouverte. Plus loin à l'EST, une passerelle vitrée file vers le Bloc H. À l'OUEST, le retour vers le carrefour.",
+        "La section « Biol. Chim. Phys. ». La lueur de la lune éclaire violemment les paillasses. Une odeur clinique et âcre de vieux produits chimiques pique le nez. La porte du Dépôt de Sciences (B247) est fermée par un cadenas à lettres ; une fiche plastifiée y est collée. Au mur, un immense tableau périodique. Plus loin à l'EST, une passerelle vitrée file vers le Bloc H. À l'OUEST, le retour vers le carrefour.",
       sorties: { OUEST: 3, EST: 17 },
-      objets: ["ruban_adhesif"],
+      locaux: ["B242", "B243", "B244", "B245", "B246", "B248", "B249", "B250", "B251", "B252", "B253", "B255"],
+      lectures: [
+        {
+          mots: ["FICHE", "PORTE", "DEPOT", "CADENAS"],
+          texte:
+            "Fiche plastifiée sur la porte du dépôt : « Cadenas à lettres. Rappel au personnel : la combinaison est le symbole chimique du seul métal qui reste liquide à la température de la pièce. » En dessous, quelqu'un a ajouté au feutre : « Vive la sécurité… »",
+        },
+        {
+          mots: ["TABLEAU", "PERIODIQUE", "ELEMENTS", "MUR"],
+          texte:
+            "Le tableau périodique, en couleurs délavées. Tes yeux accrochent quelques cases : 1 H Hydrogène · 2 He Hélium · 6 C Carbone · 8 O Oxygène · 11 Na Sodium · 13 Al Aluminium · 26 Fe Fer · 29 Cu Cuivre · 47 Ag Argent · 50 Sn Étain · 79 Au Or · 80 Hg Mercure · 82 Pb Plomb · 92 U Uranium.",
+        },
+      ],
     },
     6: {
       nom: "Carrefour Principal",
@@ -194,39 +310,56 @@
       description:
         "Tu as descendu les marches. De minces faisceaux de lumière lunaire traversent la poussière en suspension. Les ombres des piliers s'étirent au sol telles des griffes. L'escalier remonte vers l'étage (HAUT). Autour de toi, quatre abysses : le couloir administratif au NORD, l'entrée de l'auditorium au SUD, la place publique 2 à l'OUEST, et la place publique 1 à l'EST.",
       sorties: { HAUT: 3, NORD: 10, SUD: 8, OUEST: 18, EST: 22 },
-      objets: [],
+      locaux: ["B100", "B101", "B103", "B104", "B105"],
     },
     7: {
       nom: "La Cafétéria",
       zone: "Rez-de-chaussée · Bloc C",
       description:
-        "Une mer de 600 chaises renversées, formant un chaos géométrique terrifiant. L'immense salle du Bloc C est baignée dans une lueur bleutée maladive. Les comptoirs des cuisines au loin ressemblent à des autels abandonnés. Ton estomac se noue douloureusement. (Sorties : OUEST vers l'Aile C, NORD vers les cuisines).",
-      sorties: { OUEST: 19, NORD: 21 },
+        "Une mer de 600 chaises renversées, formant un chaos géométrique terrifiant. L'immense salle du Bloc C est baignée dans une lueur bleutée maladive. Les comptoirs des cuisines au loin ressemblent à des autels abandonnés. Ton estomac se noue douloureusement. (Sorties : OUEST et EST vers les deux couloirs de l'Aile C, NORD vers les cuisines).",
+      sorties: { OUEST: 19, EST: 28, NORD: 21 },
       objets: ["barre_tendre"],
     },
     8: {
       nom: "L'Auditorium",
       zone: "Rez-de-chaussée · Bloc B",
       description:
-        "La caverne. Une noirceur d'encre engloutit les rangées. Tes pas résonnent avec un écho démesuré qui te donne la nausée. Sur le mur de la scène de l'auditorium de 446 places, tu devines de larges lettres tracées à la hâte.",
+        "La caverne. Une noirceur d'encre engloutit les rangées. Tes pas résonnent avec un écho démesuré qui te donne la nausée. Sur le mur de la scène de l'auditorium de 446 places, tu devines de larges lettres tracées à la hâte. Des portes mènent aux coulisses.",
       sorties: { NORD: 6 },
-      objets: [],
+      locaux: ["B176", "B177", "B178", "B179", "B180", "B181", "B182"],
+      lectures: [
+        {
+          mots: ["MUR", "LETTRES", "INSCRIPTION", "SCENE"],
+          type: "mural",
+          texte:
+            "ILS ONT COUPÉ L'EAU. ILS ONT COUPÉ LE COURANT. LE SILENCE EST LEUR ARME. LA CLÉ DE LA SORTIE EST AU SECRÉTARIAT, DANS LE COFFRE. LE CODE ? DEMANDE À PLANTE. NE SORS PAS SANS TE DÉFENDRE. NE TOUCHE JAMAIS AUX PORTES DE SECOURS.",
+        },
+      ],
     },
     10: {
       nom: "Couloir Administratif et Sortie",
       zone: "Rez-de-chaussée · Bloc A",
       description:
-        "L'angoisse devient palpable. C'est le Bloc A, la Direction. Devant toi, les portes principales menant vers l'extérieur sont scellées par d'épaisses chaînes industrielles. À l'EST, la porte du Secrétariat est verrouillée par un lourd cadenas rouillé. Revenir au SUD est ta seule échappatoire immédiate.",
-      sorties: { SUD: 6, EST: 11 },
-      objets: [],
+        "L'angoisse devient palpable. C'est le Bloc A, la Direction. Devant toi, les portes principales menant vers l'extérieur sont scellées par d'épaisses chaînes industrielles. À l'EST, la porte du Secrétariat est verrouillée par un lourd cadenas rouillé. À l'OUEST, les portes vitrées de la bibliothèque. Derrière le comptoir de la réception, des dizaines de bureaux s'alignent. Revenir au SUD est ta seule échappatoire immédiate.",
+      sorties: { SUD: 6, EST: 11, OUEST: 23 },
+      locaux: [
+        "A101", "A103", "A104", "A106", "A107", "A108", "A109", "A110", "A111", "A112", "A113", "A114", "A115",
+        "A116", "A117", "A118", "A119", "A120", "A121", "A122", "A123", "A124", "A125", "A126", "A127", "A128",
+        "A129", "A130", "A131", "A132", "A133", "A134", "A135", "A136", "A136A", "A137", "Réception", "Magasin",
+      ],
     },
     11: {
       nom: "Le Secrétariat",
       zone: "Rez-de-chaussée · Bloc A",
       description:
-        "La panique s'est arrêtée ici. Les dossiers jonchent le sol du secrétariat comme des cadavres de papier. Le tiroir du bureau de la direction a été arraché à moitié.",
+        "La panique s'est arrêtée ici. Les dossiers jonchent le sol du secrétariat comme des cadavres de papier. Le tiroir du bureau de la direction a été arraché à moitié. Contre le mur, un petit coffre-fort gris, fermé, avec un clavier à chiffres. Un post-it jaune est collé sur sa porte. (Sortie : OUEST).",
       sorties: { OUEST: 10 },
-      objets: ["cle_principale"],
+      lectures: [
+        {
+          mots: ["POST", "POSTIT", "IT", "COFFRE", "NOTE"],
+          texte: "Sur le post-it, au stylo rouge : « Nouveau code du coffre = la réponse au problème au tableau de Plante. Arrêtez de me le demander! — La direction »",
+        },
+      ],
     },
     12: {
       nom: "Couloir des Gymnases",
@@ -234,7 +367,7 @@
       description:
         "Un long couloir rectiligne file vers les gymnases. L'air sent le caoutchouc froid et la sueur ancienne. Les bruits de tes pas sont étouffés, comme si les murs de béton absorbaient le son. NORD : les vestiaires. SUD : le gymnase 1. EST : le Bloc H. OUEST : retour vers la place publique 1.",
       sorties: { OUEST: 22, NORD: 13, SUD: 14, EST: 20 },
-      objets: [],
+      locaux: ["Gym 2", "Gym 3", "Gym 4", "Gym 5", "Salle d'entraînement", "B134", "B138", "B139", "B140"],
     },
     13: {
       nom: "Les Vestiaires",
@@ -249,25 +382,38 @@
       nom: "Le Gymnase 1",
       zone: "Rez-de-chaussée · Gymnases",
       description:
-        "Le gymnase est si vaste que l'obscurité n'y a pas de fond. La lune tombe en colonnes obliques par les hautes fenêtres et découpe sur le plancher verni les lignes des terrains, comme le tracé d'un rituel oublié. Un seul ballon repose au centre, parfaitement immobile, comme si quelqu'un l'y avait déposé avec soin. (Sortie : NORD).",
+        "Le gymnase est si vaste que l'obscurité n'y a pas de fond. La lune tombe en colonnes obliques par les hautes fenêtres et découpe sur le plancher verni les lignes des terrains, comme le tracé d'un rituel oublié. Un seul ballon repose au centre, parfaitement immobile, comme si quelqu'un l'y avait déposé avec soin. Au SUD, les portes de secours donnent sur la cour. Au NORD, le couloir.",
       sorties: { NORD: 12 },
-      objets: [],
+      pieges: { SUD: MORT_PORTE_SECOURS },
     },
     15: {
       nom: "Couloir du Bloc F",
       zone: "Rez-de-chaussée · Bloc F",
       description:
-        "Le couloir C103 te mène jusqu'au Bloc F, une aile basse et étroite accrochée au flanc de l'école. Les portes des classes F101 à F110 sont toutes fermées. Derrière leurs petites fenêtres, les pupitres alignés attendent des élèves qui ne viendront plus. Au bout du couloir, la cage d'escalier en demi-lune monte vers l'étage (HAUT). Au NORD, le retour vers l'Aile C.",
+        "Le couloir C103 te mène jusqu'au Bloc F, une aile basse et étroite accrochée au flanc de l'école. Les portes des classes F101 à F118 sont toutes fermées. Derrière leurs petites fenêtres, les pupitres alignés attendent des élèves qui ne viendront plus. Au bout du couloir, la cage d'escalier en demi-lune monte vers l'étage (HAUT). Au SUD, une porte de secours donne sur la cour. Au NORD, le retour vers l'Aile C.",
       sorties: { NORD: 19, HAUT: 16 },
-      objets: [],
+      pieges: { SUD: MORT_PORTE_SECOURS },
+      locaux: ["F101", "F102", "F103", "F104", "F105", "F106", "F108", "F109", "F110", "F111", "F112", "F113", "F114", "F115", "F116", "F117", "F118"],
     },
     16: {
       nom: "L'Étage du Bloc F",
       zone: "2e étage · Bloc F",
       description:
-        "Le couloir F200 est si étroit que tu pourrais toucher les deux murs en écartant les bras. Une odeur d'antiseptique flotte près du local F212. L'armoire de premiers soins pend, ouverte, son contenu éparpillé au sol comme si quelqu'un l'avait fouillée en pleine panique. Dans la classe F209, des mots tracés à la craie accrochent la lueur de la lune au tableau. L'escalier redescend (BAS).",
-      sorties: { BAS: 15 },
-      objets: ["baton_lumineux"],
+        "Le couloir F200 est si étroit que tu pourrais toucher les deux murs en écartant les bras. Une odeur d'antiseptique flotte près du local F212, où une armoire de premiers soins est fermée par un cadenas à trois chiffres. Quelque chose est gravé sur le métal. Dans la classe F209, des mots tracés à la craie accrochent la lueur de la lune au tableau. L'escalier redescend (BAS). À l'EST, le couloir rejoint l'étage du Bloc C.",
+      sorties: { BAS: 15, EST: 27 },
+      locaux: ["F201", "F202", "F203", "F204", "F205", "F206", "F207", "F208", "F209", "F210", "F211", "F212A"],
+      lectures: [
+        {
+          mots: ["ARMOIRE", "GRAVURE", "ENIGME", "CADENAS", "METAL"],
+          texte: "Gravé à la pointe d'un compas sur la porte de l'armoire : « Les sièges de la caverne, moins la classe où tout a commencé. »",
+        },
+        {
+          mots: ["TABLEAU", "CRAIE", "MOTS"],
+          type: "mural",
+          texte:
+            "Ils suivent le bruit. Ils ne voient pas dans le noir, mais ils entendent tout. Le courant ne reviendra pas. Ne touchez pas aux portes de secours : l'alarme les appelle. Si tu lis ceci, marche doucement.",
+        },
+      ],
     },
     17: {
       nom: "L'Étage du Bloc H",
@@ -275,7 +421,10 @@
       description:
         "La passerelle débouche sur le Bloc H. Par les grandes fenêtres du couloir, le boulevard Robert s'étire, désert, sous un ciel qui ne ressemble à aucun ciel. Des voitures sont arrêtées en plein milieu de la chaussée, portières ouvertes, comme abandonnées en pleine course. Rien ne bouge. L'escalier du bout du couloir descend vers le rez-de-chaussée du Bloc H (BAS). À l'OUEST, le retour vers les laboratoires.",
       sorties: { OUEST: 5, BAS: 20 },
-      objets: [],
+      locaux: [
+        "H201", "H202", "H203", "H204", "H205", "H206", "H207", "H208", "H209", "H211", "H212", "H213", "H215",
+        "H216", "H217", "H218", "H221", "H222", "H223", "H224", "H225", "H226", "H228", "H229", "H230", "H231",
+      ],
     },
     18: {
       nom: "La Place Publique 2",
@@ -283,23 +432,24 @@
       description:
         "La place publique 2 s'étend à flanc d'auditorium, immense et plate. Le jour, c'est le cœur bruyant de l'école ; cette nuit, c'est une plaine morte. Les rangées de casiers métalliques s'alignent en biais, à perte de vue. Quelques portes pendent, ouvertes, comme des bouches qui auraient voulu crier. Au SUD, le couloir de l'Aile C. À l'EST, le retour vers le carrefour principal.",
       sorties: { EST: 6, SUD: 19 },
-      objets: [],
+      locaux: ["B106", "B108", "B110", "B111", "B112", "B114", "B115", "B116", "B117", "B118", "B119", "B121", "B122", "B123", "B124", "B125", "B126", "B127"],
     },
     19: {
       nom: "L'Aile C",
       zone: "Rez-de-chaussée · Bloc C",
       description:
-        "Un couloir étroit longe le flanc de la cafétéria. Les néons éteints pendent du plafond comme des ossements. Par les portes vitrées, à l'EST, tu devines la grande salle de la cafétéria. Au SUD, le couloir C103 s'enfonce vers le Bloc F. Au NORD, la place publique.",
+        "Un couloir étroit longe le flanc ouest de la cafétéria. Les néons éteints pendent du plafond comme des ossements. Par les portes vitrées, à l'EST, tu devines la grande salle de la cafétéria. Au mur, un avertisseur d'alarme incendie rouge. Au SUD, le couloir C103 s'enfonce vers le Bloc F. Au NORD, la place publique 2.",
       sorties: { NORD: 18, EST: 7, SUD: 15 },
-      objets: [],
+      locaux: ["C100", "C101", "C102", "C103", "C104", "C105", "C106", "C107", "C108", "C109", "C110", "C111", "C112", "C113", "C114"],
     },
     20: {
       nom: "Couloir du Bloc H",
       zone: "Rez-de-chaussée · Bloc H",
       description:
-        "Le Bloc H. Derrière une grille baissée, le café étudiant H115 garde ses chaises retournées sur les tables, pattes en l'air, comme des insectes morts. Plus loin, les portes doubles du gymnase 6 sont entrouvertes sur un noir épais que tu préfères ne pas sonder. L'escalier monte vers l'étage du Bloc H (HAUT). À l'OUEST, le retour vers les gymnases.",
+        "Le Bloc H. Derrière une grille baissée, le café étudiant H115 garde ses chaises retournées sur les tables, pattes en l'air, comme des insectes morts. Au SUD, les portes doubles du gymnase 6 sont entrouvertes sur un noir épais que tu préfères ne pas sonder. À l'EST, une porte de secours donne sur le boulevard Robert. L'escalier monte vers l'étage du Bloc H (HAUT). À l'OUEST, le retour vers les gymnases.",
       sorties: { OUEST: 12, HAUT: 17 },
-      objets: [],
+      pieges: { SUD: MORT_GYM6, EST: MORT_PORTE_SECOURS },
+      locaux: ["H101", "H102", "H103", "H104", "H106", "H107", "H108", "H109", "H111", "H113", "H114", "H116", "H117", "H119", "H120", "H121"],
     },
     21: {
       nom: "Les Cuisines",
@@ -313,43 +463,238 @@
       nom: "La Place Publique 1",
       zone: "Rez-de-chaussée · Bloc B",
       description:
-        "Le reflet exact de l'autre place publique, de l'autre côté de l'auditorium. Les mêmes casiers en biais, le même vide immense. Sur le sol, un sac à dos éventré a vomi ses cahiers ; les pages tournent toutes seules, lentement, dans un courant d'air que tu ne sens pas. À l'EST, un long couloir mène aux gymnases. À l'OUEST, le carrefour principal.",
-      sorties: { OUEST: 6, EST: 12 },
-      objets: [],
+        "Le reflet exact de l'autre place publique, de l'autre côté de l'auditorium. Les mêmes casiers en biais, le même vide immense. Sur le sol, un sac à dos éventré a vomi ses cahiers ; les pages tournent toutes seules, lentement, dans un courant d'air que tu ne sens pas. Au NORD, le local de la vie étudiante. À l'EST, un long couloir mène aux gymnases. Au SUD, le couloir est de l'Aile C. À l'OUEST, le carrefour principal.",
+      sorties: { OUEST: 6, EST: 12, NORD: 24, SUD: 28 },
+      locaux: [
+        "B142", "B143", "B144", "B145", "B146", "B147", "B148", "B149", "B152", "B153", "B154", "B155", "B156",
+        "B157", "B158", "B159", "B160", "B161", "B162", "B163", "B165", "B166", "B167",
+      ],
+    },
+    23: {
+      nom: "La Bibliothèque",
+      zone: "Rez-de-chaussée · Bloc A",
+      description:
+        "La bibliothèque A102. Des rayonnages à perte de vue, et pas un son. Les livres ont l'air d'attendre. Sur le chariot des retours, quelqu'un a laissé un roman ouvert, à l'envers sur sa couverture : Le Petit Prince. Une phrase est soulignée au crayon, trois fois. (Sortie : EST).",
+      sorties: { EST: 10 },
+      lectures: [
+        {
+          mots: ["LIVRE", "ROMAN", "PHRASE", "PRINCE", "PETIT"],
+          texte:
+            "« On ne voit bien qu'avec le cœur. L'essentiel est invisible pour les yeux. » Dans la marge, au crayon : « 4 – 1 – 2 ? ». Puis, d'une autre main : « Non. »",
+        },
+      ],
+    },
+    24: {
+      nom: "La Vie Étudiante",
+      zone: "Rez-de-chaussée · Bloc B",
+      description:
+        "Le local de la vie étudiante, B169. Des affiches du spectacle de fin d'année, des banderoles de l'équipe de basket, un divan défoncé. Sur la table basse, un journal du matin, plié en deux. (Sortie : SUD).",
+      sorties: { SUD: 22 },
+      lectures: [
+        {
+          mots: ["JOURNAL", "QUOTIDIEN", "UNE", "TITRE"],
+          texte:
+            "Le Quotidien d'Ahuntsic, édition de ce matin. En une : « ÉCLOSION DANS LE NORD DE MONTRÉAL. » Plus bas : « Les autorités demandent à la population de rester à l'intérieur. Les personnes infectées seraient attirées par le bruit. Ne sortez sous aucun prétexte. » Le reste de la page a été arraché.",
+        },
+      ],
+    },
+    25: {
+      nom: "Le Centre Pédagogique",
+      zone: "2e étage · Bloc B",
+      description:
+        "Le centre pédagogique. Des rangées d'ordinateurs aux écrans noirs, comme des yeux crevés. Une imprimante a dévidé une longue langue de papier blanc jusqu'au sol. Tout autour, des salles de travail et des classes. À l'EST, le carrefour. Au SUD, le couloir sud de l'étage.",
+      sorties: { EST: 3, SUD: 26 },
+      locaux: ["B207", "B208", "B209", "B211", "B212", "B213", "B214", "B215", "B217", "B218"],
+    },
+    26: {
+      nom: "Couloir Sud de l'Étage",
+      zone: "2e étage · Bloc B",
+      description:
+        "Le couloir sud de l'étage longe l'arrière de l'auditorium. Deux cages d'escalier y descendent, mais leurs portes sont bloquées par des pupitres empilés à la hâte : une barricade, montée de l'intérieur. Quelqu'un n'a pas voulu que quelque chose monte. Au SUD, la passerelle vers l'étage du Bloc C. Au NORD, le centre pédagogique.",
+      sorties: { NORD: 25, SUD: 27 },
+      locaux: ["B219", "B221", "B222", "B223", "B224", "B227", "B229", "B230", "B231", "B233", "B234", "B236", "B237", "B238", "B239", "B240"],
+    },
+    27: {
+      nom: "L'Étage du Bloc C",
+      zone: "2e étage · Bloc C",
+      description:
+        "L'étage du Bloc C. Un dédale de couloirs et de classes. Les portes se ressemblent toutes. Tu pourrais te perdre ici, et quelque chose te dit que d'autres s'y sont perdus avant toi. Les escaliers du bloc sont encombrés de chaises enchevêtrées, infranchissables. À l'OUEST, le couloir F200 mène à l'étage du Bloc F. Au NORD, le retour vers le Bloc B.",
+      sorties: { NORD: 26, OUEST: 16 },
+      locaux: [
+        "C201", "C202", "C203", "C204", "C205", "C209", "C212", "C213", "C214", "C216", "C219", "C221", "C224",
+        "C229", "C230", "C233", "C234", "C237", "C238", "C240", "C241", "C242",
+      ],
+    },
+    28: {
+      nom: "L'Aile C Est",
+      zone: "Rez-de-chaussée · Bloc C",
+      description:
+        "Le couloir est de la cafétéria. Des casiers défoncés, un distributeur de collations éventré, vidé jusqu'à la dernière croustille : quelqu'un est passé avant toi. Une odeur de friture froide flotte jusqu'ici. À l'OUEST, la cafétéria. Au NORD, la place publique 1.",
+      sorties: { OUEST: 7, NORD: 22 },
+      locaux: ["C117", "C120", "C123", "C126", "C127", "C130", "C132", "C133", "C134", "C135", "C142", "C144", "C145", "B129", "B130", "B132"],
     },
   };
 
   // Position de chaque lieu sur le plan de l'agenda : [étage, colonne, rangée, nom court].
   // Nord en haut ; une case par lieu.
   const PLAN = {
-    1: ["etage", 3, 0, "A-217"],
     2: ["etage", 2, 0, "Couloir A-211"],
+    1: ["etage", 3, 0, "A-217"],
+    25: ["etage", 1, 1, "Centre péd."],
     3: ["etage", 2, 1, "Carrefour"],
-    4: ["etage", 2, 2, "Balcon"],
     5: ["etage", 3, 1, "Labos"],
     17: ["etage", 4, 1, "Bloc H"],
-    16: ["etage", 1, 3, "Bloc F"],
-    10: ["rdc", 2, 0, "Direction"],
-    11: ["rdc", 3, 0, "Secrétariat"],
-    6: ["rdc", 2, 1, "Carrefour"],
+    26: ["etage", 1, 2, "Couloir sud"],
+    4: ["etage", 2, 2, "Balcon"],
+    16: ["etage", 0, 3, "Bloc F"],
+    27: ["etage", 1, 3, "Bloc C"],
+    23: ["rdc", 1, -1, "Bibliothèque"],
+    10: ["rdc", 2, -1, "Direction"],
+    11: ["rdc", 3, -1, "Secrétariat"],
+    24: ["rdc", 3, 0, "Vie étudiante"],
+    13: ["rdc", 4, 0, "Vestiaires"],
     18: ["rdc", 1, 1, "Place pub. 2"],
+    6: ["rdc", 2, 1, "Carrefour"],
     22: ["rdc", 3, 1, "Place pub. 1"],
     12: ["rdc", 4, 1, "Gymnases"],
-    13: ["rdc", 4, 0, "Vestiaires"],
-    14: ["rdc", 4, 2, "Gymnase 1"],
     20: ["rdc", 5, 1, "Bloc H"],
     8: ["rdc", 2, 2, "Auditorium"],
+    14: ["rdc", 4, 2, "Gymnase 1"],
     21: ["rdc", 2, 3, "Cuisines"],
-    7: ["rdc", 2, 4, "Cafétéria"],
     19: ["rdc", 1, 4, "Aile C"],
+    7: ["rdc", 2, 4, "Cafétéria"],
+    28: ["rdc", 3, 4, "Aile C est"],
     15: ["rdc", 1, 5, "Bloc F"],
   };
 
   const LIEU_DEPART = 1;
   const LIEU_SORTIE = 10;
   const LIEU_SECRETARIAT = 11;
-  const LIEU_AUDITORIUM = 8;
-  const LIEU_TABLEAU = 16;
+
+  // ==========================================
+  // ÉNIGMES À CODE
+  // ==========================================
+  // La réponse n'est jamais stockée : seulement son empreinte SHA-256.
+  const CODES = {
+    5: {
+      empreinte: "68e29784d1a114fda63d38f9458caa7a591f5186766ac67440b6a736182222ee",
+      revele: "ruban_adhesif",
+      echec: "Tu fais tourner les molettes. Le cadenas reste fermé.",
+      succes: "Les molettes s'alignent. Le cadenas à lettres s'ouvre avec un déclic. Dans le dépôt, entre les bocaux étiquetés, un rouleau de ruban adhésif industriel.",
+    },
+    16: {
+      empreinte: "08490295488a1189099751ebeddb5992313dd2a831e07a92e66d196ddc261777",
+      revele: "baton_lumineux",
+      echec: "Tu fais tourner les trois chiffres. Le cadenas ne bouge pas.",
+      succes: "Trois chiffres, un déclic. La porte de l'armoire s'ouvre en grinçant. Compresses, pansements, une couverture de survie… et, au fond, un bâton lumineux encore dans son emballage.",
+    },
+    11: {
+      empreinte: "45297c633d331e6ac35169ebaaf75bc7fafd206ebb59ba4efd80566936e46eb0",
+      revele: "cle_principale",
+      echec: "Le coffre émet un bip strident, qui résonne beaucoup trop fort dans le silence. Mauvais code.",
+      bruyant: true,
+      succes: "Le clavier émet quatre petits bips, puis un cliquetis. La porte du coffre s'ouvre. À l'intérieur, sur une pile d'enveloppes, la clé principale.",
+    },
+  };
+  // Ordre des réponses dans la clé de déchiffrement de la phrase.
+  const ORDRE_CODES = [5, 16, 11];
+
+  // ==========================================
+  // LOCAUX (tous les numéros des plans)
+  // ==========================================
+  const LOCAUX_CLASSE = [
+    "Une classe vide. Les chaises sont montées sur les pupitres, pattes en l'air. Rien.",
+    "Des pupitres en rangées parfaites. Un sac à dos oublié sous l'un d'eux ne contient que des cahiers. Rien d'utile.",
+    "La classe sent la craie et la poussière. Le tableau a été effacé à la hâte ; des traînées blanches tourbillonnent encore sur le vert.",
+    "Une salle de classe ordinaire, si ordinaire que c'en est inquiétant. L'horloge murale est arrêtée à 15 h 07.",
+    "Les stores sont baissés. Dans la pénombre, un projecteur te fixe de son œil mort. Il n'y a rien ici.",
+    "Une chaise renversée au milieu de la pièce. Personne ne l'a relevée. Tu ne la relèves pas non plus.",
+    "Sur un pupitre, une boîte à lunch ouverte. Le sandwich à l'intérieur a verdi. Ton estomac se retourne.",
+    "Des affiches de grammaire tapissent les murs. « Le participe passé employé avec avoir… » La phrase s'arrête là, arrachée.",
+    "La classe est plongée dans le noir. Tu restes sur le seuil et tends l'oreille. Rien ne bouge. Tu ressors.",
+    "Un globe terrestre trône sur le bureau du prof. Quelqu'un l'a fait tourner. Il tourne encore, très lentement.",
+    "Des copies d'examen jonchent le sol, piétinées. Les notes en rouge n'ont plus aucune importance.",
+    "Une classe de mathématiques. Au tableau, une équation que personne ne résoudra. Rien d'autre.",
+    "Les fenêtres donnent sur la cour. Tu ne t'en approches pas. Tu ressors à reculons.",
+    "Des cellulaires confisqués dorment dans un bac en plastique sur le bureau. Tous morts. Comme le tien.",
+  ];
+
+  const LOCAUX_BUREAU = [
+    "Un petit bureau. Un fauteuil, un ordinateur éteint, une plante qui a soif. Rien.",
+    "Des classeurs métalliques. Tu en ouvres un : des dossiers d'élèves, des noms, des notes. Rien qui t'aide.",
+    "Un bureau en désordre. Une photo de famille, face contre la table. Tu ne la retournes pas.",
+    "Un téléphone fixe sur le bureau. Tu décroches. Aucune tonalité. Seulement un souffle, très loin. Tu raccroches vite.",
+    "Une salle de réunion. Douze chaises autour d'une table vide. Sur le tableau blanc : « Plan d'urgence — À DISCUTER ». Rien d'autre.",
+    "Un bureau minuscule, à peine plus grand qu'un placard. Il sent le café froid.",
+  ];
+
+  const LOCAUX_PETIT = [
+    "Un local de rangement. Des boîtes de carton, des chaises empilées. Rien.",
+    "Un placard technique. Des tuyaux, des compteurs, des fils. Tout est mort.",
+    "Des toilettes. Un robinet goutte. L'eau est coupée, pourtant. Tu ne veux pas savoir d'où vient cette goutte.",
+    "Un local à photocopies. Une feuille est coincée dans la machine. Tu la tires : elle est blanche.",
+    "Un réduit sans fenêtre. Tu n'y vois rien. Tu refermes la porte.",
+    "Un local d'entretien. Une vadrouille, un seau d'eau grise, une odeur d'eau de Javel.",
+  ];
+
+  const LOCAUX_GYM = [
+    "Un gymnase plongé dans le noir. Des filets de volleyball pendent, à moitié décrochés. Ton souffle résonne sous le plafond trop haut. Rien.",
+    "Un gymnase vide. Les gradins repliés contre le mur forment une falaise sombre. Tu ne t'attardes pas.",
+  ];
+
+  // Locaux particuliers : fausses pistes, ambiance, pièges, objets.
+  const LOCAUX_SPECIAUX = {
+    A215: { texte: "Au tableau, en grosses lettres : CODE = 0000. Barré. Réécrit. Barré encore. Quelqu'un a perdu patience ici." },
+    A226: { texte: "Une classe d'histoire. Sur le bureau, une pile de copies corrigées. Sur la première, un problème d'intérêts : l'élève a répondu 1200 $, et M. Plante a écrit en rouge « Presque ! Relis l'énoncé. »" },
+    B261: { texte: "Sur le bureau, un post-it : « Le code, c'est ma date de fête. — K. » Tu ne connais aucun K." },
+    B268: { texte: "Les portes de l'ascenseur sont entrouvertes sur la cage vide. Un courant d'air froid monte du fond. Il n'y a pas de cabine. Tu recules." },
+    B270: { texte: "La cabine d'ascenseur est coincée entre deux étages. Par l'interstice, tu ne vois que du noir." },
+    B243: { texte: "Un laboratoire de chimie. Sur une paillasse, un bécher rempli d'un liquide argenté, immobile. Ce n'est que de l'eau sale, qui reflète la lune." },
+    B251: { texte: "Un laboratoire de biologie. Dans un bocal, une grenouille dans le formol te regarde. Elle a l'air de savoir quelque chose." },
+    B177: { texte: "La scène. Un seul projecteur pend de travers au-dessus de toi. Au sol, du ruban phosphorescent marque l'emplacement des acteurs. Des croix. Partout. Beaucoup trop de croix." },
+    B176: { texte: "Les coulisses. Un costume de lapin géant pend à un cintre. Ses grands yeux de plastique te fixent. Rien d'autre." },
+    B145: { texte: "Un local de rangement. Sur une étagère, une lampe de poche en plastique jaune. Tu la glisses dans ta poche.", objet: "lampe_morte" },
+    C224: { texte: "Une classe déserte. Dans le pupitre du fond, une petite clé dorée accrochée à un porte-clés en forme d'étoile. Tu la prends.", objet: "cle_doree" },
+    C144: { texte: "La conciergerie. Seaux, vadrouilles, produits. Sur une tablette, une boîte de piles AA : elles ont toutes coulé, gonflées, inutilisables." },
+    C112: { texte: "Une salle de classe. Le babillard est couvert de dessins d'enfants du camp de jour de l'été. Un soleil, une maison, une famille. Une silhouette noire, derrière la maison." },
+    F110: { texte: "La fenêtre de la classe est ouverte. Dehors, dans la cour, des silhouettes. Des dizaines, immobiles, toutes tournées vers l'école. Elles attendent. Tu refermes la porte sans un bruit." },
+    H208: { texte: "Une classe d'arts. Des dizaines de dessins sont punaisés aux murs. Sur chacun, le même personnage : une silhouette sans visage, debout dans un couloir. En bas de chaque feuille, la même date. Aujourd'hui." },
+    H105: { mort: MORT_GYM6 },
+    RECEPTION: { texte: "Le comptoir de la réception. Une tasse de café figé. Le registre des visiteurs est ouvert : la dernière signature s'arrête au milieu du nom, et la ligne d'encre file jusqu'au bord de la page." },
+    MAGASIN: { texte: "Le magasin scolaire. Des cartables, des calculatrices, des chandails à l'effigie de l'école. Tout est en ordre. C'est presque pire." },
+    "SALLE D'ENTRAINEMENT": { texte: "La salle d'entraînement. Des machines à poids, des tapis roulants immobiles. Dans les miroirs, ta silhouette. Une seule. Tu vérifies deux fois." },
+  };
+
+  // Index global : numéro de local -> lieu qui y donne accès.
+  const compact = (s) => normaliser(s).replace(/ /g, "");
+  const INDEX_LOCAUX = {};
+  for (const id in LIEUX) {
+    for (const nom of LIEUX[id].locaux || []) INDEX_LOCAUX[compact(nom)] = { nom, lieu: Number(id) };
+  }
+  INDEX_LOCAUX.A217 = { nom: "A217", lieu: 2, vers: 1 };
+  INDEX_LOCAUX.B247 = { nom: "B247", lieu: 5, depot: true };
+  INDEX_LOCAUX.F212 = { nom: "F212", lieu: 16, armoire: true };
+  INDEX_LOCAUX.B169 = { nom: "B169", lieu: 22, vers: 24 };
+  INDEX_LOCAUX.A102 = { nom: "A102", lieu: 10, vers: 23 };
+  INDEX_LOCAUX.H105 = { nom: "H105", lieu: 20 };
+  INDEX_LOCAUX.H115 = { nom: "H115", lieu: 20 };
+
+  function hachage(s) {
+    let h = 7;
+    for (const ch of s) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+    return h;
+  }
+
+  function texteLocal(nom) {
+    const cle = compact(nom);
+    if (LOCAUX_SPECIAUX[cle] && LOCAUX_SPECIAUX[cle].texte) return LOCAUX_SPECIAUX[cle].texte;
+    const choisir = (liste) => liste[hachage(cle) % liste.length];
+    if (cle.startsWith("GYM")) return choisir(LOCAUX_GYM);
+    if (/[0-9][A-Z]$/.test(cle)) return choisir(LOCAUX_PETIT);
+    if (/^A1/.test(cle)) return choisir(LOCAUX_BUREAU);
+    if (/^B1[0-9]{2}$/.test(cle) && hachage(cle) % 3 === 0) return choisir(LOCAUX_PETIT);
+    return choisir(LOCAUX_CLASSE);
+  }
 
   // ==========================================
   // VOCABULAIRE DU PARSER
@@ -377,6 +722,11 @@
     BRISER: "FRAPPER", BRISE: "FRAPPER", CASSER: "FRAPPER", CASSE: "FRAPPER",
     UTILISER: "UTILISER", UTILISE: "UTILISER", U: "UTILISER",
     OUVRIR: "OUVRIR", OUVRE: "OUVRIR", DEVERROUILLER: "OUVRIR", DEVERROUILLE: "OUVRIR",
+    ENTRER: "ENTRER", ENTRE: "ENTRER", VISITER: "ENTRER", VISITE: "ENTRER",
+    COMPOSER: "COMPOSER", COMPOSE: "COMPOSER", TAPER: "COMPOSER", TAPE: "COMPOSER",
+    CODE: "COMPOSER", COMBINAISON: "COMPOSER", ESSAYER: "COMPOSER", ESSAIE: "COMPOSER",
+    TIRER: "TIRER", TIRE: "TIRER", ACTIONNER: "TIRER", ACTIONNE: "TIRER", ABAISSER: "TIRER",
+    SORTIR: "SORTIR", SORS: "SORTIR", FUIR: "SORTIR", FUIS: "SORTIR",
     CARTE: "CARTE", PLAN: "CARTE", M: "CARTE",
     ALLUMER: "ALLUMER", ALLUME: "ALLUMER", PLIER: "ALLUMER", PLIE: "ALLUMER", CRAQUER: "ALLUMER", CRAQUE: "ALLUMER",
     INVENTAIRE: "INVENTAIRE", INV: "INVENTAIRE", I: "INVENTAIRE",
@@ -384,18 +734,19 @@
   };
 
   const MOTS_VIDES = new Set([
-    "LE", "LA", "LES", "L", "UN", "UNE", "DES", "DE", "DU", "D", "AU", "AUX",
+    "LE", "LA", "LES", "L", "UN", "UNE", "DES", "DE", "DU", "D", "AU", "AUX", "DANS",
     "A", "VERS", "SUR", "AVEC", "ET", "EN", "MON", "MA", "MES", "TON", "TA", "TES", "CE", "CETTE",
   ]);
 
   // Décors : mots reconnus mais qui ne sont pas des objets d'inventaire.
   const DECORS = {
-    MUR: "MUR", MURS: "MUR", LETTRES: "MUR", INSCRIPTION: "MUR", INSCRIPTIONS: "MUR", SCENE: "MUR",
     CADENAS: "CADENAS",
     CHAINE: "CHAINES", CHAINES: "CHAINES", SERRURE: "CHAINES",
     PORTE: "PORTE", PORTES: "PORTE", SORTIE: "PORTE",
     SECRETARIAT: "SECRETARIAT",
-    TABLEAU: "TABLEAU", CRAIE: "TABLEAU", MOTS: "TABLEAU",
+    FENETRE: "FENETRE", FENETRES: "FENETRE", VITRE: "FENETRE", VITRES: "FENETRE", CARREAU: "FENETRE",
+    ALARME: "ALARME", AVERTISSEUR: "ALARME", POIGNEE: "ALARME",
+    COFFRE: "COFFRE", ARMOIRE: "ARMOIRE", DEPOT: "DEPOT",
   };
 
   function normaliser(texte) {
@@ -407,13 +758,17 @@
       .trim();
   }
 
+  const MOTIF_LOCAL = /^[A-H][0-9]{3}[A-Z]?$/;
+
   function analyser(commande) {
     const mots = normaliser(commande).split(" ").filter(Boolean);
     if (mots.length === 0) return null;
     let verbe = null;
     let direction = null;
     const premier = mots[0];
-    if (DIRECTIONS[premier] && mots.length === 1) {
+    if (MOTIF_LOCAL.test(mots.join(""))) {
+      verbe = "ENTRER"; // « B243 » ou « B 243 » tout seul
+    } else if (DIRECTIONS[premier] && mots.length === 1) {
       verbe = "ALLER";
       direction = DIRECTIONS[premier];
     } else if (VERBES[premier]) {
@@ -422,10 +777,11 @@
       verbe = "ALLER";
       direction = DIRECTIONS[premier];
     }
-    const reste = mots.slice(1).filter((m) => !MOTS_VIDES.has(m));
+    const suite = verbe === "ENTRER" && !VERBES[premier] ? mots : mots.slice(1);
+    const reste = suite.filter((m) => !MOTS_VIDES.has(m));
     if (verbe === "ALLER" && !direction) {
       const d = reste.find((m) => DIRECTIONS[m]);
-      if (d) direction = DIRECTIONS[d];
+      if (d && reste.length === 1) direction = DIRECTIONS[d];
     }
     const objets = [];
     const decors = [];
@@ -435,7 +791,9 @@
       }
       if (DECORS[m] && !decors.includes(DECORS[m])) decors.push(DECORS[m]);
     }
-    return { verbe, direction, objets, decors, mots: reste, brut: commande };
+    // « clé dorée » ne doit pas viser aussi la clé principale.
+    if (objets.includes("cle_doree") && objets.includes("cle_principale")) objets.splice(objets.indexOf("cle_principale"), 1);
+    return { verbe, direction, objets, decors, mots: reste, suite: suite.join(""), brut: commande };
   }
 
   // ==========================================
@@ -446,13 +804,38 @@
       this.lieu = LIEU_DEPART;
       this.inventaire = ["telephone_mort"];
       this.objetsParLieu = {};
-      for (const id in LIEUX) this.objetsParLieu[id] = LIEUX[id].objets.slice();
+      for (const id in LIEUX) this.objetsParLieu[id] = (LIEUX[id].objets || []).slice();
       this.flags = { a_mange: false, arme_fabriquee: false, cadenas_brise: false, lumiere: false };
+      this.codes = {}; // réponses trouvées, par lieu
+      this.locauxFouilles = [];
       this.visites = new Set([LIEU_DEPART]);
       this.poursuite = 0; // tours restants avant que la chose n'arrive (0 = pas de poursuite)
       this.tour = 0;
       this.evenementVu = false;
       this.termine = false;
+    }
+
+    // Sauvegarde : un objet JSON qu'on peut remettre dans Partie.restaurer.
+    exporter() {
+      return {
+        lieu: this.lieu,
+        inventaire: this.inventaire,
+        objetsParLieu: this.objetsParLieu,
+        flags: this.flags,
+        codes: this.codes,
+        locauxFouilles: this.locauxFouilles,
+        visites: [...this.visites],
+        poursuite: this.poursuite,
+        tour: this.tour,
+        evenementVu: this.evenementVu,
+        termine: this.termine,
+      };
+    }
+
+    static restaurer(d) {
+      const p = new Partie();
+      Object.assign(p, d, { visites: new Set(d.visites) });
+      return p;
     }
 
     // Sortie : liste de blocs { type, texte } que l'interface affiche.
@@ -461,6 +844,10 @@
         ...OUVERTURE.map((t) => ({ type: "ouverture", texte: t })),
         ...this.decrireLieu(),
       ];
+    }
+
+    reprendre() {
+      return [sys("Partie reprise là où tu l'avais laissée. Tape REJOUER pour recommencer à zéro."), ...this.decrireLieu()];
     }
 
     dansLeNoir() {
@@ -476,9 +863,10 @@
     }
 
     sortiesVisibles() {
-      const sorties = LIEUX[this.lieu].sorties;
-      return ORDRE_DIRECTIONS.filter((d) => d in sorties).map((d) => {
-        if (this.lieu === LIEU_SORTIE && sorties[d] === LIEU_SECRETARIAT && !this.flags.cadenas_brise) {
+      const lieu = LIEUX[this.lieu];
+      const toutes = Object.assign({}, lieu.pieges, lieu.sorties);
+      return ORDRE_DIRECTIONS.filter((d) => d in toutes).map((d) => {
+        if (this.lieu === LIEU_SORTIE && lieu.sorties[d] === LIEU_SECRETARIAT && !this.flags.cadenas_brise) {
           return d + " (verrouillée)";
         }
         return d;
@@ -500,13 +888,16 @@
           texte: "Tu distingues ici : " + ici.map((id) => OBJETS[id].enPlace).join(", ") + ".",
         });
       }
+      if (lieu.locaux && lieu.locaux.length) {
+        blocs.push({ type: "sorties", texte: "Locaux : " + lieu.locaux.join(" · ") });
+      }
       blocs.push({ type: "sorties", texte: "Sorties : " + this.sortiesVisibles().join(" · ") });
       return blocs;
     }
 
     executer(commande) {
       if (this.termine) {
-        return [{ type: "systeme", texte: "La nuit est terminée. Tape REJOUER pour recommencer." }];
+        return [sys("La nuit est terminée. Tape REJOUER pour recommencer.")];
       }
       const c = analyser(commande);
       if (!c) return [];
@@ -519,9 +910,9 @@
 
       if (enPoursuite && !this.termine) {
         this.poursuite -= 1;
-        if (this.poursuite === 0) return blocs.concat(this.mort());
-        if (this.poursuite === 3) blocs.push({ type: "evenement", texte: TEXTE_PAS_LOINTAINS });
-        if (this.poursuite === 1) blocs.push({ type: "evenement", texte: TEXTE_PAS_PROCHES });
+        if (this.poursuite <= 0) return blocs.concat(this.mort(MORT_POURSUITE));
+        if (this.poursuite === 4) blocs.push({ type: "evenement", texte: TEXTE_PAS_LOINTAINS });
+        if (this.poursuite === 2) blocs.push({ type: "evenement", texte: TEXTE_PAS_PROCHES });
       }
 
       if (this.tour === TOUR_EVENEMENT && !this.evenementVu && !this.termine) {
@@ -542,6 +933,10 @@
         case "FRAPPER": return this.frapper(c);
         case "UTILISER": return this.utiliser(c);
         case "OUVRIR": return this.ouvrir(c);
+        case "ENTRER": return this.entrer(c);
+        case "COMPOSER": return this.composer(c);
+        case "TIRER": return this.tirer(c);
+        case "SORTIR": return this.sortir();
         case "ALLUMER": return this.allumer(c);
         case "CARTE": return this.carte();
         case "INVENTAIRE": return this.afficherInventaire();
@@ -554,22 +949,81 @@
       return [
         sys(
           "Déplacements : NORD, SUD, EST, OUEST, HAUT, BAS (ou N, S, E, O, H, B). " +
-            "Actions : PRENDRE, REGARDER, LIRE, COMBINER, MANGER, FRAPPER, UTILISER, OUVRIR, ALLUMER. " +
+            "Pour visiter un local : ENTRER suivi de son numéro (ex. : ENTRER A215). " +
+            "Actions : PRENDRE, REGARDER, LIRE, COMBINER, MANGER, FRAPPER, UTILISER, OUVRIR, ALLUMER, COMPOSER (un code). " +
             "INVENTAIRE (ou I) pour voir ce que tu portes. CARTE pour consulter le plan de ton agenda."
         ),
       ];
     }
 
     aller(c) {
-      if (!c.direction) return [sys("Aller où ? (NORD, SUD, EST, OUEST, HAUT, BAS)")];
-      const dest = LIEUX[this.lieu].sorties[c.direction];
+      if (!c.direction) {
+        if (c.mots.length) return this.entrer(c);
+        return [sys("Aller où ? (NORD, SUD, EST, OUEST, HAUT, BAS)")];
+      }
+      const lieu = LIEUX[this.lieu];
+      if (lieu.pieges && lieu.pieges[c.direction]) return this.mort(lieu.pieges[c.direction]);
+      const dest = lieu.sorties[c.direction];
       if (dest === undefined) return [sys("Tu ne peux pas aller par là.")];
       if (this.lieu === LIEU_SORTIE && dest === LIEU_SECRETARIAT && !this.flags.cadenas_brise) {
         return [{ type: "texte", texte: "La porte du Secrétariat est verrouillée par un lourd cadenas rouillé." }];
       }
+      return this.allerA(dest);
+    }
+
+    allerA(dest) {
       this.lieu = dest;
       this.visites.add(dest);
       return this.decrireLieu();
+    }
+
+    entrer(c) {
+      const cible = c.suite;
+      if (!cible) return [sys("Entrer où ? Tape ENTRER suivi du numéro d'un local.")];
+      const lieu = LIEUX[this.lieu];
+      const nom = (lieu.locaux || []).find((l) => cible.endsWith(compact(l)));
+      const connu = INDEX_LOCAUX[cible] || Object.values(INDEX_LOCAUX).find((x) => cible.endsWith(compact(x.nom)));
+      if (!nom) {
+        if (connu && connu.lieu === this.lieu) {
+          if (connu.vers) return this.allerA(connu.vers);
+          if (connu.depot) return [{ type: "texte", texte: this.codes[5] ? "Le dépôt est ouvert. Des bocaux, des béchers, des produits étiquetés. Rien d'autre d'utile." : "Le Dépôt de Sciences est fermé par un cadenas à lettres. Une fiche plastifiée est collée sur la porte." }];
+          if (connu.armoire) return [{ type: "texte", texte: "Le local F212. L'armoire de premiers soins est là, contre le mur." }];
+          if (compact(connu.nom) === "H105") return this.mort(MORT_GYM6);
+          if (compact(connu.nom) === "H115") return [{ type: "texte", texte: "La grille du café est baissée et cadenassée. Derrière, les chaises retournées sur les tables. Rien à faire ici." }];
+        }
+        if (connu && connu.vers === this.lieu) return [sys("Tu y es déjà.")];
+        if (connu) return [sys(`Le local ${connu.nom} ne donne pas ici. On y accède depuis : ${LIEUX[connu.lieu].nom}.`)];
+        if (CODES[this.lieu] && /[0-9]/.test(cible)) return this.composer(c);
+        return [sys("Il n'y a pas de local de ce nom ici. La liste des locaux est affichée sous la description du lieu.")];
+      }
+      const special = LOCAUX_SPECIAUX[compact(nom)];
+      if (special && special.mort) return this.mort(special.mort);
+      const blocs = [{ type: "texte", texte: `Tu entres dans le local ${nom}. ${texteLocal(nom)}` }];
+      if (special && special.objet && !this.locauxFouilles.includes(compact(nom))) {
+        this.inventaire.push(special.objet);
+        blocs.push(sys("Pris : " + OBJETS[special.objet].nom + "."));
+      } else if (special && special.objet) {
+        blocs.length = 0;
+        blocs.push({ type: "texte", texte: `Tu entres dans le local ${nom}. Tu as déjà fouillé ici. Il n'y a plus rien.` });
+      }
+      if (!this.locauxFouilles.includes(compact(nom))) this.locauxFouilles.push(compact(nom));
+      blocs.push(sys("Tu ressors dans le couloir."));
+      return blocs;
+    }
+
+    composer(c) {
+      const enigme = CODES[this.lieu];
+      if (!enigme) return [sys("Il n'y a rien ici qui demande un code.")];
+      if (this.codes[this.lieu]) return [sys("C'est déjà ouvert.")];
+      const essai = c.mots.filter((m) => !["CODE", "COMBINAISON", "CADENAS", "COFFRE", "ARMOIRE", "DEPOT"].includes(m)).join("");
+      if (!essai) return [sys("Quel code ? Tape COMPOSER suivi du code (ex. : COMPOSER 1234).")];
+      if (empreinte(essai) !== enigme.empreinte) {
+        if (enigme.bruyant && this.poursuite > 1) this.poursuite -= 1;
+        return [{ type: "texte", texte: enigme.echec }];
+      }
+      this.codes[this.lieu] = essai;
+      this.objetsParLieu[this.lieu].push(enigme.revele);
+      return [{ type: "texte", texte: enigme.succes }];
     }
 
     prendre(c) {
@@ -594,8 +1048,15 @@
       return blocs;
     }
 
+    lecture(c) {
+      const lectures = LIEUX[this.lieu].lectures || [];
+      return lectures.find((l) => c.mots.some((m) => l.mots.includes(m)));
+    }
+
     regarder(c) {
-      if (c.objets.length === 0 && c.decors.length === 0) return this.decrireLieu();
+      if (c.objets.length === 0 && c.decors.length === 0 && c.mots.length === 0) return this.decrireLieu();
+      const lu = this.lecture(c);
+      if (lu) return [{ type: lu.type || "lecture", texte: lu.texte }];
       if (c.objets.length) {
         const id = c.objets[0];
         if (id === "agenda" && this.possede(id) && c.mots.some((m) => m === "CARTE" || m === "PLAN")) return this.carte();
@@ -605,8 +1066,6 @@
         return [sys("Il n'y a pas de " + OBJETS[id].nom + " ici.")];
       }
       const decor = c.decors[0];
-      if (decor === "MUR" && this.lieu === LIEU_AUDITORIUM) return this.lire(c);
-      if (decor === "TABLEAU" && this.lieu === LIEU_TABLEAU) return this.lire(c);
       if (this.lieu === LIEU_SORTIE) {
         if (decor === "CADENAS" || decor === "SECRETARIAT") {
           return [{
@@ -620,17 +1079,16 @@
           return [{ type: "texte", texte: "Devant toi, les portes principales menant vers l'extérieur sont scellées par d'épaisses chaînes industrielles." }];
         }
       }
+      if (decor === "FENETRE") return [{ type: "texte", texte: "Dehors, le noir. Des formes immobiles, peut-être. Tu préfères ne pas t'approcher de la vitre." }];
       return [sys("Tu ne vois rien de particulier.")];
     }
 
     lire(c) {
       if (c.objets.includes("agenda")) return this.carte();
-      if (this.lieu === LIEU_AUDITORIUM && (c.decors.includes("MUR") || c.objets.length === 0)) {
-        return [{ type: "mural", texte: TEXTE_MURAL }];
-      }
-      if (this.lieu === LIEU_TABLEAU && (c.decors.includes("TABLEAU") || c.objets.length === 0)) {
-        return [{ type: "mural", texte: TEXTE_TABLEAU }];
-      }
+      if (this.dansLeNoir()) return [sys("Il fait trop noir pour lire quoi que ce soit.")];
+      const lectures = LIEUX[this.lieu].lectures || [];
+      const lu = this.lecture(c) || (c.mots.length === 0 ? lectures[0] : null);
+      if (lu) return [{ type: lu.type || "lecture", texte: lu.texte }];
       return [sys("Il n'y a rien à lire ici.")];
     }
 
@@ -671,14 +1129,21 @@
 
     frapper(c) {
       if (c.objets.includes("baton_lumineux")) return this.allumer(c);
+      if (c.decors.includes("FENETRE")) return this.mort(MORT_FENETRE);
       const cible = c.decors.includes("CADENAS") || c.decors.includes("SECRETARIAT") ||
         (c.objets.includes("arme_artisanale") && this.lieu === LIEU_SORTIE);
       if (!cible) {
-        if (c.mots.length === 0 && this.lieu !== LIEU_SORTIE) return [sys("Frapper quoi ?")];
         if (c.mots.length === 0 && this.lieu === LIEU_SORTIE) return this.frapperCadenas();
+        if (c.mots.length === 0) return [sys("Frapper quoi ?")];
+        if (c.decors.some((d) => ["COFFRE", "ARMOIRE", "DEPOT"].includes(d))) {
+          return [sys("Ça ferait un vacarme épouvantable, et ça ne céderait pas. Il doit y avoir un code.")];
+        }
         return [sys("Frapper ça ne servirait à rien.")];
       }
-      if (this.lieu !== LIEU_SORTIE) return [sys("Il n'y a pas de cadenas ici.")];
+      if (this.lieu !== LIEU_SORTIE) {
+        if (CODES[this.lieu]) return [sys("Ça ferait un vacarme épouvantable, et ça ne céderait pas. Il doit y avoir un code.")];
+        return [sys("Il n'y a pas de cadenas à briser ici.")];
+      }
       return this.frapperCadenas();
     }
 
@@ -696,7 +1161,20 @@
       ];
     }
 
+    tirer(c) {
+      if (c.decors.includes("ALARME")) return this.mort(MORT_ALARME);
+      return [sys("Tirer quoi ?")];
+    }
+
+    sortir() {
+      if (this.lieu === LIEU_SORTIE) return this.ouvrir({ decors: [], objets: [] });
+      const pieges = LIEUX[this.lieu].pieges;
+      if (pieges) return this.mort(Object.values(pieges)[0]);
+      return [sys("Il n'y a pas de sortie vers l'extérieur ici.")];
+    }
+
     utiliser(c) {
+      if (c.decors.includes("ALARME")) return this.mort(MORT_ALARME);
       if (c.objets.length === 0) return [sys("Utiliser quoi ?")];
       const id = c.objets[0];
       if (!this.possede(id)) {
@@ -713,9 +1191,12 @@
         case "barre_tendre":
           return this.manger(c);
         case "baton_lumineux":
+        case "lampe_morte":
           return this.allumer(c);
         case "agenda":
           return this.carte();
+        case "cle_doree":
+          return [{ type: "texte", texte: "Tu essaies la petite clé dorée. Elle n'entre dans aucune serrure ici." }];
         case "telephone_mort":
           return [{ type: "texte", texte: this.evenementVu ? "L'écran est mort." : OBJETS.telephone_mort.description }];
         case "tuyau_metal":
@@ -728,6 +1209,10 @@
     }
 
     ouvrir(c) {
+      if (c.decors.includes("FENETRE")) return this.mort(MORT_FENETRE);
+      if (CODES[this.lieu] && !this.codes[this.lieu]) {
+        return [sys("C'est fermé par un code. Tape COMPOSER suivi du code.")];
+      }
       if (this.lieu === LIEU_SORTIE) {
         if (c.decors.includes("SECRETARIAT") || c.decors.includes("CADENAS")) {
           return this.flags.cadenas_brise
@@ -737,6 +1222,7 @@
         if (this.possede("cle_principale")) return this.victoire();
         return [{ type: "texte", texte: "Les portes principales menant vers l'extérieur sont scellées par d'épaisses chaînes industrielles." }];
       }
+      if (c.decors.includes("PORTE") && LIEUX[this.lieu].pieges) return this.sortir();
       return [sys("Il n'y a rien à ouvrir ici.")];
     }
 
@@ -763,6 +1249,10 @@
     }
 
     allumer(c) {
+      if (c.objets.includes("lampe_morte")) {
+        if (!this.possede("lampe_morte")) return [sys("Tu n'as pas de lampe de poche.")];
+        return [{ type: "texte", texte: "Tu appuies sur l'interrupteur de la lampe. Rien. Tu la secoues. Toujours rien. Les piles sont mortes." }];
+      }
       if (c.objets.length && !c.objets.includes("baton_lumineux")) return [sys("Ça ne s'allume pas.")];
       if (!this.possede("baton_lumineux")) return [sys("Tu n'as rien pour faire de la lumière.")];
       if (this.flags.lumiere) return [sys("Le bâton luit déjà dans ta main.")];
@@ -776,33 +1266,29 @@
       return [sys("Tu portes : " + this.inventaire.map((id) => OBJETS[id].nom).join(", ") + ".")];
     }
 
-    mort() {
+    mort(texte) {
       this.termine = true;
       return [
-        { type: "mort", texte: TEXTE_MORT[0] },
-        { type: "coupure", texte: TEXTE_MORT[1] },
-        { type: "finmort", texte: TEXTE_MORT[2] },
+        { type: "mort", texte },
+        { type: "coupure", texte: TEXTE_FIN_MORT[0] },
+        { type: "finmort", texte: TEXTE_FIN_MORT[1] },
       ];
     }
 
     victoire() {
       this.termine = true;
+      const cle = ORDRE_CODES.map((id) => this.codes[id]).join("|");
       return [
         { type: "victoire", texte: TEXTE_VICTOIRE[0] },
         { type: "coupure", texte: TEXTE_VICTOIRE[1] },
         { type: "fin", texte: TEXTE_VICTOIRE[2] },
+        { type: "recompense", texte: TEXTE_RECOMPENSE },
+        { type: "phrase", texte: "« " + dechiffrer(PHRASE_CHIFFREE, cle) + " »" },
       ];
     }
 
     etat() {
-      return {
-        lieu: this.lieu,
-        inventaire: this.inventaire.slice(),
-        flags: Object.assign({}, this.flags),
-        tour: this.tour,
-        termine: this.termine,
-        poursuite: this.poursuite,
-      };
+      return this.exporter();
     }
   }
 
@@ -810,7 +1296,7 @@
     return { type: "systeme", texte };
   }
 
-  const api = { Partie, LIEUX, OBJETS, analyser, normaliser };
+  const api = { Partie, LIEUX, OBJETS, analyser, normaliser, empreinte, chiffrer, utf8, hex, dechiffrer, texteLocal };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else global.NuitStEx = api;
 })(typeof window !== "undefined" ? window : globalThis);
