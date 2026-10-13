@@ -109,95 +109,95 @@
   const LIEUX = {
     1: {
       nom: "La Classe de M. Plante",
-      zone: "2e étage · Aile A",
+      zone: "2e étage · Bloc A",
       description:
-        "Le repaire de M. Plante. Rassurant le jour, absolument terrifiant cette nuit. La faible lueur de la lune découpe la forme de son bureau à l'avant. Dans les ombres, les frises chronologiques et les graphiques d'éducation financière affichés aux murs ressemblent à de longues cicatrices sombres. L'air est mort. (Sortie : EST).",
-      sorties: { EST: 2 },
+        "Le repaire de M. Plante. Rassurant le jour, absolument terrifiant cette nuit. La faible lueur de la lune découpe la forme de son bureau à l'avant. Dans les ombres, les frises chronologiques et les graphiques d'éducation financière affichés aux murs ressemblent à de longues cicatrices sombres. L'air est mort. (Sortie : OUEST).",
+      sorties: { OUEST: 2 },
       objets: [],
     },
     2: {
-      nom: "Couloir de l'Aile A",
-      zone: "2e étage · Aile A",
+      nom: "Couloir A-211",
+      zone: "2e étage · Bloc A",
       description:
-        "Le long corridor de l'Aile A à l'étage. Les casiers métalliques forment une haie d'honneur sinistre qui s'étire dans l'obscurité, se perdant dans le noir absolu. À l'OUEST, la porte du local A-217. Au NORD, le couloir s'ouvre sur un espace plus vaste.",
-      sorties: { OUEST: 1, NORD: 3 },
+        "Le long corridor du Bloc A au deuxième étage. Les casiers métalliques forment une haie d'honneur sinistre qui s'étire dans l'obscurité, se perdant dans le noir absolu. À l'EST, la porte du local A-217. Au SUD, le couloir s'ouvre sur un espace plus vaste.",
+      sorties: { EST: 1, SUD: 3 },
       objets: [],
     },
     3: {
       nom: "Carrefour de l'Étage",
-      zone: "2e étage · Aile B",
+      zone: "2e étage · Bloc B",
       description:
-        "Tu es au cœur du deuxième étage. L'air y est lourd, suffocant. Au centre, la gueule béante de l'escalier principal plonge vers le rez-de-chaussée (BAS). À l'OUEST, l'obscurité de la partie haute de l'auditorium. À l'EST, le couloir s'enfonce vers les laboratoires de sciences de l'Aile D. Au SUD, le retour vers ton couloir.",
-      sorties: { SUD: 2, OUEST: 4, EST: 5, BAS: 6 },
+        "Tu es au cœur du deuxième étage. L'air y est lourd, suffocant. Au centre, la gueule béante de l'escalier principal plonge vers le rez-de-chaussée (BAS). Au SUD, l'obscurité de la partie haute de l'auditorium. À l'OUEST, le couloir s'enfonce vers les laboratoires de sciences du Bloc D. Au NORD, le retour vers ton couloir.",
+      sorties: { NORD: 2, SUD: 4, OUEST: 5, BAS: 6 },
       objets: [],
     },
     4: {
       nom: "Partie Haute de l'Auditorium",
-      zone: "2e étage · Aile B",
+      zone: "2e étage · Bloc B",
       description:
         "Tu te tiens sur le balcon de la partie haute de l'auditorium. Tu surplombes la grande salle noire en contrebas. Tu as l'impression vertigineuse que, tout en bas dans cette mer de 446 sièges, quelque chose vient de bouger. Une simple illusion d'optique dans les ténèbres ? Tu n'as pas le courage d'attendre pour vérifier. L'unique issue est derrière toi.",
-      sorties: { EST: 3 },
+      sorties: { NORD: 3 },
       objets: [],
     },
     5: {
       nom: "Laboratoires de Sciences",
-      zone: "2e étage · Aile D",
+      zone: "2e étage · Bloc D",
       description:
         "La section « Biol. Chim. Phys. ». La lueur de la lune éclaire violemment les paillasses. Une odeur clinique et âcre de vieux produits chimiques pique le nez. La porte du Dépôt de Sciences est ouverte.",
-      sorties: { OUEST: 3 },
+      sorties: { EST: 3 },
       objets: ["ruban_adhesif"],
     },
     6: {
       nom: "Carrefour Principal",
-      zone: "Rez-de-chaussée · Aile B",
+      zone: "Rez-de-chaussée · Bloc B",
       description:
-        "Tu as descendu les marches. De minces faisceaux de lumière lunaire traversent la poussière en suspension. Les ombres des piliers s'étirent au sol telles des griffes. L'escalier remonte vers l'étage (HAUT). Autour de toi, quatre abysses : la cafétéria au NORD, le couloir administratif au SUD, l'aile des métiers à l'EST, et l'entrée de l'auditorium à l'OUEST.",
-      sorties: { HAUT: 3, NORD: 7, SUD: 10, EST: 12, OUEST: 8 },
+        "Tu as descendu les marches. De minces faisceaux de lumière lunaire traversent la poussière en suspension. Les ombres des piliers s'étirent au sol telles des griffes. L'escalier remonte vers l'étage (HAUT). Autour de toi, quatre abysses : le couloir administratif au NORD, l'entrée de l'auditorium au SUD, les ateliers du Bloc D à l'OUEST, et la cafétéria à l'EST.",
+      sorties: { HAUT: 3, NORD: 10, SUD: 8, OUEST: 12, EST: 7 },
       objets: [],
     },
     7: {
       nom: "La Cafétéria",
-      zone: "Rez-de-chaussée · Aile C",
+      zone: "Rez-de-chaussée · Bloc B",
       description:
-        "Une mer de 600 chaises renversées, formant un chaos géométrique terrifiant. L'immense salle de l'Aile C est baignée dans une lueur bleutée maladive. Les comptoirs des cuisines au loin ressemblent à des autels abandonnés. Ton estomac se noue douloureusement. (La sortie est au SUD).",
-      sorties: { SUD: 6 },
+        "Une mer de 600 chaises renversées, formant un chaos géométrique terrifiant. L'immense salle est baignée dans une lueur bleutée maladive. Les comptoirs des cuisines au loin ressemblent à des autels abandonnés. Ton estomac se noue douloureusement. (La sortie est à l'OUEST).",
+      sorties: { OUEST: 6 },
       objets: ["barre_tendre"],
     },
     8: {
       nom: "L'Auditorium",
-      zone: "Rez-de-chaussée · Aile B",
+      zone: "Rez-de-chaussée · Bloc B",
       description:
         "La caverne. Une noirceur d'encre engloutit les rangées. Tes pas résonnent avec un écho démesuré qui te donne la nausée. Sur le mur de la scène de l'auditorium de 446 places, tu devines de larges lettres tracées à la hâte.",
-      sorties: { EST: 6 },
+      sorties: { NORD: 6 },
       objets: [],
     },
     10: {
       nom: "Couloir Administratif et Sortie",
-      zone: "Rez-de-chaussée · Aile A",
+      zone: "Rez-de-chaussée · Bloc A",
       description:
-        "L'angoisse devient palpable. C'est l'Aile A, la Direction. Devant toi, les portes principales menant vers l'extérieur sont scellées par d'épaisses chaînes industrielles. À l'OUEST, la porte du Secrétariat est verrouillée par un lourd cadenas rouillé. Revenir au NORD est ta seule échappatoire immédiate.",
-      sorties: { NORD: 6, OUEST: 11 },
+        "L'angoisse devient palpable. C'est le Bloc A, la Direction. Devant toi, les portes principales menant vers l'extérieur sont scellées par d'épaisses chaînes industrielles. À l'EST, la porte du Secrétariat est verrouillée par un lourd cadenas rouillé. Revenir au SUD est ta seule échappatoire immédiate.",
+      sorties: { SUD: 6, EST: 11 },
       objets: [],
     },
     11: {
       nom: "Le Secrétariat",
-      zone: "Rez-de-chaussée · Aile A",
+      zone: "Rez-de-chaussée · Bloc A",
       description:
         "La panique s'est arrêtée ici. Les dossiers jonchent le sol du secrétariat comme des cadavres de papier. Le tiroir du bureau de la direction a été arraché à moitié.",
-      sorties: { EST: 10 },
+      sorties: { OUEST: 10 },
       objets: ["cle_principale"],
     },
     12: {
       nom: "Carrefour des Ateliers",
-      zone: "Rez-de-chaussée · Aile D",
+      zone: "Rez-de-chaussée · Bloc D",
       description:
-        "L'air sent la graisse froide et la rouille. C'est le couloir des ateliers de l'Aile D. Les bruits de tes pas sont étouffés, comme si les murs de béton absorbaient le son. NORD : L'Atelier de Mécanique. SUD : La Chaufferie. OUEST : Retour vers le carrefour central.",
-      sorties: { OUEST: 6, NORD: 13, SUD: 14 },
+        "L'air sent la graisse froide et la rouille. C'est le couloir des ateliers du Bloc D. Les bruits de tes pas sont étouffés, comme si les murs de béton absorbaient le son. NORD : L'Atelier de Mécanique. SUD : La Chaufferie. EST : Retour vers le carrefour central.",
+      sorties: { EST: 6, NORD: 13, SUD: 14 },
       objets: [],
     },
     13: {
       nom: "L'Atelier de Mécanique",
-      zone: "Rez-de-chaussée · Aile D",
+      zone: "Rez-de-chaussée · Bloc D",
       description:
         "Aveuglant d'obscurité. Aucune fenêtre ne perce l'atelier d'automobile et de mécanique. Seule la sensation du métal glacé des ponts élévateurs t'entoure. C'est le ventre d'une bête morte.",
       sorties: { SUD: 12 },
@@ -205,7 +205,7 @@
     },
     14: {
       nom: "La Chaufferie",
-      zone: "Rez-de-chaussée · Aile D",
+      zone: "Rez-de-chaussée · Bloc D",
       description:
         "Une salle des machines oppressante. Les gigantesques chaudières sont d'immenses silhouettes fantomatiques. Un silence si lourd qu'il te fait bourdonner les tympans.",
       sorties: { NORD: 12 },
@@ -336,7 +336,7 @@
     sortiesVisibles() {
       const sorties = LIEUX[this.lieu].sorties;
       return ORDRE_DIRECTIONS.filter((d) => d in sorties).map((d) => {
-        if (this.lieu === LIEU_SORTIE && d === "OUEST" && !this.flags.cadenas_brise) {
+        if (this.lieu === LIEU_SORTIE && sorties[d] === LIEU_SECRETARIAT && !this.flags.cadenas_brise) {
           return d + " (verrouillée)";
         }
         return d;
@@ -452,7 +452,7 @@
             type: "texte",
             texte: this.flags.cadenas_brise
               ? "La porte du secrétariat s'entrouvre."
-              : "À l'OUEST, la porte du Secrétariat est verrouillée par un lourd cadenas rouillé.",
+              : "À l'EST, la porte du Secrétariat est verrouillée par un lourd cadenas rouillé.",
           }];
         }
         if (decor === "CHAINES" || decor === "PORTE") {

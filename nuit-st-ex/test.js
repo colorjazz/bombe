@@ -52,7 +52,7 @@ test("AIDE ne compte pas comme un tour", () => {
 
 test("porte du secrétariat verrouillée tant que le cadenas tient", () => {
   const p = new Partie();
-  const r = jouer(p, ["e", "n", "bas", "sud", "ouest"]);
+  const r = jouer(p, ["o", "s", "bas", "nord", "est"]);
   assert.strictEqual(p.lieu, 10);
   assert.ok(texte(r).includes("verrouillée"));
 });
@@ -60,7 +60,7 @@ test("porte du secrétariat verrouillée tant que le cadenas tient", () => {
 test("combiner sans ruban", () => {
   const p = new Partie();
   const r = jouer(p, [
-    "e", "n", "bas", "e", "n", "prendre tuyau", "s", "s", "prendre lame",
+    "o", "s", "bas", "o", "n", "prendre tuyau", "s", "s", "prendre lame",
     "combiner tuyau avec lame",
   ]);
   assert.ok(texte(r).includes("rien pour les faire tenir ensemble"));
@@ -70,16 +70,16 @@ test("combiner sans ruban", () => {
 test("frapper le cadenas sans avoir mangé, puis après", () => {
   const p = new Partie();
   jouer(p, [
-    "e", "n", "e", "prendre ruban", "o", "bas",
-    "e", "n", "prendre tuyau", "s", "s", "prendre lame", "n",
-    "combiner tuyau avec lame", "o", "s",
+    "o", "s", "o", "prendre ruban", "e", "bas",
+    "o", "n", "prendre tuyau", "s", "s", "prendre lame", "n",
+    "combiner tuyau avec lame", "e", "n",
   ]);
   assert.ok(p.flags.arme_fabriquee);
   assert.deepStrictEqual(p.inventaire.sort(), ["arme_artisanale", "telephone_mort"]);
   let r = p.executer("frapper cadenas");
   assert.ok(texte(r).includes("Tu es trop faible"));
   assert.ok(!p.flags.cadenas_brise);
-  jouer(p, ["n", "n", "prendre barre", "manger barre tendre", "s", "s"]);
+  jouer(p, ["s", "e", "prendre barre", "manger barre tendre", "o", "n"]);
   assert.ok(p.flags.a_mange);
   r = p.executer("fracasser cadenas");
   assert.ok(texte(r).includes("la charnière explose"));
@@ -90,12 +90,12 @@ test("partie complète jusqu'à la victoire", () => {
   const p = new Partie();
   p.demarrer();
   const r = jouer(p, [
-    "est", "nord", "est", "prendre ruban adhésif", "ouest", "bas",
-    "nord", "manger barre", "sud",
-    "ouest", "lire mur", "est",
-    "est", "nord", "prendre tuyau", "sud", "sud", "prendre lame", "nord",
-    "combiner tuyau avec lame", "ouest", "sud",
-    "frapper cadenas", "ouest", "prendre clé", "est",
+    "ouest", "sud", "ouest", "prendre ruban adhésif", "est", "bas",
+    "est", "manger barre", "ouest",
+    "sud", "lire mur", "nord",
+    "ouest", "nord", "prendre tuyau", "sud", "sud", "prendre lame", "nord",
+    "combiner tuyau avec lame", "est", "nord",
+    "frapper cadenas", "est", "prendre clé", "ouest",
     "utiliser clé sur chaînes",
   ]);
   assert.ok(p.termine);
@@ -117,6 +117,16 @@ test("LIRE MUR seulement dans l'auditorium", () => {
   assert.ok(texte(p.executer("lire mur")).includes("rien à lire"));
   p.lieu = 8;
   assert.ok(texte(p.executer("lire mur")).includes("LE SILENCE EST LEUR ARME"));
+});
+
+test("la carte suit les plans : chaque sortie a son retour", () => {
+  const { LIEUX } = require("./moteur.js");
+  const inverse = { NORD: "SUD", SUD: "NORD", EST: "OUEST", OUEST: "EST", HAUT: "BAS", BAS: "HAUT" };
+  for (const id in LIEUX) {
+    for (const [d, dest] of Object.entries(LIEUX[id].sorties)) {
+      assert.strictEqual(LIEUX[dest].sorties[inverse[d]], Number(id), `${id} ${d} -> ${dest}`);
+    }
+  }
 });
 
 console.log(`\n${n} tests réussis.`);
