@@ -112,17 +112,30 @@ test("entrer dans les locaux : vides, fausses pistes, objets inutiles", () => {
   p.executer("entrer a217");
   assert.strictEqual(p.lieu, 1);
   p.lieu = 27;
-  p.executer("entrer c224");
-  assert.ok(p.possede("cle_doree"));
-  assert.ok(texte(p.executer("entrer c224")).includes("déjà fouillé"));
-  assert.ok(texte(p.executer("utiliser clé dorée")).includes("aucune serrure"));
-  const locaux = p.decrireLieu().find((x) => x.type === "locaux");
-  assert.ok(locaux.locaux.find((l) => l.nom === "C224").visite);
-  assert.ok(!locaux.locaux.find((l) => l.nom === "C201").visite);
-  assert.strictEqual(locaux.vus, 1);
-  assert.ok(locaux.texte.includes("C224 ✓") && locaux.texte.includes("(1/22 visités)"));
+  // Un objet dans un local n'est plus ramassé tout seul : sans PRENDRE, le local reste « à revoir ».
+  assert.ok(texte(p.executer("entrer c224")).includes("clé dorée"));
+  assert.ok(!p.possede("cle_doree"));
+  p.executer("entrer c201");
+  assert.ok(texte(p.executer("prendre clé dorée")).includes("Il n'y a pas")); // on a quitté C224
+  let locaux = p.decrireLieu().find((x) => x.type === "locaux");
+  assert.ok(locaux.locaux.find((l) => l.nom === "C224").aRevoir);
+  assert.ok(!locaux.locaux.find((l) => l.nom === "C201").aRevoir && locaux.locaux.find((l) => l.nom === "C201").visite);
+  assert.ok(!locaux.locaux.find((l) => l.nom === "C202").visite);
+  assert.strictEqual(locaux.vus, 2);
+  assert.strictEqual(locaux.aRevoir, 1);
+  assert.ok(locaux.texte.includes("C224 ✓ (à revoir)") && locaux.texte.includes("C201 ✓ ·") && locaux.texte.includes("(2/22 visités)"));
   const q = Partie.restaurer(JSON.parse(JSON.stringify(p.exporter())));
-  assert.strictEqual(q.decrireLieu().find((x) => x.type === "locaux").vus, 1);
+  assert.strictEqual(q.decrireLieu().find((x) => x.type === "locaux").aRevoir, 1);
+  p.executer("entrer c224");
+  assert.ok(texte(p.executer("prendre clé dorée")).includes("Tu ressors"));
+  assert.ok(p.possede("cle_doree"));
+  assert.ok(texte(p.executer("entrer c224")).includes("Le pupitre du fond est vide"));
+  locaux = p.decrireLieu().find((x) => x.type === "locaux");
+  assert.strictEqual(locaux.aRevoir, 0);
+  assert.ok(texte(p.executer("utiliser clé dorée")).includes("aucune serrure"));
+  p.executer("entrer c224");
+  p.executer("o"); // un déplacement referme le local
+  assert.strictEqual(p.localOuvert, null);
   for (const nom of ["A120", "B272A", "Gym 3", "C130"]) assert.ok(texteLocal(nom).length > 20);
   p.lieu = 10;
   for (const cmd of ["réception", "Magasin", "entrer dans la réception", "aller au magasin"]) {

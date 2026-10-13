@@ -17,6 +17,8 @@
     --lune: #9db3c9;         /* accent : lueur bleutée de la lune */
     --ecran: #f2efe6;        /* lumière crue du téléphone */
     --rouille: #b4674a;      /* métal, cadenas */
+    --vert: #7fae86;         /* local visité, rien d'oublié */
+    --jaune: #d9b44a;        /* local visité, quelque chose d'oublié */
     --f-titre: "Michroma", "Eurostile", "Arial Black", sans-serif;
     --f-texte: "Spectral", "Iowan Old Style", Georgia, serif;
     --f-machine: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
@@ -110,7 +112,10 @@
   .sorties { color: var(--ombre); text-transform: uppercase; letter-spacing: 0.14em; }
   .locaux { font-family: var(--f-machine); font-size: 0.8rem; line-height: 1.8; color: var(--cendre); letter-spacing: 0.06em; }
   .locaux .etiquette, .locaux .compte { color: var(--ombre); text-transform: uppercase; letter-spacing: 0.14em; }
-  .locaux .visite { color: var(--ombre); opacity: 0.6; }
+  .locaux .visite { color: var(--ombre); }
+  .locaux .crochet { color: var(--vert); }
+  .locaux .a-revoir { color: var(--cendre); }
+  .locaux .a-revoir .crochet, .locaux .compte .jaune { color: var(--jaune); }
   .locaux .compte { margin-left: 0.5rem; }
   .systeme { color: var(--ombre); }
   .commande { color: var(--lune); margin-top: 1rem !important; }
@@ -536,17 +541,31 @@
           etiquette.className = "etiquette";
           etiquette.textContent = "Locaux : ";
           p.appendChild(etiquette);
+          // Crochet vert : visité, rien d'oublié. Crochet jaune : il reste quelque chose dedans.
           b.locaux.forEach((l, i) => {
             if (i) p.appendChild(document.createTextNode(" · "));
             const span = document.createElement("span");
-            span.textContent = l.visite ? l.nom + " ✓" : l.nom;
-            if (l.visite) span.className = "visite";
+            span.textContent = l.nom;
+            if (l.visite) {
+              span.className = l.aRevoir ? "a-revoir" : "visite";
+              const crochet = document.createElement("span");
+              crochet.className = "crochet";
+              crochet.textContent = " ✓";
+              crochet.title = l.aRevoir ? "Tu as laissé quelque chose ici" : "Visité";
+              span.appendChild(crochet);
+            }
             p.appendChild(span);
           });
           if (b.vus) {
             const compte = document.createElement("span");
             compte.className = "compte";
             compte.textContent = `${b.vus}/${b.locaux.length} visités`;
+            if (b.aRevoir) {
+              const jaune = document.createElement("span");
+              jaune.className = "jaune";
+              jaune.textContent = ` · ${b.aRevoir} à revoir`;
+              compte.appendChild(jaune);
+            }
             p.appendChild(compte);
           }
         } else if (b.type === "lieu") {

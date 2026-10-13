@@ -668,8 +668,8 @@
     B251: { texte: "Un laboratoire de biologie. Dans un bocal, une grenouille dans le formol te regarde. Elle a l'air de savoir quelque chose." },
     B177: { texte: "La scène. Un seul projecteur pend de travers au-dessus de toi. Au sol, du ruban phosphorescent marque l'emplacement des acteurs. Des croix. Partout. Beaucoup trop de croix." },
     B176: { texte: "Les coulisses. Un costume de lapin géant pend à un cintre. Ses grands yeux de plastique te fixent. Rien d'autre." },
-    B145: { texte: "Un local de rangement. Sur une étagère, une lampe de poche en plastique jaune. Tu la glisses dans ta poche.", objet: "lampe_morte" },
-    C224: { texte: "Une classe déserte. Dans le pupitre du fond, une petite clé dorée accrochée à un porte-clés en forme d'étoile. Tu la prends.", objet: "cle_doree" },
+    B145: { texte: "Un local de rangement. Sur une étagère, une lampe de poche en plastique jaune.", objet: "lampe_morte", objetSorti: "Un local de rangement. Des boîtes, des chaises empilées. L'étagère où était la lampe est vide." },
+    C224: { texte: "Une classe déserte. Dans le pupitre du fond, une petite clé dorée accrochée à un porte-clés en forme d'étoile.", objet: "cle_doree", objetSorti: "Une classe déserte. Le pupitre du fond est vide." },
     C144: { texte: "La conciergerie. Seaux, vadrouilles, produits. Sur une tablette, une boîte de piles AA : elles ont toutes coulé, gonflées, inutilisables." },
     C112: { texte: "Une salle de classe. Le babillard est couvert de dessins d'enfants du camp de jour de l'été. Un soleil, une maison, une famille. Une silhouette noire, derrière la maison." },
     F110: { texte: "La fenêtre de la classe est ouverte. Dehors, dans la cour, des silhouettes. Des dizaines, immobiles, toutes tournées vers l'école. Elles attendent. Tu refermes la porte sans un bruit." },
@@ -693,6 +693,12 @@
   INDEX_LOCAUX.A102 = { nom: "A102", lieu: 10, vers: 23 };
   INDEX_LOCAUX.H105 = { nom: "H105", lieu: 20 };
   INDEX_LOCAUX.H115 = { nom: "H115", lieu: 20 };
+
+  function objetsLocauxDepart() {
+    const depart = {};
+    for (const cle in LOCAUX_SPECIAUX) if (LOCAUX_SPECIAUX[cle].objet) depart[cle] = [LOCAUX_SPECIAUX[cle].objet];
+    return depart;
+  }
 
   function hachage(s) {
     let h = 7;
@@ -830,6 +836,8 @@
       this.codes = {}; // réponses trouvées, par lieu
       this.notes = []; // ce que le joueur a écrit dans le calepin
       this.locauxFouilles = [];
+      this.objetsLocaux = objetsLocauxDepart(); // objets encore dans les locaux, par numéro
+      this.localOuvert = null; // local où l'on vient d'entrer : PRENDRE y fonctionne jusqu'au prochain déplacement
       this.visites = new Set([LIEU_DEPART]);
       this.poursuite = 0; // tours restants avant que la chose n'arrive (0 = pas de poursuite)
       this.tour = 0;
@@ -848,6 +856,8 @@
         codes: this.codes,
         notes: this.notes,
         locauxFouilles: this.locauxFouilles,
+        objetsLocaux: this.objetsLocaux,
+        localOuvert: this.localOuvert,
         visites: [...this.visites],
         poursuite: this.poursuite,
         tour: this.tour,
@@ -859,7 +869,12 @@
 
     static restaurer(d) {
       const p = new Partie();
-      Object.assign(p, d, { visites: new Set(d.visites), notes: d.notes || [] });
+      Object.assign(p, d, {
+        visites: new Set(d.visites),
+        notes: d.notes || [],
+        objetsLocaux: d.objetsLocaux || objetsLocauxDepart(),
+        localOuvert: d.localOuvert || null,
+      });
       return p;
     }
 
@@ -917,13 +932,22 @@
         });
       }
       if (lieu.locaux && lieu.locaux.length) {
-        const locaux = lieu.locaux.map((nom) => ({ nom, visite: this.locauxFouilles.includes(compact(nom)) }));
+        // Un local visité où il reste un objet est « à revoir » (crochet jaune) ; sinon il est fait (vert).
+        const locaux = lieu.locaux.map((nom) => {
+          const cle = compact(nom);
+          const visite = this.locauxFouilles.includes(cle);
+          const aRevoir = visite && (this.objetsLocaux[cle] || []).length > 0;
+          return { nom, visite, aRevoir };
+        });
         const vus = locaux.filter((l) => l.visite).length;
+        const aRevoir = locaux.filter((l) => l.aRevoir).length;
+        const marque = (l) => (l.aRevoir ? l.nom + " ✓ (à revoir)" : l.visite ? l.nom + " ✓" : l.nom);
         blocs.push({
           type: "locaux",
-          texte: "Locaux : " + locaux.map((l) => (l.visite ? l.nom + " ✓" : l.nom)).join(" · ") + (vus ? ` (${vus}/${locaux.length} visités)` : ""),
+          texte: "Locaux : " + locaux.map(marque).join(" · ") + (vus ? ` (${vus}/${locaux.length} visités)` : ""),
           locaux,
           vus,
+          aRevoir,
         });
       }
       blocs.push({ type: "sorties", texte: "Sorties : " + this.sortiesVisibles().join(" · ") });
@@ -1017,6 +1041,7 @@
 
     allerA(dest) {
       const origine = this.lieu;
+      this.localOuvert = null;
       this.lieu = dest;
       this.visites.add(dest);
       return this.decrireLieu(origine);
@@ -1043,15 +1068,17 @@
       }
       const special = LOCAUX_SPECIAUX[compact(nom)];
       if (special && special.mort) return this.mort(special.mort);
-      const blocs = [{ type: "texte", texte: `Tu entres dans le local ${nom}. ${texteLocal(nom)}` }];
-      if (special && special.objet && !this.locauxFouilles.includes(compact(nom))) {
-        this.inventaire.push(special.objet);
-        blocs.push(sys("Pris : " + OBJETS[special.objet].nom + "."));
-      } else if (special && special.objet) {
-        blocs.length = 0;
-        blocs.push({ type: "texte", texte: `Tu entres dans le local ${nom}. Tu as déjà fouillé ici. Il n'y a plus rien.` });
+      const cle = compact(nom);
+      const restants = this.objetsLocaux[cle] || [];
+      const description = special && special.objet && !restants.length ? special.objetSorti : texteLocal(nom);
+      const blocs = [{ type: "texte", texte: `Tu entres dans le local ${nom}. ${description}` }];
+      if (!this.locauxFouilles.includes(cle)) this.locauxFouilles.push(cle);
+      if (restants.length) {
+        this.localOuvert = { cle, lieu: this.lieu };
+        blocs.push({ type: "objets", texte: "Tu distingues ici : " + restants.map((id) => OBJETS[id].enPlace).join(", ") + "." });
+        return blocs;
       }
-      if (!this.locauxFouilles.includes(compact(nom))) this.locauxFouilles.push(compact(nom));
+      this.localOuvert = null;
       blocs.push(sys("Tu ressors dans le couloir."));
       return blocs;
     }
@@ -1080,8 +1107,18 @@
           blocs.push({ type: "texte", texte: TEXTE_NOIR_ABSOLU });
           continue;
         }
+        const local = this.localOuvert && this.localOuvert.lieu === this.lieu ? this.localOuvert.cle : null;
+        const dansLocal = local ? this.objetsLocaux[local] || [] : [];
         if (this.possede(id)) {
           blocs.push(sys("Tu as déjà " + OBJETS[id].nom + "."));
+        } else if (dansLocal.includes(id)) {
+          this.objetsLocaux[local] = dansLocal.filter((x) => x !== id);
+          this.inventaire.push(id);
+          blocs.push(sys("Pris : " + OBJETS[id].nom + "."));
+          if (!this.objetsLocaux[local].length) {
+            this.localOuvert = null;
+            blocs.push(sys("Tu ressors dans le couloir."));
+          }
         } else if (ici.includes(id)) {
           this.objetsParLieu[this.lieu] = ici.filter((x) => x !== id);
           this.inventaire.push(id);
