@@ -111,7 +111,7 @@
       nom: "La Classe de M. Plante",
       zone: "2e étage · Aile A",
       description:
-        "Le repaire de M. Plante. Rassurant le jour, absolument terrifiant cette nuit. La faible lueur de la lune découpe la forme de son bureau à l'avant. Dans les ombres, les frises chronologiques et les graphiques d'éducation financière affichés aux murs ressemblent à de longues cicatrices sombres. Un accessoire en bois du jeu Survivor St-Ex repose sur une table, inutile. L'air est mort. (Sortie : EST).",
+        "Le repaire de M. Plante. Rassurant le jour, absolument terrifiant cette nuit. La faible lueur de la lune découpe la forme de son bureau à l'avant. Dans les ombres, les frises chronologiques et les graphiques d'éducation financière affichés aux murs ressemblent à de longues cicatrices sombres. L'air est mort. (Sortie : EST).",
       sorties: { EST: 2 },
       objets: [],
     },
