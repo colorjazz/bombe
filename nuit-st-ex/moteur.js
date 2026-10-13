@@ -109,7 +109,7 @@
   const LIEUX = {
     1: {
       nom: "La Classe de M. Plante",
-      zone: "Étage · Aile A",
+      zone: "2e étage · Aile A",
       description:
         "Le repaire de M. Plante. Rassurant le jour, absolument terrifiant cette nuit. La faible lueur de la lune découpe la forme de son bureau à l'avant. Dans les ombres, les frises chronologiques et les graphiques d'éducation financière affichés aux murs ressemblent à de longues cicatrices sombres. Un accessoire en bois du jeu Survivor St-Ex repose sur une table, inutile. L'air est mort. (Sortie : EST).",
       sorties: { EST: 2 },
@@ -117,7 +117,7 @@
     },
     2: {
       nom: "Couloir de l'Aile A",
-      zone: "Étage · Aile A",
+      zone: "2e étage · Aile A",
       description:
         "Le long corridor de l'Aile A à l'étage. Les casiers métalliques forment une haie d'honneur sinistre qui s'étire dans l'obscurité, se perdant dans le noir absolu. À l'OUEST, la porte du local A-217. Au NORD, le couloir s'ouvre sur un espace plus vaste.",
       sorties: { OUEST: 1, NORD: 3 },
@@ -125,15 +125,15 @@
     },
     3: {
       nom: "Carrefour de l'Étage",
-      zone: "Étage · Aile B",
+      zone: "2e étage · Aile B",
       description:
-        "Tu es au cœur du premier étage. L'air y est lourd, suffocant. Au centre, la gueule béante de l'escalier principal plonge vers le rez-de-chaussée (BAS). À l'OUEST, l'obscurité de la partie haute de l'auditorium. À l'EST, le couloir s'enfonce vers les laboratoires de sciences de l'Aile D. Au SUD, le retour vers ton couloir.",
+        "Tu es au cœur du deuxième étage. L'air y est lourd, suffocant. Au centre, la gueule béante de l'escalier principal plonge vers le rez-de-chaussée (BAS). À l'OUEST, l'obscurité de la partie haute de l'auditorium. À l'EST, le couloir s'enfonce vers les laboratoires de sciences de l'Aile D. Au SUD, le retour vers ton couloir.",
       sorties: { SUD: 2, OUEST: 4, EST: 5, BAS: 6 },
       objets: [],
     },
     4: {
       nom: "Partie Haute de l'Auditorium",
-      zone: "Étage · Aile B",
+      zone: "2e étage · Aile B",
       description:
         "Tu te tiens sur le balcon de la partie haute de l'auditorium. Tu surplombes la grande salle noire en contrebas. Tu as l'impression vertigineuse que, tout en bas dans cette mer de 446 sièges, quelque chose vient de bouger. Une simple illusion d'optique dans les ténèbres ? Tu n'as pas le courage d'attendre pour vérifier. L'unique issue est derrière toi.",
       sorties: { EST: 3 },
@@ -141,7 +141,7 @@
     },
     5: {
       nom: "Laboratoires de Sciences",
-      zone: "Étage · Aile D",
+      zone: "2e étage · Aile D",
       description:
         "La section « Biol. Chim. Phys. ». La lueur de la lune éclaire violemment les paillasses. Une odeur clinique et âcre de vieux produits chimiques pique le nez. La porte du Dépôt de Sciences est ouverte.",
       sorties: { OUEST: 3 },
