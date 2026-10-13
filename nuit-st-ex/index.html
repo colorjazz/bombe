@@ -333,6 +333,30 @@
   #joueur { display: flex; gap: 0.75rem; align-items: baseline; }
   #quitter { padding: 0.2rem 0.5rem; font-size: 0.65rem; }
   #rang { color: var(--lune) !important; }
+  #bloc-palmares { display: grid; gap: 0.9rem; }
+  #bouton-palmares { width: 100%; }
+  #palmares { display: grid; gap: 0.75rem; }
+  .tableau-palmares { overflow-x: auto; }
+  .tableau-palmares table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--f-machine);
+    font-size: 0.8rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .tableau-palmares th {
+    text-align: left;
+    font-weight: 500;
+    font-size: 0.65rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ombre);
+    padding: 0.4rem 0.5rem;
+    border-bottom: 1px solid var(--beton-2);
+  }
+  .tableau-palmares td { padding: 0.45rem 0.5rem; border-bottom: 1px solid var(--beton-2); color: var(--cendre); }
+  .tableau-palmares td.nombre, .tableau-palmares th.nombre { text-align: right; }
+  .tableau-palmares tr:first-child td { color: var(--lune); }
 
   .secousse { animation: secousse 0.45s linear; }
 
@@ -402,6 +426,16 @@
         <p id="erreur-compte" role="alert"></p>
       </form>
       <p class="note">Ta progression est sauvegardée et tu reprends où tu étais. Si tu meurs, tu recommences au début. N'utilise pas un mot de passe que tu utilises ailleurs.</p>
+    </section>
+    <section id="bloc-palmares" hidden>
+      <button id="bouton-palmares" type="button" aria-expanded="false" aria-controls="palmares">Voir le palmarès</button>
+      <div id="palmares" hidden>
+        <p class="note">Les survivants, du temps de jeu le plus court au plus long. Seul le temps passé à jouer compte : les pauses de plus de 5 minutes sont exclues.</p>
+        <div class="tableau-palmares"><table>
+          <thead><tr><th>#</th><th>Pseudo</th><th class="nombre">Temps</th><th class="nombre">Morts</th></tr></thead>
+          <tbody id="lignes-palmares"></tbody>
+        </table></div>
+      </div>
     </section>
     <p id="sans-compte" class="note" hidden>Les comptes ne sont offerts que dans la version de l'école.</p>
   </div>
@@ -580,14 +614,22 @@
       minuterie = setTimeout(envoyerSauvegarde, 3000);
     }
 
+    function formaterTemps(secondes) {
+      const h = Math.floor(secondes / 3600);
+      const m = Math.floor((secondes % 3600) / 60);
+      const s = secondes % 60;
+      const deux = (x) => String(x).padStart(2, "0");
+      return h > 0 ? `${h} h ${deux(m)} min` : `${m} min ${deux(s)} s`;
+    }
+
     function enregistrerVictoire() {
       if (!session) return;
       const rang = document.getElementById("rang");
       appeler("enregistrerVictoire", session.jeton, partie.reponses())
         .then((r) => {
-          rang.textContent = r.rang === 1
+          rang.textContent = (r.rang === 1
             ? "Tu es la toute première personne à survivre à la nuit."
-            : `Tu es la ${r.rang}e personne à survivre à la nuit.`;
+            : `Tu es la ${r.rang}e personne à survivre à la nuit.`) + ` Temps de jeu : ${formaterTemps(r.temps)}.`;
           rang.hidden = false;
         })
         .catch((e) => afficher([{ type: "systeme", texte: "Victoire non enregistrée : " + e.message }]));
@@ -640,6 +682,43 @@
 
     serveurJoignable().then((oui) => {
       document.getElementById(oui ? "bloc-compte" : "sans-compte").hidden = false;
+      document.getElementById("bloc-palmares").hidden = !oui;
+    });
+
+    function afficherPalmares() {
+      const corps = document.getElementById("lignes-palmares");
+      const ligneSeule = (texte) => {
+        const tr = document.createElement("tr");
+        const td = document.createElement("td");
+        td.colSpan = 4;
+        td.textContent = texte;
+        tr.appendChild(td);
+        corps.replaceChildren(tr);
+      };
+      ligneSeule("Chargement…");
+      appeler("palmares")
+        .then((liste) => {
+          if (!liste.length) return ligneSeule("Personne n'a encore survécu à la nuit.");
+          corps.replaceChildren(...liste.map((g, i) => {
+            const tr = document.createElement("tr");
+            for (const [valeur, classe] of [[i + 1, ""], [g.pseudo, ""], [formaterTemps(g.temps), "nombre"], [g.morts, "nombre"]]) {
+              const td = document.createElement("td");
+              td.textContent = valeur;
+              if (classe) td.className = classe;
+              tr.appendChild(td);
+            }
+            return tr;
+          }));
+        })
+        .catch((e) => ligneSeule("Palmarès indisponible : " + e.message));
+    }
+
+    document.getElementById("bouton-palmares").addEventListener("click", function () {
+      const panneau = document.getElementById("palmares");
+      panneau.hidden = !panneau.hidden;
+      this.setAttribute("aria-expanded", String(!panneau.hidden));
+      this.textContent = panneau.hidden ? "Voir le palmarès" : "Cacher le palmarès";
+      if (!panneau.hidden) afficherPalmares();
     });
     document.getElementById("invite").addEventListener("click", () => entrerDansLeJeu(null, null));
     document.getElementById("onglet-connexion").addEventListener("click", () => choisirOnglet(false));

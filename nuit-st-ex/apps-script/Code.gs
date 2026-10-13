@@ -4,8 +4,11 @@
  * Sert le jeu (Index.html) et garde, dans le classeur Google Sheets auquel ce
  * script est rattaché :
  *   - Comptes  : pseudo, sel, empreinte du mot de passe (jamais le mot de passe lui-même)
- *   - Parties  : la sauvegarde de chaque compte et son nombre de morts
- *   - Gagnants : l'ordre d'arrivée, avec la date et l'heure exactes
+ *   - Parties  : la sauvegarde de chaque compte, ses morts et son temps de jeu actif
+ *   - Gagnants : l'ordre d'arrivée, la date et l'heure, le temps de jeu et les morts
+ *
+ * Le temps de jeu est mesuré ici, par le serveur, à partir des sauvegardes :
+ * un écart de plus de PAUSE_MAX entre deux contacts compte comme une pause.
  *
  * Mise en place : voir nuit-st-ex/README.md, section « Version de l'école ».
  */
@@ -19,6 +22,21 @@ var EMPREINTES_CODES = [
 ];
 
 var DUREE_SESSION = 6 * 60 * 60; // secondes (maximum permis par CacheService)
+var PAUSE_MAX = 5 * 60; // secondes sans contact au-delà desquelles on ne compte plus le temps
+// Une victoire plus rapide ou avec moins de sauvegardes que ça est marquée « À vérifier »
+// et n'apparaît pas dans le palmarès public.
+var TEMPS_MINIMUM = 10 * 60;
+var SAUVEGARDES_MINIMUM = 15;
+
+var ENTETES = {
+  Comptes: ["Pseudo", "Sel", "Empreinte du mot de passe", "Créé le"],
+  Parties: ["Pseudo", "Sauvegarde", "Dernier contact", "Morts", "Temps de jeu (s)", "Sauvegardes"],
+  Gagnants: ["Rang d'arrivée", "Pseudo", "Date et heure", "Temps de jeu", "Temps (s)", "Morts", "Vérification"],
+};
+
+function maintenant_() {
+  return new Date();
+}
 
 // Noms acceptés pour le fichier HTML du jeu (le bon est « Index »).
 var NOMS_PAGE = ["Index", "index", "Index.html", "index.html"];
@@ -53,6 +71,7 @@ var ACTIONS = {
   creerCompte: function (a) { return creerCompte(a[0], a[1]); },
   connecter: function (a) { return connecter(a[0], a[1]); },
   sauvegarder: function (a) { return sauvegarder(a[0], a[1], a[2]); },
+  palmares: function () { return palmares(); },
   enregistrerVictoire: function (a) { return enregistrerVictoire(a[0], a[1]); },
 };
 
@@ -75,18 +94,16 @@ function json_(objet) {
 function installer() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   PropertiesService.getScriptProperties().setProperty("CLASSEUR", ss.getId());
-  onglet_(ss, "Comptes", ["Pseudo", "Sel", "Empreinte du mot de passe", "Créé le"]);
-  onglet_(ss, "Parties", ["Pseudo", "Sauvegarde", "Mise à jour", "Morts"]);
-  onglet_(ss, "Gagnants", ["Rang", "Pseudo", "Date et heure"]);
+  for (var nom in ENTETES) onglet_(ss, nom, ENTETES[nom]);
 }
 
+// Crée l'onglet au besoin et (ré)écrit ses en-têtes : relancer installer() après une mise à jour est sans danger.
 function onglet_(ss, nom, entetes) {
   var feuille = ss.getSheetByName(nom) || ss.insertSheet(nom);
-  if (feuille.getLastRow() === 0) {
-    feuille.appendRow(entetes);
-    feuille.setFrozenRows(1);
-    feuille.getRange(1, 1, 1, entetes.length).setFontWeight("bold");
-  }
+  if (feuille.getLastRow() === 0) feuille.appendRow(entetes);
+  else feuille.getRange(1, 1, 1, entetes.length).setValues([entetes]);
+  feuille.setFrozenRows(1);
+  feuille.getRange(1, 1, 1, entetes.length).setFontWeight("bold");
   return feuille;
 }
 
@@ -166,7 +183,8 @@ function creerCompte(pseudo, mdp) {
     var comptes = feuille_("Comptes");
     if (ligne_(comptes, pseudo)) throw new Error("Ce pseudo est déjà pris. Choisis-en un autre.");
     var sel = Utilities.getUuid();
-    comptes.appendRow([pseudo, sel, empreinteMotDePasse_(sel, mdp), new Date()]);
+    comptes.appendRow([pseudo, sel, empreinteMotDePasse_(sel, mdp), maintenant_()]);
+    contact_(pseudo, false);
     return ouvrirSession_(pseudo, null);
   });
 }
@@ -181,27 +199,59 @@ function connecter(pseudo, mdp) {
     Utilities.sleep(800); // ralentit les essais au hasard
     throw new Error("Pseudo ou mot de passe incorrect.");
   }
+  return verrouiller_(function () {
+    var partie = contact_(ligne[0], false);
+    return ouvrirSession_(ligne[0], partie.sauvegarde ? JSON.parse(partie.sauvegarde) : null);
+  });
+}
+
+// Note un contact du joueur dans l'onglet Parties et renvoie sa ligne.
+// Si compter est vrai, le temps écoulé depuis le dernier contact s'ajoute au temps de jeu
+// (sauf au-delà de PAUSE_MAX : c'était une pause ou un autre jour).
+function contact_(pseudo, compter) {
   var parties = feuille_("Parties");
-  var p = ligne_(parties, ligne[0]);
-  var brut = p ? parties.getRange(p, 2).getValue() : "";
-  return ouvrirSession_(ligne[0], brut ? JSON.parse(brut) : null);
+  var n = ligne_(parties, pseudo);
+  var maintenant = maintenant_();
+  if (!n) {
+    parties.appendRow([pseudo, "", maintenant, 0, 0, 0]);
+    n = parties.getLastRow();
+  }
+  var v = parties.getRange(n, 1, 1, 6).getValues()[0];
+  var partie = {
+    ligne: n,
+    sauvegarde: v[1],
+    morts: Number(v[3]) || 0,
+    temps: Number(v[4]) || 0,
+    sauvegardes: Number(v[5]) || 0,
+  };
+  var dernier = v[2] instanceof Date ? v[2].getTime() : new Date(v[2]).getTime();
+  var ecart = (maintenant.getTime() - dernier) / 1000;
+  if (compter && ecart > 0 && ecart <= PAUSE_MAX) partie.temps += Math.round(ecart);
+  parties.getRange(n, 3).setValues([[maintenant]]);
+  parties.getRange(n, 5).setValues([[partie.temps]]);
+  return partie;
 }
 
 /** etat = sauvegarde de la partie, ou null pour l'effacer (mort, nouvelle partie). */
 function sauvegarder(jeton, etat, mort) {
   var pseudo = pseudoDeSession_(jeton);
   return verrouiller_(function () {
-    var parties = feuille_("Parties");
-    var n = ligne_(parties, pseudo);
+    var partie = contact_(pseudo, true);
     var valeur = etat ? JSON.stringify(etat) : "";
-    if (!n) {
-      parties.appendRow([pseudo, valeur, new Date(), mort ? 1 : 0]);
-    } else {
-      var morts = Number(parties.getRange(n, 4).getValue()) || 0;
-      parties.getRange(n, 2, 1, 3).setValues([[valeur, new Date(), morts + (mort ? 1 : 0)]]);
-    }
+    var parties = feuille_("Parties");
+    parties.getRange(partie.ligne, 2).setValues([[valeur]]);
+    parties.getRange(partie.ligne, 4).setValues([[partie.morts + (mort ? 1 : 0)]]);
+    parties.getRange(partie.ligne, 6).setValues([[partie.sauvegardes + 1]]);
     return true;
   });
+}
+
+function formaterTemps_(secondes) {
+  var h = Math.floor(secondes / 3600);
+  var m = Math.floor((secondes % 3600) / 60);
+  var s = secondes % 60;
+  var deux = function (x) { return ("0" + x).slice(-2); };
+  return h > 0 ? h + " h " + deux(m) + " min" : m + " min " + deux(s) + " s";
 }
 
 function enregistrerVictoire(jeton, reponses) {
@@ -211,15 +261,34 @@ function enregistrerVictoire(jeton, reponses) {
   if (!valide) throw new Error("les réponses ne correspondent pas.");
   return verrouiller_(function () {
     var gagnants = feuille_("Gagnants");
-    var deja = gagnants.getRange(1, 1, gagnants.getLastRow(), 2).getValues();
+    var deja = gagnants.getRange(1, 1, gagnants.getLastRow(), 5).getValues();
     for (var i = 1; i < deja.length; i++) {
-      if (String(deja[i][1]).toLowerCase() === pseudo.toLowerCase()) return { rang: deja[i][0], deja: true };
+      if (String(deja[i][1]).toLowerCase() === pseudo.toLowerCase()) {
+        return { rang: deja[i][0], deja: true, temps: Number(deja[i][4]) || 0 };
+      }
     }
+    var partie = contact_(pseudo, true);
+    var suspect = partie.temps < TEMPS_MINIMUM || partie.sauvegardes < SAUVEGARDES_MINIMUM;
     var rang = deja.length; // en-tête compris : 1er gagnant = rang 1
-    gagnants.appendRow([rang, pseudo, new Date()]);
-    var parties = feuille_("Parties");
-    var p = ligne_(parties, pseudo);
-    if (p) parties.getRange(p, 2, 1, 2).setValues([["", new Date()]]);
-    return { rang: rang, deja: false };
+    gagnants.appendRow([
+      rang, pseudo, maintenant_(), formaterTemps_(partie.temps), partie.temps, partie.morts,
+      suspect ? "À vérifier (trop rapide)" : "OK",
+    ]);
+    feuille_("Parties").getRange(partie.ligne, 2).setValues([[""]]);
+    return { rang: rang, deja: false, temps: partie.temps };
   });
+}
+
+/** Palmarès public : les victoires vérifiées, du temps de jeu le plus court au plus long. */
+function palmares() {
+  var gagnants = feuille_("Gagnants");
+  if (gagnants.getLastRow() < 2) return [];
+  return gagnants.getRange(2, 1, gagnants.getLastRow() - 1, 7).getValues()
+    .filter(function (l) { return l[6] === "OK"; })
+    .map(function (l) {
+      var date = l[2] instanceof Date ? l[2] : new Date(l[2]);
+      return { arrivee: l[0], pseudo: String(l[1]), temps: Number(l[4]) || 0, morts: Number(l[5]) || 0, date: date.toISOString() };
+    })
+    .sort(function (a, b) { return a.temps - b.temps || a.arrivee - b.arrivee; })
+    .slice(0, 50);
 }

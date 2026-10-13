@@ -40,9 +40,15 @@ Le site appelle le déploiement Apps Script : celui-ci doit avoir la version act
 Le classeur garde trois onglets :
 
 - **Comptes** : pseudo, sel et empreinte du mot de passe. Le mot de passe lui-même n'est jamais stocké.
-- **Parties** : la sauvegarde de chaque compte, sa dernière mise à jour et son nombre de morts.
-- **Gagnants** : l'ordre d'arrivée, avec la date et l'heure exactes de chaque victoire.
-  Une victoire n'est acceptée que si les trois réponses sont bonnes.
+- **Parties** : la sauvegarde de chaque compte, son dernier contact, ses morts, son temps de jeu actif
+  (mesuré par le serveur ; une pause de plus de 5 minutes ne compte pas) et son nombre de sauvegardes.
+- **Gagnants** : l'ordre d'arrivée, la date et l'heure, le temps de jeu, les morts et une vérification.
+  Une victoire n'est acceptée que si les trois réponses sont bonnes. Une victoire en moins de 10 minutes
+  de jeu, ou avec moins de 15 sauvegardes, est marquée « À vérifier » et n'apparaît pas dans le palmarès.
+
+Le palmarès (bouton sur l'écran d'accueil) classe les victoires vérifiées du temps le plus court au plus long.
+
+Après une mise à jour de `Code.gs`, relancer `installer` : les en-têtes des onglets sont mis à jour sans rien effacer.
 
 ### Installation (une seule fois)
 

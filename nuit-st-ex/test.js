@@ -284,7 +284,11 @@ function serveurSimule() {
   vm.createContext(contexte);
   vm.runInContext(fs.readFileSync(path.join(__dirname, "apps-script", "Code.gs"), "utf8"), contexte);
   contexte.installer();
-  return { s: contexte, ss, cache };
+  // Horloge simulée : avancer(secondes) fait passer le temps côté serveur.
+  let horloge = Date.parse("2026-10-14T13:00:00Z");
+  contexte.maintenant_ = () => new Date(horloge);
+  const avancer = (secondes) => { horloge += secondes * 1000; };
+  return { s: contexte, ss, cache, avancer };
 }
 
 test("serveur : création de compte, connexion, sauvegarde, mot de passe jamais stocké", () => {
@@ -346,15 +350,41 @@ test("Code.gs et moteur.js ont les mêmes empreintes ; apps-script/Index.html es
     "apps-script/Index.html est périmé : lancer node nuit-st-ex/construire-apps-script.js");
 });
 
-testSolution("serveur : classement des gagnants", (reponses) => {
-  const { s, ss } = serveurSimule();
-  const a = s.creerCompte("Premiere", "secret42");
-  const b = s.creerCompte("Deuxieme", "secret42");
-  assert.strictEqual(s.enregistrerVictoire(a.jeton, reponses).rang, 1);
-  assert.strictEqual(s.enregistrerVictoire(b.jeton, reponses).rang, 2);
-  const encore = s.enregistrerVictoire(a.jeton, reponses);
+test("serveur : le temps de jeu ne compte que le jeu actif", () => {
+  const { s, ss, avancer } = serveurSimule();
+  const a = s.creerCompte("Chrono", "secret42");
+  for (let i = 0; i < 10; i++) { avancer(30); s.sauvegarder(a.jeton, { lieu: 1 }, false); } // 5 min de jeu
+  avancer(3 * 3600); // pause : la fin du cours
+  const b = s.connecter("Chrono", "secret42");
+  avancer(60);
+  s.sauvegarder(b.jeton, { lieu: 2 }, false); // +1 min
+  const ligne = ss.feuilles.Parties.lignes[1];
+  assert.strictEqual(ligne[4], 360);
+  assert.strictEqual(ligne[5], 11);
+});
+
+testSolution("serveur : palmarès par temps, victoires trop rapides écartées", (reponses) => {
+  const { s, ss, avancer } = serveurSimule();
+  const jouerPendant = (jeton, minutes) => {
+    for (let i = 0; i < minutes * 2; i++) { avancer(30); s.sauvegarder(jeton, { lieu: 1 }, false); }
+  };
+  const lente = s.creerCompte("Lente", "secret42");
+  const rapide = s.creerCompte("Rapide", "secret42");
+  const tricheur = s.creerCompte("Eclair", "secret42");
+  jouerPendant(lente.jeton, 90);
+  assert.strictEqual(s.enregistrerVictoire(lente.jeton, reponses).rang, 1);
+  jouerPendant(rapide.jeton, 40);
+  const r = s.enregistrerVictoire(rapide.jeton, reponses);
+  assert.strictEqual(r.rang, 2);
+  assert.ok(Math.abs(r.temps - 40 * 60) <= 31);
+  avancer(5);
+  assert.strictEqual(s.enregistrerVictoire(tricheur.jeton, reponses).rang, 3);
+  assert.strictEqual(ss.feuilles.Gagnants.lignes[3][6], "À vérifier (trop rapide)");
+  const encore = s.enregistrerVictoire(lente.jeton, reponses);
   assert.ok(encore.deja && encore.rang === 1);
-  assert.strictEqual(ss.feuilles.Gagnants.lignes.length, 3);
+  const p = s.palmares();
+  assert.deepStrictEqual(p.map((g) => g.pseudo), ["Rapide", "Lente"]);
+  assert.ok(typeof p[0].date === "string");
 });
 
 testSolution("partie complète jusqu'à la victoire et la phrase", ([labo, armoire, coffre]) => {
