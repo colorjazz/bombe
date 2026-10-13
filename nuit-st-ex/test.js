@@ -242,6 +242,104 @@ test("sauvegarde et reprise", () => {
   assert.ok(texte(q.reprendre()).includes("Carrefour"));
 });
 
+// ==========================================
+// Serveur Apps Script, avec un faux Google Sheets en mémoire
+// ==========================================
+function serveurSimule() {
+  const vm = require("vm");
+  const fs = require("fs");
+  const path = require("path");
+  const classeurs = {};
+  function nouvelleFeuille() {
+    const lignes = [];
+    const plage = (r, c, nr = 1, nc = 1) => ({
+      getValues: () => Array.from({ length: nr }, (_, i) => Array.from({ length: nc }, (_, j) => ((lignes[r - 1 + i] || [])[c - 1 + j] ?? ""))),
+      getValue: () => ((lignes[r - 1] || [])[c - 1] ?? ""),
+      setValues: (v) => v.forEach((ligne, i) => ligne.forEach((x, j) => { (lignes[r - 1 + i] ||= [])[c - 1 + j] = x; })),
+      setFontWeight: () => {},
+    });
+    return { lignes, appendRow: (r) => lignes.push(r.slice()), getLastRow: () => lignes.length, getRange: plage, setFrozenRows: () => {} };
+  }
+  const ss = { feuilles: {}, getId: () => "classeur-1", getSheetByName(n) { return this.feuilles[n] || null; }, insertSheet(n) { return (this.feuilles[n] = nouvelleFeuille()); } };
+  classeurs["classeur-1"] = ss;
+  const proprietes = {};
+  const cache = {};
+  const contexte = {
+    SpreadsheetApp: { getActiveSpreadsheet: () => ss, openById: (id) => classeurs[id] },
+    PropertiesService: { getScriptProperties: () => ({ setProperty: (k, v) => { proprietes[k] = v; }, getProperty: (k) => proprietes[k] }) },
+    CacheService: { getScriptCache: () => ({ put: (k, v) => { cache[k] = v; }, get: (k) => cache[k] ?? null }) },
+    LockService: { getScriptLock: () => ({ waitLock() {}, releaseLock() {} }) },
+    Utilities: {
+      DigestAlgorithm: { SHA_256: "sha256" }, Charset: { UTF_8: "utf8" },
+      computeDigest: (_, t) => Array.from(crypto.createHash("sha256").update(t, "utf8").digest()).map((b) => (b > 127 ? b - 256 : b)),
+      getUuid: () => crypto.randomUUID(),
+      sleep: () => {},
+    },
+    HtmlService: {},
+  };
+  vm.createContext(contexte);
+  vm.runInContext(fs.readFileSync(path.join(__dirname, "apps-script", "Code.gs"), "utf8"), contexte);
+  contexte.installer();
+  return { s: contexte, ss, cache };
+}
+
+test("serveur : création de compte, connexion, sauvegarde, mot de passe jamais stocké", () => {
+  const { s, ss } = serveurSimule();
+  const a = s.creerCompte("Nuit_Noire", "secret42");
+  assert.ok(a.jeton && a.sauvegarde === null);
+  assert.throws(() => s.creerCompte("nuit_noire", "autre"), /déjà pris/);
+  assert.throws(() => s.creerCompte("ab", "secret42"), /3 à 20/);
+  assert.throws(() => s.creerCompte("Bonjour", "123"), /au moins 4/);
+  assert.throws(() => s.connecter("Nuit_Noire", "mauvais"), /incorrect/);
+  assert.throws(() => s.connecter("Personne", "secret42"), /incorrect/);
+  assert.ok(!JSON.stringify(ss.feuilles.Comptes.lignes).includes("secret42"));
+
+  const p = new Partie();
+  jouer(p, ["prendre agenda", "o", "s"]);
+  s.sauvegarder(a.jeton, p.exporter(), false);
+  const b = s.connecter("NUIT_NOIRE", "secret42");
+  assert.strictEqual(b.pseudo, "Nuit_Noire");
+  const q = Partie.restaurer(b.sauvegarde);
+  assert.strictEqual(q.lieu, 3);
+  assert.ok(q.possede("agenda"));
+
+  s.sauvegarder(b.jeton, null, true); // mort : la sauvegarde est effacée, le compteur monte
+  assert.strictEqual(s.connecter("Nuit_Noire", "secret42").sauvegarde, null);
+  assert.strictEqual(ss.feuilles.Parties.lignes[1][3], 1);
+  assert.throws(() => s.sauvegarder("jeton-bidon", null, false), /session a expiré/);
+});
+
+test("serveur : une victoire n'est acceptée qu'avec les bonnes réponses", () => {
+  const { s } = serveurSimule();
+  const a = s.creerCompte("Tricheur", "secret42");
+  assert.throws(() => s.enregistrerVictoire(a.jeton, ["A", "B", "C"]), /ne correspondent pas/);
+  assert.throws(() => s.enregistrerVictoire(a.jeton, null), /ne correspondent pas/);
+});
+
+test("Code.gs et moteur.js ont les mêmes empreintes ; apps-script/Index.html est à jour", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const moteur = fs.readFileSync(path.join(__dirname, "moteur.js"), "utf8");
+  const code = fs.readFileSync(path.join(__dirname, "apps-script", "Code.gs"), "utf8");
+  const dansMoteur = [...moteur.matchAll(/empreinte: "([0-9a-f]{64})"/g)].map((m) => m[1]);
+  const dansCode = [...code.matchAll(/"([0-9a-f]{64})"/g)].map((m) => m[1]);
+  assert.deepStrictEqual(dansCode, dansMoteur);
+  const { construire } = require("./construire-apps-script.js");
+  assert.strictEqual(fs.readFileSync(path.join(__dirname, "apps-script", "Index.html"), "utf8"), construire(),
+    "apps-script/Index.html est périmé : lancer node nuit-st-ex/construire-apps-script.js");
+});
+
+testSolution("serveur : classement des gagnants", (reponses) => {
+  const { s, ss } = serveurSimule();
+  const a = s.creerCompte("Premiere", "secret42");
+  const b = s.creerCompte("Deuxieme", "secret42");
+  assert.strictEqual(s.enregistrerVictoire(a.jeton, reponses).rang, 1);
+  assert.strictEqual(s.enregistrerVictoire(b.jeton, reponses).rang, 2);
+  const encore = s.enregistrerVictoire(a.jeton, reponses);
+  assert.ok(encore.deja && encore.rang === 1);
+  assert.strictEqual(ss.feuilles.Gagnants.lignes.length, 3);
+});
+
 testSolution("partie complète jusqu'à la victoire et la phrase", ([labo, armoire, coffre]) => {
   const p = new Partie();
   p.demarrer();

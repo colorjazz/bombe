@@ -24,6 +24,7 @@
   }
 
   html, body { height: 100%; }
+  [hidden] { display: none !important; }
   body {
     margin: 0;
     background: var(--beton);
@@ -260,6 +261,79 @@
     text-transform: uppercase;
   }
 
+  /* Écran d'accueil : invité ou compte */
+  #accueil {
+    position: fixed;
+    inset: 0;
+    z-index: 5;
+    background: var(--beton);
+    overflow-y: auto;
+    padding: calc(2rem + env(safe-area-inset-top, 0px)) 16px calc(2rem + env(safe-area-inset-bottom, 0px));
+    box-sizing: border-box;
+  }
+  .accueil-boite { max-width: 26rem; margin: 0 auto; display: grid; gap: 1.25rem; }
+  .accueil-boite h1 {
+    margin: 0;
+    font-family: var(--f-titre);
+    font-weight: 400;
+    font-size: clamp(1.3rem, 6vw, 1.9rem);
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    line-height: 1.4;
+    text-wrap: balance;
+  }
+  .accueil-boite .accroche { margin: 0; font-style: italic; }
+  .accueil-boite h2 {
+    margin: 0;
+    font-family: var(--f-machine);
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--lune);
+  }
+  .note {
+    margin: 0;
+    font-family: var(--f-machine);
+    font-size: 0.75rem;
+    line-height: 1.6;
+    color: var(--ombre);
+  }
+  .bouton-principal { width: 100%; padding: 0.9rem; font-size: 0.8rem; }
+  #bloc-compte {
+    display: grid;
+    gap: 0.9rem;
+    border-top: 1px solid var(--beton-2);
+    padding-top: 1.25rem;
+  }
+  .onglets { display: flex; gap: 0.5rem; }
+  .onglets button { flex: 1; color: var(--ombre); border-color: var(--beton-2); }
+  .onglets button[aria-pressed="true"] { color: var(--lune); border-color: var(--lune); }
+  #form-compte { display: grid; gap: 0.5rem; }
+  #form-compte label {
+    font-family: var(--f-machine);
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ombre);
+    margin-top: 0.4rem;
+  }
+  #form-compte input {
+    background: var(--beton-2);
+    border: 1px solid var(--beton-2);
+    color: var(--cendre);
+    font-family: var(--f-machine);
+    font-size: 1rem;
+    padding: 0.6rem 0.7rem;
+    outline: none;
+  }
+  #form-compte input:focus-visible { border-color: var(--lune); }
+  #form-compte button[type="submit"] { margin-top: 0.6rem; }
+  #erreur-compte { min-height: 1.2em; color: var(--rouille); font-family: var(--f-machine); font-size: 0.8rem; margin: 0; }
+  #joueur { display: flex; gap: 0.75rem; align-items: baseline; }
+  #quitter { padding: 0.2rem 0.5rem; font-size: 0.65rem; }
+  #rang { color: var(--lune) !important; }
+
   .secousse { animation: secousse 0.45s linear; }
 
   @keyframes apparition { from { opacity: 0; filter: blur(3px); } to { opacity: 1; filter: none; } }
@@ -283,6 +357,7 @@
   <header>
     <span class="ecole">Polyvalente Antoine-de-Saint-Exupéry</span>
     <span id="zone">2e étage · Bloc A</span>
+    <span id="joueur"><span id="nom-joueur">Invité</span><button id="quitter" type="button">Quitter</button></span>
   </header>
   <main id="journal" aria-live="polite"></main>
   <form id="saisie" autocomplete="off">
@@ -298,8 +373,37 @@
     <h2 id="verdict">Tu as survécu à la nuit</h2>
     <p id="consigne-finale" hidden>Dis cette phrase en personne à M. Plante :</p>
     <p id="phrase-finale" class="phrase" hidden></p>
+    <p id="rang" hidden></p>
     <p>La Nuit à St-Ex</p>
     <button id="rejouer" type="button">Rejouer</button>
+  </div>
+</div>
+
+<div id="accueil">
+  <div class="accueil-boite">
+    <h1>La Nuit à St-Ex</h1>
+    <p class="accroche">Tu t'es endormi en classe. Quand tu te réveilles, l'école est plongée dans le noir.</p>
+    <button id="invite" class="bouton-principal" type="button">Jouer comme invité</button>
+    <p class="note">Aucune sauvegarde : tu recommences au début à chaque fois.</p>
+    <section id="bloc-compte" hidden>
+      <h2>Mon compte</h2>
+      <div class="onglets" role="group" aria-label="Compte">
+        <button id="onglet-connexion" type="button" aria-pressed="true">Se connecter</button>
+        <button id="onglet-creation" type="button" aria-pressed="false">Créer un compte</button>
+      </div>
+      <form id="form-compte" autocomplete="on">
+        <label for="pseudo">Pseudo</label>
+        <input id="pseudo" name="pseudo" autocomplete="username" maxlength="20" spellcheck="false" autocapitalize="off" required>
+        <label for="mdp">Mot de passe</label>
+        <input id="mdp" name="mdp" type="password" autocomplete="current-password" required>
+        <label for="mdp2" id="label-mdp2" hidden>Confirme le mot de passe</label>
+        <input id="mdp2" name="mdp2" type="password" autocomplete="new-password" hidden>
+        <button id="bouton-compte" class="bouton-principal" type="submit">Se connecter</button>
+        <p id="erreur-compte" role="alert"></p>
+      </form>
+      <p class="note">Ta progression est sauvegardée et tu reprends où tu étais. Si tu meurs, tu recommences au début. N'utilise pas un mot de passe que tu utilises ailleurs.</p>
+    </section>
+    <p id="sans-compte" class="note" hidden>Les comptes ne sont offerts que dans la version de l'école.</p>
   </div>
 </div>
 
@@ -416,42 +520,127 @@
       journal.scrollTop = journal.scrollHeight;
     }
 
-    // Sauvegarde automatique dans ce navigateur, pour reprendre après un rechargement.
-    const CLE_SAUVEGARDE = "nuit-st-ex-partie";
+    // ==========================================
+    // COMPTES (seulement dans la version Google Apps Script)
+    // ==========================================
+    // L'invité ne sauvegarde rien. Avec un compte, la partie est envoyée au
+    // serveur (Google Sheets) quelques secondes après chaque commande.
+    const run = window.google && google.script && google.script.run;
+    const accueil = document.getElementById("accueil");
+    let session = null; // { pseudo, jeton }
+    let minuterie = null;
+
+    function appeler(fonction, ...args) {
+      return new Promise((ok, echec) => {
+        run.withSuccessHandler(ok).withFailureHandler((e) => echec(e && e.message ? e : new Error(String(e))))[fonction](...args);
+      });
+    }
+
+    function envoyerSauvegarde() {
+      clearTimeout(minuterie);
+      minuterie = null;
+      if (!session || !partie) return;
+      const mort = partie.termine && !partie.gagne;
+      if (partie.gagne) return; // la victoire est enregistrée à part
+      appeler("sauvegarder", session.jeton, partie.termine ? null : partie.exporter(), mort).catch((e) => {
+        afficher([{ type: "systeme", texte: "Sauvegarde impossible : " + e.message }]);
+      });
+    }
 
     function sauvegarder() {
-      try {
-        if (partie.termine) localStorage.removeItem(CLE_SAUVEGARDE);
-        else localStorage.setItem(CLE_SAUVEGARDE, JSON.stringify(partie.exporter()));
-      } catch (e) { /* stockage indisponible : on joue sans sauvegarde */ }
+      if (!session) return;
+      if (partie.termine) return envoyerSauvegarde();
+      clearTimeout(minuterie);
+      minuterie = setTimeout(envoyerSauvegarde, 3000);
     }
 
-    function partieSauvegardee() {
-      try {
-        const brut = localStorage.getItem(CLE_SAUVEGARDE);
-        return brut ? NuitStEx.Partie.restaurer(JSON.parse(brut)) : null;
-      } catch (e) {
-        return null;
-      }
+    function enregistrerVictoire() {
+      if (!session) return;
+      const rang = document.getElementById("rang");
+      appeler("enregistrerVictoire", session.jeton, partie.reponses())
+        .then((r) => {
+          rang.textContent = r.rang === 1
+            ? "Tu es la toute première personne à survivre à la nuit."
+            : `Tu es la ${r.rang}e personne à survivre à la nuit.`;
+          rang.hidden = false;
+        })
+        .catch((e) => afficher([{ type: "systeme", texte: "Victoire non enregistrée : " + e.message }]));
     }
 
-    function nouvellePartie(reprise) {
+    function nouvellePartie(sauvegarde) {
       journal.textContent = "";
       noir.classList.remove("actif");
       noir.hidden = true;
-      document.getElementById("phrase-finale").hidden = true;
-      document.getElementById("consigne-finale").hidden = true;
-      const sauvee = reprise ? partieSauvegardee() : null;
-      if (sauvee) {
-        partie = sauvee;
+      for (const id of ["phrase-finale", "consigne-finale", "rang"]) document.getElementById(id).hidden = true;
+      if (sauvegarde) {
+        partie = NuitStEx.Partie.restaurer(sauvegarde);
         afficher(partie.reprendre());
       } else {
         partie = new NuitStEx.Partie();
         afficher(partie.demarrer());
+        sauvegarder();
       }
-      sauvegarder();
       champ.focus();
     }
+
+    function entrerDansLeJeu(nouvelleSession, sauvegarde) {
+      session = nouvelleSession;
+      document.getElementById("nom-joueur").textContent = session ? session.pseudo : "Invité";
+      accueil.hidden = true;
+      nouvellePartie(sauvegarde);
+    }
+
+    function revenirAccueil() {
+      if (minuterie) envoyerSauvegarde();
+      session = null;
+      partie = null;
+      document.getElementById("mdp").value = "";
+      document.getElementById("mdp2").value = "";
+      choisirOnglet(false);
+      accueil.hidden = false;
+    }
+
+    let modeCreation = false;
+    function choisirOnglet(creation) {
+      modeCreation = creation;
+      document.getElementById("onglet-connexion").setAttribute("aria-pressed", String(!creation));
+      document.getElementById("onglet-creation").setAttribute("aria-pressed", String(creation));
+      document.getElementById("label-mdp2").hidden = !creation;
+      document.getElementById("mdp2").hidden = !creation;
+      document.getElementById("mdp").autocomplete = creation ? "new-password" : "current-password";
+      document.getElementById("bouton-compte").textContent = creation ? "Créer mon compte" : "Se connecter";
+      document.getElementById("erreur-compte").textContent = "";
+    }
+
+    if (run) {
+      document.getElementById("bloc-compte").hidden = false;
+    } else {
+      document.getElementById("sans-compte").hidden = false;
+    }
+    document.getElementById("invite").addEventListener("click", () => entrerDansLeJeu(null, null));
+    document.getElementById("onglet-connexion").addEventListener("click", () => choisirOnglet(false));
+    document.getElementById("onglet-creation").addEventListener("click", () => choisirOnglet(true));
+    document.getElementById("quitter").addEventListener("click", revenirAccueil);
+    document.getElementById("form-compte").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const erreur = document.getElementById("erreur-compte");
+      const bouton = document.getElementById("bouton-compte");
+      const pseudo = document.getElementById("pseudo").value.trim();
+      const mdp = document.getElementById("mdp").value;
+      if (modeCreation && mdp !== document.getElementById("mdp2").value) {
+        erreur.textContent = "Les deux mots de passe ne sont pas pareils.";
+        return;
+      }
+      erreur.textContent = "";
+      bouton.disabled = true;
+      appeler(modeCreation ? "creerCompte" : "connecter", pseudo, mdp)
+        .then((r) => entrerDansLeJeu({ pseudo: r.pseudo, jeton: r.jeton }, r.sauvegarde))
+        .catch((err) => { erreur.textContent = err.message; })
+        .finally(() => { bouton.disabled = false; });
+    });
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "hidden" && minuterie) envoyerSauvegarde();
+    });
 
     document.getElementById("saisie").addEventListener("submit", function (e) {
       e.preventDefault();
@@ -461,8 +650,10 @@
       historique.push(commande);
       position = historique.length;
       afficher([{ type: "commande", texte: commande.toUpperCase() }]);
-      if (NuitStEx.normaliser(commande) === "REJOUER") return nouvellePartie();
-      afficher(partie.executer(commande));
+      if (NuitStEx.normaliser(commande) === "REJOUER") return nouvellePartie(null);
+      const blocs = partie.executer(commande);
+      afficher(blocs);
+      if (blocs.some((b) => b.type === "fin")) enregistrerVictoire();
       sauvegarder();
     });
 
@@ -478,12 +669,11 @@
       }
     });
 
-    document.getElementById("rejouer").addEventListener("click", () => nouvellePartie(false));
+    document.getElementById("rejouer").addEventListener("click", () => nouvellePartie(null));
     journal.addEventListener("click", function () {
       if (!window.getSelection().toString()) champ.focus();
     });
 
-    nouvellePartie(true);
   })();
 </script>
 </body>

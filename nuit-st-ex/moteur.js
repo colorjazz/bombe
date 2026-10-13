@@ -813,6 +813,7 @@
       this.tour = 0;
       this.evenementVu = false;
       this.termine = false;
+      this.gagne = false;
     }
 
     // Sauvegarde : un objet JSON qu'on peut remettre dans Partie.restaurer.
@@ -829,6 +830,7 @@
         tour: this.tour,
         evenementVu: this.evenementVu,
         termine: this.termine,
+        gagne: this.gagne,
       };
     }
 
@@ -1275,8 +1277,14 @@
       ];
     }
 
+    // Réponses trouvées, dans l'ordre attendu par le serveur pour valider une victoire.
+    reponses() {
+      return ORDRE_CODES.map((id) => this.codes[id] || "");
+    }
+
     victoire() {
       this.termine = true;
+      this.gagne = true;
       const cle = ORDRE_CODES.map((id) => this.codes[id]).join("|");
       return [
         { type: "victoire", texte: TEXTE_VICTOIRE[0] },
