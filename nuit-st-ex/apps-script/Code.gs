@@ -23,7 +23,9 @@ var DUREE_SESSION = 6 * 60 * 60; // secondes (maximum permis par CacheService)
 // Noms acceptés pour le fichier HTML du jeu (le bon est « Index »).
 var NOMS_PAGE = ["Index", "index", "Index.html", "index.html"];
 
-function doGet() {
+function doGet(e) {
+  // Le site Netlify vérifie que le serveur répond avant d'afficher les comptes.
+  if (e && e.parameter && e.parameter.ping) return json_({ ok: true });
   for (var i = 0; i < NOMS_PAGE.length; i++) {
     try {
       return HtmlService.createHtmlOutputFromFile(NOMS_PAGE[i])
@@ -43,6 +45,30 @@ function doGet() {
       "Version : <b>Nouvelle version</b> → Déployer. Un déploiement ne voit pas les fichiers ajoutés après lui.</p>" +
       "</div>"
   ).setTitle("La Nuit à St-Ex");
+}
+
+// Appels venant du site Netlify (ou de toute page hors Apps Script) :
+// POST, corps JSON { action, args }, réponse JSON { ok, resultat } ou { ok: false, erreur }.
+var ACTIONS = {
+  creerCompte: function (a) { return creerCompte(a[0], a[1]); },
+  connecter: function (a) { return connecter(a[0], a[1]); },
+  sauvegarder: function (a) { return sauvegarder(a[0], a[1], a[2]); },
+  enregistrerVictoire: function (a) { return enregistrerVictoire(a[0], a[1]); },
+};
+
+function doPost(e) {
+  try {
+    var requete = JSON.parse(e.postData.contents);
+    var action = ACTIONS[requete.action];
+    if (!action) throw new Error("action inconnue.");
+    return json_({ ok: true, resultat: action(requete.args || []) });
+  } catch (err) {
+    return json_({ ok: false, erreur: err.message });
+  }
+}
+
+function json_(objet) {
+  return ContentService.createTextOutput(JSON.stringify(objet)).setMimeType(ContentService.MimeType.JSON);
 }
 
 /** À lancer une fois depuis l'éditeur : crée les onglets et retient le classeur. */

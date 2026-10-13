@@ -525,15 +525,41 @@
     // ==========================================
     // L'invité ne sauvegarde rien. Avec un compte, la partie est envoyée au
     // serveur (Google Sheets) quelques secondes après chaque commande.
+    // Servi par Apps Script : google.script.run. Ailleurs (Netlify) : appels HTTP
+    // vers le même déploiement Apps Script, si celui-ci répond.
+    const URL_SERVEUR = "https://script.google.com/macros/s/AKfycbzGRokVF2hFcZjqHRRlidYcQRbfO6QpWHx1iq9E9rwbAuQEjkUVjk-9FYdw-MbtA2hZwg/exec";
     const run = window.google && google.script && google.script.run;
     const accueil = document.getElementById("accueil");
     let session = null; // { pseudo, jeton }
     let minuterie = null;
 
     function appeler(fonction, ...args) {
-      return new Promise((ok, echec) => {
-        run.withSuccessHandler(ok).withFailureHandler((e) => echec(e && e.message ? e : new Error(String(e))))[fonction](...args);
-      });
+      if (run) {
+        return new Promise((ok, echec) => {
+          run.withSuccessHandler(ok).withFailureHandler((e) => echec(e && e.message ? e : new Error(String(e))))[fonction](...args);
+        });
+      }
+      // text/plain évite la requête préalable CORS, qu'Apps Script ne gère pas.
+      return fetch(URL_SERVEUR, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ action: fonction, args }),
+      })
+        .catch(() => { throw new Error("le serveur ne répond pas. Vérifie ta connexion."); })
+        .then((r) => r.json())
+        .then((r) => {
+          if (!r.ok) throw new Error(r.erreur);
+          return r.resultat;
+        });
+    }
+
+    function serveurJoignable() {
+      if (run) return Promise.resolve(true);
+      if (!URL_SERVEUR || !/^https?:$/.test(location.protocol)) return Promise.resolve(false);
+      return fetch(URL_SERVEUR + "?ping=1")
+        .then((r) => r.json())
+        .then((r) => r.ok === true)
+        .catch(() => false);
     }
 
     function envoyerSauvegarde() {
@@ -612,11 +638,9 @@
       document.getElementById("erreur-compte").textContent = "";
     }
 
-    if (run) {
-      document.getElementById("bloc-compte").hidden = false;
-    } else {
-      document.getElementById("sans-compte").hidden = false;
-    }
+    serveurJoignable().then((oui) => {
+      document.getElementById(oui ? "bloc-compte" : "sans-compte").hidden = false;
+    });
     document.getElementById("invite").addEventListener("click", () => entrerDansLeJeu(null, null));
     document.getElementById("onglet-connexion").addEventListener("click", () => choisirOnglet(false));
     document.getElementById("onglet-creation").addEventListener("click", () => choisirOnglet(true));

@@ -276,6 +276,10 @@ function serveurSimule() {
       sleep: () => {},
     },
     HtmlService: {},
+    ContentService: {
+      MimeType: { JSON: "json" },
+      createTextOutput: (t) => ({ texte: t, setMimeType() { return this; } }),
+    },
   };
   vm.createContext(contexte);
   vm.runInContext(fs.readFileSync(path.join(__dirname, "apps-script", "Code.gs"), "utf8"), contexte);
@@ -307,6 +311,19 @@ test("serveur : création de compte, connexion, sauvegarde, mot de passe jamais 
   assert.strictEqual(s.connecter("Nuit_Noire", "secret42").sauvegarde, null);
   assert.strictEqual(ss.feuilles.Parties.lignes[1][3], 1);
   assert.throws(() => s.sauvegarder("jeton-bidon", null, false), /session a expiré/);
+});
+
+test("serveur : appels HTTP du site Netlify (doPost, ping)", () => {
+  const { s } = serveurSimule();
+  const post = (corps) => JSON.parse(s.doPost({ postData: { contents: JSON.stringify(corps) } }).texte);
+  const cree = post({ action: "creerCompte", args: ["Netlify", "secret42"] });
+  assert.ok(cree.ok && cree.resultat.jeton);
+  assert.deepStrictEqual(post({ action: "creerCompte", args: ["Netlify", "secret42"] }), { ok: false, erreur: "Ce pseudo est déjà pris. Choisis-en un autre." });
+  assert.ok(post({ action: "connecter", args: ["Netlify", "secret42"] }).ok);
+  assert.ok(post({ action: "sauvegarder", args: [cree.resultat.jeton, { lieu: 3 }, false] }).ok);
+  assert.deepStrictEqual(post({ action: "connecter", args: ["netlify", "secret42"] }).resultat.sauvegarde, { lieu: 3 });
+  assert.strictEqual(post({ action: "installer" }).ok, false);
+  assert.strictEqual(JSON.parse(s.doGet({ parameter: { ping: "1" } }).texte).ok, true);
 });
 
 test("serveur : une victoire n'est acceptée qu'avec les bonnes réponses", () => {

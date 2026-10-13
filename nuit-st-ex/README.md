@@ -26,8 +26,16 @@ L'écran d'accueil propose deux choix :
 - **Mon compte** : un pseudo et un mot de passe. La partie est sauvegardée et reprend où on l'a laissée.
   Une mort efface la sauvegarde : on recommence au début.
 
-Les comptes ne fonctionnent que si le jeu est servi par Google Apps Script. Ouvert directement
-(fichier ou lien Claude), seul le mode invité est offert.
+Les comptes fonctionnent quand le jeu est servi par Google Apps Script, ou par un site web
+(Netlify) qui joint ce même déploiement Apps Script : son adresse est dans `URL_SERVEUR`, dans
+`index.html`. Si le serveur ne répond pas (fichier ouvert directement, lien Claude), seul le mode
+invité est offert.
+
+### Netlify
+
+Réglages du site : *Base directory* vide, *Build command* vide, *Publish directory* `nuit-st-ex`.
+Le site appelle le déploiement Apps Script : celui-ci doit avoir la version actuelle de `Code.gs`
+(avec `doPost`).
 
 Le classeur garde trois onglets :
 
