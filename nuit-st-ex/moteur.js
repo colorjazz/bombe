@@ -270,8 +270,14 @@
       nom: "Aile A",
       zone: "Aile A · 2e étage",
       description:
-        "Le long corridor de l'Aile A au deuxième étage. Les casiers métalliques forment une haie d'honneur sinistre qui s'étire dans l'obscurité, se perdant dans le noir absolu. À l'EST, la porte du local A-217. Au SUD, le couloir s'ouvre sur un espace plus vaste.",
+        "Le long corridor de l'Aile A au deuxième étage. Les casiers métalliques forment une haie d'honneur sinistre qui s'étire dans l'obscurité, se perdant dans le noir absolu. Sur une porte de casier, quelqu'un a gravé à la pointe d'un compas : « La plupart des portes de classe ne mènent nulle part. Ne perds pas ton temps. » À l'EST, la porte du local A-217. Au SUD, le couloir s'ouvre sur un espace plus vaste.",
       sorties: { EST: 1, SUD: 3 },
+      lectures: [
+        {
+          mots: ["INSCRIPTION", "CASIER", "CASIERS", "GRAVURE", "PORTE"],
+          texte: "Gravé sur la porte du casier : « La plupart des portes de classe ne mènent nulle part. Ne perds pas ton temps. »",
+        },
+      ],
       locaux: ["A201", "A203", "A204", "A205", "A208", "A209", "A210", "A213", "A214", "A215", "A218", "A222", "A225", "A226"],
     },
     3: {

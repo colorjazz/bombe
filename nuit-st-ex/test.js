@@ -180,6 +180,9 @@ test("les vestiaires sont trop noirs sans le bâton lumineux, et la lampe est mo
 test("les indices se lisent là où ils sont", () => {
   const p = new Partie();
   assert.ok(texte(p.executer("lire tableau")).includes("intérêt composé"));
+  p.lieu = 2;
+  assert.ok(texte(p.executer("lire inscription")).includes("La plupart des portes de classe ne mènent nulle part. Ne perds pas ton temps."));
+  assert.ok(texte(p.decrireLieu()).includes("Ne perds pas ton temps."));
   p.lieu = 8;
   assert.ok(texte(p.executer("lire mur")).includes("DEMANDE À PLANTE"));
   p.lieu = 16;
