@@ -101,16 +101,16 @@
     },
     tuyau_metal: {
       nom: "tuyau de métal",
-      enPlace: "un tuyau de métal (lourd et solide)",
-      description: "Un tuyau de métal, lourd et solide.",
+      enPlace: "un tuyau de métal (arraché au mur des douches)",
+      description: "Un tuyau de métal arraché au mur des douches, lourd et solide.",
       mots: ["TUYAU", "METAL"],
       prenable: true,
     },
     lame_lourde: {
       nom: "lame lourde",
-      enPlace: "une lame lourde (une lame de cisailles tranchante)",
-      description: "Une lame lourde : une lame de cisailles tranchante.",
-      mots: ["LAME", "CISAILLES", "CISAILLE"],
+      enPlace: "une lame lourde (un couperet de boucher, tombé au pied du comptoir)",
+      description: "Une lame lourde : un couperet de boucher, épais et tranchant.",
+      mots: ["LAME", "COUPERET", "HACHOIR", "COUTEAU"],
       prenable: true,
     },
     cle_principale: {
@@ -118,6 +118,13 @@
       enPlace: "la clé principale",
       description: "La clé principale. La clé de la sortie.",
       mots: ["CLE", "CLEF", "CLES"],
+      prenable: true,
+    },
+    agenda: {
+      nom: "agenda",
+      enPlace: "ton agenda (ouvert sur ton pupitre)",
+      description: "Ton agenda scolaire, la couverture cornée. À l'intérieur, le plan de l'école. Tape CARTE pour le consulter.",
+      mots: ["AGENDA", "CARTE", "PLAN"],
       prenable: true,
     },
     baton_lumineux: {
@@ -147,7 +154,7 @@
       description:
         "Le repaire de M. Plante. Rassurant le jour, absolument terrifiant cette nuit. La faible lueur de la lune découpe la forme de son bureau à l'avant. Dans les ombres, les frises chronologiques et les graphiques d'éducation financière affichés aux murs ressemblent à de longues cicatrices sombres. L'air est mort. (Sortie : OUEST).",
       sorties: { OUEST: 2 },
-      objets: [],
+      objets: ["agenda"],
     },
     2: {
       nom: "Couloir A-211",
@@ -185,16 +192,16 @@
       nom: "Carrefour Principal",
       zone: "Rez-de-chaussée · Bloc B",
       description:
-        "Tu as descendu les marches. De minces faisceaux de lumière lunaire traversent la poussière en suspension. Les ombres des piliers s'étirent au sol telles des griffes. L'escalier remonte vers l'étage (HAUT). Autour de toi, quatre abysses : le couloir administratif au NORD, l'entrée de l'auditorium au SUD, la place publique à l'OUEST, et, à l'EST, le passage vers le Bloc H et ses ateliers.",
-      sorties: { HAUT: 3, NORD: 10, SUD: 8, OUEST: 18, EST: 12 },
+        "Tu as descendu les marches. De minces faisceaux de lumière lunaire traversent la poussière en suspension. Les ombres des piliers s'étirent au sol telles des griffes. L'escalier remonte vers l'étage (HAUT). Autour de toi, quatre abysses : le couloir administratif au NORD, l'entrée de l'auditorium au SUD, la place publique 2 à l'OUEST, et la place publique 1 à l'EST.",
+      sorties: { HAUT: 3, NORD: 10, SUD: 8, OUEST: 18, EST: 22 },
       objets: [],
     },
     7: {
       nom: "La Cafétéria",
       zone: "Rez-de-chaussée · Bloc C",
       description:
-        "Une mer de 600 chaises renversées, formant un chaos géométrique terrifiant. L'immense salle du Bloc C est baignée dans une lueur bleutée maladive. Les comptoirs des cuisines au loin ressemblent à des autels abandonnés. Ton estomac se noue douloureusement. (La sortie est à l'OUEST, vers l'Aile C).",
-      sorties: { OUEST: 19 },
+        "Une mer de 600 chaises renversées, formant un chaos géométrique terrifiant. L'immense salle du Bloc C est baignée dans une lueur bleutée maladive. Les comptoirs des cuisines au loin ressemblent à des autels abandonnés. Ton estomac se noue douloureusement. (Sorties : OUEST vers l'Aile C, NORD vers les cuisines).",
+      sorties: { OUEST: 19, NORD: 21 },
       objets: ["barre_tendre"],
     },
     8: {
@@ -222,29 +229,29 @@
       objets: ["cle_principale"],
     },
     12: {
-      nom: "Couloir du Bloc H",
-      zone: "Rez-de-chaussée · Bloc H",
+      nom: "Couloir des Gymnases",
+      zone: "Rez-de-chaussée · Gymnases",
       description:
-        "L'air sent la graisse froide et la rouille. C'est le couloir du Bloc H, celui des ateliers. Les bruits de tes pas sont étouffés, comme si les murs de béton absorbaient le son. NORD : L'Atelier de Mécanique. SUD : La Chaufferie. HAUT : l'escalier vers l'étage du Bloc H. OUEST : Retour vers le carrefour central.",
-      sorties: { OUEST: 6, NORD: 13, SUD: 14, HAUT: 17 },
+        "Un long couloir rectiligne file vers les gymnases. L'air sent le caoutchouc froid et la sueur ancienne. Les bruits de tes pas sont étouffés, comme si les murs de béton absorbaient le son. NORD : les vestiaires. SUD : le gymnase 1. EST : le Bloc H. OUEST : retour vers la place publique 1.",
+      sorties: { OUEST: 22, NORD: 13, SUD: 14, EST: 20 },
       objets: [],
     },
     13: {
-      nom: "L'Atelier de Mécanique",
-      zone: "Rez-de-chaussée · Bloc H",
+      nom: "Les Vestiaires",
+      zone: "Rez-de-chaussée · Gymnases",
       description:
-        "Aveuglant d'obscurité. Aucune fenêtre ne perce l'atelier d'automobile et de mécanique. Seule la sensation du métal glacé des ponts élévateurs t'entoure. C'est le ventre d'une bête morte.",
+        "Aveuglant d'obscurité. Aucune fenêtre ne perce les vestiaires. Une odeur d'eau croupie monte des douches et, quelque part, une goutte tombe, régulière comme un métronome. Seule la sensation du carrelage glacé sous tes semelles te guide. C'est le ventre d'une bête morte. (Sortie : SUD).",
       sorties: { SUD: 12 },
       objets: ["tuyau_metal"],
       sombre: true,
     },
     14: {
-      nom: "La Chaufferie",
-      zone: "Rez-de-chaussée · Bloc H",
+      nom: "Le Gymnase 1",
+      zone: "Rez-de-chaussée · Gymnases",
       description:
-        "Une salle des machines oppressante. Les gigantesques chaudières sont d'immenses silhouettes fantomatiques. Un silence si lourd qu'il te fait bourdonner les tympans.",
+        "Le gymnase est si vaste que l'obscurité n'y a pas de fond. La lune tombe en colonnes obliques par les hautes fenêtres et découpe sur le plancher verni les lignes des terrains, comme le tracé d'un rituel oublié. Un seul ballon repose au centre, parfaitement immobile, comme si quelqu'un l'y avait déposé avec soin. (Sortie : NORD).",
       sorties: { NORD: 12 },
-      objets: ["lame_lourde"],
+      objets: [],
     },
     15: {
       nom: "Couloir du Bloc F",
@@ -266,15 +273,15 @@
       nom: "L'Étage du Bloc H",
       zone: "2e étage · Bloc H",
       description:
-        "La passerelle débouche sur le Bloc H. Par les grandes fenêtres du couloir, le boulevard Robert s'étire, désert, sous un ciel qui ne ressemble à aucun ciel. Des voitures sont arrêtées en plein milieu de la chaussée, portières ouvertes, comme abandonnées en pleine course. Rien ne bouge. L'escalier du bout du couloir descend vers les ateliers (BAS). À l'OUEST, le retour vers les laboratoires.",
-      sorties: { OUEST: 5, BAS: 12 },
+        "La passerelle débouche sur le Bloc H. Par les grandes fenêtres du couloir, le boulevard Robert s'étire, désert, sous un ciel qui ne ressemble à aucun ciel. Des voitures sont arrêtées en plein milieu de la chaussée, portières ouvertes, comme abandonnées en pleine course. Rien ne bouge. L'escalier du bout du couloir descend vers le rez-de-chaussée du Bloc H (BAS). À l'OUEST, le retour vers les laboratoires.",
+      sorties: { OUEST: 5, BAS: 20 },
       objets: [],
     },
     18: {
-      nom: "La Place Publique",
+      nom: "La Place Publique 2",
       zone: "Rez-de-chaussée · Bloc B",
       description:
-        "La place publique s'étend à flanc d'auditorium, immense et plate. Le jour, c'est le cœur bruyant de l'école ; cette nuit, c'est une plaine morte. Les rangées de casiers métalliques s'alignent en biais, à perte de vue. Quelques portes pendent, ouvertes, comme des bouches qui auraient voulu crier. Au SUD, le couloir de l'Aile C. À l'EST, le retour vers le carrefour principal.",
+        "La place publique 2 s'étend à flanc d'auditorium, immense et plate. Le jour, c'est le cœur bruyant de l'école ; cette nuit, c'est une plaine morte. Les rangées de casiers métalliques s'alignent en biais, à perte de vue. Quelques portes pendent, ouvertes, comme des bouches qui auraient voulu crier. Au SUD, le couloir de l'Aile C. À l'EST, le retour vers le carrefour principal.",
       sorties: { EST: 6, SUD: 19 },
       objets: [],
     },
@@ -286,6 +293,56 @@
       sorties: { NORD: 18, EST: 7, SUD: 15 },
       objets: [],
     },
+    20: {
+      nom: "Couloir du Bloc H",
+      zone: "Rez-de-chaussée · Bloc H",
+      description:
+        "Le Bloc H. Derrière une grille baissée, le café étudiant H115 garde ses chaises retournées sur les tables, pattes en l'air, comme des insectes morts. Plus loin, les portes doubles du gymnase 6 sont entrouvertes sur un noir épais que tu préfères ne pas sonder. L'escalier monte vers l'étage du Bloc H (HAUT). À l'OUEST, le retour vers les gymnases.",
+      sorties: { OUEST: 12, HAUT: 17 },
+      objets: [],
+    },
+    21: {
+      nom: "Les Cuisines",
+      zone: "Rez-de-chaussée · Bloc C",
+      description:
+        "Les cuisines de la cafétéria. Inox, carrelage, crochets vides. Les chambres froides sont ouvertes et ne soufflent plus rien ; l'odeur de nourriture tournée te prend à la gorge. Sur le grand comptoir de découpe, les ustensiles ont été balayés au sol dans un éclat de panique. (La sortie est au SUD).",
+      sorties: { SUD: 7 },
+      objets: ["lame_lourde"],
+    },
+    22: {
+      nom: "La Place Publique 1",
+      zone: "Rez-de-chaussée · Bloc B",
+      description:
+        "Le reflet exact de l'autre place publique, de l'autre côté de l'auditorium. Les mêmes casiers en biais, le même vide immense. Sur le sol, un sac à dos éventré a vomi ses cahiers ; les pages tournent toutes seules, lentement, dans un courant d'air que tu ne sens pas. À l'EST, un long couloir mène aux gymnases. À l'OUEST, le carrefour principal.",
+      sorties: { OUEST: 6, EST: 12 },
+      objets: [],
+    },
+  };
+
+  // Position de chaque lieu sur le plan de l'agenda : [étage, colonne, rangée, nom court].
+  // Nord en haut ; une case par lieu.
+  const PLAN = {
+    1: ["etage", 3, 0, "A-217"],
+    2: ["etage", 2, 0, "Couloir A-211"],
+    3: ["etage", 2, 1, "Carrefour"],
+    4: ["etage", 2, 2, "Balcon"],
+    5: ["etage", 3, 1, "Labos"],
+    17: ["etage", 4, 1, "Bloc H"],
+    16: ["etage", 1, 3, "Bloc F"],
+    10: ["rdc", 2, 0, "Direction"],
+    11: ["rdc", 3, 0, "Secrétariat"],
+    6: ["rdc", 2, 1, "Carrefour"],
+    18: ["rdc", 1, 1, "Place pub. 2"],
+    22: ["rdc", 3, 1, "Place pub. 1"],
+    12: ["rdc", 4, 1, "Gymnases"],
+    13: ["rdc", 4, 0, "Vestiaires"],
+    14: ["rdc", 4, 2, "Gymnase 1"],
+    20: ["rdc", 5, 1, "Bloc H"],
+    8: ["rdc", 2, 2, "Auditorium"],
+    21: ["rdc", 2, 3, "Cuisines"],
+    7: ["rdc", 2, 4, "Cafétéria"],
+    19: ["rdc", 1, 4, "Aile C"],
+    15: ["rdc", 1, 5, "Bloc F"],
   };
 
   const LIEU_DEPART = 1;
@@ -320,6 +377,7 @@
     BRISER: "FRAPPER", BRISE: "FRAPPER", CASSER: "FRAPPER", CASSE: "FRAPPER",
     UTILISER: "UTILISER", UTILISE: "UTILISER", U: "UTILISER",
     OUVRIR: "OUVRIR", OUVRE: "OUVRIR", DEVERROUILLER: "OUVRIR", DEVERROUILLE: "OUVRIR",
+    CARTE: "CARTE", PLAN: "CARTE", M: "CARTE",
     ALLUMER: "ALLUMER", ALLUME: "ALLUMER", PLIER: "ALLUMER", PLIE: "ALLUMER", CRAQUER: "ALLUMER", CRAQUE: "ALLUMER",
     INVENTAIRE: "INVENTAIRE", INV: "INVENTAIRE", I: "INVENTAIRE",
     AIDE: "AIDE", "?": "AIDE", HELP: "AIDE",
@@ -390,6 +448,7 @@
       this.objetsParLieu = {};
       for (const id in LIEUX) this.objetsParLieu[id] = LIEUX[id].objets.slice();
       this.flags = { a_mange: false, arme_fabriquee: false, cadenas_brise: false, lumiere: false };
+      this.visites = new Set([LIEU_DEPART]);
       this.poursuite = 0; // tours restants avant que la chose n'arrive (0 = pas de poursuite)
       this.tour = 0;
       this.evenementVu = false;
@@ -484,6 +543,7 @@
         case "UTILISER": return this.utiliser(c);
         case "OUVRIR": return this.ouvrir(c);
         case "ALLUMER": return this.allumer(c);
+        case "CARTE": return this.carte();
         case "INVENTAIRE": return this.afficherInventaire();
         default:
           return [sys("Je ne comprends pas. Tape AIDE pour la liste des commandes.")];
@@ -495,7 +555,7 @@
         sys(
           "Déplacements : NORD, SUD, EST, OUEST, HAUT, BAS (ou N, S, E, O, H, B). " +
             "Actions : PRENDRE, REGARDER, LIRE, COMBINER, MANGER, FRAPPER, UTILISER, OUVRIR, ALLUMER. " +
-            "INVENTAIRE (ou I) pour voir ce que tu portes."
+            "INVENTAIRE (ou I) pour voir ce que tu portes. CARTE pour consulter le plan de ton agenda."
         ),
       ];
     }
@@ -508,6 +568,7 @@
         return [{ type: "texte", texte: "La porte du Secrétariat est verrouillée par un lourd cadenas rouillé." }];
       }
       this.lieu = dest;
+      this.visites.add(dest);
       return this.decrireLieu();
     }
 
@@ -537,6 +598,7 @@
       if (c.objets.length === 0 && c.decors.length === 0) return this.decrireLieu();
       if (c.objets.length) {
         const id = c.objets[0];
+        if (id === "agenda" && this.possede(id) && c.mots.some((m) => m === "CARTE" || m === "PLAN")) return this.carte();
         if (this.possede(id) || this.objetsParLieu[this.lieu].includes(id)) {
           return [{ type: "texte", texte: OBJETS[id].description }];
         }
@@ -562,6 +624,7 @@
     }
 
     lire(c) {
+      if (c.objets.includes("agenda")) return this.carte();
       if (this.lieu === LIEU_AUDITORIUM && (c.decors.includes("MUR") || c.objets.length === 0)) {
         return [{ type: "mural", texte: TEXTE_MURAL }];
       }
@@ -651,6 +714,8 @@
           return this.manger(c);
         case "baton_lumineux":
           return this.allumer(c);
+        case "agenda":
+          return this.carte();
         case "telephone_mort":
           return [{ type: "texte", texte: this.evenementVu ? "L'écran est mort." : OBJETS.telephone_mort.description }];
         case "tuyau_metal":
@@ -673,6 +738,28 @@
         return [{ type: "texte", texte: "Les portes principales menant vers l'extérieur sont scellées par d'épaisses chaînes industrielles." }];
       }
       return [sys("Il n'y a rien à ouvrir ici.")];
+    }
+
+    carte() {
+      if (!this.possede("agenda")) return [sys("Tu n'as pas de plan de l'école. Ton agenda en contient un.")];
+      if (this.dansLeNoir()) return [sys("Il fait trop noir pour lire quoi que ce soit.")];
+      const lieux = [...this.visites].filter((id) => PLAN[id]).map((id) => {
+        const [etage, x, y, nom] = PLAN[id];
+        const s = LIEUX[id].sorties;
+        const vertical = ["HAUT", "BAS"].some((d) => s[d] !== undefined && this.visites.has(s[d]));
+        return { id, etage, x, y, nom, actuel: id === this.lieu, vertical };
+      });
+      const liens = [];
+      for (const id of this.visites) {
+        for (const [d, dest] of Object.entries(LIEUX[id].sorties)) {
+          if (d === "HAUT" || d === "BAS" || !this.visites.has(dest) || id > dest) continue;
+          if (PLAN[id] && PLAN[dest] && PLAN[id][0] === PLAN[dest][0]) liens.push([id, dest]);
+        }
+      }
+      return [
+        { type: "texte", texte: "Tu ouvres ton agenda sur le plan de l'école. Tu n'y repères que les endroits où tu es déjà passé." },
+        { type: "carte", texte: "Plan de l'école (lieux visités).", etageActuel: PLAN[this.lieu][0], lieux, liens },
+      ];
     }
 
     allumer(c) {

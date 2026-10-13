@@ -20,11 +20,12 @@ const texte = (blocs) => blocs.map((b) => b.texte).join("\n");
 
 // Mène une partie neuve jusque devant le cadenas, armé et rassasié (lieu 10).
 const VERS_LE_CADENAS = [
+  "prendre agenda",
   "o", "s", "e", "prendre ruban", "o", "bas",                  // labos -> carrefour principal
-  "o", "s", "e", "manger barre", "o",                          // place publique -> Aile C -> cafétéria
+  "o", "s", "e", "manger barre", "n", "prendre lame", "s", "o", // place publique 2 -> cafétéria -> cuisines
   "s", "haut", "prendre bâton", "bas", "n", "n", "e",          // Bloc F
-  "e", "n", "allumer bâton", "prendre tuyau", "s",             // Bloc H, mécanique
-  "s", "prendre lame", "n", "combiner tuyau avec lame", "o", "n",
+  "e", "e", "n", "allumer bâton", "prendre tuyau", "s",        // place publique 1 -> vestiaires
+  "combiner tuyau avec lame", "o", "o", "n",
 ];
 
 test("ouverture puis description de la classe", () => {
@@ -75,9 +76,9 @@ test("porte du secrétariat verrouillée tant que le cadenas tient", () => {
   assert.ok(texte(r).includes("verrouillée"));
 });
 
-test("l'atelier de mécanique est trop noir sans le bâton lumineux", () => {
+test("les vestiaires sont trop noirs sans le bâton lumineux", () => {
   const p = new Partie();
-  let r = jouer(p, ["o", "s", "bas", "e", "n"]);
+  let r = jouer(p, ["o", "s", "bas", "e", "e", "n"]);
   assert.ok(texte(r).includes("trop noir"));
   assert.ok(!texte(r).includes("tuyau"));
   r = p.executer("prendre tuyau");
@@ -146,6 +147,20 @@ test("après le fracas, traîner trop longtemps est fatal", () => {
   assert.ok(texte(r[4]).includes("se rapprochent"));
   assert.ok(p.termine);
   assert.strictEqual(r[5][r[5].length - 1].type, "finmort");
+});
+
+test("l'agenda montre le plan des lieux visités", () => {
+  const p = new Partie();
+  assert.ok(texte(p.executer("carte")).includes("Ton agenda en contient un"));
+  jouer(p, ["prendre agenda", "o", "s", "bas"]);
+  const r = p.executer("carte");
+  const plan = r.find((b) => b.type === "carte");
+  assert.deepStrictEqual(plan.lieux.map((l) => l.id).sort((a, b) => a - b), [1, 2, 3, 6]);
+  assert.strictEqual(plan.lieux.find((l) => l.actuel).id, 6);
+  assert.strictEqual(plan.etageActuel, "rdc");
+  assert.deepStrictEqual(plan.liens, [[1, 2], [2, 3]]);
+  assert.ok(plan.lieux.find((l) => l.id === 3).vertical);
+  assert.ok(p.executer("lire agenda").some((b) => b.type === "carte"));
 });
 
 test("OUVRIR PORTE avec la clé déclenche aussi la victoire", () => {

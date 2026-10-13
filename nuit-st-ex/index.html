@@ -111,6 +111,24 @@
   .commande { color: var(--lune); margin-top: 1rem !important; }
   .commande::before { content: "› "; color: var(--ombre); }
 
+  /* Plan de l'agenda */
+  .plan { margin: 0; display: grid; gap: 1rem; animation: apparition 1.2s ease both; }
+  .plan figcaption {
+    font-family: var(--f-machine);
+    font-size: 0.65rem;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--ombre);
+    margin-bottom: 0.4rem;
+  }
+  .plan svg { display: block; max-width: 100%; height: auto; }
+  .plan .lien { stroke: var(--ombre); stroke-width: 1.5; }
+  .plan .case { fill: var(--beton-2); stroke: var(--ombre); stroke-width: 1; }
+  .plan .actuel .case { stroke: var(--lune); stroke-width: 2; }
+  .plan text { fill: var(--cendre); font-family: var(--f-machine); font-size: 10px; text-anchor: middle; }
+  .plan .actuel text { fill: var(--lune); }
+  .plan .escalier { fill: var(--ombre); font-size: 9px; }
+
   .mural {
     font-family: var(--f-titre);
     font-size: 0.95rem;
@@ -278,8 +296,68 @@
     let position = 0;
     let partie;
 
+    const SVG = "http://www.w3.org/2000/svg";
+    const ETAGES = [["etage", "2e étage"], ["rdc", "Rez-de-chaussée"]];
+
+    function el(nom, attrs, texte) {
+      const e = document.createElementNS(SVG, nom);
+      for (const k in attrs) e.setAttribute(k, attrs[k]);
+      if (texte) e.textContent = texte;
+      return e;
+    }
+
+    // Dessine le plan de l'agenda : une case par lieu visité, étage courant en premier.
+    function dessinerPlan(b) {
+      const W = 104, H = 46, BW = 92, BH = 30;
+      const conteneur = document.createElement("div");
+      conteneur.className = "plan";
+      const ordre = ETAGES.slice().sort((a) => (a[0] === b.etageActuel ? -1 : 1));
+      for (const [etage, titre] of ordre) {
+        const lieux = b.lieux.filter((l) => l.etage === etage);
+        if (!lieux.length) continue;
+        const parId = Object.fromEntries(lieux.map((l) => [l.id, l]));
+        const x0 = Math.min(...lieux.map((l) => l.x));
+        const y0 = Math.min(...lieux.map((l) => l.y));
+        const colonnes = Math.max(...lieux.map((l) => l.x)) - x0 + 1;
+        const rangees = Math.max(...lieux.map((l) => l.y)) - y0 + 1;
+        const svg = el("svg", {
+          viewBox: `0 0 ${colonnes * W} ${rangees * H}`,
+          width: colonnes * W,
+          role: "img",
+          "aria-label": "Plan : " + titre,
+        });
+        const centre = (l) => [(l.x - x0) * W + W / 2, (l.y - y0) * H + H / 2];
+        for (const [a, c] of b.liens) {
+          if (!parId[a] || !parId[c]) continue;
+          const [x1, y1] = centre(parId[a]);
+          const [x2, y2] = centre(parId[c]);
+          svg.appendChild(el("line", { class: "lien", x1, y1, x2, y2 }));
+        }
+        for (const l of lieux) {
+          const [cx, cy] = centre(l);
+          const g = el("g", { class: l.actuel ? "actuel" : "" });
+          g.appendChild(el("rect", { class: "case", x: cx - BW / 2, y: cy - BH / 2, width: BW, height: BH, rx: 2 }));
+          g.appendChild(el("text", { x: cx, y: cy + (l.actuel ? 0 : 3.5) }, l.nom));
+          if (l.actuel) g.appendChild(el("text", { x: cx, y: cy + 11, class: "escalier" }, "tu es ici"));
+          if (l.vertical) g.appendChild(el("text", { x: cx + BW / 2 - 7, y: cy - BH / 2 + 10, class: "escalier" }, "↕"));
+          svg.appendChild(g);
+        }
+        const fig = document.createElement("figure");
+        fig.style.margin = "0";
+        const cap = document.createElement("figcaption");
+        cap.textContent = titre;
+        fig.append(cap, svg);
+        conteneur.appendChild(fig);
+      }
+      return conteneur;
+    }
+
     function afficher(blocs) {
       for (const b of blocs) {
+        if (b.type === "carte") {
+          journal.appendChild(dessinerPlan(b));
+          continue;
+        }
         const p = document.createElement("p");
         p.className = b.type;
         if (b.type === "lieu") {
