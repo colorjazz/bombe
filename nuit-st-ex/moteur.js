@@ -151,16 +151,16 @@
       nom: "Carrefour Principal",
       zone: "Rez-de-chaussée · Bloc B",
       description:
-        "Tu as descendu les marches. De minces faisceaux de lumière lunaire traversent la poussière en suspension. Les ombres des piliers s'étirent au sol telles des griffes. L'escalier remonte vers l'étage (HAUT). Autour de toi, quatre abysses : le couloir administratif au NORD, l'entrée de l'auditorium au SUD, la cafétéria à l'OUEST, et les ateliers à l'EST.",
-      sorties: { HAUT: 3, NORD: 10, SUD: 8, OUEST: 7, EST: 12 },
+        "Tu as descendu les marches. De minces faisceaux de lumière lunaire traversent la poussière en suspension. Les ombres des piliers s'étirent au sol telles des griffes. L'escalier remonte vers l'étage (HAUT). Autour de toi, trois abysses : le couloir administratif au NORD, l'entrée de l'auditorium au SUD, et les ateliers à l'EST.",
+      sorties: { HAUT: 3, NORD: 10, SUD: 8, EST: 12 },
       objets: [],
     },
     7: {
       nom: "La Cafétéria",
-      zone: "Rez-de-chaussée · Bloc B",
+      zone: "Rez-de-chaussée · Bloc C",
       description:
-        "Une mer de 600 chaises renversées, formant un chaos géométrique terrifiant. L'immense salle est baignée dans une lueur bleutée maladive. Les comptoirs des cuisines au loin ressemblent à des autels abandonnés. Ton estomac se noue douloureusement. (La sortie est à l'EST).",
-      sorties: { EST: 6 },
+        "Une mer de 600 chaises renversées, formant un chaos géométrique terrifiant. L'immense salle du Bloc C est baignée dans une lueur bleutée maladive. Les comptoirs des cuisines au loin ressemblent à des autels abandonnés. Ton estomac se noue douloureusement. (La sortie est au NORD).",
+      sorties: { NORD: 8 },
       objets: ["barre_tendre"],
     },
     8: {
@@ -168,7 +168,7 @@
       zone: "Rez-de-chaussée · Bloc B",
       description:
         "La caverne. Une noirceur d'encre engloutit les rangées. Tes pas résonnent avec un écho démesuré qui te donne la nausée. Sur le mur de la scène de l'auditorium de 446 places, tu devines de larges lettres tracées à la hâte.",
-      sorties: { NORD: 6 },
+      sorties: { NORD: 6, SUD: 7 },
       objets: [],
     },
     10: {
