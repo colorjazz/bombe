@@ -314,8 +314,9 @@
       nom: "Carrefour Principal",
       zone: "Rez-de-chaussée · Bloc B",
       description:
-        "Tu as descendu les marches. De minces faisceaux de lumière lunaire traversent la poussière en suspension. Les ombres des piliers s'étirent au sol telles des griffes. L'escalier remonte vers l'étage (HAUT). Autour de toi, quatre abysses : le couloir administratif au NORD, l'entrée de l'auditorium au SUD, la place publique 2 à l'OUEST, et la place publique 1 à l'EST.",
+        "De minces faisceaux de lumière lunaire traversent la poussière en suspension. Les ombres des piliers s'étirent au sol telles des griffes. L'escalier remonte vers l'étage (HAUT). Autour de toi, quatre abysses : le couloir administratif au NORD, l'entrée de l'auditorium au SUD, la place publique 2 à l'OUEST, et la place publique 1 à l'EST.",
       sorties: { HAUT: 3, NORD: 10, SUD: 8, OUEST: 18, EST: 22 },
+      arrivees: { 3: "Tu as descendu les marches." },
       locaux: ["B100", "B101", "B103", "B104", "B105"],
     },
     7: {
@@ -396,8 +397,9 @@
       nom: "Couloir du Bloc F",
       zone: "Rez-de-chaussée · Bloc F",
       description:
-        "Le couloir C103 te mène jusqu'au Bloc F, une aile basse et étroite accrochée au flanc de l'école. Les portes des classes F101 à F118 sont toutes fermées. Derrière leurs petites fenêtres, les pupitres alignés attendent des élèves qui ne viendront plus. Au bout du couloir, la cage d'escalier en demi-lune monte vers l'étage (HAUT). Au SUD, une porte de secours donne sur la cour. Au NORD, le retour vers l'Aile C.",
+        "Le Bloc F, une aile basse et étroite accrochée au flanc de l'école. Les portes des classes F101 à F118 sont toutes fermées. Derrière leurs petites fenêtres, les pupitres alignés attendent des élèves qui ne viendront plus. Au bout du couloir, la cage d'escalier en demi-lune monte vers l'étage (HAUT). Au SUD, une porte de secours donne sur la cour. Au NORD, le retour vers l'Aile C.",
       sorties: { NORD: 19, HAUT: 16 },
+      arrivees: { 19: "Le couloir C103 te mène jusqu'au bout de l'école.", 16: "Tu redescends l'escalier en demi-lune." },
       pieges: { SUD: MORT_PORTE_SECOURS },
       locaux: ["F101", "F102", "F103", "F104", "F105", "F106", "F108", "F109", "F110", "F111", "F112", "F113", "F114", "F115", "F116", "F117", "F118"],
     },
@@ -425,8 +427,9 @@
       nom: "L'Étage du Bloc H",
       zone: "2e étage · Bloc H",
       description:
-        "La passerelle débouche sur le Bloc H. Par les grandes fenêtres du couloir, le boulevard Robert s'étire, désert, sous un ciel qui ne ressemble à aucun ciel. Des voitures sont arrêtées en plein milieu de la chaussée, portières ouvertes, comme abandonnées en pleine course. Rien ne bouge. L'escalier du bout du couloir descend vers le rez-de-chaussée du Bloc H (BAS). À l'OUEST, le retour vers les laboratoires.",
+        "Par les grandes fenêtres du couloir, le boulevard Robert s'étire, désert, sous un ciel qui ne ressemble à aucun ciel. Des voitures sont arrêtées en plein milieu de la chaussée, portières ouvertes, comme abandonnées en pleine course. Rien ne bouge. L'escalier du bout du couloir descend vers le rez-de-chaussée du Bloc H (BAS). À l'OUEST, le retour vers les laboratoires.",
       sorties: { OUEST: 5, BAS: 20 },
+      arrivees: { 5: "La passerelle débouche sur l'étage du Bloc H.", defaut: "L'étage du Bloc H." },
       locaux: [
         "H201", "H202", "H203", "H204", "H205", "H206", "H207", "H208", "H209", "H211", "H212", "H213", "H215",
         "H216", "H217", "H218", "H221", "H222", "H223", "H224", "H225", "H226", "H228", "H229", "H230", "H231",
@@ -889,11 +892,14 @@
       });
     }
 
-    decrireLieu() {
+    // origine : le lieu d'où l'on arrive, pour la phrase d'ouverture (« Tu as descendu les marches. »).
+    decrireLieu(origine) {
       const lieu = LIEUX[this.lieu];
+      const arrivees = lieu.arrivees || {};
+      const intro = arrivees[origine] || arrivees.defaut;
       const blocs = [
         { type: "lieu", texte: lieu.nom, zone: lieu.zone },
-        { type: "texte", texte: lieu.description },
+        { type: "texte", texte: intro ? intro + " " + lieu.description : lieu.description },
       ];
       const ici = this.objetsParLieu[this.lieu];
       if (this.dansLeNoir()) {
@@ -993,9 +999,10 @@
     }
 
     allerA(dest) {
+      const origine = this.lieu;
       this.lieu = dest;
       this.visites.add(dest);
-      return this.decrireLieu();
+      return this.decrireLieu(origine);
     }
 
     entrer(c) {

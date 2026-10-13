@@ -269,6 +269,23 @@ test("calepin : noter, relire, effacer ; gratuit pendant la poursuite ; sauvegar
   assert.ok(texte(p.executer("noter")).includes("Noter quoi"));
 });
 
+test("la phrase d'arrivée dépend d'où l'on vient", () => {
+  const p = new Partie();
+  assert.ok(texte(jouer(p, ["o", "s", "bas"])).includes("Tu as descendu les marches"));
+  assert.ok(!texte(jouer(p, ["e", "o"])).includes("descendu")); // depuis la place publique 1
+  assert.ok(!texte(p.executer("regarder")).includes("descendu"));
+  p.lieu = 19;
+  assert.ok(texte(p.executer("s")).includes("Le couloir C103"));
+  p.lieu = 16;
+  const r = texte(p.executer("bas"));
+  assert.ok(r.includes("Tu redescends") && !r.includes("C103 te mène"));
+  p.lieu = 20;
+  const h = p.executer("haut")[1].texte;
+  assert.ok(h.startsWith("L'étage du Bloc H.") && !h.includes("passerelle débouche"));
+  p.lieu = 5;
+  assert.ok(p.executer("e")[1].texte.startsWith("La passerelle débouche"));
+});
+
 test("sauvegarde et reprise", () => {
   const p = new Partie();
   jouer(p, ["prendre agenda", "o", "s"]);
