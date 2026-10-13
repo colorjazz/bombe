@@ -808,7 +808,7 @@
     }
     // « clé dorée » ne doit pas viser aussi la clé principale.
     if (objets.includes("cle_doree") && objets.includes("cle_principale")) objets.splice(objets.indexOf("cle_principale"), 1);
-    return { verbe, direction, objets, decors, mots: reste, suite: suite.join(""), brut: commande };
+    return { verbe, direction, objets, decors, mots: reste, suite: suite.join(""), complet: mots.join(""), brut: commande };
   }
 
   // ==========================================
@@ -966,8 +966,12 @@
         case "ALLUMER": return this.allumer(c);
         case "CARTE": return this.carte();
         case "INVENTAIRE": return this.afficherInventaire();
-        default:
+        default: {
+          // Le nom d'un local tout seul (« Réception », « Gym 2 ») : on y entre.
+          const nom = (LIEUX[this.lieu].locaux || []).find((l) => compact(l) === c.complet);
+          if (nom) return this.entrer(Object.assign({}, c, { suite: c.complet }));
           return [sys("Je ne comprends pas. Tape AIDE pour la liste des commandes.")];
+        }
       }
     }
 

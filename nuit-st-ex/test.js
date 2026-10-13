@@ -117,6 +117,14 @@ test("entrer dans les locaux : vides, fausses pistes, objets inutiles", () => {
   assert.ok(texte(p.executer("entrer c224")).includes("déjà fouillé"));
   assert.ok(texte(p.executer("utiliser clé dorée")).includes("aucune serrure"));
   for (const nom of ["A120", "B272A", "Gym 3", "C130"]) assert.ok(texteLocal(nom).length > 20);
+  p.lieu = 10;
+  for (const cmd of ["réception", "Magasin", "entrer dans la réception", "aller au magasin"]) {
+    assert.ok(texte(p.executer(cmd)).includes("Tu entres dans le local"), cmd);
+  }
+  p.lieu = 12;
+  for (const cmd of ["gym 2", "Salle d'entraînement", "salle d entrainement"]) {
+    assert.ok(texte(p.executer(cmd)).includes("Tu entres dans le local"), cmd);
+  }
 });
 
 test("pièges : portes de secours, alarme, fenêtre, gymnase 6", () => {
