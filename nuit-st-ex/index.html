@@ -388,7 +388,7 @@
 <div class="ecran" id="ecran">
   <header>
     <span class="ecole">Polyvalente Antoine-de-Saint-Exupéry</span>
-    <span id="zone">2e étage · Bloc A</span>
+    <span id="zone">Aile A · 2e étage</span>
     <span id="joueur"><span id="nom-joueur">Invité</span><button id="quitter" type="button">Quitter</button></span>
   </header>
   <main id="journal" aria-live="polite"></main>
@@ -463,7 +463,7 @@
     let partie;
 
     const SVG = "http://www.w3.org/2000/svg";
-    const ETAGES = [["etage", "2e étage"], ["rdc", "Rez-de-chaussée"]];
+    const ETAGES = [["etage", "2e étage"], ["rdc", "1er étage"]];
 
     function el(nom, attrs, texte) {
       const e = document.createElementNS(SVG, nom);

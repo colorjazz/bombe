@@ -388,7 +388,7 @@
 <div class="ecran" id="ecran">
   <header>
     <span class="ecole">Polyvalente Antoine-de-Saint-Exupéry</span>
-    <span id="zone">2e étage · Bloc A</span>
+    <span id="zone">Aile A · 2e étage</span>
     <span id="joueur"><span id="nom-joueur">Invité</span><button id="quitter" type="button">Quitter</button></span>
   </header>
   <main id="journal" aria-live="polite"></main>
@@ -701,7 +701,7 @@
   const LIEUX = {
     1: {
       nom: "La Classe de M. Plante",
-      zone: "2e étage · Bloc A",
+      zone: "Aile A · 2e étage",
       description:
         "Le repaire de M. Plante. Rassurant le jour, absolument terrifiant cette nuit. La faible lueur de la lune découpe la forme de son bureau à l'avant. Dans les ombres, les frises chronologiques et les graphiques d'éducation financière affichés aux murs ressemblent à de longues cicatrices sombres. Au tableau, l'écriture penchée de M. Plante : le problème du jour, que personne n'a fini de recopier. L'air est mort. (Sortie : OUEST).",
       sorties: { OUEST: 2 },
@@ -720,15 +720,15 @@
     },
     2: {
       nom: "Aile A",
-      zone: "2e étage · Bloc A",
+      zone: "Aile A · 2e étage",
       description:
-        "Le long corridor du Bloc A au deuxième étage. Les casiers métalliques forment une haie d'honneur sinistre qui s'étire dans l'obscurité, se perdant dans le noir absolu. À l'EST, la porte du local A-217. Au SUD, le couloir s'ouvre sur un espace plus vaste.",
+        "Le long corridor de l'Aile A au deuxième étage. Les casiers métalliques forment une haie d'honneur sinistre qui s'étire dans l'obscurité, se perdant dans le noir absolu. À l'EST, la porte du local A-217. Au SUD, le couloir s'ouvre sur un espace plus vaste.",
       sorties: { EST: 1, SUD: 3 },
       locaux: ["A201", "A203", "A204", "A205", "A208", "A209", "A210", "A213", "A214", "A215", "A218", "A222", "A225", "A226"],
     },
     3: {
       nom: "Carrefour de l'Étage",
-      zone: "2e étage · Bloc B",
+      zone: "Aile B · 2e étage",
       description:
         "Tu es au cœur du deuxième étage. L'air y est lourd, suffocant. Au centre, la gueule béante de l'escalier principal plonge vers le rez-de-chaussée (BAS). Au SUD, l'obscurité de la partie haute de l'auditorium. À l'EST, le couloir s'enfonce vers les laboratoires de sciences. À l'OUEST, le centre pédagogique. Au NORD, le retour vers ton couloir.",
       sorties: { NORD: 2, SUD: 4, EST: 5, OUEST: 25, BAS: 6 },
@@ -736,7 +736,7 @@
     },
     4: {
       nom: "Partie Haute de l'Auditorium",
-      zone: "2e étage · Bloc B",
+      zone: "Aile B · 2e étage",
       description:
         "Tu te tiens sur le balcon de la partie haute de l'auditorium. Tu surplombes la grande salle noire en contrebas. Tu as l'impression vertigineuse que, tout en bas dans cette mer de 446 sièges, quelque chose vient de bouger. Une simple illusion d'optique dans les ténèbres ? Tu n'as pas le courage d'attendre pour vérifier. L'unique issue est derrière toi.",
       sorties: { NORD: 3 },
@@ -744,9 +744,9 @@
     },
     5: {
       nom: "Laboratoires de Sciences",
-      zone: "2e étage · Bloc B",
+      zone: "Aile B · 2e étage",
       description:
-        "La section « Biol. Chim. Phys. ». La lueur de la lune éclaire violemment les paillasses. Une odeur clinique et âcre de vieux produits chimiques pique le nez. La porte du Dépôt de Sciences (B247) est fermée par un cadenas à lettres ; une fiche plastifiée y est collée. Au mur, un immense tableau périodique. Plus loin à l'EST, une passerelle vitrée file vers le Bloc H. À l'OUEST, le retour vers le carrefour.",
+        "La section « Biol. Chim. Phys. ». La lueur de la lune éclaire violemment les paillasses. Une odeur clinique et âcre de vieux produits chimiques pique le nez. La porte du Dépôt de Sciences (B247) est fermée par un cadenas à lettres ; une fiche plastifiée y est collée. Au mur, un immense tableau périodique. Plus loin à l'EST, une passerelle vitrée file vers l'Aile H. À l'OUEST, le retour vers le carrefour.",
       sorties: { OUEST: 3, EST: 17 },
       locaux: ["B242", "B243", "B244", "B245", "B246", "B248", "B249", "B250", "B251", "B252", "B253", "B255"],
       lectures: [
@@ -764,7 +764,7 @@
     },
     6: {
       nom: "Carrefour Principal",
-      zone: "Rez-de-chaussée · Bloc B",
+      zone: "Aile B · 1er étage",
       description:
         "De minces faisceaux de lumière lunaire traversent la poussière en suspension. Les ombres des piliers s'étirent au sol telles des griffes. L'escalier remonte vers l'étage (HAUT). Autour de toi, quatre abysses : le couloir administratif au NORD, l'entrée de l'auditorium au SUD, la place publique 2 à l'OUEST, et la place publique 1 à l'EST.",
       sorties: { HAUT: 3, NORD: 10, SUD: 8, OUEST: 18, EST: 22 },
@@ -773,15 +773,15 @@
     },
     7: {
       nom: "La Cafétéria",
-      zone: "Rez-de-chaussée · Bloc C",
+      zone: "Aile C · 1er étage",
       description:
-        "Une mer de 600 chaises renversées, formant un chaos géométrique terrifiant. L'immense salle du Bloc C est baignée dans une lueur bleutée maladive. Les comptoirs des cuisines au loin ressemblent à des autels abandonnés. Ton estomac se noue douloureusement. (Sorties : OUEST et EST vers les deux couloirs de l'Aile C, NORD vers les cuisines).",
+        "Une mer de 600 chaises renversées, formant un chaos géométrique terrifiant. L'immense salle de l'Aile C est baignée dans une lueur bleutée maladive. Les comptoirs des cuisines au loin ressemblent à des autels abandonnés. Ton estomac se noue douloureusement. (Sorties : OUEST et EST vers les deux couloirs de l'Aile C, NORD vers les cuisines).",
       sorties: { OUEST: 19, EST: 28, NORD: 21 },
       objets: ["barre_tendre"],
     },
     8: {
       nom: "L'Auditorium",
-      zone: "Rez-de-chaussée · Bloc B",
+      zone: "Aile B · 1er étage",
       description:
         "La caverne. Une noirceur d'encre engloutit les rangées. Tes pas résonnent avec un écho démesuré qui te donne la nausée. Sur le mur de la scène de l'auditorium de 446 places, tu devines de larges lettres tracées à la hâte. Des portes mènent aux coulisses.",
       sorties: { NORD: 6 },
@@ -797,9 +797,9 @@
     },
     10: {
       nom: "Couloir Administratif et Sortie",
-      zone: "Rez-de-chaussée · Bloc A",
+      zone: "Aile A · 1er étage",
       description:
-        "L'angoisse devient palpable. C'est le Bloc A, la Direction. Devant toi, les portes principales menant vers l'extérieur sont scellées par d'épaisses chaînes industrielles. À l'EST, la porte du Secrétariat est verrouillée par un lourd cadenas rouillé. À l'OUEST, les portes vitrées de la bibliothèque. Derrière le comptoir de la réception, des dizaines de bureaux s'alignent. Revenir au SUD est ta seule échappatoire immédiate.",
+        "L'angoisse devient palpable. C'est l'Aile A, la Direction. Devant toi, les portes principales menant vers l'extérieur sont scellées par d'épaisses chaînes industrielles. À l'EST, la porte du Secrétariat est verrouillée par un lourd cadenas rouillé. À l'OUEST, les portes vitrées de la bibliothèque. Derrière le comptoir de la réception, des dizaines de bureaux s'alignent. Revenir au SUD est ta seule échappatoire immédiate.",
       sorties: { SUD: 6, EST: 11, OUEST: 23 },
       locaux: [
         "A101", "A103", "A104", "A106", "A107", "A108", "A109", "A110", "A111", "A112", "A113", "A114", "A115",
@@ -809,7 +809,7 @@
     },
     11: {
       nom: "Le Secrétariat",
-      zone: "Rez-de-chaussée · Bloc A",
+      zone: "Aile A · 1er étage",
       description:
         "La panique s'est arrêtée ici. Les dossiers jonchent le sol du secrétariat comme des cadavres de papier. Le tiroir du bureau de la direction a été arraché à moitié. Contre le mur, un petit coffre-fort gris, fermé, avec un clavier à chiffres. Un post-it jaune est collé sur sa porte. (Sortie : OUEST).",
       sorties: { OUEST: 10 },
@@ -822,15 +822,15 @@
     },
     12: {
       nom: "Couloir des Gymnases",
-      zone: "Rez-de-chaussée · Gymnases",
+      zone: "Gymnases · 1er étage",
       description:
-        "Un long couloir rectiligne file vers les gymnases. L'air sent le caoutchouc froid et la sueur ancienne. Les bruits de tes pas sont étouffés, comme si les murs de béton absorbaient le son. NORD : les vestiaires. SUD : le gymnase 1. EST : le Bloc H. OUEST : retour vers la place publique 1.",
+        "Un long couloir rectiligne file vers les gymnases. L'air sent le caoutchouc froid et la sueur ancienne. Les bruits de tes pas sont étouffés, comme si les murs de béton absorbaient le son. NORD : les vestiaires. SUD : le gymnase 1. EST : l'Aile H. OUEST : retour vers la place publique 1.",
       sorties: { OUEST: 22, NORD: 13, SUD: 14, EST: 20 },
       locaux: ["Gym 2", "Gym 3", "Gym 4", "Gym 5", "Salle d'entraînement", "B134", "B138", "B139", "B140"],
     },
     13: {
       nom: "Les Vestiaires",
-      zone: "Rez-de-chaussée · Gymnases",
+      zone: "Gymnases · 1er étage",
       description:
         "Aveuglant d'obscurité. Aucune fenêtre ne perce les vestiaires. Une odeur d'eau croupie monte des douches et, quelque part, une goutte tombe, régulière comme un métronome. Seule la sensation du carrelage glacé sous tes semelles te guide. C'est le ventre d'une bête morte. (Sortie : SUD).",
       sorties: { SUD: 12 },
@@ -839,27 +839,27 @@
     },
     14: {
       nom: "Le Gymnase 1",
-      zone: "Rez-de-chaussée · Gymnases",
+      zone: "Gymnases · 1er étage",
       description:
         "Le gymnase est si vaste que l'obscurité n'y a pas de fond. La lune tombe en colonnes obliques par les hautes fenêtres et découpe sur le plancher verni les lignes des terrains, comme le tracé d'un rituel oublié. Un seul ballon repose au centre, parfaitement immobile, comme si quelqu'un l'y avait déposé avec soin. Au SUD, les portes de secours donnent sur la cour. Au NORD, le couloir.",
       sorties: { NORD: 12 },
       pieges: { SUD: MORT_PORTE_SECOURS },
     },
     15: {
-      nom: "Couloir du Bloc F",
-      zone: "Rez-de-chaussée · Bloc F",
+      nom: "Couloir de l'Aile F",
+      zone: "Aile F · 1er étage",
       description:
-        "Le Bloc F, une aile basse et étroite accrochée au flanc de l'école. Les portes des classes F101 à F118 sont toutes fermées. Derrière leurs petites fenêtres, les pupitres alignés attendent des élèves qui ne viendront plus. Au bout du couloir, la cage d'escalier en demi-lune monte vers l'étage (HAUT). Au SUD, une porte de secours donne sur la cour. Au NORD, le retour vers l'Aile C.",
+        "L'Aile F, basse et étroite, accrochée au flanc de l'école. Les portes des classes F101 à F118 sont toutes fermées. Derrière leurs petites fenêtres, les pupitres alignés attendent des élèves qui ne viendront plus. Au bout du couloir, la cage d'escalier en demi-lune monte vers l'étage (HAUT). Au SUD, une porte de secours donne sur la cour. Au NORD, le retour vers l'Aile C.",
       sorties: { NORD: 19, HAUT: 16 },
       arrivees: { 19: "Le couloir C103 te mène jusqu'au bout de l'école.", 16: "Tu redescends l'escalier en demi-lune." },
       pieges: { SUD: MORT_PORTE_SECOURS },
       locaux: ["F101", "F102", "F103", "F104", "F105", "F106", "F108", "F109", "F110", "F111", "F112", "F113", "F114", "F115", "F116", "F117", "F118"],
     },
     16: {
-      nom: "L'Étage du Bloc F",
-      zone: "2e étage · Bloc F",
+      nom: "L'Étage de l'Aile F",
+      zone: "Aile F · 2e étage",
       description:
-        "Le couloir F200 est si étroit que tu pourrais toucher les deux murs en écartant les bras. Une odeur d'antiseptique flotte près du local F212, où une armoire de premiers soins est fermée par un cadenas à trois chiffres. Quelque chose est gravé sur le métal. Dans la classe F209, des mots tracés à la craie accrochent la lueur de la lune au tableau. L'escalier redescend (BAS). À l'EST, le couloir rejoint l'étage du Bloc C.",
+        "Le couloir F200 est si étroit que tu pourrais toucher les deux murs en écartant les bras. Une odeur d'antiseptique flotte près du local F212, où une armoire de premiers soins est fermée par un cadenas à trois chiffres. Quelque chose est gravé sur le métal. Dans la classe F209, des mots tracés à la craie accrochent la lueur de la lune au tableau. L'escalier redescend (BAS). À l'EST, le couloir rejoint l'étage de l'Aile C.",
       sorties: { BAS: 15, EST: 27 },
       locaux: ["F201", "F202", "F203", "F204", "F205", "F206", "F207", "F208", "F209", "F210", "F211", "F212A"],
       lectures: [
@@ -876,12 +876,12 @@
       ],
     },
     17: {
-      nom: "L'Étage du Bloc H",
-      zone: "2e étage · Bloc H",
+      nom: "L'Étage de l'Aile H",
+      zone: "Aile H · 2e étage",
       description:
-        "Par les grandes fenêtres du couloir, le boulevard Robert s'étire, désert, sous un ciel qui ne ressemble à aucun ciel. Des voitures sont arrêtées en plein milieu de la chaussée, portières ouvertes, comme abandonnées en pleine course. Rien ne bouge. L'escalier du bout du couloir descend vers le rez-de-chaussée du Bloc H (BAS). À l'OUEST, le retour vers les laboratoires.",
+        "Par les grandes fenêtres du couloir, le boulevard Robert s'étire, désert, sous un ciel qui ne ressemble à aucun ciel. Des voitures sont arrêtées en plein milieu de la chaussée, portières ouvertes, comme abandonnées en pleine course. Rien ne bouge. L'escalier du bout du couloir descend vers le rez-de-chaussée de l'Aile H (BAS). À l'OUEST, le retour vers les laboratoires.",
       sorties: { OUEST: 5, BAS: 20 },
-      arrivees: { 5: "La passerelle débouche sur l'étage du Bloc H.", defaut: "L'étage du Bloc H." },
+      arrivees: { 5: "La passerelle débouche sur l'étage de l'Aile H.", defaut: "L'étage de l'Aile H." },
       locaux: [
         "H201", "H202", "H203", "H204", "H205", "H206", "H207", "H208", "H209", "H211", "H212", "H213", "H215",
         "H216", "H217", "H218", "H221", "H222", "H223", "H224", "H225", "H226", "H228", "H229", "H230", "H231",
@@ -889,7 +889,7 @@
     },
     18: {
       nom: "La Place Publique 2",
-      zone: "Rez-de-chaussée · Bloc B",
+      zone: "Aile B · 1er étage",
       description:
         "La place publique 2 s'étend à flanc d'auditorium, immense et plate. Le jour, c'est le cœur bruyant de l'école ; cette nuit, c'est une plaine morte. Les rangées de casiers métalliques s'alignent en biais, à perte de vue. Quelques portes pendent, ouvertes, comme des bouches qui auraient voulu crier. Au SUD, le couloir de l'Aile C. À l'EST, le retour vers le carrefour principal.",
       sorties: { EST: 6, SUD: 19 },
@@ -897,24 +897,24 @@
     },
     19: {
       nom: "L'Aile C",
-      zone: "Rez-de-chaussée · Bloc C",
+      zone: "Aile C · 1er étage",
       description:
-        "Un couloir étroit longe le flanc ouest de la cafétéria. Les néons éteints pendent du plafond comme des ossements. Par les portes vitrées, à l'EST, tu devines la grande salle de la cafétéria. Au mur, un avertisseur d'alarme incendie rouge. Au SUD, le couloir C103 s'enfonce vers le Bloc F. Au NORD, la place publique 2.",
+        "Un couloir étroit longe le flanc ouest de la cafétéria. Les néons éteints pendent du plafond comme des ossements. Par les portes vitrées, à l'EST, tu devines la grande salle de la cafétéria. Au mur, un avertisseur d'alarme incendie rouge. Au SUD, le couloir C103 s'enfonce vers l'Aile F. Au NORD, la place publique 2.",
       sorties: { NORD: 18, EST: 7, SUD: 15 },
       locaux: ["C100", "C101", "C102", "C103", "C104", "C105", "C106", "C107", "C108", "C109", "C110", "C111", "C112", "C113", "C114"],
     },
     20: {
-      nom: "Couloir du Bloc H",
-      zone: "Rez-de-chaussée · Bloc H",
+      nom: "Couloir de l'Aile H",
+      zone: "Aile H · 1er étage",
       description:
-        "Le Bloc H. Derrière une grille baissée, le café étudiant H115 garde ses chaises retournées sur les tables, pattes en l'air, comme des insectes morts. Au SUD, les portes doubles du gymnase 6 sont entrouvertes sur un noir épais que tu préfères ne pas sonder. À l'EST, une porte de secours donne sur le boulevard Robert. L'escalier monte vers l'étage du Bloc H (HAUT). À l'OUEST, le retour vers les gymnases.",
+        "L'Aile H. Derrière une grille baissée, le café étudiant H115 garde ses chaises retournées sur les tables, pattes en l'air, comme des insectes morts. Au SUD, les portes doubles du gymnase 6 sont entrouvertes sur un noir épais que tu préfères ne pas sonder. À l'EST, une porte de secours donne sur le boulevard Robert. L'escalier monte vers l'étage de l'Aile H (HAUT). À l'OUEST, le retour vers les gymnases.",
       sorties: { OUEST: 12, HAUT: 17 },
       pieges: { SUD: MORT_GYM6, EST: MORT_PORTE_SECOURS },
       locaux: ["H101", "H102", "H103", "H104", "H106", "H107", "H108", "H109", "H111", "H113", "H114", "H116", "H117", "H119", "H120", "H121"],
     },
     21: {
       nom: "Les Cuisines",
-      zone: "Rez-de-chaussée · Bloc C",
+      zone: "Aile C · 1er étage",
       description:
         "Les cuisines de la cafétéria. Inox, carrelage, crochets vides. Les chambres froides sont ouvertes et ne soufflent plus rien ; l'odeur de nourriture tournée te prend à la gorge. Sur le grand comptoir de découpe, les ustensiles ont été balayés au sol dans un éclat de panique. (La sortie est au SUD).",
       sorties: { SUD: 7 },
@@ -922,7 +922,7 @@
     },
     22: {
       nom: "La Place Publique 1",
-      zone: "Rez-de-chaussée · Bloc B",
+      zone: "Aile B · 1er étage",
       description:
         "Le reflet exact de l'autre place publique, de l'autre côté de l'auditorium. Les mêmes casiers en biais, le même vide immense. Sur le sol, un sac à dos éventré a vomi ses cahiers ; les pages tournent toutes seules, lentement, dans un courant d'air que tu ne sens pas. Au NORD, le local de la vie étudiante. À l'EST, un long couloir mène aux gymnases. Au SUD, le couloir est de l'Aile C. À l'OUEST, le carrefour principal.",
       sorties: { OUEST: 6, EST: 12, NORD: 24, SUD: 28 },
@@ -933,7 +933,7 @@
     },
     23: {
       nom: "La Bibliothèque",
-      zone: "Rez-de-chaussée · Bloc A",
+      zone: "Aile A · 1er étage",
       description:
         "La bibliothèque A102. Des rayonnages à perte de vue, et pas un son. Les livres ont l'air d'attendre. Sur le chariot des retours, quelqu'un a laissé un roman ouvert, à l'envers sur sa couverture : Le Petit Prince. Une phrase est soulignée au crayon, trois fois. (Sortie : EST).",
       sorties: { EST: 10 },
@@ -947,7 +947,7 @@
     },
     24: {
       nom: "La Vie Étudiante",
-      zone: "Rez-de-chaussée · Bloc B",
+      zone: "Aile B · 1er étage",
       description:
         "Le local de la vie étudiante, B169. Des affiches du spectacle de fin d'année, des banderoles de l'équipe de basket, un divan défoncé. Sur la table basse, un journal du matin, plié en deux. (Sortie : SUD).",
       sorties: { SUD: 22 },
@@ -961,7 +961,7 @@
     },
     25: {
       nom: "Le Centre Pédagogique",
-      zone: "2e étage · Bloc B",
+      zone: "Aile B · 2e étage",
       description:
         "Le centre pédagogique. Des rangées d'ordinateurs aux écrans noirs, comme des yeux crevés. Une imprimante a dévidé une longue langue de papier blanc jusqu'au sol. Tout autour, des salles de travail et des classes. À l'EST, le carrefour. Au SUD, le couloir sud de l'étage.",
       sorties: { EST: 3, SUD: 26 },
@@ -969,17 +969,17 @@
     },
     26: {
       nom: "Couloir Sud de l'Étage",
-      zone: "2e étage · Bloc B",
+      zone: "Aile B · 2e étage",
       description:
-        "Le couloir sud de l'étage longe l'arrière de l'auditorium. Deux cages d'escalier y descendent, mais leurs portes sont bloquées par des pupitres empilés à la hâte : une barricade, montée de l'intérieur. Quelqu'un n'a pas voulu que quelque chose monte. Au SUD, la passerelle vers l'étage du Bloc C. Au NORD, le centre pédagogique.",
+        "Le couloir sud de l'étage longe l'arrière de l'auditorium. Deux cages d'escalier y descendent, mais leurs portes sont bloquées par des pupitres empilés à la hâte : une barricade, montée de l'intérieur. Quelqu'un n'a pas voulu que quelque chose monte. Au SUD, la passerelle vers l'étage de l'Aile C. Au NORD, le centre pédagogique.",
       sorties: { NORD: 25, SUD: 27 },
       locaux: ["B219", "B221", "B222", "B223", "B224", "B227", "B229", "B230", "B231", "B233", "B234", "B236", "B237", "B238", "B239", "B240"],
     },
     27: {
-      nom: "L'Étage du Bloc C",
-      zone: "2e étage · Bloc C",
+      nom: "L'Étage de l'Aile C",
+      zone: "Aile C · 2e étage",
       description:
-        "L'étage du Bloc C. Un dédale de couloirs et de classes. Les portes se ressemblent toutes. Tu pourrais te perdre ici, et quelque chose te dit que d'autres s'y sont perdus avant toi. Les escaliers du bloc sont encombrés de chaises enchevêtrées, infranchissables. À l'OUEST, le couloir F200 mène à l'étage du Bloc F. Au NORD, le retour vers le Bloc B.",
+        "L'étage de l'Aile C. Un dédale de couloirs et de classes. Les portes se ressemblent toutes. Tu pourrais te perdre ici, et quelque chose te dit que d'autres s'y sont perdus avant toi. Les escaliers de l'aile sont encombrés de chaises enchevêtrées, infranchissables. À l'OUEST, le couloir F200 mène à l'étage de l'Aile F. Au NORD, le retour vers l'Aile B.",
       sorties: { NORD: 26, OUEST: 16 },
       locaux: [
         "C201", "C202", "C203", "C204", "C205", "C209", "C212", "C213", "C214", "C216", "C219", "C221", "C224",
@@ -988,7 +988,7 @@
     },
     28: {
       nom: "L'Aile C Est",
-      zone: "Rez-de-chaussée · Bloc C",
+      zone: "Aile C · 1er étage",
       description:
         "Le couloir est de la cafétéria. Des casiers défoncés, un distributeur de collations éventré, vidé jusqu'à la dernière croustille : quelqu'un est passé avant toi. Une odeur de friture froide flotte jusqu'ici. À l'OUEST, la cafétéria. Au NORD, la place publique 1.",
       sorties: { OUEST: 7, NORD: 22 },
@@ -1004,11 +1004,11 @@
     25: ["etage", 1, 1, "Centre péd."],
     3: ["etage", 2, 1, "Carrefour"],
     5: ["etage", 3, 1, "Labos"],
-    17: ["etage", 4, 1, "Bloc H"],
+    17: ["etage", 4, 1, "Aile H"],
     26: ["etage", 1, 2, "Couloir sud"],
     4: ["etage", 2, 2, "Balcon"],
-    16: ["etage", 0, 3, "Bloc F"],
-    27: ["etage", 1, 3, "Bloc C"],
+    16: ["etage", 0, 3, "Aile F"],
+    27: ["etage", 1, 3, "Aile C"],
     23: ["rdc", 1, -1, "Bibliothèque"],
     10: ["rdc", 2, -1, "Direction"],
     11: ["rdc", 3, -1, "Secrétariat"],
@@ -1018,14 +1018,14 @@
     6: ["rdc", 2, 1, "Carrefour"],
     22: ["rdc", 3, 1, "Place pub. 1"],
     12: ["rdc", 4, 1, "Gymnases"],
-    20: ["rdc", 5, 1, "Bloc H"],
+    20: ["rdc", 5, 1, "Aile H"],
     8: ["rdc", 2, 2, "Auditorium"],
     14: ["rdc", 4, 2, "Gymnase 1"],
     21: ["rdc", 2, 3, "Cuisines"],
     19: ["rdc", 1, 4, "Aile C"],
     7: ["rdc", 2, 4, "Cafétéria"],
     28: ["rdc", 3, 4, "Aile C est"],
-    15: ["rdc", 1, 5, "Bloc F"],
+    15: ["rdc", 1, 5, "Aile F"],
   };
 
   const LIEU_DEPART = 1;
@@ -1837,7 +1837,7 @@
     let partie;
 
     const SVG = "http://www.w3.org/2000/svg";
-    const ETAGES = [["etage", "2e étage"], ["rdc", "Rez-de-chaussée"]];
+    const ETAGES = [["etage", "2e étage"], ["rdc", "1er étage"]];
 
     function el(nom, attrs, texte) {
       const e = document.createElementNS(SVG, nom);

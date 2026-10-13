@@ -281,7 +281,7 @@ test("la phrase d'arrivée dépend d'où l'on vient", () => {
   assert.ok(r.includes("Tu redescends") && !r.includes("C103 te mène"));
   p.lieu = 20;
   const h = p.executer("haut")[1].texte;
-  assert.ok(h.startsWith("L'étage du Bloc H.") && !h.includes("passerelle débouche"));
+  assert.ok(h.startsWith("L'étage de l'Aile H.") && !h.includes("passerelle débouche"));
   p.lieu = 5;
   assert.ok(p.executer("e")[1].texte.startsWith("La passerelle débouche"));
 });
@@ -448,7 +448,7 @@ testSolution("partie complète jusqu'à la victoire et la phrase", ([labo, armoi
     "prendre agenda", "lire tableau",
     "o", "s", "e", "composer " + labo, "prendre ruban", "o", "bas",   // labos
     "o", "s", "e", "manger barre", "n", "prendre lame", "s", "o",    // cafétéria, cuisines
-    "s", "haut", "composer " + armoire, "prendre bâton", "bas", "n", "n", "e", // Bloc F
+    "s", "haut", "composer " + armoire, "prendre bâton", "bas", "n", "n", "e", // Aile F
     "e", "e", "n", "allumer bâton", "prendre tuyau", "s",            // vestiaires
     "combiner tuyau avec lame", "o", "o", "n",
   ]);
