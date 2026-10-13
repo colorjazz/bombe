@@ -1,0 +1,1470 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Salle de profs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&display=swap">
+<style>
+  /* Mise en page : un écran EGA 4:3 centré sur un bureau sombre, une ligne de touches dessous. */
+  :root {
+    --desk: #0b0b10;
+    --bezel: #1c1c24;
+    --bezel-edge: #34343f;
+    --legend: #8a8aa0;
+    --key: #55ffff;
+    --btn: #2a2a36;
+    --btn-fg: #ffffff;
+    --font-legend: "VT323", "Lucida Console", "Courier New", monospace;
+    color-scheme: dark;
+  }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--desk);
+    color: var(--btn-fg);
+    font-family: var(--font-legend);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding-inline: 16px;
+    padding-block: 12px;
+    box-sizing: border-box;
+    overflow-x: hidden;
+  }
+  .monitor {
+    width: min(100%, 960px, calc((100vh - 120px) * 4 / 3));
+    padding: 10px;
+    background: var(--bezel);
+    border: 2px solid var(--bezel-edge);
+    border-radius: 6px;
+    box-sizing: border-box;
+    position: relative;
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4 / 3;
+    max-width: 100%;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    background: #000;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  #kbd {
+    position: absolute;
+    left: 0; bottom: 0;
+    width: 1px; height: 1px;
+    opacity: 0;
+    border: 0; padding: 0;
+    font-size: 16px;
+  }
+  .legend {
+    color: var(--legend);
+    font-size: 20px;
+    text-align: center;
+    line-height: 1.2;
+    max-width: 960px;
+  }
+  .legend b { color: var(--key); font-weight: normal; }
+  .pad { display: none; gap: 8px; flex-wrap: wrap; justify-content: center; }
+  .pad button {
+    font-family: var(--font-legend);
+    font-size: 22px;
+    min-width: 52px; min-height: 44px;
+    background: var(--btn);
+    color: var(--btn-fg);
+    border: 2px solid var(--bezel-edge);
+    border-radius: 4px;
+  }
+  .pad button:focus-visible { outline: 2px solid var(--key); }
+  @media (pointer: coarse) { .pad { display: flex; } }
+</style>
+</head>
+<body>
+<div class="monitor">
+  <canvas id="screen" width="320" height="200" aria-label="Écran du jeu Salle de profs"></canvas>
+  <input id="kbd" type="text" maxlength="60" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Tapez un ordre">
+</div>
+<div class="pad" id="pad">
+  <button data-k="ArrowLeft" aria-label="Aller à gauche">&larr;</button>
+  <button data-k="ArrowUp" aria-label="Monter">&uarr;</button>
+  <button data-k="ArrowDown" aria-label="Descendre">&darr;</button>
+  <button data-k="ArrowRight" aria-label="Aller à droite">&rarr;</button>
+  <button data-k="type">Clavier</button>
+  <button data-k="Enter">Entrée</button>
+  <button data-k="Tab">Objets</button>
+  <button data-k="Escape">Menu</button>
+</div>
+<div class="legend"><b>Flèches</b> marcher &middot; tapez un ordre + <b>Entrée</b> &middot; <b>Tab</b> inventaire &middot; <b>Échap</b> menu &middot; <b>F3</b> répéter &middot; <b>F5</b>/<b>F7</b> sauver/restaurer</div>
+
+<script>
+"use strict";
+// ============================================================
+//  SALLE DE PROFS - trois glandeurs, une photocopieuse, Mme D.
+//  Hommage aux aventures Sierra AGI de 1987 (Police Quest).
+//  320x200 EGA, image 160x168 en pixels doubles, police 8x8.
+// ============================================================
+
+// ---------- palette EGA ----------
+const PAL = [0x000000,0x0000AA,0x00AA00,0x00AAAA,0xAA0000,0xAA00AA,0xAA5500,0xAAAAAA,
+             0x555555,0x5555FF,0x55FF55,0x55FFFF,0xFF5555,0xFF55FF,0xFFFF55,0xFFFFFF];
+const PAL32 = new Uint32Array(16);
+for (let i = 0; i < 16; i++) { const c = PAL[i]; PAL32[i] = 0xFF000000 | ((c & 0xFF) << 16) | (c & 0xFF00) | ((c >> 16) & 0xFF); }
+
+// ---------- police 8x8 (VGA IBM, domaine public, via font8x8) ----------
+const FONT_HEX = "0000000000000000183c3c1818001800363600000000000036367f367f3636000c3e031e301f0c00006333180c6663001c361c6e3b336e000606030000000000180c0606060c1800060c1818180c060000663cff3c660000000c0c3f0c0c000000000000000c0c060000003f0000000000000000000c0c006030180c060301003e63737b6f673e000c0e0c0c0c0c3f001e33301c06333f001e33301c30331e00383c36337f3078003f031f3030331e001c06031f33331e003f3330180c0c0c001e33331e33331e001e33333e30180e00000c0c00000c0c00000c0c00000c0c06180c0603060c180000003f00003f0000060c1830180c06001e3330180c000c003e637b7b7b031e000c1e33333f3333003f66663e66663f003c66030303663c001f36666666361f007f46161e16467f007f46161e16060f003c66030373667c003333333f333333001e0c0c0c0c0c1e007830303033331e006766361e366667000f06060646667f0063777f7f6b63630063676f7b736363001c36636363361c003f66663e06060f001e3333333b1e38003f66663e366667001e33070e38331e003f2d0c0c0c0c1e003333333333333f0033333333331e0c006363636b7f7763006363361c1c3663003333331e0c0c1e007f6331184c667f001e06060606061e0003060c18306040001e18181818181e00081c36630000000000000000000000ff0c0c18000000000000001e303e336e000706063e66663b0000001e3303331e003830303e33336e0000001e333f031e001c36060f06060f0000006e33333e301f0706366e666667000c000e0c0c0c1e00300030303033331e070666361e3667000e0c0c0c0c0c1e000000337f7f6b630000001f333333330000001e3333331e0000003b66663e060f00006e33333e307800003b6e66060f0000003e031e301f00080c3e0c0c2c18000000333333336e0000003333331e0c000000636b7f7f3600000063361c36630000003333333e301f00003f190c263f00380c0c070c0c38001818180018181800070c0c380c0c07006e3b000000000000";
+const FONT_EXT = "0000000000000000181800181818180018187e03037e18181c36260f06673f000000633e363e630033331e3f0c3f0c0c18181800181818007cc61c36361c331e33000000000000003c4299858599423c3c36367c0000000000cc663366cc00000000003f3030000000000000000000003c429da59da5423c7e000000000000001c36361c0000000018187e1818007e001c30180c3c0000001c3018301c000000180c00000000000000006666663e0603fedbdbded8d8d8000000001818000000000000000018301e080c081c000000001c36361c00000000003366cc66330000c36333bdecf6f303c363337bcc6633f003c463b4dbace6800c000c0603331e0007001c36637f630070001c36637f63001c36003e637f63006e3b003e637f6300631c36637f6363000c0c001e333f33007c36337f333373001e3303331e18301e07003f061e063f0038003f061e063f000c123f061e063f0036003f061e063f0007001e0c0c0c1e0038001e0c0c0c1e000c12001e0c0c1e0033001e0c0c0c1e003f666f6f66663f003f0033373f3b33000e00183c663c18007000183c663c18003c66183c663c18006e3b003e63633e00c3183c66663c180000361c081c3600005c36737b6f361d000e00666666663c007000666666663c003c66006666663c003300333333331e00700066663c1818000f063e66663e060f001e331f331f030307001e303e337e0038001e303e337e007ec33c607c66fc006e3b1e303e337e0033001e303e337e000c0c1e303e337e000000fe30fe33fe0000001e03031e301c07001e333f031e0038001e333f031e007ec33c667e063c0033001e333f031e0007000e0c0c0c1e001c000e0c0c0c1e003e631c1818183c0033000e0c0c0c1e001b0e1b303e331e00001f001f333333000007001e33331e000038001e33331e001e33001e33331e006e3b001e33331e000033001e33331e001818007e0018180000603c767e6e3c060007003333337e000038003333337e001e33003333337e000033003333337e0000380033333e301f0000063e663e060000330033333e301f";
+const FONT = {};
+for (let i = 0; i < 95; i++) { const g = []; for (let r = 0; r < 8; r++) g.push(parseInt(FONT_HEX.substr(i * 16 + r * 2, 2), 16)); FONT[32 + i] = g; }
+for (let i = 0; i < 96; i++) { const g = []; for (let r = 0; r < 8; r++) g.push(parseInt(FONT_EXT.substr(i * 16 + r * 2, 2), 16)); FONT[160 + i] = g; }
+
+// ---------- tampons d'écran ----------
+const SW = 320, SH = 200, PW = 160, PH = 168, PIC_Y = 8;
+const scr = new Uint8Array(SW * SH);
+const pic = new Uint8Array(PW * PH);
+let bg = new Uint8Array(PW * PH);
+const cv = document.getElementById("screen");
+const cx = cv.getContext("2d");
+const img = cx.createImageData(SW, SH);
+const img32 = new Uint32Array(img.data.buffer);
+
+function pset(x, y, c) { x |= 0; y |= 0; if (x < 0 || x >= PW || y < 0 || y >= PH) return; pic[y * PW + x] = c; }
+function rect(x, y, w, h, c) { for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) pset(i, j, c); }
+function frame(x, y, w, h, c) { rect(x, y, w, 1, c); rect(x, y + h - 1, w, 1, c); rect(x, y, 1, h, c); rect(x + w - 1, y, 1, h, c); }
+function line(x0, y0, x1, y1, c) {
+  x0 |= 0; y0 |= 0; x1 |= 0; y1 |= 0;
+  const dx = Math.abs(x1 - x0), sx = x0 < x1 ? 1 : -1, dy = -Math.abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
+  let e = dx + dy;
+  for (;;) { pset(x0, y0, c); if (x0 === x1 && y0 === y1) break; const e2 = 2 * e; if (e2 >= dy) { e += dy; x0 += sx; } if (e2 <= dx) { e += dx; y0 += sy; } }
+}
+function ellipse(cx0, cy0, rx, ry, c) {
+  for (let y = -ry; y <= ry; y++) for (let x = -rx; x <= rx; x++) if ((x * x) / (rx * rx + 0.5) + (y * y) / (ry * ry + 0.5) <= 1) pset(cx0 + x, cy0 + y, c);
+}
+function sset(x, y, c) { if (x < 0 || x >= SW || y < 0 || y >= SH) return; scr[y * SW + x] = c; }
+function srect(x, y, w, h, c) { for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) sset(i, j, c); }
+function glyph(ch, x, y, fg, bgc, sx = 1, sy = 1) {
+  const g = FONT[ch.charCodeAt(0)] || FONT[63];
+  for (let r = 0; r < 8; r++) for (let b = 0; b < 8; b++) {
+    const on = (g[r] >> b) & 1;
+    if (on) srect(x + b * sx, y + r * sy, sx, sy, fg);
+    else if (bgc >= 0) srect(x + b * sx, y + r * sy, sx, sy, bgc);
+  }
+}
+function text(str, x, y, fg, bgc = -1, sx = 1, sy = 1) {
+  // majuscules accentuées : la police 8x8 les écrase, on fait comme les jeux de l'époque
+  str = str.replace(/[\u00c0-\u00dd]/g, (ch) => ch.normalize("NFD")[0]);
+  for (let i = 0; i < str.length; i++) glyph(str[i], x + i * 8 * sx, y, fg, bgc, sx, sy); }
+const center = (str, y, fg, sx = 1, sy = 1) => text(str, Math.floor((SW - str.length * 8 * sx) / 2), y, fg, -1, sx, sy);
+
+// ---------- son : haut-parleur PC à une voix ----------
+let actx = null, voice = null;
+function audio() {
+  try {
+    if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+    if (actx.state === "suspended") actx.resume();
+  } catch (e) { actx = null; }
+  return actx;
+}
+const NOTE = (n) => { const m = { C: -9, D: -7, E: -5, F: -4, G: -2, A: 0, B: 2 }; const r = /^([A-G])(#|b)?(\d)$/.exec(n); let s = m[r[1]] + (r[2] === "#" ? 1 : r[2] === "b" ? -1 : 0) + (parseInt(r[3]) - 4) * 12; return 440 * Math.pow(2, s / 12); };
+function play(seq, tempo = 1) {
+  if (!S || !S.sound) return;
+  const a = audio(); if (!a) return;
+  try { if (voice) { voice.stop(); voice = null; } } catch (e) {}
+  const o = a.createOscillator(), g = a.createGain();
+  o.type = "square"; g.gain.value = 0; o.connect(g); g.connect(a.destination);
+  let t = a.currentTime + 0.02;
+  for (const [n, d] of seq) {
+    const dur = (d / 1000) * tempo;
+    if (n) { o.frequency.setValueAtTime(typeof n === "number" ? n : NOTE(n), t); g.gain.setValueAtTime(0.045, t); g.gain.setValueAtTime(0, t + dur * 0.9); }
+    else g.gain.setValueAtTime(0, t);
+    t += dur;
+  }
+  o.start(); o.stop(t + 0.05); voice = o;
+}
+const SFX = {
+  theme: [["C5",160],["C5",160],["G4",160],["A4",320],["G4",320],[0,80],["B4",160],["C5",160],["D5",160],["E5",320],["D5",160],["C5",160],["A4",160],["G4",480],[0,160],["E4",160],["F4",160],["G4",160],["C5",320],["B4",160],["C5",640]],
+  points: [["C5",50],["E5",50],["G5",50],["C6",110]],
+  door: [[110,60],[0,30],[90,90]],
+  death: [["G4",260],["F#4",260],["F4",260],["E4",700]],
+  pa: [["E5",350],["C5",600]],
+  bell: Array.from({ length: 30 }, (_, i) => [i % 2 ? 1400 : 1600, 50]),
+  win: [["C5",120],["E5",120],["G5",120],["C6",240],["G5",120],["C6",480]],
+  beep: [[880,80]],
+  bad: [[160,180]],
+  select: [[660,40]],
+};
+
+// ---------- les trois glandeurs ----------
+const CHARS = [
+  { id: "jp", name: "chat-JP", subj: "SVT", de: "de SVT", style: "ears",
+    c: { hair: 0, skin: 12, shirt: 15, vest: 2, tie: 10, pants: 8, shoes: 0, style: "ears" },
+    pitch: "Prof de SVT. Dort quatorze heures par jour, comme un chat. Retombe toujours sur ses pattes, surtout pour esquiver une réunion.",
+    desc: "chat-JP, prof de SVT. Un serre-tête à oreilles de chat, un pull vert, et l'énergie d'un félin à 14h un dimanche.",
+    quiz: "Interro de SVT : « La photosynthèse ». Question 1 : Pourquoi les plantes sont-elles vertes ? Question 2 : Non, sérieusement, pourquoi ?" },
+  { id: "guy", name: "Guy-Homie", subj: "EPS", de: "d'EPS", style: "cap",
+    c: { hair: 0, skin: 6, shirt: 4, vest: 4, tie: 15, pants: 1, shoes: 15, cap: 9, style: "cap" },
+    pitch: "Prof d'EPS. Casquette à l'envers, sifflet au cou. Son programme annuel : « Allez, on fait un foot. »",
+    desc: "Guy-Homie, prof d'EPS. Casquette à l'envers, sweat rouge, sifflet autour du cou et des baskets qui n'ont jamais couru.",
+    quiz: "Interro écrite d'EPS : « Les règles du handball ». Question 1 : Combien de joueurs ? Question 2 : C'est quoi, un ballon ?" },
+  { id: "crispy", name: "Crispy", subj: "français", de: "de français", style: "spiky",
+    c: { hair: 14, skin: 12, shirt: 15, vest: 13, tie: 5, pants: 8, shoes: 0, style: "spiky" },
+    pitch: "Prof de français. Corrige au pifomètre : la note dépend du poids de la copie. Les copies lourdes ont 14.",
+    desc: "Crispy, prof de français. Cheveux blonds en pétard, gilet rose, et un stylo rouge qui n'a jamais servi.",
+    quiz: "Interro de français : « Le passé simple ». Question 1 : Conjuguez « résoudre ». Question 2 : Pleurez." },
+];
+const MME_D = { hair: 7, skin: 12, shirt: 15, vest: 6, tie: 15, pants: 6, shoes: 0, style: "bun", glasses: true, skirt: true };
+
+// ---------- état du jeu ----------
+const POINTS = { signin: 5, board: 1, water: 1, camera: 1, wake: 2, memo: 2, readmemo: 3, key: 5, mug: 3, filter: 3, grounds: 3,
+  fillpot: 5, brew: 5, pour: 5, milk: 2, gift: 10, donut: 3, unlock: 5, paper: 5, unplug: 5, jam: 5,
+  plugin: 2, loadpaper: 5, code: 5, copy: 10, deliver: 10 };
+const MAX = Object.values(POINTS).reduce((a, b) => a + b, 0);
+const BELL = 1200; // secondes de jeu entre 7h40 et 8h00
+
+let S = null;
+function newState() {
+  return {
+    mode: "title", pc: 0, room: "hall", x: 22, y: 140, face: "down", dir: null, frame: 0, step: 0, target: null,
+    score: 0, got: {}, sound: (S && S.sound === false) ? false : true,
+    inv: ["quiz", "pen"], mug: null, pot: "sludge", brewEnd: 0,
+    signed: false, fridgeOpen: false, cabinetOpen: false, supplyUnlocked: false,
+    copier: { plugged: true, jam: true, paper: false, code: false },
+    happy: false, knowsCode: false, donutWarned: false, donut: true, awake: false, blocked: false,
+    code: String(1000 + Math.floor(Math.random() * 9000)),
+    t: 0, warned: {}, dead: false, won: false, last: "",
+  };
+}
+S = newState();
+const P = () => CHARS[S.pc];
+const OTH = () => CHARS.filter((c, i) => i !== S.pc);
+const B = () => OTH()[0]; // à table, accro au café, connaît le code
+const C = () => OTH()[1]; // sur le canapé, en « réunion »
+const has = (it) => S.inv.includes(it);
+const give = (it) => { if (!has(it)) S.inv.push(it); };
+const lose = (it) => { S.inv = S.inv.filter((i) => i !== it); };
+function award(key) { if (S.got[key]) return; S.got[key] = 1; S.score += POINTS[key]; play(SFX.points); }
+function clockStr() { const s = Math.min(BELL, Math.floor(S.t)); const m = 40 + Math.floor(s / 60); return m >= 60 ? "8h00" : "7h" + String(m).padStart(2, "0"); }
+
+// ---------- boîtes de message ----------
+const Q = [];
+function say(msg, opt = {}) { Q.push(Object.assign({ text: msg }, opt)); }
+function wrap(str, width = 30) {
+  const out = [];
+  for (const para of str.split("\n")) {
+    if (para === "") { out.push(""); continue; }
+    let l = "";
+    for (const w of para.split(" ")) {
+      if ((l + (l ? " " : "") + w).length > width) { out.push(l); l = w; } else l += (l ? " " : "") + w;
+    }
+    out.push(l);
+  }
+  return out;
+}
+function drawBox(msg) {
+  // espaces insécables avant la ponctuation haute, à la française
+  const lines = wrap(msg.replace(/ ([:;!?»])/g, " $1").replace(/« /g, "« "));
+  const cols = Math.max(...lines.map((l) => l.length), 1), rows = lines.length;
+  const w = cols * 8, h = rows * 8;
+  const x0 = Math.floor((SW - w) / 2 / 8) * 8, y0 = PIC_Y + Math.max(4, Math.floor((PH - h) / 2 / 8) * 8);
+  srect(x0 - 10, y0 - 6, w + 20, h + 12, 15);
+  srect(x0 - 7, y0 - 4, w + 14, 1, 4); srect(x0 - 7, y0 + h + 3, w + 14, 1, 4);
+  srect(x0 - 8, y0 - 4, 2, h + 8, 4); srect(x0 + w + 6, y0 - 4, 2, h + 8, 4);
+  lines.forEach((l, i) => text(l, x0, y0 + i * 8, 0));
+}
+
+// ---------- personnages ----------
+function headExtras(x, T, c, f) {
+  if (c.style === "ears") { pset(x - 2, T - 1, c.hair); pset(x + 2, T - 1, c.hair); pset(x - 2, T - 2, c.hair); pset(x + 2, T - 2, c.hair); }
+  if (c.style === "spiky") { pset(x - 2, T - 1, c.hair); pset(x, T - 2, c.hair); pset(x, T - 1, c.hair); pset(x + 2, T - 1, c.hair); pset(x + 1, T - 1, c.hair); }
+  if (c.style === "cap") {
+    rect(x - 2, T - 1, 5, 2, c.cap);
+    if (f === "left") pset(x + 3, T, c.cap); else if (f === "right") pset(x - 3, T, c.cap); else if (f === "up") rect(x - 1, T + 1, 3, 1, c.cap);
+  }
+  if (c.style === "bun") { rect(x - 1, T - 2, 3, 2, c.hair); }
+}
+function drawPerson(x, y, f, fr, c) {
+  const T = y - 27, wk = fr % 4;
+  const side = f === "left" || f === "right";
+  if (side) {
+    const d = f === "right" ? 1 : -1;
+    rect(x - 2, T, 5, 2, c.hair);
+    rect(x - 2, T + 2, 5, 4, c.skin);
+    rect(d > 0 ? x - 2 : x + 1, T + 2, 2, 3, c.hair);
+    pset(x + d, T + 3, 0);
+    if (c.glasses) pset(x + 2 * d, T + 3, 0);
+    pset(x, T + 6, c.skin);
+    rect(x - 2, T + 7, 5, 10, c.vest);
+    const sw = wk === 1 ? 1 : wk === 3 ? -1 : 0;
+    line(x, T + 8, x + sw * d, T + 15, c.shirt === c.vest ? 0 : c.shirt); pset(x + sw * d, T + 16, c.skin);
+    rect(x - 2, T + 17, 5, 1, c.pants);
+    const legc = c.skirt ? 8 : c.pants;
+    if (c.skirt) rect(x - 2, T + 17, 5, 5, c.pants);
+    if (wk === 1 || wk === 3) {
+      line(x - 1, T + 21, x - 2 - d, T + 26, legc); line(x, T + 21, x - 1 - d, T + 26, legc);
+      line(x, T + 21, x + 1 + d, T + 26, legc); line(x + 1, T + 21, x + 2 + d, T + 26, legc);
+      if (!c.skirt) { rect(x - 1, T + 18, 3, 3, c.pants); }
+      rect(x - 2 - d + (d > 0 ? 0 : -1), T + 27, 3, 1, c.shoes); rect(x + 1 + d + (d > 0 ? 0 : -1), T + 27, 3, 1, c.shoes);
+    } else {
+      rect(x - 1, T + (c.skirt ? 22 : 18), 3, c.skirt ? 5 : 9, legc);
+      rect(d > 0 ? x - 1 : x - 2, T + 27, 4, 1, c.shoes);
+    }
+    headExtras(x, T, c, f);
+    return;
+  }
+  const down = f === "down";
+  rect(x - 2, T, 5, 2, c.hair);
+  if (down) {
+    rect(x - 2, T + 2, 1, 3, c.hair); rect(x + 2, T + 2, 1, 3, c.hair);
+    rect(x - 1, T + 2, 3, 4, c.skin); pset(x - 2, T + 5, c.skin); pset(x + 2, T + 5, c.skin);
+    pset(x - 1, T + 3, 0); pset(x + 1, T + 3, 0);
+    if (c.glasses) pset(x, T + 3, 0);
+  } else {
+    rect(x - 2, T + 2, 5, 3, c.hair); rect(x - 1, T + 5, 3, 1, c.hair);
+  }
+  pset(x, T + 6, c.skin);
+  rect(x - 2, T + 7, 5, 10, c.vest);
+  rect(x - 3, T + 7, 1, 9, c.shirt); rect(x + 3, T + 7, 1, 9, c.shirt);
+  pset(x - 3, T + 16, c.skin); pset(x + 3, T + 16, c.skin);
+  if (down) { pset(x - 1, T + 7, c.shirt); pset(x + 1, T + 7, c.shirt); rect(x, T + 7, 1, c.skirt ? 1 : 7, c.tie); if (c.skirt) { pset(x - 1, T + 8, c.tie); pset(x + 1, T + 8, c.tie); } }
+  if (c.skirt) {
+    rect(x - 2, T + 17, 5, 5, c.pants);
+    const lh = wk === 1 ? 3 : 5, rh = wk === 3 ? 3 : 5;
+    rect(x - 2, T + 22, 2, lh, 8); rect(x - 2, T + 22 + lh, 2, 1, c.shoes);
+    rect(x + 1, T + 22, 2, rh, 8); rect(x + 1, T + 22 + rh, 2, 1, c.shoes);
+  } else {
+    rect(x - 2, T + 17, 5, 2, c.pants);
+    const lh = wk === 1 ? 6 : 8, rh = wk === 3 ? 6 : 8;
+    rect(x - 2, T + 19, 2, lh, c.pants); rect(x - 2, T + 19 + lh, 2, 1, c.shoes);
+    rect(x + 1, T + 19, 2, rh, c.pants); rect(x + 1, T + 19 + rh, 2, 1, c.shoes);
+  }
+  headExtras(x, T, c, f);
+}
+function drawSeated(px, T, c) {
+  rect(px - 2, T, 5, 2, c.hair);
+  rect(px - 2, T + 2, 1, 3, c.hair); rect(px + 2, T + 2, 1, 3, c.hair);
+  rect(px - 1, T + 2, 3, 4, c.skin); pset(px - 1, T + 3, 0); pset(px + 1, T + 3, 0); pset(px, T + 3, 8);
+  headExtras(px, T, c, "down");
+  pset(px, T + 6, c.skin);
+  rect(px - 3, T + 7, 7, 14, c.vest); rect(px - 1, T + 7, 3, 1, c.shirt);
+  rect(px + 2, T + 17, 4, 2, c.vest); pset(px + 6, T + 18, c.skin);
+}
+function drawLying(c) {
+  // sur le canapé, tête à gauche, en pleine « réunion »
+  const y = 139;
+  rect(8, y - 2, 4, 5, c.hair); rect(10, y - 1, 3, 3, c.skin); pset(11, y, 0);
+  if (c.style === "cap") rect(7, y - 2, 2, 4, c.cap);
+  if (c.style === "ears") { pset(8, y - 3, c.hair); pset(8, y + 3, c.hair); }
+  if (c.style === "spiky") { pset(7, y - 2, c.hair); pset(7, y, c.hair); pset(7, y + 2, c.hair); }
+  rect(13, y - 2, 12, 5, c.vest); rect(24, y - 1, 12, 4, c.pants); rect(36, y - 1, 2, 4, c.shoes);
+  if (!S.awake) {
+    const ph = (tick >> 3) % 3;
+    const z = (zx, zy, col) => { rect(zx, zy, 3, 1, col); pset(zx + 1, zy + 1, col); rect(zx, zy + 2, 3, 1, col); };
+    z(13, 122 - ph * 2, 15); if (ph > 0) z(17, 117 - ph * 2, 7);
+  } else { rect(15, y - 4, 3, 2, 8); }
+}
+function drawEgoDown(x, y) {
+  const c = P().c;
+  rect(x - 12, y - 4, 4, 4, c.skin); rect(x - 13, y - 4, 1, 4, c.hair);
+  rect(x - 8, y - 5, 10, 5, c.vest);
+  rect(x + 2, y - 4, 10, 4, c.pants); rect(x + 12, y - 4, 2, 4, c.shoes);
+}
+
+// ---------- pièces ----------
+const ROOMS = {};
+const inR = (x, y, r) => x >= r[0] && x <= r[2] && y >= r[1] && y <= r[3];
+function distTo(r) { const dx = Math.max(r[0] - S.x, 0, S.x - r[2]); const dy = Math.max(r[1] - S.y, 0, S.y - r[3]); return Math.max(dx, dy); }
+
+ROOMS.hall = {
+  obstacles: [[66, 104, 92, 114], [41, 118, 51, 127]],
+  spots: {
+    mailbox: [128, 100, 158, 104, 8], sheet: [66, 100, 92, 116, 6], board: [62, 100, 96, 106, 10], door: [100, 100, 126, 104, 6],
+    locker: [8, 100, 62, 106, 8], fountain: [0, 100, 12, 104, 8], mmeD: [41, 118, 51, 127, 10],
+  },
+  bg() {
+    rect(0, 0, 160, 10, 8);
+    rect(18, 3, 22, 3, 15); rect(69, 3, 22, 3, 15); rect(120, 3, 22, 3, 15);
+    rect(0, 10, 160, 1, 0);
+    rect(0, 11, 160, 87, 7);
+    rect(0, 30, 160, 2, 3);
+    rect(0, 96, 160, 3, 0);
+    rect(0, 99, 160, 69, 8);
+    for (const yy of [101, 104, 108, 113, 119, 126, 134, 143, 153, 164]) rect(0, yy, 160, 1, 7);
+    for (let i = -7; i <= 7; i++) line(80 + i * 12, 99, 80 + i * 40, 167, 7);
+    rect(1, 72, 8, 5, 15); frame(1, 72, 8, 5, 8); rect(4, 70, 2, 2, 8); rect(3, 77, 4, 6, 8);
+    rect(10, 34, 52, 62, 1); rect(10, 33, 52, 1, 9);
+    for (let i = 0; i <= 52; i += 8) rect(10 + i, 34, 1, 62, 0);
+    for (let i = 0; i < 52; i += 8) { for (const vy of [38, 40, 42]) rect(13 + i, vy, 4, 1, 9); rect(16 + i, 64, 1, 3, 7); for (const vy of [86, 88]) rect(13 + i, vy, 4, 1, 9); }
+    frame(64, 40, 32, 24, 0); rect(65, 41, 30, 22, 6);
+    rect(67, 43, 7, 9, 15); rect(68, 45, 5, 1, 8); rect(68, 47, 4, 1, 8); rect(68, 49, 5, 1, 8);
+    rect(76, 44, 7, 7, 14); rect(77, 46, 5, 1, 4);
+    rect(85, 42, 8, 10, 15); rect(86, 45, 6, 1, 4); rect(86, 47, 6, 1, 4); rect(86, 49, 3, 1, 4);
+    rect(69, 54, 9, 7, 12); rect(81, 54, 11, 7, 10); rect(82, 56, 9, 1, 2);
+    pset(70, 43, 4); pset(79, 44, 1); pset(88, 42, 4); pset(73, 54, 0); pset(86, 54, 4);
+    rect(100, 38, 26, 59, 0); rect(102, 40, 22, 57, 6);
+    rect(106, 44, 8, 16, 11); line(107, 58, 112, 46, 15); rect(119, 68, 2, 2, 14);
+    rect(103, 28, 20, 7, 15); frame(103, 28, 20, 7, 0); rect(105, 31, 16, 1, 1);
+    rect(130, 44, 27, 34, 6); frame(130, 44, 27, 34, 0);
+    for (let r = 0; r < 4; r++) for (let c = 0; c < 3; c++) rect(132 + c * 8, 46 + r * 8, 7, 6, 0);
+    rect(133, 48, 4, 3, 15); rect(149, 56, 4, 3, 15); rect(141, 64, 4, 2, 14); rect(133, 71, 4, 1, 15);
+  },
+  dyn() {
+    if (!S.got.memo) rect(141, 48, 4, 3, 15);
+    if (!S.got.key) pset(143, 50, 14);
+  },
+  layers() {
+    return [
+      { base: 113, draw() {
+        rect(73, 94, 12, 19, 6); rect(74, 98, 10, 1, 4); rect(74, 108, 10, 1, 4); rect(72, 112, 14, 1, 0);
+        rect(70, 91, 18, 4, 8); rect(74, 91, 10, 3, 15); rect(78, 90, 2, 1, 7);
+        if (S.signed) rect(75, 93, 5, 1, 1);
+      } },
+      { base: 124, draw() { drawPerson(46, 124, S.x < 40 ? "left" : S.x > 52 ? "right" : "down", 0, MME_D); rect(48, 105, 3, 4, 15); } },
+    ];
+  },
+  walk(x, y) { return y >= 100 && y <= 167 && x >= 1 && x <= 158 && !this.obstacles.some((r) => inR(x, y, r)); },
+  exit(nx, ny) {
+    if (ny < 100 && nx >= 104 && nx <= 122) {
+      if (!S.signed) { S.dir = null; S.blocked = true; say("« HALTE. » La voix de Mme D claque comme une règle sur un pupitre. « " + P().name + ". Le registre. On signe AVANT d'aller se vautrer en salle des profs. J'ai un tableur pour vos retards, et il a besoin d'une deuxième feuille. »"); return true; }
+      goRoom("lounge", 17, 102, "down"); return true;
+    }
+    if (nx < 1) { S.dir = null; S.x = 3; say("Par là, c'est le gymnase. Rien de bon ne se passe au gymnase avant 8h."); return true; }
+    if (nx > 158) { S.dir = null; S.x = 156; say("Le secrétariat. Mme D y a fait installer un judas. Personne ne sait pourquoi. Tout le monde a peur."); return true; }
+    if (ny > 167) {
+      S.dir = null;
+      if (has("copies")) { win(); return true; }
+      S.y = 165; say("Au bout du couloir, votre salle, la 112. Inutile d'y aller sans les photocopies : trente-deux ados vous mangeraient tout cru.");
+      return true;
+    }
+    return false;
+  },
+  look() { return "Le couloir du collège de Lytton sent la cire et le désespoir. Des casiers d'élèves bleus, un panneau d'affichage, le registre de présence, les casiers des profs et la porte de la salle des profs. Mme D, la principale, monte la garde. Une équipe de documentaire filme tout. Votre salle est au sud."; },
+};
+
+ROOMS.lounge = {
+  obstacles: [[41, 100, 109, 129], [114, 104, 156, 137], [1, 130, 45, 157]],
+  spots: {
+    fridge: [32, 100, 54, 104, 8], microwave: [32, 100, 54, 104, 8], maker: [58, 100, 80, 104, 6], pot: [58, 100, 80, 104, 6],
+    sink: [80, 100, 104, 104, 6], rack: [104, 100, 128, 104, 6], cabinet: [58, 100, 106, 104, 8], supply: [134, 100, 156, 104, 6],
+    copier: [114, 104, 156, 137, 6], cord: [114, 104, 158, 140, 8], table: [41, 100, 109, 129, 7], npcB: [41, 100, 109, 129, 8],
+    donut: [41, 100, 109, 129, 7], couch: [1, 130, 45, 157, 6], npcC: [1, 130, 45, 157, 7], door: [6, 100, 28, 104, 6],
+  },
+  bg() {
+    rect(0, 0, 160, 9, 8); rect(56, 3, 48, 3, 15); rect(0, 9, 160, 1, 0);
+    rect(0, 10, 160, 87, 2);
+    rect(0, 95, 160, 4, 0);
+    rect(0, 99, 160, 69, 6);
+    for (let y = 99; y < 168; y++) for (let x = 0; x < 160; x++) if (((x * 7 + y * 13) ^ (x * y)) % 29 === 0) pset(x, y, 4);
+    rect(6, 38, 22, 58, 0); rect(8, 40, 18, 56, 6); rect(12, 44, 7, 12, 11); line(13, 54, 17, 46, 15); rect(23, 68, 2, 2, 14);
+    ellipse(17, 23, 5, 6, 15); pset(17, 18, 0); pset(17, 28, 0); pset(12, 23, 0); pset(22, 23, 0);
+    line(17, 23, 17, 19, 0); line(17, 23, 20, 23, 0);
+    rect(34, 30, 19, 66, 15); frame(34, 30, 19, 66, 8); rect(34, 48, 19, 1, 8);
+    rect(49, 36, 1, 8, 7); rect(49, 52, 1, 16, 7);
+    pset(38, 56, 12); pset(41, 60, 9); pset(39, 64, 10); rect(37, 70, 5, 6, 14);
+    rect(35, 20, 17, 10, 8); rect(37, 22, 10, 6, 0); rect(48, 22, 2, 1, 10); rect(48, 25, 2, 1, 7);
+    rect(60, 16, 46, 26, 6); frame(60, 16, 46, 26, 0); rect(75, 16, 1, 26, 0); rect(90, 16, 1, 26, 0);
+    pset(73, 30, 14); pset(77, 30, 14); pset(88, 30, 14); pset(92, 30, 14);
+    rect(110, 16, 18, 24, 15); frame(110, 16, 18, 24, 0); line(112, 19, 125, 19, 6);
+    rect(116, 21, 5, 5, 6); pset(117, 22, 0); pset(119, 22, 0); rect(117, 20, 1, 1, 6); rect(120, 20, 1, 1, 6);
+    rect(115, 26, 7, 4, 6); rect(113, 34, 12, 1, 0); rect(114, 36, 10, 1, 4);
+    rect(58, 79, 76, 17, 6); frame(58, 79, 76, 17, 0);
+    for (let i = 70; i < 134; i += 12) rect(i, 79, 1, 17, 0);
+    for (let i = 64; i < 134; i += 12) pset(i, 84, 14);
+    rect(56, 75, 80, 4, 7); rect(56, 75, 80, 1, 15);
+    rect(82, 75, 20, 2, 8); line(92, 67, 92, 74, 7); rect(92, 67, 4, 1, 7); pset(95, 68, 7);
+    rect(106, 73, 20, 2, 7); for (let i = 106; i < 126; i += 3) pset(i, 72, 7);
+    rect(62, 56, 13, 4, 0); rect(70, 56, 5, 19, 0); rect(62, 73, 13, 2, 0);
+    rect(136, 24, 19, 72, 8); frame(136, 24, 19, 72, 0); rect(145, 24, 1, 72, 0);
+    pset(143, 58, 14); pset(147, 58, 14); rect(145, 54, 1, 2, 7);
+    rect(137, 28, 7, 1, 7); rect(147, 28, 7, 1, 7);
+    rect(155, 86, 3, 4, 15); pset(156, 87, 0); pset(156, 88, 0);
+  },
+  dyn() {
+    const potCol = { sludge: 0, empty: 8, water: 11, brewing: 6, coffee: 6 }[S.pot];
+    rect(63, 63, 7, 10, 8); rect(64, 66, 5, 7, potCol);
+    if (S.pot === "sludge") rect(64, 70, 5, 3, 6);
+    if (S.pot === "brewing" && (tick >> 2) % 2) { pset(66, 61, 15); pset(67, 59, 15); }
+    pset(72, 70, S.pot === "brewing" || S.pot === "coffee" ? 12 : 4);
+    if (!S.got.mug) { rect(108, 69, 4, 4, 12); pset(112, 70, 12); }
+    rect(114, 69, 4, 4, 14); pset(118, 70, 14);
+    rect(120, 69, 4, 4, 9); pset(124, 70, 9);
+    if (S.cabinetOpen) {
+      rect(61, 17, 14, 24, 0); rect(61, 29, 14, 1, 6);
+      if (!S.got.filter) rect(63, 24, 6, 5, 15);
+      if (!S.got.grounds) { rect(67, 34, 5, 6, 4); rect(67, 34, 5, 1, 7); }
+      rect(56, 17, 4, 24, 6);
+    }
+    if (S.fridgeOpen) {
+      rect(35, 49, 17, 46, 7); rect(36, 50, 15, 44, 15);
+      rect(36, 62, 15, 1, 7); rect(36, 76, 15, 1, 7);
+      if (!S.got.milkTaken) { rect(38, 55, 4, 7, 15); frame(38, 55, 4, 7, 9); }
+      rect(43, 58, 7, 4, 14);
+      rect(38, 70, 8, 5, 2);
+      rect(27, 49, 7, 46, 15); frame(27, 49, 7, 46, 8);
+    }
+    if (S.supplyUnlocked) {
+      rect(137, 25, 17, 70, 0);
+      for (const sy of [40, 58, 76]) rect(137, sy, 17, 1, 7);
+      if (!S.got.paper) { rect(139, 35, 13, 5, 15); rect(139, 37, 13, 1, 9); }
+      rect(140, 53, 6, 5, 14); rect(139, 71, 9, 5, 4);
+    }
+  },
+  layers() {
+    return [
+      { base: 129, draw() {
+        drawSeated(66, 89, B().c);
+        rect(61, 95, 1, 18, 0); rect(71, 95, 1, 12, 0);
+        rect(46, 110, 58, 5, 6); rect(46, 110, 58, 1, 14); rect(46, 115, 58, 1, 0);
+        rect(48, 116, 2, 12, 0); rect(100, 116, 2, 12, 0); rect(60, 116, 1, 9, 8); rect(90, 116, 1, 9, 8);
+        rect(54, 107, 9, 3, 15); rect(55, 106, 8, 1, 15); rect(55, 108, 6, 1, 4);
+        rect(80, 107, 14, 3, 13); rect(80, 104, 14, 3, 15); frame(80, 104, 14, 3, 13);
+        if (S.donut) { rect(85, 107, 4, 2, 6); pset(86, 107, 14); }
+        if (S.happy) { rect(70, 106, 3, 4, 12); pset(73, 107, 12); if ((tick >> 3) % 2) pset(71, 104, 15); else pset(72, 103, 15); }
+      } },
+      { base: 137, draw() {
+        rect(118, 108, 35, 4, 8); rect(118, 108, 35, 1, 7);
+        rect(120, 112, 31, 24, 7); frame(120, 112, 31, 24, 0);
+        rect(123, 116, 12, 1, 8); rect(123, 122, 25, 1, 8); rect(123, 128, 25, 1, 8);
+        const c = S.copier;
+        rect(139, 114, 9, 4, !c.plugged ? 0 : c.jam ? 12 : c.code && c.paper ? 10 : 14);
+        rect(151, 120, 6, 3, c.paper ? 15 : 8); rect(151, 123, 6, 1, 0);
+        rect(121, 135, 2, 2, 0); rect(148, 135, 2, 2, 0);
+        if (c.plugged) { line(151, 130, 157, 122, 0); line(157, 122, 157, 90, 0); }
+        else { line(151, 130, 155, 136, 0); rect(155, 136, 2, 1, 0); }
+      } },
+      { base: 157, draw() {
+        rect(4, 130, 38, 12, 4); rect(4, 130, 38, 1, 12);
+        rect(4, 142, 38, 8, 5); rect(4, 142, 38, 1, 13);
+        drawLying(C().c);
+        rect(1, 135, 4, 17, 4); rect(41, 135, 4, 17, 4);
+        rect(3, 152, 2, 4, 0); rect(41, 152, 2, 4, 0);
+      } },
+    ];
+  },
+  walk(x, y) { return y >= 100 && y <= 166 && x >= 1 && x <= 158 && !this.obstacles.some((r) => inR(x, y, r)); },
+  exit(nx, ny) {
+    if (ny < 100 && nx >= 8 && nx <= 26) { goRoom("hall", 113, 102, "down"); return true; }
+    if (ny > 166) { S.dir = null; say("La seule sortie, c'est la porte du couloir. Mme D a fait murer l'autre en 2003."); return true; }
+    return false;
+  },
+  look() { return "La salle des profs. Murs vert hôpital, moquette d'une couleur que la science ne sait pas nommer. Frigo, micro-ondes, cafetière, évier, placards, une armoire grise et la photocopieuse. " + B().name + " est à table, l'oeil sur le dernier pain au chocolat. " + C().name + " dort sur le canapé."; },
+};
+
+function buildBg() { pic.fill(0); ROOMS[S.room].bg(); bg = pic.slice(); }
+function goRoom(r, x, y, face) {
+  S.room = r; S.x = x; S.y = y; S.face = face; S.dir = null; S.target = null;
+  buildBg(); play(SFX.door);
+  if (r === "lounge" && !S.got.seenLounge) { S.got.seenLounge = 1; say(ROOMS.lounge.look()); }
+}
+
+// ---------- analyseur (parser) ----------
+const strip = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "");
+const FILLER = new Set("le la les l un une des du de d au aux a ma mon mes ta ton sa son ses ce cet cette ces avec dans sur sous pour par en et puis svp plait s il vous te je j qu que t n ne pas vers chez contre tres encore maintenant vite nouveau nouvelle frais fraiche vieux vieille peu quoi comme est c ca cela ceci propos m y coince coincee bloque bloquee bien doucement fond tout".split(" "));
+const VOC = {};
+function syn(canon, list) { for (const w of list.split(" ")) VOC[w] = canon; }
+// verbes
+syn("look", "regarder regarde regardez examiner examine examinez observer observe inspecter inspecte voir vois fouiller fouille chercher cherche verifier verifie consulter consulte x");
+syn("read", "lire lis lisez relire relis");
+syn("take", "prendre prends prenez prend attraper attrape ramasser ramasse recuperer recupere voler vole piquer pique emprunter emprunte");
+syn("drop", "poser pose lacher lache jeter jette");
+syn("open", "ouvrir ouvre ouvrez deballer deballe");
+syn("close", "fermer ferme fermez refermer referme");
+syn("talk", "parler parle parlez discuter discute bavarder bavarde causer cause dire dis");
+syn("hello", "bonjour salut coucou hello yo wesh");
+syn("ask", "demander demande demandez interroger interroge");
+syn("give", "donner donne donnez offrir offre tendre tends servir sers apporter apporte");
+syn("sign", "signer signe signez emarger emarge parapher");
+syn("use", "utiliser utilise utilisez allumer allume appuyer appuie actionner actionne demarrer demarre lancer lance presser");
+syn("fill", "remplir remplis remplissez");
+syn("make", "faire fais faites preparer prepare");
+syn("pour", "verser verse versez");
+syn("drink", "boire bois buvez gouter goute siroter sirote avaler avale");
+syn("eat", "manger mange mangez croquer croque devorer devore");
+syn("unplug", "debrancher debranche debranchez eteindre eteins");
+syn("plugv", "brancher branche branchez rebrancher rebranche");
+syn("fix", "reparer repare enlever enleve retirer retire debloquer debloque degager degage tirer tire extraire extrais liberer libere");
+syn("load", "mettre mets mettez charger charge inserer insere placer place ajouter ajoute recharger");
+syn("type", "taper tape tapez saisir saisis composer compose");
+syn("enter", "entrer entre");
+syn("unlock", "deverrouiller deverrouille");
+syn("lock", "verrouiller verrouille");
+syn("copyv", "photocopier dupliquer imprimer imprime");
+syn("sit", "asseoir assieds assoir dormir dors reposer repose allonger allonge sieste glander glande");
+syn("stand", "lever leve debout");
+syn("smell", "sentir sens renifler renifle");
+syn("wait", "attendre attends");
+syn("empty", "vider vide videz rincer rince laver lave nettoyer nettoie");
+syn("wake", "reveiller reveille secouer secoue");
+syn("inventory", "inventaire inv i objets");
+syn("score", "score points");
+syn("help", "aide aider indice");
+syn("save", "sauver sauvegarder sauve sauvegarde enregistrer");
+syn("restore", "restaurer restaure");
+syn("restart", "recommencer recommence");
+syn("quit", "quitter quitte");
+syn("sound", "son");
+syn("kill", "tuer tue cogner cogne gifler gifle attaquer attaque baffer frapper frappe");
+syn("insult", "insulter insulte engueuler engueule");
+syn("kiss", "embrasser embrasse bisou calin");
+syn("knock", "toquer toque");
+syn("listen", "ecouter ecoute");
+syn("go", "aller va vas marcher marche partir pars sortir sors avancer avance");
+syn("swear", "merde putain zut mince punaise");
+syn("thank", "merci remercier remercie");
+syn("yell", "crier crie hurler hurle pleurer pleure");
+syn("dance", "danser danse");
+syn("meow", "miauler miaule miaou ronronner ronronne");
+syn("whistle", "siffler siffle");
+syn("joke", "blague blaguer plaisanter calembour");
+syn("strike", "greve greviste manifester");
+// noms
+syn("memo", "note memo lettre circulaire");
+syn("key", "cle clef cles clefs");
+syn("mailbox", "casier casiers courrier bannette pigeonnier");
+syn("box", "boite carton");
+syn("feuille", "feuille feuilles");
+syn("sheet", "registre emargement pupitre liste");
+syn("board", "tableau panneau affichage annonces liege");
+syn("affiche", "affiche affiches");
+syn("fountain", "fontaine");
+syn("water", "eau");
+syn("locker", "vestiaire vestiaires");
+syn("door", "porte");
+syn("mmeD", "mme madame principale directrice dirlo patronne chef");
+syn("person", "homme femme collegue prof professeur quelqu lui elle il personne");
+syn("c_jp", "chat jp");
+syn("c_guy", "guy homie");
+syn("c_crispy", "crispy");
+syn("fridge", "frigo frigidaire refrigerateur congelateur");
+syn("lunch", "sandwich casse croute dejeuner repas");
+syn("milk", "lait brique");
+syn("coffee", "cafe kawa jus");
+syn("pot", "verseuse carafe");
+syn("maker", "cafetiere percolateur");
+syn("machine", "machine");
+syn("filter", "filtre filtres");
+syn("grounds", "moulu paquet poudre");
+syn("cabinet", "placard placards etagere etageres");
+syn("supply", "armoire fournitures reserve");
+syn("paper", "papier rame ramette");
+syn("copier", "photocopieuse photocopieur copieur imprimante toner vitre ecran");
+syn("copies", "copies photocopies exemplaires");
+syn("jam", "bourrage");
+syn("cord", "cordon prise fil cable courant");
+syn("code", "code numero");
+syn("quiz", "interro interrogation controle sujet original evaluation");
+syn("mug", "tasse mug tasses");
+syn("sink", "evier robinet");
+syn("rack", "egouttoir vaisselle");
+syn("donut", "pain chocolat chocolatine croissant viennoiserie");
+syn("table", "table bureau");
+syn("couch", "canape sofa");
+syn("chair", "chaise chaises");
+syn("clock", "horloge heure montre pendule");
+syn("microwave", "micro");
+syn("poster", "poster chaton");
+syn("wall", "mur murs");
+syn("floor", "sol moquette carrelage terre");
+syn("ceiling", "plafond lumiere neon neons lampe");
+syn("me", "moi");
+syn("room", "salle piece autour endroit lieu");
+syn("lounge", "profs");
+syn("hall", "couloir");
+syn("kowalski", "kowalski");
+syn("fenouil", "fenouil");
+syn("pen", "stylo");
+syn("essays", "redactions redaction dissertations");
+syn("all", "tout");
+syn("tupperware", "tupperware");
+syn("window", "fenetre fenetres");
+syn("class", "eleves classe gamins ados");
+syn("bell", "sonnerie cloche");
+syn("camera", "camera cameraman equipe documentaire objectif");
+const DUAL = { copier: ["copyv", "copier"], copie: ["copyv", "copies"], photocopie: ["copyv", "copies"], tape: ["type", "type"] };
+const VERBS = new Set(["look","read","take","drop","open","close","talk","hello","ask","give","sign","use","fill","make","pour","drink","eat","unplug","plugv","fix","load","type","enter","unlock","lock","copyv","sit","stand","smell","wait","empty","wake","inventory","score","help","save","restore","restart","quit","sound","kill","insult","kiss","knock","listen","go","swear","thank","yell","dance","meow","whistle","joke","strike"]);
+
+function parse(raw) {
+  let s = " " + strip(raw.toLowerCase()).replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim() + " ";
+  s = s.replace(/ faire (des |les |une |la )?(photo)?cop(ie|ies) /g, " photocopier interro ")
+       .replace(/ tirer (sur )?(la |le )?(prise|cordon|fil) /g, " debrancher photocopieuse ")
+       .replace(/ regarder autour /g, " regarder salle ").replace(/ quelle heure /g, " regarder horloge ")
+       .replace(/ mot de passe /g, " code ").replace(/ micro ondes /g, " micro ")
+       .replace(/ pains? au chocolat /g, " pain ").replace(/ machine a cafe /g, " cafetiere ")
+       .replace(/ salle des profs /g, " profs ").replace(/ jambon beurre /g, " sandwich ")
+       .replace(/ casiers? des eleves /g, " vestiaire ").replace(/ casiers? des profs /g, " casier ")
+       .replace(/ boite aux lettres /g, " casier ").replace(/ cafe moulu /g, " moulu ")
+       .replace(/ regarder (la )?camera /g, " regarder camera ").replace(/ face camera /g, " camera ")
+       .replace(/ jeu de mots /g, " blague ").replace(/ faire (une )?blague /g, " blague ")
+       .replace(/ faire (la )?greve /g, " greve ").replace(/ faire (une )?sieste /g, " sieste ");
+  const words = s.trim().split(" ").filter(Boolean);
+  if (!words.length) return null;
+  const toks = []; let num = null;
+  for (const w of words) {
+    if (/^\d+$/.test(w)) { num = w; continue; }
+    if (DUAL[w]) { toks.push(toks.length === 0 ? DUAL[w][0] : DUAL[w][1]); continue; }
+    if (VOC[w]) { toks.push(VOC[w]); continue; }
+    if (FILLER.has(w)) continue;
+    return { err: "Je ne comprends pas « " + w + " »." };
+  }
+  let v = null; const N = [];
+  for (const t of toks) { if (!v && VERBS.has(t)) v = t; else N.push(t); }
+  if (!v && num) v = "type";
+  if (!v && N.length) v = N[0] === "camera" ? "look" : "look";
+  if (!v) return { err: "Hein ?" };
+  return { v, N: resolve(N), num };
+}
+function nearest(names) {
+  const sp = ROOMS[S.room].spots; let best = names[0], bd = 1e9;
+  for (const n of names) if (sp[n]) { const d = distTo(sp[n]); if (d < bd) { bd = d; best = n; } }
+  return best;
+}
+function resolve(N) {
+  const L = S.room === "lounge";
+  const ids = { c_jp: "jp", c_guy: "guy", c_crispy: "crispy" };
+  let out = N.map((n) => {
+    if (ids[n]) { const id = ids[n]; return id === P().id ? "me" : id === B().id ? "npcB" : "npcC"; }
+    if (n === "machine") return N.includes("copier") || N.includes("copyv") ? "copier" : N.includes("coffee") ? "maker" : L ? nearest(["copier", "maker"]) : "machine";
+    if (n === "box") return N.includes("grounds") || N.includes("coffee") ? "grounds" : L ? "donut" : "mailbox";
+    if (n === "person") return L ? nearest(["npcB", "npcC"]) : "mmeD";
+    if (n === "cabinet") return N.includes("supply") ? "supply" : L ? nearest(["cabinet", "supply"]) : "locker";
+    if (n === "water") return L ? "water" : "fountain";
+    if (n === "lounge") return L ? "room" : "door";
+    if (n === "hall") return L ? "door" : "room";
+    if (n === "copyv") return "copier";
+    if (n === "feuille") return L ? "paper" : "sheet";
+    if (n === "affiche") return L ? "poster" : "board";
+    if (n === "mailbox" && N.includes("class")) return "locker";
+    return n;
+  });
+  if (out.includes("door")) out = out.filter((n) => n !== "room");
+  if (out.includes("locker")) out = out.filter((n) => n !== "class");
+  if (out.includes("maker")) out = out.filter((n) => n !== "coffee");
+  if (out.includes("grounds")) out = out.filter((n) => n !== "coffee");
+  return out.filter((n, i, a) => a.indexOf(n) === i);
+}
+
+// ---------- commandes ----------
+const HERE = {
+  hall: ["mailbox","sheet","board","fountain","locker","door","mmeD","wall","floor","ceiling","room","class","memo","key","camera"],
+  lounge: ["fridge","lunch","milk","microwave","coffee","pot","maker","filter","grounds","cabinet","supply","paper","copier","jam","cord","mug","sink","rack","donut","table","couch","chair","clock","poster","npcB","npcC","door","essays","tupperware","wall","floor","ceiling","room","window","water","camera"],
+};
+const CANT = ["Ce n'est pas possible.", "Vous ne pouvez pas faire ça.", "Il ne se passe rien.", "Ça n'a aucun sens.", "Même un glandeur a ses limites."];
+let cantI = 0;
+function cant() { say(CANT[cantI++ % CANT.length]); }
+function near(spot) {
+  const sp = ROOMS[S.room].spots[spot];
+  if (!sp) { say("Vous ne voyez pas ça ici."); return false; }
+  if (distTo(sp) > sp[4]) { say("Vous n'êtes pas assez près."); return false; }
+  return true;
+}
+function near0(spot) { const sp = ROOMS[S.room].spots[spot]; return sp && distTo(sp) <= sp[4]; }
+function invName(it) {
+  return {
+    quiz: "Interro " + P().de + " (original)", pen: "Stylo rouge (neuf, jamais servi)", memo: "Note de Mme D", key: "Petite clé en laiton",
+    mug: S.mug === "milk" ? "Tasse de café au lait" : S.mug === "coffee" ? "Tasse de café frais" : "Tasse vide",
+    filter: "Filtre à café", grounds: "Paquet de café moulu", milk: "Brique de lait", paper: "Ramette de papier", copies: "32 copies de l'interro",
+  }[it];
+}
+function copierDisplay() {
+  const c = S.copier;
+  if (!c.plugged) return "noir";
+  if (c.jam) return "BOURRAGE - ZONE 4C";
+  if (!c.paper) return "AJOUTER PAPIER - BAC 1";
+  if (!c.code) return "SAISIR CODE D'ACCÈS";
+  return "PRÊTE";
+}
+const MEMO = "NOTE DE SERVICE - À TOUT LE PERSONNEL\n\nLa photocopieuse est ENCORE bloquée. Il est INTERDIT d'y mettre la main tant qu'elle est branchée. Nous pleurons toujours M. Fenouil.\n\nVotre clé de l'armoire à fournitures est jointe. Le code de la photocopieuse a changé. Je ne le donnerai à personne.\n\nCordialement (non).\nMme D, Principale";
+
+function camera() {
+  award("camera");
+  const nm = P().name, L = S.room === "lounge";
+  let t;
+  if (S.won) t = "« Trente-deux copies. Je crois que c'est le truc le plus productif que j'ai fait depuis la rentrée. »";
+  else if (has("copies")) t = "« J'ai les photocopies. Et personne n'est mort. Enfin, pas aujourd'hui. »";
+  else if (!S.copier.jam && L) t = "« J'ai mis la main dans la photocopieuse et je suis toujours là. Je pense que je mérite une prime. Ou au moins un pain au chocolat. »";
+  else if (S.happy) t = "« " + B().name + " m'a donné le code. On est potes maintenant. Enfin, jusqu'à la fin du café. »";
+  else if (L) t = "« " + B().name + " sans café, c'est un fauve. Un fauve qui corrige des rédactions. Et " + C().name + "... " + C().name + " est en réunion. Avec le canapé. »";
+  else if (S.blocked && !S.signed) t = "« Mme D a fait plastifier le mot PROCÉDURE. Je suis sûr qu'il est accroché au-dessus de son lit. »";
+  else if (!S.signed) t = "« Le registre. Mme D vérifie le registre comme d'autres vérifient la météo. Avec passion. Et un fusil. »";
+  else t = "« Le secret, quand on est prof, c'est d'avoir l'air occupé. Regardez. » " + nm + " fronce les sourcils devant un mur.";
+  say("(" + nm + ", face caméra)\n\n" + t + "\n\nLe caméraman zoome lentement.");
+}
+
+function doLook(N) {
+  const n = N[0];
+  const L = S.room === "lounge";
+  if (!n || n === "room") return say(ROOMS[S.room].look());
+  if (n === "camera") return camera();
+  const inv = {
+    quiz: P().quiz,
+    pen: "Votre stylo rouge. Toujours neuf. Vous corrigez au feeling.",
+    memo: MEMO, key: "Une petite clé en laiton marquée ARMOIRE.",
+    filter: "Un filtre à café en papier. Conique. Immaculé.", grounds: "Un paquet de café moulu marque Repère, « CORSÉ ». C'est la chose la plus corsée du collège.",
+    milk: "La date de péremption est effacée. Il est peut-être bon. Il est peut-être vivant.",
+    paper: "500 feuilles de papier blanc. Du 80 grammes. Le luxe.", copies: "Trente-deux copies encore tièdes de votre interro. Ça sent la victoire et le toner.",
+    me: "Vous êtes " + P().desc.replace(P().name + ", ", "").replace(/^p/, "p") + " " + P().pitch.split(". ").slice(1).join(". "),
+  };
+  if (n === "mug" && has("mug")) return say(invName("mug") + ". Il y a écrit : MEILLEUR PROF DU MONDE (OU PRESQUE).");
+  if (inv[n] && (has(n) || n === "me")) return say(inv[n]);
+  if (n === "clock") return say((L ? "L'horloge au-dessus de la porte indique " : "Votre montre indique ") + clockStr() + ". La sonnerie retentit à 8h00.");
+  if (n === "ceiling") return say(L ? "Des dalles tachées. L'une d'elles a la forme de Mme D. Elle vous juge, même depuis le plafond." : "Les néons grésillent. L'un d'eux clignote en morse. Il dit : V-A-C-A-N-C-E-S.");
+  if (n === "floor") return say(L ? "Une moquette marron conçue pour cacher les taches de café. Elle a échoué." : "Un lino fraîchement ciré. M. Ortiz, l'agent d'entretien, en est très fier.");
+  if (n === "wall") return say(L ? "Les murs sont du vert exact d'un hôpital dans un film triste." : "Des parpaings gris avec une bande bleu canard. Les couleurs du collège, en quelque sorte.");
+  if (n === "door") return say(L ? "La porte qui donne sur le couloir. Et sur Mme D." : "La porte de la salle des profs. Plaque : RÉSERVÉ AU PERSONNEL. Les élèves croient qu'il y a un jacuzzi derrière.");
+  if (n === "bell") return say("La sonnerie retentit à 8h00 pile. Il est " + clockStr() + ".");
+  if (n === "class") return say("La salle 112 est au sud. Trente-deux élèves de 4e y seront à 8h00, que vous soyez là ou non.");
+  if (n === "kowalski") return say("M. Kowalski, le prof de techno, n'est pas là. Estimez-vous heureux.");
+  if (n === "fenouil") return say("M. Fenouil a enseigné la chimie ici pendant trente ans. Puis il a essayé de réparer la photocopieuse. Il y a une petite plaque au-dessus de l'évier.");
+  if (n === "mmeD" && L) return say("Mme D n'est pas là. Mais vous sentez son regard à travers le mur.");
+  if (!HERE[S.room].includes(n)) return say("Vous ne voyez pas ça ici.");
+  switch (n) {
+    case "mailbox": return say((S.got.memo && S.got.key) ? "Votre casier, étiqueté " + P().name.toUpperCase() + ", est vide. À part un trombone et vos rêves." : "Des casiers en bois, un par prof. Le vôtre est étiqueté " + P().name.toUpperCase() + ". Il y a quelque chose dedans.");
+    case "memo": case "key": return say("C'est dans votre casier. Prenez-le, tout simplement.");
+    case "sheet": return say("Le registre de présence, sur son pupitre. Noms déjà inscrits : KOWALSKI 6h45, MME D 5h30 (elle dort ici ?), " + B().name.toUpperCase() + " 7h38, " + C().name.toUpperCase() + " 7h39." + (S.signed ? " Et le vôtre." : " Le vôtre n'y est pas encore."));
+    case "board": award("board"); return say("Panneau d'affichage : VENTE DE GÂTEAUX VENDREDI. PERDU : HAMSTER, RÉPOND AU NOM DE GÉRARD. RÉUNION REPORTÉE (ENCORE). Et une note de Mme D : « LES PROFS QUI TRAÎNENT SERONT NOTÉS. »");
+    case "fountain": return say("Une fontaine à eau fixée au mur, pile à hauteur d'un élève de CM1.");
+    case "locker": return say("Des casiers d'élèves bleus, cabossés. L'un d'eux bourdonne. Personne ne veut savoir.");
+    case "mmeD": return say("Mme D, principale depuis 1979. Chignon gris serré comme un budget, lunettes en demi-lune, tailleur beige, presse-papiers à la main. Elle n'a jamais souri. On dit qu'elle a essayé une fois, en 1994, et qu'il a plu pendant trois semaines.");
+    case "fridge": return S.fridgeOpen ? say("Dans le frigo : " + (S.got.milkTaken ? "" : "une brique de lait, ") + "un jambon-beurre étiqueté KOWALSKI - PAS TOUCHE, et un tupperware dont le contenu a développé une conscience.") : say("Un frigo blanc couvert d'aimants et d'une affiche : MERCI D'ÉTIQUETER VOTRE NOURRITURE - MME D. Un micro-ondes est posé dessus.");
+    case "lunch": return say(S.fridgeOpen ? "Un jambon-beurre emballé dans du papier. Étiquette en majuscules rageuses : KOWALSKI - PAS TOUCHE. ÇA VEUT DIRE TOI, " + B().name.toUpperCase() + "." : "Vous ne voyez pas ça ici.");
+    case "tupperware": return say(S.fridgeOpen ? "Ça bouge. Un peu. Refermez le frigo." : "Vous ne voyez pas ça ici.");
+    case "milk": return say(S.fridgeOpen && !S.got.milkTaken ? "Une brique de lait. " + inv.milk : "Vous ne voyez pas ça ici.");
+    case "microwave": return say("Quelqu'un y a fait réchauffer du poisson en 2009. Plus personne ne s'en sert. L'odeur, elle, est restée.");
+    case "coffee": case "pot": case "maker": {
+      const p = { sludge: "La verseuse contient un goudron noir qui était du café mardi dernier. La plaque est toujours allumée.", empty: "La verseuse est vide.", water: "La verseuse est pleine d'eau propre.", brewing: "Le café passe. Ça glougloute avec espoir.", coffee: "Une pleine verseuse de café frais. Ça sent l'espoir." }[S.pot];
+      return say("Une vieille cafetière à filtre. " + p);
+    }
+    case "filter": case "grounds": return say(S.cabinetOpen ? "C'est dans le placard au-dessus du plan de travail." : "Vous ne voyez pas ça ici.");
+    case "cabinet": return say(S.cabinetOpen ? "Dans le placard :" + (S.got.filter ? "" : " des filtres à café,") + (S.got.grounds ? "" : " un paquet de café moulu,") + " et un sachet de sucre de 1994." : "Des placards en bois au-dessus du plan de travail. Pas fermés à clé.");
+    case "supply": return say(S.supplyUnlocked ? "L'armoire est ouverte. " + (S.got.paper ? "Agrafeuses, toner, et des craies que personne n'a touchées depuis 1991." : "Il y a une ramette de papier neuve sur l'étagère du haut.") : "Une grande armoire métallique grise. Fermée à clé. Mme D garde le bon papier sous clé, comme les bijoux de la couronne.");
+    case "paper": return say(S.supplyUnlocked && !S.got.paper ? "Une ramette de papier dans l'armoire." : S.copier.paper ? "Le bac de la photocopieuse est chargé." : "Vous ne voyez pas de papier ici.");
+    case "copier": case "jam": return say("Une photocopieuse beige de la taille d'une petite voiture. Autocollant : NE PAS DONNER DE COUPS DE PIED. Son écran " + (copierDisplay() === "noir" ? "est noir. Elle est débranchée." : "affiche : " + copierDisplay() + ".") + (S.copier.jam ? " Une feuille froissée est coincée tout au fond, juste à côté d'une étiquette : DANGER - HAUTE TENSION." : ""));
+    case "cord": return say(S.copier.plugged ? "Le cordon de la photocopieuse court jusqu'à une prise murale." : "Le cordon de la photocopieuse traîne par terre, débranché.");
+    case "mug": case "rack": return say("Un égouttoir avec quelques tasses propres." + (S.got.mug ? "" : " Une rouge dit : MEILLEUR PROF DU MONDE (OU PRESQUE)."));
+    case "sink": return say("Un évier inox. Au-dessus, une petite plaque en laiton : EN MÉMOIRE DE GÉRARD FENOUIL. IL N'A RIEN DÉBRANCHÉ.");
+    case "water": return say("L'évier a l'eau courante. En général.");
+    case "donut": return say(S.donut ? "Le dernier pain au chocolat, dans une boîte rose. (Ne dites pas « chocolatine » ici. Il y a déjà eu des blessés.) " + B().name + " le surveille. Et vous surveille." : "La boîte est vide. Il ne reste que des miettes et des souvenirs.");
+    case "table": return say("Une table bancale, une pile de rédactions, une boîte de viennoiseries, et " + B().name + ".");
+    case "essays": return say("Soixante-dix rédactions sur « Mes vacances ». " + B().name + " en est à la troisième depuis septembre.");
+    case "couch": return say("Un canapé écossais marron. " + C().name + " est vautré dessus, en « réunion ».");
+    case "chair": return say("Des chaises en plastique. " + B().name + " en occupe une, et a posé ses pieds sur une autre.");
+    case "poster": return say("Un chaton suspendu à une branche : ACCROCHE-TOI. Quelqu'un a ajouté au stylo rouge : ...JUSQU'EN JUILLET.");
+    case "npcB": return say(B().desc + (S.happy ? " Sirote son café avec un air presque humain." : " Fixe une pile de rédactions comme si elles lui devaient de l'argent."));
+    case "npcC": return say(C().desc + (S.awake ? " Fait semblant de lire un manuel. À l'envers." : " Dort sur le canapé, la bouche ouverte. Le caméraman fait un gros plan."));
+    case "window": return say("Il n'y a pas de fenêtre en salle des profs. Il n'y en a jamais.");
+  }
+  say("Rien de spécial.");
+}
+
+function act(v, N, num) {
+  const L = S.room === "lounge";
+  const n0 = N[0], hasN = (...a) => a.some((x) => N.includes(x));
+  const nm = P().id;
+  switch (v) {
+    case "look": return doLook(N);
+    case "inventory": return showInv();
+    case "score": return say("Votre score est de " + S.score + " sur " + MAX + ".");
+    case "help": return say("Flèches pour marcher (rappuyez pour vous arrêter). Puis tapez ce que vous voulez faire :\n\nREGARDER   LIRE NOTE\nPRENDRE COURRIER\nPARLER À MME D\nDEMANDER LE CODE\nDONNER CAFÉ   RÉVEILLER\nREGARDER CAMÉRA\n\nIl faut être près des choses. F3 répète la dernière commande.");
+    case "save": return saveGame();
+    case "restore": return restoreGame();
+    case "restart": return confirmRestart();
+    case "quit": return say("Merci d'avoir joué à Salle de profs.\n\nENTRÉE pour recommencer, ÉCHAP pour continuer.", { enter: restart });
+    case "sound": S.sound = !S.sound; return say("Son : " + (S.sound ? "oui." : "non."));
+    case "wait": return say("Vous attendez. C'est votre spécialité. Il est " + clockStr() + ".");
+    case "swear": return say("Surveillez votre langage. Il y a peut-être des élèves. Et un micro-perche.");
+    case "kill": return say("Ce genre de chose vous vaudrait un rendez-vous avec le rectorat. Et une nouvelle carrière.");
+    case "insult": return hasN("mmeD") && !L ? (near("mmeD") && die("Vous ouvrez la bouche pour dire à Mme D ce que vous pensez d'elle.\n\nElle sort un formulaire. Puis un deuxième. Puis un tampon.\n\nVous êtes muté avec effet immédiat au collège de l'île de Kerguelen. Le documentaire s'arrête là pour vous.")) : say("Gardez votre énergie. Vous en avez si peu.");
+    case "strike": return !L && near0("mmeD") ? die("Vous murmurez le mot « grève » à moins de trois mètres de Mme D.\n\nSes lunettes s'embuent. Elle déclenche une inspection surprise de vos cahiers de textes. Les vôtres sont vides depuis octobre.\n\nOn ne vous revoit plus. L'équipe de tournage non plus.") : say("Vous évoquez l'idée d'une grève. " + (L ? B().name + " lève un poing, sans lâcher sa tasse." : "Quelque part, Mme D éternue."));
+    case "kiss": return say(hasN("mmeD") ? "Mme D vous fixe jusqu'à ce que vous cessiez d'exister. Vous reculez lentement." : "Restons professionnels. Il y a une caméra.");
+    case "dance": return say("Vous esquissez un pas de danse. Le caméraman l'a filmé. Ce sera dans le générique.");
+    case "yell": return say("Votre voix résonne. Quelque part, un agent d'entretien soupire.");
+    case "thank": return say("De rien.");
+    case "listen": return say(L ? "Le frigo ronronne. La cafetière cliquette. " + C().name + " ronfle en ré mineur." : "Des casiers claquent au loin. Le stylo de Mme D gratte son registre. Elle note quelque chose. Sur vous.");
+    case "knock": return say("Vous toquez. Personne ne répond. La porte n'est pas fermée : marchez simplement dedans.");
+    case "go": case "enter":
+      if (v === "enter" && (hasN("code") || num)) return act("type", N, num);
+      return say("Utilisez les flèches pour marcher. Pour passer une porte, foncez dedans.");
+    case "hello": case "talk": return talk(n0);
+    case "ask": return ask(N);
+    case "wake": return wake();
+    case "stand": return say("Vous êtes debout. C'est déjà ça.");
+    case "sit": return say(L ? "Le canapé est pris par " + C().name + ". Et la sonnerie est à 8h00. Les vrais glandeurs savent quand il ne faut pas glander." : "Il n'y a nulle part où s'asseoir ici. Mme D a fait retirer les bancs en 1998.");
+    case "smell": return say(hasN("milk") ? "Ça sent... bon ? Probablement assez bon pour un café. Probablement pas pour le boire tel quel." : hasN("microwave") ? "Poisson. 2009. Inimitable." : L ? "Café brûlé, vieux poisson et désespoir." : "Cire à parquet et taille-crayon.");
+    case "drop": return say("Vous feriez mieux de le garder.");
+    case "meow": return say(nm === "jp" ? "« Miaou. » Vous ronronnez doucement. Le caméraman tourne la caméra vers vous, lentement, sans rien dire." : "Miauler, c'est le truc de chat-JP. Ne volez pas les répliques des autres.");
+    case "whistle": return say(nm === "guy" ? "PRRRRRT ! Par réflexe, tout le couloir s'arrête de courir. Même Mme D se fige une demi-seconde. C'est votre plus grande victoire de l'année." : "Vous n'avez pas de sifflet. C'est le truc de Guy-Homie.");
+    case "joke": return say(nm === "crispy" ? "« Quel est le comble pour un prof de français ? Perdre le fil de sa conjugaison. » Silence. Un néon grésille. Le caméraman regarde l'objectif, gêné." : "Laissez les jeux de mots à Crispy. Quelqu'un doit bien souffrir pour l'humour.");
+    case "read":
+      if (hasN("memo")) { if (has("memo")) { award("readmemo"); return say(MEMO); } break; }
+      if (N.length && !hasN("sheet")) return doLook(N);
+      break;
+  }
+  if (!L) return hallAct(v, N, num);
+  return loungeAct(v, N, num);
+}
+
+function talk(n) {
+  const L = S.room === "lounge";
+  const pn = P().name;
+  if (!n) n = L ? nearest(["npcB", "npcC"]) : "mmeD";
+  if (n === "me") return say("Vous vous parlez à vous-même. Le caméraman prend des notes.");
+  if (n === "mmeD" && !L) {
+    if (!near("mmeD")) return;
+    if (!S.signed) return say("Mme D ne lève pas les yeux de son presse-papiers. « " + pn + ". Vous respirez. Mais vous n'avez pas signé. Le registre. Maintenant. La procédure, c'est la procédure. »");
+    if (!has("copies")) return say("« Vous avez signé à " + clockStr() + ". Je le note. Je note tout. Maintenant, vos photocopies. Et ne touchez PAS à cette machine quand elle est branchée. Nous avons déjà perdu Fenouil. Et ses copies n'étaient même pas corrigées. »");
+    return say("« Des photocopies ? Vous ? Je suis... » Mme D cherche le mot. « ...surprise. Ne vous habituez pas. »");
+  }
+  if (n === "npcB" && L) {
+    if (!near("npcB")) return;
+    if (!S.happy) return say(B().name + " ne lève pas les yeux de ses rédactions. « Pas un mot avant mon café, " + pn + ". Quelqu'un a laissé la cafetière allumée depuis mardi. C'était peut-être moi. Peu importe. »");
+    return say("« Ce café est un miracle. Le code de la photocopieuse, c'est " + S.code + ". Et débranche-la avant d'aller farfouiller dedans. On n'a qu'une plaque au-dessus de l'évier, je veux pas en voir deux. »");
+  }
+  if (n === "npcC" && L) {
+    if (!near("npcC")) return;
+    if (!S.awake) return say(C().name + " ronfle. Le caméraman vous fait signe de continuer, ravi.");
+    return say("« Mme D ? Soixante-dix-quatre ans. Elle était déjà principale quand le collège était une grotte. Elle a un fichier Excel sur chacun de nous. Le mien s'appelle « POURQUOI ». »");
+  }
+  say("Il n'y a personne de ce nom ici.");
+}
+function wake() {
+  if (S.room !== "lounge") return say("Personne ne dort ici. À part votre motivation.");
+  if (!near("npcC")) return;
+  if (S.awake) return say(C().name + " a déjà un oeil ouvert. C'est son maximum.");
+  S.awake = true; award("wake");
+  return say(C().name + " ouvre un oeil. « Chut. Je suis en réunion. Avec le canapé. » Un temps. « Bon. Un conseil : débranche la photocopieuse avant de la tripoter, et apporte un café à " + B().name + ". Sans café, " + B().name + " ne donne rien. Pas même l'heure. » Puis se rendort. Presque.");
+}
+function ask(N) {
+  const L = S.room === "lounge";
+  let who = N.find((n) => n === "npcB" || n === "npcC" || n === "mmeD");
+  if (!who) who = L ? nearest(["npcB", "npcC"]) : "mmeD";
+  if (who === "mmeD" && L) return say("Mme D n'est pas là. Dieu merci.");
+  if (who !== "mmeD" && !L) return say("Il n'y a personne de ce nom ici.");
+  if (!near(who)) return;
+  const t = N.find((n) => n !== who);
+  const pn = P().name;
+  if (who === "npcC") {
+    if (!S.awake) return say(C().name + " dort profondément. Essayez RÉVEILLER " + C().name.toUpperCase() + ".");
+    switch (t) {
+      case "mmeD": return say("« Mme D ? Elle a fait supprimer la machine à café de l'ancienne salle des profs. Pour « la productivité ». On a fait une minute de silence. »");
+      case "code": case "copier": return say("« Le code ? Demande à " + B().name + ". Mais pas avant son café. J'ai essayé une fois. J'ai encore la marque. »");
+      case "donut": return say("« Le pain au chocolat ? N'y pense même pas. Pas tant que " + B().name + " n'a pas eu son café. »");
+      case "camera": return say("« Les gars du documentaire ? Ils sont là depuis trois semaines. Ils m'ont filmé en train de dormir onze heures au total. Je suis la star. »");
+    }
+    return say("« Mmh. Pose ta question à " + B().name + ". Moi je suis en pause. Depuis 2017. »");
+  }
+  if (who === "npcB") {
+    switch (t) {
+      case "code": case "copier":
+        if (S.happy) return say("« C'est " + S.code + ". Tu écoutes quand on te parle ? »");
+        return say("« Le code ? Évidemment que je le connais. Et tu le connaîtras aussi, juste après m'avoir apporté un café. Un FRAIS. Pas le goudron de mardi. »");
+      case "jam": return say("« Cette machine se bloque si on la regarde de travers. Débranche-la avant de mettre la main dedans. Fenouil ne l'a pas fait. »");
+      case "donut": return say(S.happy ? "« Vas-y, prends-le. Tu l'as mérité. »" : "« C'est MON pain au chocolat. Je le fixe depuis 7h15. On a une connexion. »");
+      case "lunch": case "kowalski": return say("« Kowalski ? Prof de techno. 1m95. Très à cheval sur son déjeuner. L'an dernier, quelqu'un a mangé son yaourt. On ne l'a jamais revu. »");
+      case "fenouil": return say("« Gérard Fenouil. Trente ans de chimie. Et puis cette photocopieuse. » " + B().name + " s'essuie discrètement les yeux avec une rédaction.");
+      case "coffee": case "pot": case "maker": case "filter": case "grounds": return say("« Filtres et café moulu dans le placard au-dessus du plan de travail. L'eau, c'est l'évier. C'est pas sorcier, " + pn + ". »");
+      case "milk": return say("« Je le prends avec du lait. Mais ne bois SURTOUT pas ce lait tel quel. »");
+      case "mmeD": return say("« Mme D ? Elle a mis une note sur cette photocopieuse dans chaque casier. Tu l'as lue, au moins ? Non. Évidemment. »");
+      case "paper": case "supply": return say("« Le papier est dans l'armoire. Mme D la ferme à clé, puis met une clé dans chaque casier. Personne ne comprend. Surtout pas elle. »");
+      case "essays": return say("« Soixante-dix rédactions sur « Mes vacances ». La troisième est allée à la plage. Les deux premières aussi. Je vais mettre 12 à tout le monde. »");
+      case "npcC": return say("« " + C().name + " ? En réunion depuis 7h40. Avec le canapé. Ça a l'air productif. »");
+      case "camera": return say(B().name + " regarde la caméra. Longuement. Puis revient à ses rédactions. Le silence en dit long.");
+      case "me": return say("« Toi ? Le seul prof qui a réussi à mettre « faire une sieste » dans sa progression annuelle. Respect. »");
+    }
+    return say("« Aucune idée, " + pn + ". »");
+  }
+  switch (t) {
+    case "code": case "copier": return say("« Le code ? Je l'ai changé onze fois cette année. Je ne le donne à personne. » Elle plisse les yeux. « " + B().name + " le trouve toujours. Je ne sais pas comment. »");
+    case "sheet": return say("« Chaque professeur signe. Chaque matin. À l'encre bleue. Pas noire. Pas violette. BLEUE. »");
+    case "npcB": return say("« " + B().name + ". Trente-quatre retards cette année. Ne vous mettez jamais entre " + B().name + " et une viennoiserie. »");
+    case "npcC": return say("« " + C().name + ". J'ai un dossier. Il fait quatre centimètres d'épaisseur. Il s'intitule SIESTES. »");
+    case "paper": case "supply": case "key": return say("« Votre clé de l'armoire est dans votre casier, avec ma note. Lisez ma note. Je les écris pour être lues. Elles ne le sont jamais. »");
+    case "lunch": case "kowalski": return say("« M. Kowalski est le seul professeur sérieux de cet établissement. Ne touchez pas à son sandwich. »");
+    case "fenouil": return say("Mme D retire ses lunettes. Une demi-seconde. « Nous ne parlons pas de l'incident de la photocopieuse. »");
+    case "jam": return say("« On débranche d'abord. J'ai fait une note. Plastifiée. »");
+    case "camera": return say("« Ces gens filment un documentaire sur « la vie d'un collège ». J'ai demandé qu'on floute les professeurs. Pour protéger le public. »");
+    case "me": return say("« Vous ? " + clockStr() + " et toujours pas de photocopies. C'est dans votre dossier. Tout est dans votre dossier. »");
+  }
+  return say("« Je suis occupée, " + pn + ". Contrairement à certains. »");
+}
+
+function hallAct(v, N, num) {
+  const hasN = (...a) => a.some((x) => N.includes(x));
+  if ((v === "take" || v === "open") && hasN("mailbox", "memo", "key", "all")) {
+    if (!near("mailbox")) return;
+    if (v === "open") return say(S.got.memo && S.got.key ? "Votre casier est vide." : "Votre casier n'a pas de porte. Dedans : " + [S.got.memo ? "" : "une note", S.got.key ? "" : "une petite clé en laiton"].filter(Boolean).join(" et ") + ".");
+    const wantMemo = hasN("memo", "mailbox", "all"), wantKey = hasN("key", "mailbox", "all");
+    const got = [];
+    if (wantMemo && !S.got.memo) { give("memo"); award("memo"); got.push("la note"); }
+    if (wantKey && !S.got.key) { give("key"); award("key"); got.push("la clé en laiton"); }
+    if (!got.length) return say("Il n'y a plus rien dans votre casier.");
+    return say("Vous prenez " + got.join(" et ") + " dans votre casier.");
+  }
+  if (v === "read" && hasN("memo")) return say(near0("mailbox") ? "Prenez-la d'abord." : "Vous ne l'avez pas.");
+  if (v === "read" && hasN("sheet")) return near("sheet") && doLook(["sheet"]);
+  if (v === "sign") {
+    if (!near("sheet")) return;
+    if (S.signed) return say("Vous avez déjà signé. Une fois, c'est la procédure. Deux fois, c'est de la paperasse.");
+    S.signed = true; award("signin");
+    return say("Vous signez : " + P().name.toUpperCase() + ", " + clockStr() + ". Mme D regarde votre signature, puis vous, puis votre signature. « Encre bleue. Bien. » C'est le plus beau compliment qu'elle ait fait depuis 1979.");
+  }
+  if ((v === "drink" || v === "use") && hasN("fountain", "water")) {
+    if (!near("fountain")) return;
+    award("water"); return say("Vous vous penchez très bas et aspirez. Tiède, vaguement métallique. Le même goût depuis 1962.");
+  }
+  if (v === "open" && hasN("locker")) return near("locker") && say("Ouvrir un casier d'élève avant 8h ? Personne n'est prêt pour ce qu'il y a dedans.");
+  if (v === "open" && hasN("door")) return say("Marchez simplement dedans.");
+  if (v === "give") return say(hasN("mmeD") ? "« Je n'accepte pas les cadeaux, " + P().name + ". C'est dans le règlement intérieur. Page 212. »" : "Personne ici n'en veut.");
+  if (v === "take" && hasN("sheet")) return say("Voler le registre ? Mme D vous retrouverait. Elle retrouve toujours tout.");
+  if (v === "take" && hasN("board")) return say("Il est vissé au mur.");
+  if (v === "take" && hasN("mmeD")) return say("Mme D ne se « prend » pas. Mme D vous prend. Vos week-ends, surtout.");
+  if (HERE.lounge.includes(N[0]) && !HERE.hall.includes(N[0])) return say("Vous ne voyez pas ça ici.");
+  cant();
+}
+
+function loungeAct(v, N, num) {
+  const hasN = (...a) => a.some((x) => N.includes(x));
+  const c = S.copier;
+  if (v === "open" && hasN("fridge")) { if (!near("fridge")) return; S.fridgeOpen = true; return doLook(["fridge"]); }
+  if (v === "close" && hasN("fridge")) { if (!near("fridge")) return; S.fridgeOpen = false; return say("Vous refermez le frigo. Le tupperware semble soulagé."); }
+  if ((v === "take" || v === "eat" || v === "open") && hasN("lunch")) {
+    if (!near("fridge")) return;
+    if (!S.fridgeOpen) return say("Ouvrez d'abord le frigo, peut-être.");
+    if (v === "take") return say("Vous saisissez le sandwich. Un frisson vous parcourt l'échine. Vous le reposez. C'était moins une.");
+    return die("Vous déballez le jambon-beurre marqué KOWALSKI - PAS TOUCHE. Vous en prenez une bouchée divine.\n\nLa porte grince. M. Kowalski, prof de techno, 1m95, remplit l'encadrement. Il tient une ponceuse.\n\nOn vous retrouve jeudi. Sous blister.");
+  }
+  if (v === "open" && hasN("tupperware")) return say("Non. Absolument pas. Certaines choses doivent rester fermées.");
+  if (v === "take" && hasN("milk")) {
+    if (S.got.milkTaken) return say("Vous l'avez déjà.");
+    if (!near("fridge")) return;
+    if (!S.fridgeOpen) return say("Ouvrez d'abord le frigo, peut-être.");
+    give("milk"); S.got.milkTaken = 1; return say("Vous prenez la brique de lait. Elle fait un bruit inquiétant quand on la secoue.");
+  }
+  if (v === "drink" && hasN("milk")) {
+    if (!has("milk")) return say("Vous n'avez pas de lait.");
+    return die("Vous buvez le lait au goulot. Il est tiède. Il a des grumeaux. Il a expiré avant la naissance de la plupart de vos élèves.\n\nVos derniers instants sont consacrés aux regrets. Le caméraman, lui, a tout filmé.");
+  }
+  if (hasN("microwave") && ["open", "use", "take"].includes(v)) return near("microwave") && say("Vous ouvrez le micro-ondes. Le poisson de 2009 vous saute au nez. Vous le refermez, les larmes aux yeux.");
+  if (v === "open" && hasN("cabinet")) { if (!near("cabinet")) return; S.cabinetOpen = true; return doLook(["cabinet"]); }
+  if (v === "close" && hasN("cabinet")) { if (!near("cabinet")) return; S.cabinetOpen = false; return say("Vous refermez le placard."); }
+  if (v === "take" && hasN("filter", "grounds", "all") && !hasN("supply")) {
+    if (!near("cabinet")) return;
+    if (!S.cabinetOpen) return say("Ouvrez d'abord le placard.");
+    const got = [];
+    if (hasN("filter", "all") && !S.got.filter) { give("filter"); award("filter"); got.push("un filtre"); }
+    if (hasN("grounds", "all") && !S.got.grounds) { give("grounds"); award("grounds"); got.push("le paquet de café moulu"); }
+    return say(got.length ? "Vous prenez " + got.join(" et ") + "." : "Vous l'avez déjà pris.");
+  }
+  if (v === "take" && hasN("mug")) {
+    if (has("mug") || S.got.mug) return say("Une tasse, c'est bien assez.");
+    if (!near("rack")) return;
+    give("mug"); S.mug = "empty"; award("mug"); return say("Vous prenez la tasse rouge MEILLEUR PROF DU MONDE (OU PRESQUE). Le « presque » vous va bien.");
+  }
+  if (v === "drink" && hasN("water")) return near("sink") && say("Vous buvez au robinet. Les canalisations sont plus vieilles que le collège.");
+  if ((v === "fill" && hasN("pot", "water", "maker", "coffee") && !hasN("mug")) || (v === "use" && hasN("sink")) || (v === "empty" && hasN("pot"))) {
+    if (!near0("sink") && !near0("maker")) return say("Vous n'êtes pas assez près.");
+    if (S.pot === "brewing" || S.pot === "coffee") return say("La verseuse est pleine de café. N'y touchez pas.");
+    if (v === "empty") { if (S.pot === "sludge") { S.pot = "empty"; return say("Vous renversez la verseuse dans l'évier. Le café de mardi glisse d'un seul bloc, comme une gelée."); } return say("Elle est déjà vide."); }
+    const was = S.pot; S.pot = "water"; award("fillpot");
+    return say(was === "sludge" ? "Vous portez la verseuse à l'évier, videz le goudron antique (il tombe avec un « plof ») et la remplissez d'eau fraîche." : "Vous remplissez la verseuse d'eau.");
+  }
+  if (v === "take" && hasN("pot")) return say("Elle vit sur sa plaque. Vous pouvez la REMPLIR à l'évier ou VERSER le café.");
+  if ((v === "make" && hasN("coffee", "maker", "pot")) || (v === "use" && hasN("maker")) || (v === "load" && hasN("filter", "grounds"))) {
+    if (!near("maker")) return;
+    if (S.pot === "brewing") return say("Ça passe déjà. Patience.");
+    if (S.pot === "coffee") return say("Il y a déjà une verseuse de café frais.");
+    if (!has("filter")) return say("Il vous faut un filtre. Cherchez dans les placards.");
+    if (!has("grounds")) return say("Il vous faut du café moulu. Cherchez dans les placards.");
+    if (S.pot === "sludge") return say("La verseuse est pleine du goudron de mardi. Videz-la et remplissez-la d'eau d'abord.");
+    if (S.pot === "empty") return say("La verseuse est vide. Remplissez-la d'eau d'abord.");
+    lose("filter"); lose("grounds"); S.pot = "brewing"; S.brewEnd = S.t + 24; award("brew");
+    return say("Filtre dans le porte-filtre, une généreuse dose de café, l'eau dans le réservoir, et clic. La machine gargouille et siffle comme un vieux radiateur. C'est la première fois que vous faites quelque chose avant 8h.");
+  }
+  if ((v === "load" || v === "pour") && hasN("milk")) {
+    if (!has("milk")) return say("Vous n'avez pas de lait.");
+    if (!has("mug") || S.mug === "empty") return say("Versez d'abord le café.");
+    if (S.mug === "milk") return say("Il y a déjà du lait.");
+    S.mug = "milk"; award("milk"); return say("Vous ajoutez un nuage de lait. Couleur caramel parfaite. " + B().name + " jette un oeil, avec intérêt.");
+  }
+  if (v === "pour" || (v === "fill" && hasN("mug")) || (v === "take" && hasN("coffee"))) {
+    if (!near("maker")) return;
+    if (!has("mug")) return say("Il vous faut une tasse.");
+    if (S.pot === "sludge") return say("Vous ne serviriez pas ça à votre pire ennemi. Enfin... à Mme D, peut-être.");
+    if (S.pot === "brewing") return say("Patience. Ça passe encore.");
+    if (S.pot !== "coffee") return say("Il n'y a pas de café dans la verseuse.");
+    if (S.mug !== "empty") return say("Votre tasse est déjà pleine.");
+    S.mug = "coffee"; award("pour"); return say("Vous versez une tasse fumante de café frais. Toute la salle sent meilleur. " + C().name + " grogne de bonheur dans son sommeil.");
+  }
+  if (v === "drink" && hasN("coffee", "pot", "mug")) {
+    if (has("mug") && (S.mug === "coffee" || S.mug === "milk")) { S.mug = "empty"; return say("Aaah. Vous buvez toute la tasse. Vous vous sentez d'attaque pour affronter les 4e.\n\n" + B().name + " vous regarde avec une haine pure."); }
+    if (!near("maker")) return;
+    if (S.pot === "sludge") return die("Contre toute raison, vous buvez directement dans la verseuse. Un café qui mijote depuis mardi a la consistance du goudron.\n\nVotre coeur atteint des vitesses jusqu'ici réservées aux colibris.");
+    return say("Boire à la verseuse ? Prenez une tasse, espèce de sauvage.");
+  }
+  if (v === "give") {
+    const to = hasN("npcC") ? "npcC" : "npcB";
+    if (!near(to)) return;
+    if (to === "npcC") return say(S.awake ? "« Garde ça pour " + B().name + ". Moi je carbure à la sieste. »" : C().name + " dort. Le caméraman fait non de la tête.");
+    if (hasN("coffee", "mug")) {
+      if (!has("mug")) return say("Vous n'avez pas de café.");
+      if (S.mug === "empty") return say("Vous tendez une tasse vide à " + B().name + ". « C'est une métaphore, " + P().name + " ? »");
+      const milky = S.mug === "milk";
+      lose("mug"); S.mug = null; S.happy = true; S.knowsCode = true; award("gift");
+      return say(B().name + " boit une longue gorgée. Son visage entier se transforme. « " + (milky ? "Avec du lait, comme je l'aime. " : "") + P().name + ", tu es un ange. Le code de la photocopieuse, c'est " + S.code + ". Et vas-y, prends le pain au chocolat. Tu l'as mérité. »");
+    }
+    if (hasN("quiz", "copies")) return say("« J'ai soixante-dix rédactions à corriger. Ne me donne PAS plus de papier. »");
+    if (hasN("milk")) return say("« Du lait ? Tout seul ? Je suis un chaton, maintenant ? »");
+    return say(B().name + " secoue la tête sans lever les yeux.");
+  }
+  if ((v === "take" || v === "eat") && hasN("donut")) {
+    if (!S.donut) return say("Il n'y en a plus. Vous l'avez mangé. C'était merveilleux.");
+    if (!near("donut")) return;
+    if (S.happy) { S.donut = false; award("donut"); return say("Vous dévorez le pain au chocolat en quatre bouchées. Feuilleté, beurré, encore tiède. Pendant un instant, la vie est belle. Le caméraman a la larme à l'oeil."); }
+    if (!S.donutWarned) { S.donutWarned = true; return say(B().name + " vous fixe par-dessus ses lunettes. « Touche à ce pain au chocolat, " + P().name + ", et c'est TOI qu'on corrigera. »"); }
+    return die("Vous tendez la main vers le pain au chocolat.\n\nLe stylo rouge de " + B().name + " se déplace plus vite que l'oeil humain. Correction immédiate. Et définitive.\n\nNOTE : 0/20. VENIR ME VOIR.");
+  }
+  if (v === "unlock" || (v === "use" && hasN("key")) || (v === "open" && hasN("supply"))) {
+    if (!near("supply")) return;
+    if (S.supplyUnlocked) return say("Elle est déjà ouverte.");
+    if (!has("key")) return say(v === "open" ? "Fermée à clé. Mme D garde le bon papier sous clé, comme les bijoux de la couronne." : "Vous n'avez pas de clé qui convienne.");
+    S.supplyUnlocked = true; award("unlock");
+    return say("La clé en laiton tourne avec un clic satisfaisant. L'armoire s'ouvre : agrafeuses, toner, et sur l'étagère du haut, une ramette de papier neuve. Elle brille.");
+  }
+  if (v === "take" && hasN("paper")) {
+    if (S.got.paper) return say("Vous l'avez déjà prise.");
+    if (!near("supply")) return;
+    if (!S.supplyUnlocked) return say("Le papier est enfermé dans l'armoire.");
+    give("paper"); award("paper"); return say("Vous prenez la ramette de papier. Elle est plus lourde que votre motivation.");
+  }
+  if (v === "unplug") {
+    if (hasN("maker", "coffee")) return say("Débrancher la cafetière ? Dans CETTE salle ? " + B().name + " vous enterrerait sous le parking.");
+    if (!near("cord")) return;
+    if (!c.plugged) return say("Elle est déjà débranchée.");
+    c.plugged = false; award("unplug"); return say("Vous suivez le cordon jusqu'au mur et tirez la prise. L'écran s'éteint avec un petit gémissement. Quelque part, Mme D ressent une perturbation dans la procédure. Positive, pour une fois.");
+  }
+  if (v === "plugv") {
+    if (!near("cord")) return;
+    if (c.plugged) return say("Elle est déjà branchée.");
+    c.plugged = true; if (!c.jam) award("plugin");
+    return say("Vous rebranchez la photocopieuse. Elle vrombit, cogne, chauffe. L'écran affiche : " + copierDisplay() + ".");
+  }
+  if (v === "fix" || (v === "open" && hasN("copier")) || (v === "take" && hasN("jam"))) {
+    if (hasN("cord")) return act("unplug", N, num);
+    if (!hasN("copier", "jam", "paper") && v !== "fix") return cant();
+    if (!near("copier")) return;
+    if (!c.jam) return say(v === "open" ? "Vous ouvrez le panneau avant. Rien que de la poussière de toner et de mauvais souvenirs. Vous refermez." : "Pas de bourrage. Pour une fois.");
+    if (c.plugged) return die("Vous ouvrez le panneau avant et plongez la main vers la feuille coincée. Vos doigts effleurent le module de fusion. La machine est toujours branchée.\n\nLes lumières baissent. " + B().name + " ne lève même pas les yeux. " + C().name + " ne se réveille même pas.\n\nUne deuxième plaque est vissée à côté de celle de M. Fenouil.");
+    c.jam = false; award("jam");
+    return say("Courant coupé, vous plongez la main et retirez délicatement la feuille froissée. C'est la page 214 du roman que Mme D écrit en secret. Titre : « PROCÉDURE ». Vous décidez de ne pas la lire.");
+  }
+  if (v === "load" && hasN("paper", "copier")) {
+    if (!has("paper")) return say(c.paper ? "La photocopieuse a déjà du papier." : "Vous n'avez pas de papier.");
+    if (!near("copier")) return;
+    lose("paper"); c.paper = true; award("loadpaper"); return say("Vous glissez la ramette dans le bac 1. Le bac se referme avec un clonk plein d'assurance.");
+  }
+  if (v === "type" || (v === "use" && hasN("code"))) {
+    if (!near("copier")) return;
+    if (!c.plugged) return say("La photocopieuse est morte. La brancher aiderait peut-être.");
+    if (c.jam) return say("L'écran affiche seulement BOURRAGE - ZONE 4C. Il ignore vos boutons.");
+    let code = num;
+    if (!code) { if (!S.knowsCode) return say("Vous ne connaissez pas le code. Quelqu'un dans cette salle le connaît."); code = S.code; }
+    if (code !== S.code) { play(SFX.bad); return say("Vous tapez " + code + ". La machine bipe avec mépris : CODE INVALIDE."); }
+    if (c.code) return say("Vous avez déjà saisi le code.");
+    c.code = true; award("code"); play(SFX.beep);
+    return say("Vous tapez " + code + ". L'écran clignote : ACCÈS AUTORISÉ." + (c.paper ? " PRÊTE." : " Puis : AJOUTER PAPIER - BAC 1."));
+  }
+  if (v === "copyv" || (v === "use" && hasN("copier")) || (v === "load" && hasN("quiz")) || (v === "make" && hasN("copies"))) {
+    if (!near("copier")) return;
+    if (has("copies")) return say("Vous avez déjà 32 copies. Une de plus et c'est la déforestation.");
+    if (!c.plugged) return say("Rien ne se passe. Elle est débranchée.");
+    if (c.jam) return say("La photocopieuse gémit : BOURRAGE - ZONE 4C.");
+    if (!c.paper) return say("La photocopieuse gémit : AJOUTER PAPIER - BAC 1.");
+    if (!c.code) return say("L'écran affiche : SAISIR CODE D'ACCÈS.");
+    give("copies"); award("copy"); play(SFX.points);
+    return say("Vous posez l'interro sur la vitre, réglez sur 32 et appuyez sur COPIE. La machine souffle, cogne, envisage de se bloquer, se ravise, et crache enfin 32 copies tièdes.\n\nMaintenant, en classe !");
+  }
+  if (v === "use" && hasN("couch")) return act("sit", N, num);
+  if (v === "open" && hasN("door")) return say("Marchez simplement dedans.");
+  if (v === "use" && hasN("pen")) return say("Vous débouchez le stylo rouge. Il n'a jamais servi. Il sent le neuf, et la culpabilité.");
+  if (v === "take" && hasN("essays")) return say(B().name + " vous tape sur la main sans lever les yeux.");
+  if (v === "take" && hasN("copier", "couch", "table", "fridge", "npcC")) return say("Il vous faudrait un transpalette. Et un autre métier.");
+  if (HERE.hall.includes(N[0]) && !HERE.lounge.includes(N[0])) return say("Vous ne voyez pas ça ici.");
+  cant();
+}
+
+// ---------- mort, victoire, sauvegarde ----------
+function die(msg) {
+  S.dead = true; S.dir = null; S.target = null; play(SFX.death);
+  say(msg, { enter: () => say("Merci d'avoir joué à Salle de profs. La prochaine fois, respectez la procédure.\n\nENTRÉE pour recommencer.\nÉCHAP pour restaurer votre partie.", { enter: restart, esc: () => { if (!restoreGame(true)) restart(); } }) });
+}
+function win() {
+  award("deliver"); S.won = true; S.dir = null; play(SFX.win);
+  say("Vous entrez en salle 112 à " + clockStr() + " avec 32 copies encore tièdes de votre interro.\n\nPile à l'heure, la sonnerie retentit. Trente-deux élèves de 4e soupirent à l'unisson.\n\nDans le couloir, Mme D note l'heure. Elle a l'air presque déçue.", {
+    enter: () => say("(" + P().name + ", face caméra)\n\n« Vous savez quoi ? Aujourd'hui, j'ai travaillé. Un peu. Et j'ai même pas eu mal. »\n\nLe caméraman zoome. Générique.", {
+      enter: () => say("FÉLICITATIONS !\n\nScore final : " + S.score + " sur " + MAX + "." + (S.score < MAX ? "\n\nIl reste des points à trouver. Fouillez. Regardez la caméra. Réveillez les collègues." : "\n\nScore parfait. Même Mme D n'a rien trouvé à redire. Enfin, presque.") + "\n\nENTRÉE pour rejouer.", { enter: () => restart(true), esc: () => restart(true) }),
+    }),
+  });
+}
+function saveGame() {
+  try { localStorage.setItem("sdp-save", JSON.stringify(S)); say("Partie sauvegardée.\n\n(" + clockStr() + ", score " + S.score + ")"); }
+  catch (e) { say("Ce navigateur refuse de sauvegarder la partie."); }
+}
+function restoreGame(quiet) {
+  let d = null;
+  try { d = JSON.parse(localStorage.getItem("sdp-save") || "null"); } catch (e) { d = null; }
+  if (!d) { if (!quiet) say("Aucune partie sauvegardée."); return false; }
+  Q.length = 0; S = d; S.mode = "play"; S.dir = null; S.target = null; buildBg();
+  say("Partie restaurée.");
+  return true;
+}
+function restart(choose) {
+  Q.length = 0; const snd = S.sound, pc = S.pc; S = newState(); S.sound = snd; S.pc = pc;
+  if (choose) { S.mode = "select"; return; }
+  S.mode = "play"; buildBg(); intro();
+}
+function confirmRestart() { say("ENTRÉE pour recommencer la partie.\n\nÉCHAP pour continuer celle-ci.", { enter: () => restart(true) }); }
+function intro() {
+  say("Collège de Lytton.\nLundi, 7h40.\n\nVous êtes " + P().name + ", prof " + P().de + ". Vous aviez tout le week-end pour préparer votre interro. Vous l'avez écrite ce matin, dans le bus.");
+  say("Il faut 32 photocopies avant la sonnerie de 8h00. La photocopieuse est en salle des profs, avec " + B().name + " et " + C().name + ".\n\nEt Mme D, la principale, surveille le couloir.\n\nAh, et une équipe de documentaire filme le collège.");
+  say("Flèches pour marcher. Tapez des ordres comme REGARDER, PRENDRE COURRIER ou PARLER À MME D, puis ENTRÉE.\n\nÉCHAP : menu.\nTAB : inventaire.");
+}
+
+// ---------- inventaire et menu ----------
+let overlay = null;
+function showInv() { overlay = "inv"; }
+function drawInv() {
+  scr.fill(15);
+  center("Vous transportez :", 8, 0);
+  const items = S.inv.map(invName);
+  if (!items.length) center("rien", 32, 0);
+  items.forEach((it, i) => text(it.slice(0, 38), 16, 28 + i * 12, 0));
+  center("Une touche pour revenir au jeu", 184, 0);
+}
+const MENUS = [
+  { t: "Info", items: [["À propos", () => say("SALLE DE PROFS\nTrois glandeurs. Une photocopieuse. Mme D.\n\nUn hommage de fan aux aventures Sierra AGI de 1987.\n\nAucune photocopieuse n'a été maltraitée. Plusieurs profs, si.")], ["Aide", () => act("help", [])]] },
+  { t: "Fichier", items: [["Sauver       <F5>", saveGame], ["Restaurer    <F7>", () => restoreGame()], ["Recommencer  <F9>", confirmRestart], ["Quitter", () => act("quit", [])]] },
+  { t: "Action", items: [["Regarder", () => doLook([])], ["Inventaire  <Tab>", showInv], ["Score", () => act("score", [])], ["Heure", () => say("Votre montre indique " + clockStr() + ". Sonnerie à 8h00.")], ["Face caméra", camera]] },
+  { t: "Spécial", items: [["Son oui/non  <F2>", () => { S.sound = !S.sound; }]] },
+];
+let menu = null;
+function drawMenu() {
+  srect(0, 0, SW, 8, 15);
+  let x = 8; const xs = [];
+  MENUS.forEach((m, i) => { xs.push(x); text(m.t, x, 0, i === menu.m ? 15 : 0, i === menu.m ? 0 : 15); x += (m.t.length + 1) * 8; });
+  const m = MENUS[menu.m]; const w = Math.max(...m.items.map((it) => it[0].length)) * 8 + 16;
+  const mx = Math.min(xs[menu.m], SW - w - 2), my = 8, h = m.items.length * 8 + 8;
+  srect(mx, my, w, h, 15);
+  srect(mx, my, w, 1, 0); srect(mx, my + h - 1, w, 1, 0); srect(mx, my, 1, h, 0); srect(mx + w - 1, my, 1, h, 0);
+  m.items.forEach((it, i) => { const sel = i === menu.i; srect(mx + 4, my + 4 + i * 8, w - 8, 8, sel ? 0 : 15); text(it[0], mx + 8, my + 4 + i * 8, sel ? 15 : 0); });
+}
+
+// ---------- écran titre et choix du perso ----------
+function drawTitle() {
+  scr.fill(1);
+  srect(6, 6, SW - 12, SH - 12, 0);
+  srect(8, 8, SW - 16, 1, 9); srect(8, SH - 9, SW - 16, 1, 9); srect(8, 8, 2, SH - 16, 9); srect(SW - 10, 8, 2, SH - 16, 9);
+  const c1 = "SALLE", c2 = "DE PROFS";
+  text(c1, (SW - c1.length * 32) / 2 + 3, 22, 4, -1, 4, 3); text(c1, (SW - c1.length * 32) / 2, 20, 14, -1, 4, 3);
+  text(c2, (SW - c2.length * 32) / 2 + 3, 48, 4, -1, 4, 3); text(c2, (SW - c2.length * 32) / 2, 46, 14, -1, 4, 3);
+  center("Trois glandeurs. Une photocopieuse.", 78, 11);
+  center("Et Mme D.", 88, 12);
+  const M = (x, y, w, h, c) => srect(140 + x * 2, 100 + y, w * 2, h, c);
+  M(4, 10, 14, 24, 12); M(5, 11, 12, 1, 4); M(18, 15, 4, 2, 12); M(20, 17, 2, 10, 12); M(18, 27, 4, 2, 12); M(4, 34, 14, 2, 4);
+  M(6, 18, 10, 2, 15); M(6, 22, 8, 1, 15);
+  const ph = (tick >> 2) % 3;
+  for (let i = 0; i < 3; i++) { M(7 + i * 3 + (ph === i ? 1 : 0), 2 + i, 1, 4, 7); M(8 + i * 3 - (ph === i ? 1 : 0), 6 + i, 1, 3, 7); }
+  srect(124, 136, 72, 2, 6);
+  if ((tick >> 3) % 2) center("Appuyez sur ENTRÉE", 154, 15);
+  center("Une production du collège de Lytton", 174, 7);
+}
+const SEL_X = [13, 40, 67];
+function drawSelect() {
+  scr.fill(0);
+  srect(0, 24, SW, 64, 1);
+  srect(0, 0, SW, 8, 15); center("Choisissez votre glandeur", 0, 0);
+  pic.fill(255);
+  CHARS.forEach((ch, i) => drawPerson(SEL_X[i], 60, "down", i === S.pc ? (tick >> 2) : 0, ch.c));
+  for (let py = 30; py < 62; py++) for (let px = 0; px < 80; px++) { const c = pic[py * PW + px]; if (c !== 255) srect(px * 4, 24 + (py - 30) * 2, 4, 2, c); }
+  CHARS.forEach((ch, i) => {
+    const cxp = SEL_X[i] * 4 + 2, sel = i === S.pc;
+    if (sel) { srect(cxp - 44, 20, 88, 1, 14); srect(cxp - 44, 100, 88, 1, 14); srect(cxp - 44, 20, 2, 81, 14); srect(cxp + 42, 20, 2, 81, 14); }
+    text(ch.name, cxp - ch.name.length * 4, 106, sel ? 14 : 7);
+  });
+  const lines = wrap(CHARS[S.pc].pitch, 38);
+  lines.forEach((l, i) => text(l, 8, 124 + i * 9, 15));
+  if ((tick >> 3) % 2) center("<  >  puis ENTRÉE", 186, 11);
+}
+
+// ---------- boucle principale ----------
+let tick = 0, cursorOn = true;
+const kbd = document.getElementById("kbd");
+
+function update() {
+  tick++;
+  if (S.mode !== "play" || Q.length || overlay || menu || S.dead || S.won) return;
+  S.t += 0.1;
+  if (S.pot === "brewing" && S.t >= S.brewEnd) { S.pot = "coffee"; play(SFX.beep); say("La cafetière lâche un dernier gargouillis triomphant. Le café est prêt. " + (S.room === "lounge" ? B().name + " renifle l'air comme un chien de chasse." : "")); }
+  const pa = (k, at, msg) => { if (S.t >= at && !S.warned[k]) { S.warned[k] = 1; play(SFX.pa); say(msg); } };
+  pa("10", 600, "*DING DONG* « Ici Mme D. Sonnerie dans dix minutes. Les professeurs qui traînent en salle des profs seront notés. Je sais qui vous êtes. »");
+  pa("5", 900, "*DING DONG* « Cinq minutes. " + C().name + ", je vous entends ronfler depuis mon bureau. »");
+  pa("1", 1140, "*DING DONG* « UNE minute. » Quelque part, trente-deux élèves de 4e sont déjà en salle 112. Sans surveillance. Ça sent le roussi.");
+  if (S.t >= BELL && !Q.length) {
+    play(SFX.bell);
+    return die("DRIIIIIIIIING !\n\nLa sonnerie de 8h00 retentit. Trente-deux élèves de 4e attendent en salle 112, sans prof et sans interro.\n\nQuand vous arrivez, ils ont formé un gouvernement provisoire. Mme D en est la présidente. Vous n'en faites pas partie.");
+  }
+  let dx = 0, dy = 0;
+  if (S.target) {
+    const tx = S.target.x - S.x, ty = S.target.y - S.y;
+    if (Math.abs(tx) <= 1 && Math.abs(ty) <= 1) S.target = null;
+    else { dx = Math.sign(tx) * (Math.abs(tx) > 1 ? 1 : 0); dy = Math.sign(ty) * (Math.abs(ty) > 1 ? 1 : 0); S.face = Math.abs(tx) > Math.abs(ty) * 1.2 ? (tx > 0 ? "right" : "left") : (ty > 0 ? "down" : "up"); }
+  } else if (S.dir) {
+    dx = S.dir.includes("left") ? -1 : S.dir.includes("right") ? 1 : 0;
+    dy = S.dir.includes("up") ? -1 : S.dir.includes("down") ? 1 : 0;
+  }
+  if (dx || dy) {
+    const R = ROOMS[S.room]; const nx = S.x + dx, ny = S.y + dy;
+    if (R.exit(nx, ny)) { S.target = null; return; }
+    if (R.walk(nx, ny)) { S.x = nx; S.y = ny; S.step++; if (S.step % 2 === 0) S.frame++; }
+    else if (S.target && dx && dy && R.walk(nx, S.y)) { S.x = nx; S.step++; }
+    else if (S.target && dx && dy && R.walk(S.x, ny)) { S.y = ny; S.step++; }
+    else { S.dir = null; S.target = null; S.frame = 0; }
+  } else S.frame = 0;
+}
+
+function render() {
+  if (overlay === "inv") { drawInv(); return blit(); }
+  if (S.mode === "title") { drawTitle(); return blit(); }
+  if (S.mode === "select") { drawSelect(); return blit(); }
+  scr.fill(0);
+  pic.set(bg);
+  const R = ROOMS[S.room];
+  R.dyn();
+  const layers = R.layers().slice();
+  layers.push({ base: S.y, draw() { if (S.dead) drawEgoDown(S.x, S.y); else drawPerson(S.x, S.y, S.face, S.frame, P().c); } });
+  layers.sort((a, b) => a.base - b.base).forEach((l) => l.draw());
+  for (let y = 0; y < PH; y++) { const so = (y + PIC_Y) * SW, po = y * PW; for (let x = 0; x < PW; x++) { const c = pic[po + x]; scr[so + x * 2] = c; scr[so + x * 2 + 1] = c; } }
+  srect(0, 0, SW, 8, 15);
+  text(" Score:" + S.score + " sur " + MAX, 0, 0, 0);
+  text("Son:" + (S.sound ? "oui" : "non"), 32 * 8, 0, 0);
+  if (!S.dead && !S.won) { const ln = ">" + (kbd.value || "").slice(-38); text(ln, 0, 176, 15); if (cursorOn && !Q.length && !menu) text("_", ln.length * 8, 176, 15); }
+  if (menu) drawMenu();
+  if (Q.length) drawBox(Q[0].text);
+  blit();
+}
+function blit() { for (let i = 0; i < scr.length; i++) img32[i] = PAL32[scr[i]]; cx.putImageData(img, 0, 0); }
+
+let acc = 0, lastT = performance.now();
+function loop(now) {
+  acc += Math.min(250, now - lastT); lastT = now;
+  while (acc >= 50) { update(); acc -= 50; if (tick % 8 === 0) cursorOn = !cursorOn; }
+  render();
+  requestAnimationFrame(loop);
+}
+
+// ---------- entrées ----------
+const DIRS = { ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right", Home: "upleft", PageUp: "upright", End: "downleft", PageDown: "downright" };
+function submit() {
+  const raw = kbd.value.trim(); kbd.value = "";
+  if (!raw) return;
+  S.last = raw;
+  const p = parse(raw);
+  if (!p) return;
+  if (p.err) return say(p.err);
+  act(p.v, p.N, p.num);
+}
+function startGame() { play(SFX.door); S.mode = "play"; buildBg(); intro(); }
+function key(k) {
+  if (S.mode === "title") {
+    if (k === "Enter" || k === " ") { audio(); play(SFX.theme); S.mode = "select"; }
+    return true;
+  }
+  if (S.mode === "select") {
+    if (k === "ArrowLeft") { S.pc = (S.pc + 2) % 3; play(SFX.select); }
+    else if (k === "ArrowRight") { S.pc = (S.pc + 1) % 3; play(SFX.select); }
+    else if (k === "Enter" || k === " ") startGame();
+    return true;
+  }
+  if (overlay) { overlay = null; return true; }
+  if (Q.length) {
+    if (k === "Enter" || k === "Escape" || k === " ") {
+      const m = Q.shift();
+      if (k === "Escape" && m.esc) m.esc(); else if (k !== "Escape" && m.enter) m.enter();
+    }
+    return true;
+  }
+  if (menu) {
+    const m = MENUS[menu.m];
+    if (k === "ArrowLeft") { menu.m = (menu.m + MENUS.length - 1) % MENUS.length; menu.i = 0; }
+    else if (k === "ArrowRight") { menu.m = (menu.m + 1) % MENUS.length; menu.i = 0; }
+    else if (k === "ArrowUp") menu.i = (menu.i + m.items.length - 1) % m.items.length;
+    else if (k === "ArrowDown") menu.i = (menu.i + 1) % m.items.length;
+    else if (k === "Enter") { const fn = m.items[menu.i][1]; menu = null; fn(); }
+    else if (k === "Escape") menu = null;
+    return true;
+  }
+  if (S.dead || S.won) return true;
+  if (DIRS[k]) { S.target = null; const d = DIRS[k]; if (S.dir === d) S.dir = null; else { S.dir = d; S.face = d.includes("left") ? "left" : d.includes("right") ? "right" : d; } return true; }
+  if (k === "Clear") { S.dir = null; return true; }
+  if (k === "Enter") { submit(); return true; }
+  if (k === "Escape") { menu = { m: 0, i: 0 }; return true; }
+  if (k === "Tab") { showInv(); return true; }
+  if (k === "F2") { S.sound = !S.sound; return true; }
+  if (k === "F3") { kbd.value = S.last || ""; return true; }
+  if (k === "F5") { saveGame(); return true; }
+  if (k === "F7") { restoreGame(); return true; }
+  if (k === "F9") { confirmRestart(); return true; }
+  return false;
+}
+document.addEventListener("keydown", (e) => {
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (key(e.key)) { e.preventDefault(); return; }
+  if (e.key.length === 1 && document.activeElement !== kbd) { kbd.focus(); if (kbd.value.length < 60) kbd.value += e.key; e.preventDefault(); }
+}, true);
+kbd.addEventListener("input", () => {
+  if (Q.length || overlay || menu || S.mode !== "play" || S.dead || S.won) kbd.value = "";
+});
+
+cv.addEventListener("pointerdown", (e) => {
+  e.preventDefault(); audio();
+  const r = cv.getBoundingClientRect();
+  const sx = Math.floor((e.clientX - r.left) / r.width * SW), sy = Math.floor((e.clientY - r.top) / r.height * SH);
+  if (S.mode === "select") { const i = Math.max(0, Math.min(2, Math.floor(sx / (SW / 3)))); if (i === S.pc) startGame(); else { S.pc = i; play(SFX.select); } return; }
+  if (S.mode === "title" || overlay || Q.length) { key("Enter"); return; }
+  if (menu) { menu = null; return; }
+  if (S.dead || S.won) return;
+  if (sy >= 176) { keepKbd = true; kbd.focus(); return; }
+  const px = Math.floor(sx / 2), py = sy - PIC_Y;
+  if (py >= 0 && py < PH) { S.dir = null; S.target = { x: px, y: Math.max(100, py) }; }
+});
+function padPress(b) {
+  const k = b.dataset.k; audio();
+  if (k === "type") { toggleKbd(); return; }
+  key(k);
+}
+document.getElementById("pad").addEventListener("pointerdown", (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  e.preventDefault(); padPress(b);
+});
+document.getElementById("pad").addEventListener("click", (e) => {
+  const b = e.target.closest("button"); if (b && e.detail === 0) padPress(b); // activation au clavier
+});
+
+// Le clavier (mobile) reste ouvert : les taps sur l'écran et les boutons ne lui volent plus le focus.
+let keepKbd = false;
+kbd.addEventListener("focus", () => { keepKbd = true; });
+kbd.addEventListener("blur", () => { if (keepKbd) setTimeout(() => { if (keepKbd && document.activeElement !== kbd) kbd.focus({ preventScroll: true }); }, 0); });
+for (const el of [cv, document.getElementById("pad")]) {
+  el.addEventListener("mousedown", (e) => e.preventDefault());
+  el.addEventListener("touchstart", (e) => { if (document.activeElement === kbd) e.preventDefault(); }, { passive: false });
+}
+function toggleKbd() { if (document.activeElement === kbd) { keepKbd = false; kbd.blur(); } else { keepKbd = true; kbd.focus(); } }
+
+buildBg();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

@@ -89,14 +89,14 @@
 <body>
 <div class="monitor">
   <canvas id="screen" width="320" height="200" aria-label="Teachers' Lounge Quest game screen"></canvas>
-  <input id="kbd" type="text" maxlength="36" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Type a command">
+  <input id="kbd" type="text" maxlength="60" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Type a command">
 </div>
 <div class="pad" id="pad">
   <button data-k="ArrowLeft" aria-label="Walk left">&larr;</button>
   <button data-k="ArrowUp" aria-label="Walk up">&uarr;</button>
   <button data-k="ArrowDown" aria-label="Walk down">&darr;</button>
   <button data-k="ArrowRight" aria-label="Walk right">&rarr;</button>
-  <button data-k="type">Type</button>
+  <button data-k="type">Keyboard</button>
   <button data-k="Enter">Enter</button>
   <button data-k="Tab">Items</button>
   <button data-k="Escape">Menu</button>
@@ -1174,7 +1174,7 @@ function drawTitle() {
 // ---------- main loop ----------
 let tick = 0, cursorOn = true;
 const kbd = document.getElementById("kbd");
-function line22() { return (kbd.value || "").slice(0, 36); }
+function line22() { return (kbd.value || "").slice(-38); }
 
 function update() {
   tick++;
@@ -1294,29 +1294,45 @@ document.addEventListener("keydown", (e) => {
   if (e.ctrlKey || e.metaKey || e.altKey) return;
   if (key(e.key, e)) { e.preventDefault(); return; }
   // printable keys always go to the command line
-  if (e.key.length === 1 && document.activeElement !== kbd) { kbd.focus(); if (kbd.value.length < 36) kbd.value += e.key; e.preventDefault(); }
+  if (e.key.length === 1 && document.activeElement !== kbd) { kbd.focus(); if (kbd.value.length < 60) kbd.value += e.key; e.preventDefault(); }
 }, true);
 kbd.addEventListener("input", () => {
   if (Q.length || overlay || menu || S.mode !== "play" || S.dead || S.won) kbd.value = kbd.value.replace(/.$/, "");
 });
 
 cv.addEventListener("pointerdown", (e) => {
-  audio();
+  e.preventDefault(); audio();
   const r = cv.getBoundingClientRect();
   const sx = Math.floor((e.clientX - r.left) / r.width * SW), sy = Math.floor((e.clientY - r.top) / r.height * SH);
   if (S.mode === "title" || overlay || Q.length) { key("Enter"); return; }
   if (menu) { menu = null; return; }
   if (S.dead || S.won) return;
-  if (sy >= 176) { kbd.focus(); return; }
+  if (sy >= 176) { keepKbd = true; kbd.focus(); return; }
   const px = Math.floor(sx / 2), py = sy - PIC_Y;
   if (py >= 0 && py < PH) { S.dir = null; S.target = { x: px, y: Math.max(100, py) }; }
 });
-document.getElementById("pad").addEventListener("click", (e) => {
-  const b = e.target.closest("button"); if (!b) return;
+function padPress(b) {
   const k = b.dataset.k; audio();
-  if (k === "type") { kbd.focus(); return; }
+  if (k === "type") { toggleKbd(); return; }
   key(k);
+}
+document.getElementById("pad").addEventListener("pointerdown", (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  e.preventDefault(); padPress(b);
 });
+document.getElementById("pad").addEventListener("click", (e) => {
+  const b = e.target.closest("button"); if (b && e.detail === 0) padPress(b); // keyboard activation
+});
+
+// Keep the mobile keyboard open: taps on the screen and pad buttons no longer steal focus.
+let keepKbd = false;
+kbd.addEventListener("focus", () => { keepKbd = true; });
+kbd.addEventListener("blur", () => { if (keepKbd) setTimeout(() => { if (keepKbd && document.activeElement !== kbd) kbd.focus({ preventScroll: true }); }, 0); });
+for (const el of [cv, document.getElementById("pad")]) {
+  el.addEventListener("mousedown", (e) => e.preventDefault());
+  el.addEventListener("touchstart", (e) => { if (document.activeElement === kbd) e.preventDefault(); }, { passive: false });
+}
+function toggleKbd() { if (document.activeElement === kbd) { keepKbd = false; kbd.blur(); } else { keepKbd = true; kbd.focus(); } }
 
 buildBg();
 requestAnimationFrame(loop);
