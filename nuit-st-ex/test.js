@@ -116,6 +116,13 @@ test("entrer dans les locaux : vides, fausses pistes, objets inutiles", () => {
   assert.ok(p.possede("cle_doree"));
   assert.ok(texte(p.executer("entrer c224")).includes("déjà fouillé"));
   assert.ok(texte(p.executer("utiliser clé dorée")).includes("aucune serrure"));
+  const locaux = p.decrireLieu().find((x) => x.type === "locaux");
+  assert.ok(locaux.locaux.find((l) => l.nom === "C224").visite);
+  assert.ok(!locaux.locaux.find((l) => l.nom === "C201").visite);
+  assert.strictEqual(locaux.vus, 1);
+  assert.ok(locaux.texte.includes("C224 ✓") && locaux.texte.includes("(1/22 visités)"));
+  const q = Partie.restaurer(JSON.parse(JSON.stringify(p.exporter())));
+  assert.strictEqual(q.decrireLieu().find((x) => x.type === "locaux").vus, 1);
   for (const nom of ["A120", "B272A", "Gym 3", "C130"]) assert.ok(texteLocal(nom).length > 20);
   p.lieu = 10;
   for (const cmd of ["réception", "Magasin", "entrer dans la réception", "aller au magasin"]) {

@@ -108,6 +108,10 @@
     line-height: 1.6;
   }
   .sorties { color: var(--ombre); text-transform: uppercase; letter-spacing: 0.14em; }
+  .locaux { font-family: var(--f-machine); font-size: 0.8rem; line-height: 1.8; color: var(--cendre); letter-spacing: 0.06em; }
+  .locaux .etiquette, .locaux .compte { color: var(--ombre); text-transform: uppercase; letter-spacing: 0.14em; }
+  .locaux .visite { color: var(--ombre); opacity: 0.6; }
+  .locaux .compte { margin-left: 0.5rem; }
   .systeme { color: var(--ombre); }
   .commande { color: var(--lune); margin-top: 1rem !important; }
   .commande::before { content: "› "; color: var(--ombre); }
@@ -1369,7 +1373,14 @@
         });
       }
       if (lieu.locaux && lieu.locaux.length) {
-        blocs.push({ type: "sorties", texte: "Locaux : " + lieu.locaux.join(" · ") });
+        const locaux = lieu.locaux.map((nom) => ({ nom, visite: this.locauxFouilles.includes(compact(nom)) }));
+        const vus = locaux.filter((l) => l.visite).length;
+        blocs.push({
+          type: "locaux",
+          texte: "Locaux : " + locaux.map((l) => (l.visite ? l.nom + " ✓" : l.nom)).join(" · ") + (vus ? ` (${vus}/${locaux.length} visités)` : ""),
+          locaux,
+          vus,
+        });
       }
       blocs.push({ type: "sorties", texte: "Sorties : " + this.sortiesVisibles().join(" · ") });
       return blocs;
@@ -1910,7 +1921,26 @@
         }
         const p = document.createElement("p");
         p.className = b.type;
-        if (b.type === "lieu") {
+        if (b.type === "locaux") {
+          // Locaux visités en gris avec un ✓, pour ne pas refaire deux fois le même.
+          const etiquette = document.createElement("span");
+          etiquette.className = "etiquette";
+          etiquette.textContent = "Locaux : ";
+          p.appendChild(etiquette);
+          b.locaux.forEach((l, i) => {
+            if (i) p.appendChild(document.createTextNode(" · "));
+            const span = document.createElement("span");
+            span.textContent = l.visite ? l.nom + " ✓" : l.nom;
+            if (l.visite) span.className = "visite";
+            p.appendChild(span);
+          });
+          if (b.vus) {
+            const compte = document.createElement("span");
+            compte.className = "compte";
+            compte.textContent = `${b.vus}/${b.locaux.length} visités`;
+            p.appendChild(compte);
+          }
+        } else if (b.type === "lieu") {
           p.textContent = b.texte;
           const s = document.createElement("small");
           s.textContent = b.zone;

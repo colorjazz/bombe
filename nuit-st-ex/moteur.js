@@ -917,7 +917,14 @@
         });
       }
       if (lieu.locaux && lieu.locaux.length) {
-        blocs.push({ type: "sorties", texte: "Locaux : " + lieu.locaux.join(" · ") });
+        const locaux = lieu.locaux.map((nom) => ({ nom, visite: this.locauxFouilles.includes(compact(nom)) }));
+        const vus = locaux.filter((l) => l.visite).length;
+        blocs.push({
+          type: "locaux",
+          texte: "Locaux : " + locaux.map((l) => (l.visite ? l.nom + " ✓" : l.nom)).join(" · ") + (vus ? ` (${vus}/${locaux.length} visités)` : ""),
+          locaux,
+          vus,
+        });
       }
       blocs.push({ type: "sorties", texte: "Sorties : " + this.sortiesVisibles().join(" · ") });
       return blocs;
