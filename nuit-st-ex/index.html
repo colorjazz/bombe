@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>La Nuit à St-Ex</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Michroma&family=Spectral:ital,wght@0,300;0,400;1,300&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  /* Mise en page : une seule colonne étroite perdue dans le noir, comme un couloir ; le titre du lieu, large et espacé, écrase le texte. */
+  :root {
+    --beton: #0a0c0f;        /* fond : béton de nuit */
+    --beton-2: #12161b;      /* surfaces */
+    --cendre: #c4c8cd;       /* texte narratif, gris lunaire */
+    --ombre: #646c76;        /* texte secondaire */
+    --lune: #9db3c9;         /* accent : lueur bleutée de la lune */
+    --ecran: #f2efe6;        /* lumière crue du téléphone */
+    --rouille: #b4674a;      /* métal, cadenas */
+    --f-titre: "Michroma", "Eurostile", "Arial Black", sans-serif;
+    --f-texte: "Spectral", "Iowan Old Style", Georgia, serif;
+    --f-machine: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+    color-scheme: dark;
+  }
+
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--beton);
+    color: var(--cendre);
+    font-family: var(--f-texte);
+    font-weight: 300;
+    font-size: 1.125rem;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .ecran {
+    height: 100%;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    max-width: 44rem;
+    margin: 0 auto;
+    padding-inline: 16px;
+    box-sizing: border-box;
+  }
+
+  header {
+    padding-block: 1.25rem 0.75rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--beton-2);
+    font-family: var(--f-machine);
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ombre);
+  }
+  header .ecole { color: var(--cendre); }
+  #zone { color: var(--lune); }
+
+  #journal {
+    overflow-y: auto;
+    padding-block: 2rem 3rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+    min-width: 0;
+    scrollbar-width: thin;
+    scrollbar-color: var(--beton-2) transparent;
+  }
+
+  #journal p { margin: 0; max-width: 62ch; animation: apparition 1.2s ease both; }
+
+  .ouverture { font-style: italic; color: var(--cendre); }
+  .ouverture + .lieu { margin-top: 2.5rem; }
+
+  .lieu {
+    margin: 1.75rem 0 0;
+    font-family: var(--f-titre);
+    font-weight: 400;
+    font-size: clamp(1.05rem, 3.6vw, 1.6rem);
+    letter-spacing: 0.32em;
+    line-height: 1.35;
+    text-transform: uppercase;
+    color: var(--cendre);
+    text-wrap: balance;
+    animation: apparition 1.6s ease both;
+  }
+  .lieu small {
+    display: block;
+    margin-top: 0.4rem;
+    font-family: var(--f-machine);
+    font-size: 0.65rem;
+    letter-spacing: 0.24em;
+    color: var(--ombre);
+  }
+
+  .objets { color: var(--lune); }
+  .sorties, .systeme, .commande {
+    font-family: var(--f-machine);
+    font-size: 0.8rem;
+    letter-spacing: 0.06em;
+    line-height: 1.6;
+  }
+  .sorties { color: var(--ombre); text-transform: uppercase; letter-spacing: 0.14em; }
+  .systeme { color: var(--ombre); }
+  .commande { color: var(--lune); margin-top: 1rem !important; }
+  .commande::before { content: "› "; color: var(--ombre); }
+
+  .mural {
+    font-family: var(--f-titre);
+    font-size: 0.95rem;
+    letter-spacing: 0.12em;
+    line-height: 2;
+    color: var(--rouille);
+    padding-block: 0.5rem;
+  }
+
+  .evenement {
+    color: var(--ecran);
+    font-weight: 400;
+    border-left: 1px solid var(--ecran);
+    padding-left: 1rem;
+  }
+  .choc { color: var(--cendre); font-weight: 400; }
+  .victoire { color: var(--cendre); }
+  .coupure, .fin {
+    font-family: var(--f-titre);
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    font-size: 0.9rem;
+    text-align: center;
+    max-width: none !important;
+  }
+  .coupure { margin-top: 2.5rem !important; color: var(--ombre); }
+  .fin { color: var(--lune); }
+
+  form {
+    padding-block: 0.9rem calc(1.1rem + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid var(--beton-2);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  form label {
+    font-family: var(--f-machine);
+    color: var(--lune);
+    font-size: 1rem;
+  }
+  #commande {
+    flex: 1;
+    min-width: 0;
+    background: transparent;
+    border: 0;
+    outline: none;
+    color: var(--cendre);
+    font-family: var(--f-machine);
+    font-size: 1rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    caret-color: var(--lune);
+    padding-block: 0.4rem;
+  }
+  #commande::placeholder { color: var(--ombre); opacity: 0.7; text-transform: none; }
+  form:focus-within { border-top-color: var(--ombre); }
+
+  button {
+    background: transparent;
+    color: var(--lune);
+    border: 1px solid var(--ombre);
+    font-family: var(--f-machine);
+    font-size: 0.75rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    padding: 0.55rem 0.9rem;
+    cursor: pointer;
+  }
+  button:hover, button:focus-visible { border-color: var(--lune); outline: none; }
+
+  /* Lumière du téléphone (tour 5) */
+  #flash {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(circle at 50% 85%, var(--ecran), transparent 70%);
+    opacity: 0;
+  }
+  #flash.actif { animation: telephone 3.2s ease-out both; }
+
+  /* Coupure au noir */
+  #noir {
+    position: fixed;
+    inset: 0;
+    background: var(--beton);
+    opacity: 0;
+    pointer-events: none;
+    display: grid;
+    place-items: center;
+    text-align: center;
+    padding-inline: 16px;
+  }
+  #noir.actif { animation: coupure 2.5s 6s ease both; pointer-events: auto; }
+  #noir h2 {
+    margin: 0 0 1.5rem;
+    font-family: var(--f-titre);
+    font-weight: 400;
+    font-size: clamp(0.95rem, 3vw, 1.3rem);
+    letter-spacing: 0.4em;
+    color: var(--lune);
+    text-wrap: balance;
+  }
+  #noir p {
+    margin: 0 0 2.5rem;
+    font-family: var(--f-machine);
+    font-size: 0.7rem;
+    letter-spacing: 0.24em;
+    color: var(--ombre);
+    text-transform: uppercase;
+  }
+
+  .secousse { animation: secousse 0.45s linear; }
+
+  @keyframes apparition { from { opacity: 0; filter: blur(3px); } to { opacity: 1; filter: none; } }
+  @keyframes telephone { 0% { opacity: 0; } 6% { opacity: 0.55; } 55% { opacity: 0.35; } 62% { opacity: 0; } 100% { opacity: 0; } }
+  @keyframes coupure { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes secousse {
+    0%, 100% { transform: none; }
+    20% { transform: translateX(-6px); } 40% { transform: translateX(5px); }
+    60% { transform: translateX(-3px); } 80% { transform: translateX(2px); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; animation-delay: 0ms !important; }
+    #flash.actif { animation: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="ecran" id="ecran">
+  <header>
+    <span class="ecole">Polyvalente Antoine-de-Saint-Exupéry</span>
+    <span id="zone">Étage · Aile A</span>
+  </header>
+  <main id="journal" aria-live="polite"></main>
+  <form id="saisie" autocomplete="off">
+    <label for="commande">›</label>
+    <input id="commande" type="text" spellcheck="false" autocapitalize="characters" placeholder="Que fais-tu ? (AIDE)" aria-label="Commande">
+  </form>
+</div>
+
+<div id="flash" aria-hidden="true"></div>
+
+<div id="noir" hidden>
+  <div>
+    <h2>Tu as survécu à la nuit</h2>
+    <p>La Nuit à St-Ex</p>
+    <button id="rejouer" type="button">Rejouer</button>
+  </div>
+</div>
+
+<script src="moteur.js"></script>
+<script>
+  (function () {
+    const journal = document.getElementById("journal");
+    const zone = document.getElementById("zone");
+    const champ = document.getElementById("commande");
+    const flash = document.getElementById("flash");
+    const noir = document.getElementById("noir");
+    const ecran = document.getElementById("ecran");
+    const historique = [];
+    let position = 0;
+    let partie;
+
+    function afficher(blocs) {
+      for (const b of blocs) {
+        const p = document.createElement("p");
+        p.className = b.type;
+        if (b.type === "lieu") {
+          p.textContent = b.texte;
+          const s = document.createElement("small");
+          s.textContent = b.zone;
+          p.appendChild(s);
+          zone.textContent = b.zone;
+        } else {
+          p.textContent = b.texte;
+        }
+        journal.appendChild(p);
+        if (b.type === "evenement") {
+          flash.classList.remove("actif");
+          void flash.offsetWidth;
+          flash.classList.add("actif");
+        }
+        if (b.type === "choc") {
+          ecran.classList.remove("secousse");
+          void ecran.offsetWidth;
+          ecran.classList.add("secousse");
+        }
+        if (b.type === "fin") {
+          noir.hidden = false;
+          noir.classList.add("actif");
+        }
+      }
+      journal.scrollTop = journal.scrollHeight;
+    }
+
+    function nouvellePartie() {
+      journal.textContent = "";
+      noir.classList.remove("actif");
+      noir.hidden = true;
+      partie = new NuitStEx.Partie();
+      afficher(partie.demarrer());
+      champ.focus();
+    }
+
+    document.getElementById("saisie").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const commande = champ.value.trim();
+      champ.value = "";
+      if (!commande) return;
+      historique.push(commande);
+      position = historique.length;
+      afficher([{ type: "commande", texte: commande.toUpperCase() }]);
+      if (NuitStEx.normaliser(commande) === "REJOUER") return nouvellePartie();
+      afficher(partie.executer(commande));
+    });
+
+    champ.addEventListener("keydown", function (e) {
+      if (e.key === "ArrowUp" && position > 0) {
+        position -= 1;
+        champ.value = historique[position];
+        e.preventDefault();
+      } else if (e.key === "ArrowDown") {
+        position = Math.min(historique.length, position + 1);
+        champ.value = historique[position] || "";
+        e.preventDefault();
+      }
+    });
+
+    document.getElementById("rejouer").addEventListener("click", nouvellePartie);
+    journal.addEventListener("click", function () {
+      if (!window.getSelection().toString()) champ.focus();
+    });
+
+    nouvellePartie();
+  })();
+</script>
+</body>
+</html>
