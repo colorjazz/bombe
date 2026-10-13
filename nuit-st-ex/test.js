@@ -60,7 +60,7 @@ test("porte du secrétariat verrouillée tant que le cadenas tient", () => {
 test("combiner sans ruban", () => {
   const p = new Partie();
   const r = jouer(p, [
-    "o", "s", "bas", "o", "n", "prendre tuyau", "s", "s", "prendre lame",
+    "o", "s", "bas", "e", "n", "prendre tuyau", "s", "s", "prendre lame",
     "combiner tuyau avec lame",
   ]);
   assert.ok(texte(r).includes("rien pour les faire tenir ensemble"));
@@ -70,16 +70,16 @@ test("combiner sans ruban", () => {
 test("frapper le cadenas sans avoir mangé, puis après", () => {
   const p = new Partie();
   jouer(p, [
-    "o", "s", "o", "prendre ruban", "e", "bas",
-    "o", "n", "prendre tuyau", "s", "s", "prendre lame", "n",
-    "combiner tuyau avec lame", "e", "n",
+    "o", "s", "e", "prendre ruban", "o", "bas",
+    "e", "n", "prendre tuyau", "s", "s", "prendre lame", "n",
+    "combiner tuyau avec lame", "o", "n",
   ]);
   assert.ok(p.flags.arme_fabriquee);
   assert.deepStrictEqual(p.inventaire.sort(), ["arme_artisanale", "telephone_mort"]);
   let r = p.executer("frapper cadenas");
   assert.ok(texte(r).includes("Tu es trop faible"));
   assert.ok(!p.flags.cadenas_brise);
-  jouer(p, ["s", "e", "prendre barre", "manger barre tendre", "o", "n"]);
+  jouer(p, ["s", "o", "prendre barre", "manger barre tendre", "e", "n"]);
   assert.ok(p.flags.a_mange);
   r = p.executer("fracasser cadenas");
   assert.ok(texte(r).includes("la charnière explose"));
@@ -90,11 +90,11 @@ test("partie complète jusqu'à la victoire", () => {
   const p = new Partie();
   p.demarrer();
   const r = jouer(p, [
-    "ouest", "sud", "ouest", "prendre ruban adhésif", "est", "bas",
-    "est", "manger barre", "ouest",
+    "ouest", "sud", "est", "prendre ruban adhésif", "ouest", "bas",
+    "ouest", "manger barre", "est",
     "sud", "lire mur", "nord",
-    "ouest", "nord", "prendre tuyau", "sud", "sud", "prendre lame", "nord",
-    "combiner tuyau avec lame", "est", "nord",
+    "est", "nord", "prendre tuyau", "sud", "sud", "prendre lame", "nord",
+    "combiner tuyau avec lame", "ouest", "nord",
     "frapper cadenas", "est", "prendre clé", "ouest",
     "utiliser clé sur chaînes",
   ]);
