@@ -320,6 +320,27 @@ test("la phrase d'arrivée dépend d'où l'on vient", () => {
   assert.ok(p.executer("e")[1].texte.startsWith("La passerelle débouche"));
 });
 
+test("contexte des boutons : objets restants et locaux, sans REGARDER", () => {
+  const p = new Partie();
+  assert.deepStrictEqual(p.contexte().objets.map((o) => o.id), ["agenda", "calepin"]);
+  p.executer("prendre agenda");
+  assert.deepStrictEqual(p.contexte().objets.map((o) => o.id), ["calepin"]); // le calepin reste proposé
+  assert.deepStrictEqual(p.contexte().sorties, ["OUEST"]);
+  p.executer("o");
+  p.executer("entrer a215");
+  const ctx = p.contexte();
+  assert.strictEqual(ctx.locaux.length, 14);
+  assert.ok(ctx.locaux.find((l) => l.nom === "A215").visite);
+  p.lieu = 22;
+  p.executer("entrer b145");
+  assert.deepStrictEqual(p.contexte().objets.map((o) => o.id), ["lampe_morte"]); // objet du local ouvert
+  p.executer("entrer b142");
+  assert.deepStrictEqual(p.contexte().objets, []);
+  assert.ok(p.contexte().locaux.find((l) => l.nom === "B145").aRevoir);
+  p.lieu = 13;
+  assert.deepStrictEqual(p.contexte().objets, []); // vestiaires dans le noir : rien à prendre
+});
+
 test("sauvegarde et reprise", () => {
   const p = new Partie();
   jouer(p, ["prendre agenda", "o", "s"]);

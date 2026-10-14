@@ -933,13 +933,7 @@
         });
       }
       if (lieu.locaux && lieu.locaux.length) {
-        // Un local visité où il reste un objet est « à revoir » (crochet jaune) ; sinon il est fait (vert).
-        const locaux = lieu.locaux.map((nom) => {
-          const cle = compact(nom);
-          const visite = this.locauxFouilles.includes(cle);
-          const aRevoir = visite && (this.objetsLocaux[cle] || []).length > 0;
-          return { nom, visite, aRevoir };
-        });
+        const locaux = this.etatLocaux();
         const vus = locaux.filter((l) => l.visite).length;
         const aRevoir = locaux.filter((l) => l.aRevoir).length;
         const marque = (l) => (l.aRevoir ? l.nom + " ✓ (à revoir)" : l.visite ? l.nom + " ✓" : l.nom);
@@ -953,6 +947,27 @@
       }
       blocs.push({ type: "sorties", texte: "Sorties : " + this.sortiesVisibles().join(" · ") });
       return blocs;
+    }
+
+    // Un local visité où il reste un objet est « à revoir » (crochet jaune) ; sinon il est fait (vert).
+    etatLocaux() {
+      return (LIEUX[this.lieu].locaux || []).map((nom) => {
+        const cle = compact(nom);
+        const visite = this.locauxFouilles.includes(cle);
+        const aRevoir = visite && (this.objetsLocaux[cle] || []).length > 0;
+        return { nom, visite, aRevoir };
+      });
+    }
+
+    // Ce que l'interface propose en boutons, toujours à jour : sorties, objets à portée, locaux.
+    contexte() {
+      const ouvert = this.localOuvert && this.localOuvert.lieu === this.lieu ? this.objetsLocaux[this.localOuvert.cle] || [] : [];
+      const objets = this.dansLeNoir() ? [] : [...this.objetsParLieu[this.lieu], ...ouvert];
+      return {
+        sorties: this.sortiesVisibles(),
+        objets: objets.map((id) => ({ id, nom: OBJETS[id].nom })),
+        locaux: this.etatLocaux(),
+      };
     }
 
     executer(commande) {

@@ -163,6 +163,17 @@
     touch-action: manipulation;
   }
   #actions .direction { color: var(--cendre); border-color: var(--lune); }
+  #actions .prise { color: var(--lune); }
+  #actions [aria-expanded="true"] { border-color: var(--lune); color: var(--lune); }
+  #panneau-locaux {
+    max-height: 32vh;
+    overflow-y: auto;
+    padding: 0.4rem 0.2rem;
+    border: 1px solid var(--beton-2);
+    background: var(--beton-2);
+  }
+  #panneau-locaux p { margin: 0; line-height: 1.7; }
+  #panneau-locaux .etiquette { display: none; }
 
   .systeme { color: var(--ombre); }
   .commande { color: var(--lune); margin-top: 1rem !important; }
@@ -588,6 +599,43 @@
       return conteneur;
     }
 
+    // Locaux d'un couloir : chaque numéro se touche pour y entrer ; crochet vert (fait) ou jaune (à revoir).
+    function remplirLocaux(p, b) {
+      const etiquette = document.createElement("span");
+      etiquette.className = "etiquette";
+      etiquette.textContent = "Locaux : ";
+      p.appendChild(etiquette);
+      b.locaux.forEach((l, i) => {
+        if (i) p.appendChild(document.createTextNode(" · "));
+        const bouton = document.createElement("button");
+        bouton.type = "button";
+        bouton.dataset.commande = "entrer " + l.nom;
+        bouton.classList.add("lien-jeu");
+        bouton.textContent = l.nom;
+        if (l.visite) {
+          bouton.classList.add(l.aRevoir ? "a-revoir" : "visite");
+          const crochet = document.createElement("span");
+          crochet.className = "crochet";
+          crochet.textContent = " ✓";
+          crochet.title = l.aRevoir ? "Tu as laissé quelque chose ici" : "Visité";
+          bouton.appendChild(crochet);
+        }
+        p.appendChild(bouton);
+      });
+      if (b.vus) {
+        const compte = document.createElement("span");
+        compte.className = "compte";
+        compte.textContent = `${b.vus}/${b.locaux.length} visités`;
+        if (b.aRevoir) {
+          const jaune = document.createElement("span");
+          jaune.className = "jaune";
+          jaune.textContent = ` · ${b.aRevoir} à revoir`;
+          compte.appendChild(jaune);
+        }
+        p.appendChild(compte);
+      }
+    }
+
     function afficher(blocs) {
       for (const b of blocs) {
         if (b.type === "carte") {
@@ -597,41 +645,7 @@
         const p = document.createElement("p");
         p.className = b.type;
         if (b.type === "locaux") {
-          // Locaux visités en gris avec un ✓, pour ne pas refaire deux fois le même.
-          const etiquette = document.createElement("span");
-          etiquette.className = "etiquette";
-          etiquette.textContent = "Locaux : ";
-          p.appendChild(etiquette);
-          // Crochet vert : visité, rien d'oublié. Crochet jaune : il reste quelque chose dedans.
-          b.locaux.forEach((l, i) => {
-            if (i) p.appendChild(document.createTextNode(" · "));
-            const span = document.createElement("button");
-            span.type = "button";
-            span.dataset.commande = "entrer " + l.nom;
-            span.classList.add("lien-jeu");
-            span.textContent = l.nom;
-            if (l.visite) {
-              span.classList.add(l.aRevoir ? "a-revoir" : "visite");
-              const crochet = document.createElement("span");
-              crochet.className = "crochet";
-              crochet.textContent = " ✓";
-              crochet.title = l.aRevoir ? "Tu as laissé quelque chose ici" : "Visité";
-              span.appendChild(crochet);
-            }
-            p.appendChild(span);
-          });
-          if (b.vus) {
-            const compte = document.createElement("span");
-            compte.className = "compte";
-            compte.textContent = `${b.vus}/${b.locaux.length} visités`;
-            if (b.aRevoir) {
-              const jaune = document.createElement("span");
-              jaune.className = "jaune";
-              jaune.textContent = ` · ${b.aRevoir} à revoir`;
-              compte.appendChild(jaune);
-            }
-            p.appendChild(compte);
-          }
+          remplirLocaux(p, b);
         } else if (b.type === "objets" && b.objets) {
           p.textContent = b.texte;
           const boutons = document.createElement("span");
@@ -897,10 +911,22 @@
 
     // Boutons : les sorties du lieu, puis les commandes de tous les jours.
     const COMMANDES_RAPIDES = [["Regarder", "regarder"], ["Inventaire", "inventaire"], ["Carte", "carte"], ["Notes", "notes"], ["Aide", "aide"]];
+    let panneauLocauxOuvert = false;
     function majActions() {
       const barre = document.getElementById("actions");
       barre.replaceChildren();
       if (!partie || partie.termine) return;
+      const ctx = partie.contexte();
+      // Liste des locaux du couloir, toujours à jour (crochets vert et jaune), ouverte à la demande.
+      if (panneauLocauxOuvert && ctx.locaux.length) {
+        const panneau = document.createElement("div");
+        panneau.id = "panneau-locaux";
+        const p = document.createElement("p");
+        p.className = "locaux";
+        remplirLocaux(p, { locaux: ctx.locaux, vus: ctx.locaux.filter((l) => l.visite).length, aRevoir: ctx.locaux.filter((l) => l.aRevoir).length });
+        panneau.appendChild(p);
+        barre.appendChild(panneau);
+      }
       const rangee = () => {
         const r = document.createElement("div");
         r.className = "rangee";
@@ -916,9 +942,26 @@
         r.appendChild(b);
       };
       const sorties = rangee();
-      for (const sortie of partie.sortiesVisibles()) {
+      for (const sortie of ctx.sorties) {
         const direction = sortie.split(" ")[0];
         bouton(sorties, sortie.includes("verrouillée") ? direction + " 🔒" : direction, direction, "direction");
+      }
+      if (ctx.locaux.length) {
+        const vus = ctx.locaux.filter((l) => l.visite).length;
+        const b = document.createElement("button");
+        b.type = "button";
+        b.id = "bouton-locaux";
+        b.textContent = `Locaux ${vus}/${ctx.locaux.length}`;
+        b.setAttribute("aria-expanded", String(panneauLocauxOuvert));
+        b.addEventListener("click", () => {
+          panneauLocauxOuvert = !panneauLocauxOuvert;
+          majActions();
+        });
+        sorties.appendChild(b);
+      }
+      if (ctx.objets.length) {
+        const prises = rangee();
+        for (const o of ctx.objets) bouton(prises, "Prendre : " + o.nom, "prendre " + o.nom, "prise");
       }
       const commandes = rangee();
       for (const [texte, commande] of COMMANDES_RAPIDES) bouton(commandes, texte, commande);
