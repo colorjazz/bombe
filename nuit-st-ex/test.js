@@ -107,6 +107,9 @@ test("entrer dans les locaux : vides, fausses pistes, objets inutiles", () => {
   assert.ok(texte(r).includes("CODE = 0000"));
   r = p.executer("a 201");
   assert.ok(texte(r).includes("Tu entres dans le local A201"));
+  p.lieu = 3;
+  assert.ok(texte(p.executer("entrer B268")).includes("« La vulnérabilité c'est précieux. »"));
+  p.lieu = 2;
   r = p.executer("entrer C224");
   assert.ok(texte(r).includes("ne donne pas ici"));
   p.executer("entrer a217");
