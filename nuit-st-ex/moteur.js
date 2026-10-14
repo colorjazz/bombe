@@ -267,7 +267,7 @@
       ],
     },
     2: {
-      nom: "Aile A",
+      nom: "Corridor de l'Aile A",
       zone: "Aile A · 2e étage",
       description:
         "Le long corridor de l'Aile A au deuxième étage. Les casiers métalliques forment une haie d'honneur sinistre qui s'étire dans l'obscurité, se perdant dans le noir absolu. Sur une porte de casier, quelqu'un a gravé à la pointe d'un compas : « La plupart des portes de classe ne mènent nulle part. Ne perds pas ton temps. » D'un côté, la porte du local A-217. De l'autre, le couloir s'ouvre sur un espace plus vaste : le carrefour de l'étage.",
@@ -284,7 +284,7 @@
       nom: "Carrefour de l'Étage",
       zone: "Aile B · 2e étage",
       description:
-        "Tu es au cœur du deuxième étage. L'air y est lourd, suffocant. Au centre, la gueule béante de l'escalier principal plonge vers le rez-de-chaussée. Devant toi, l'obscurité de la partie haute de l'auditorium. Un couloir s'enfonce vers les laboratoires de sciences, un autre vers le centre pédagogique. Derrière toi, le retour vers l'Aile A.",
+        "Tu es au cœur du deuxième étage. L'air y est lourd, suffocant. Au centre, la gueule béante de l'escalier principal plonge vers le rez-de-chaussée. Devant toi, l'obscurité de la partie haute de l'auditorium. Un couloir s'enfonce vers les laboratoires de sciences, un autre vers le centre pédagogique. Derrière toi, le retour vers le corridor de l'Aile A.",
       sorties: { NORD: 2, SUD: 4, EST: 5, OUEST: 25, BAS: 6 },
       locaux: ["B203", "B203A", "B204", "B259", "B260", "B261", "B263", "B265", "B267", "B268", "B270", "B272", "B272A"],
     },
@@ -553,7 +553,7 @@
   // Position de chaque lieu sur le plan de l'agenda : [étage, colonne, rangée, nom court].
   // Nord en haut ; une case par lieu.
   const PLAN = {
-    2: ["etage", 2, 0, "Aile A"],
+    2: ["etage", 2, 0, "Corridor A"],
     1: ["etage", 3, 0, "A-217"],
     25: ["etage", 1, 1, "Centre péd."],
     3: ["etage", 2, 1, "Carrefour"],
@@ -584,7 +584,7 @@
 
   // Nom de chaque lieu sur les boutons de sortie et pour ALLER <destination>.
   const DESTINATIONS = {
-    1: "Classe de M. Plante", 2: "Aile A", 3: "Carrefour de l'étage", 4: "Balcon de l'auditorium",
+    1: "Classe de M. Plante", 2: "Corridor de l'Aile A", 3: "Carrefour de l'étage", 4: "Balcon de l'auditorium",
     5: "Laboratoires", 6: "Carrefour principal", 7: "Cafétéria", 8: "Auditorium",
     10: "Couloir administratif", 11: "Secrétariat", 12: "Couloir des gymnases", 13: "Vestiaires",
     14: "Gymnase 1", 15: "Couloir de l'Aile F", 16: "Étage de l'Aile F", 17: "Étage de l'Aile H",

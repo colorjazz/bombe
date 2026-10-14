@@ -325,7 +325,7 @@ test("contexte des boutons : objets restants et locaux, sans REGARDER", () => {
   assert.deepStrictEqual(p.contexte().objets.map((o) => o.id), ["agenda", "calepin"]);
   p.executer("prendre agenda");
   assert.deepStrictEqual(p.contexte().objets.map((o) => o.id), ["calepin"]); // le calepin reste proposé
-  assert.deepStrictEqual(p.contexte().sorties.map((x) => x.nom), ["Aile A"]);
+  assert.deepStrictEqual(p.contexte().sorties.map((x) => x.nom), ["Corridor de l'Aile A"]);
   p.executer("o");
   p.executer("entrer a215");
   const ctx = p.contexte();
@@ -343,12 +343,12 @@ test("contexte des boutons : objets restants et locaux, sans REGARDER", () => {
 
 test("déplacements par nom de destination, RETOUR, et plus de points cardinaux dans les textes", () => {
   const p = new Partie();
-  assert.deepStrictEqual(p.sortiesVisibles(), ["→ Aile A"]);
-  p.executer("aller aile A");
+  assert.deepStrictEqual(p.sortiesVisibles(), ["→ Corridor de l'Aile A"]);
+  p.executer("aller corridor aile A");
   assert.strictEqual(p.lieu, 2);
   p.executer("aller au carrefour de l'étage");
   assert.strictEqual(p.lieu, 3);
-  assert.deepStrictEqual(p.sortiesVisibles(), ["→ Aile A", "→ Balcon de l'auditorium", "→ Laboratoires", "→ Centre pédagogique", "↓ Carrefour principal"]);
+  assert.deepStrictEqual(p.sortiesVisibles(), ["→ Corridor de l'Aile A", "→ Balcon de l'auditorium", "→ Laboratoires", "→ Centre pédagogique", "↓ Carrefour principal"]);
   p.executer("laboratoires");
   assert.strictEqual(p.lieu, 5);
   p.executer("retour");
