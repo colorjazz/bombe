@@ -230,17 +230,17 @@ function drawBox(msg) {
 
 // ---------- les trois glandeurs (tous profs d'histoire) ----------
 const CHARS = [
-  { id: "jp", name: "chat-JP",
+  { id: "jp", name: "chat-JP", local: "B218",
     c: { hair: 6, skin: 12, shirt: 15, vest: 8, tie: 4, pants: 0, shoes: 0, stache: 6 },
     rps: "roche",
-    pitch: "Prof d'histoire et délégué syndical. Pince-sans-rire. Connaît la convention collective par coeur. Ne rit jamais. Même pas en dedans.",
-    desc: "chat-JP, prof d'histoire et délégué syndical. Moustache, cardigan gris, cordon rouge du syndicat. Pince-sans-rire au point d'en être inquiétant.",
+    pitch: "Prof d'histoire et délégué syndical. Pince-sans-rire. Connaît la convention collective par coeur. Garde son sérieux trois secondes, puis éclate de rire.",
+    desc: "chat-JP, prof d'histoire et délégué syndical. Moustache, cardigan gris, cordon rouge du syndicat. Pince-sans-rire... jusqu'à ce qu'il craque de rire.",
     doing: "lit la convention collective, article 8-6.03, en soulignant au crayon de plomb.",
     habit: "Son poing gauche reste fermé sur la table. Comme toujours.",
     busy: "« Pas maintenant. Je relis l'article sur les pauses. Ironiquement, je n'en prends jamais. »",
     hint: "« chat-JP ? Il joue toujours roche. Le poing levé. Solidarité syndicale. Il est pas capable de s'en empêcher. »",
     quiz: "Examen d'histoire, sec. 4 : « La grève de l'amiante de 1949 ». Question 1 : Pourquoi c'est important ? Question 2 : Avez-vous signé votre carte syndicale ?" },
-  { id: "guy", name: "Guy-Homie",
+  { id: "guy", name: "Guy-Homie", local: "B221",
     c: { hair: 0, skin: 12, shirt: 2, vest: 2, tie: 10, pants: 1, shoes: 6, style: "loupe" },
     rps: "ciseaux",
     pitch: "Prof d'histoire. Peinture des figurines de la bataille des plaines d'Abraham, au 1/72. Depuis 2011. Il en est au deuxième soldat.",
@@ -250,7 +250,7 @@ const CHARS = [
     busy: "« Chut. Je fais les boutons de l'uniforme de Wolfe. Si je respire, je rate. »",
     hint: "« Guy-Homie ? Ciseaux. Toujours. Il garde ses doigts comme sur son pinceau, même quand il dort. »",
     quiz: "Examen d'histoire, sec. 4 : « 1759, les plaines d'Abraham ». Question 1 : Qui a gagné ? Question 2 : De quelle couleur étaient les boutons de Wolfe ? (Précisez la marque de peinture.)" },
-  { id: "crispy", name: "Crispy",
+  { id: "crispy", name: "Crispy", local: "A217",
     c: { hair: 14, skin: 12, shirt: 9, vest: 9, tie: 15, pants: 8, shoes: 15, style: "spiky" },
     rps: "papier",
     pitch: "Prof d'histoire. Les pieds toujours sur le bureau, toujours sur son ordi. Personne ne sait ce que Crispy fait dessus. Pas de la correction.",
@@ -465,12 +465,12 @@ ROOMS.hall = {
     if (ny > 167) {
       S.dir = null;
       if (has("copies")) { win(); return true; }
-      S.y = 165; say("Au bout du corridor, votre local, le 112. Inutile d'y aller sans les photocopies : trente-deux élèves de secondaire 4 vous mangeraient tout rond.");
+      S.y = 165; say("Au bout du corridor, votre local, le " + P().local + ". Inutile d'y aller sans les photocopies : trente-deux élèves de secondaire 4 vous mangeraient tout rond.");
       return true;
     }
     return false;
   },
-  look() { return "Le corridor de l'école secondaire Antoine-de-Saint-Exupéry sent la cire et le découragement. Des cases d'élèves bleues, un babillard, le registre des présences, les casiers des profs et la porte de la salle des profs. Mme D, la directrice, monte la garde. Elle cherche peut-être son bureau. Une équipe de documentaire filme tout. Votre local est au sud."; },
+  look() { return "Le corridor de l'école secondaire Antoine-de-Saint-Exupéry sent la cire et le découragement. Des cases d'élèves bleues, un babillard, le registre des présences, les casiers des profs et la porte de la salle des profs. Mme D, la directrice, monte la garde. Elle cherche peut-être son bureau. Une équipe de documentaire filme tout. Votre local, le " + P().local + ", est au sud."; },
 };
 
 const SEAT_B = 58, SEAT_C = 94;
@@ -844,18 +844,18 @@ function copierDisplay() {
   if (!c.code) return "ENTRER CODE D'ACCÈS";
   return "PRÊTE";
 }
-const MEMO = "OBJET : Photocopieuse (indicateur de performance no 47)\n\nLa photocopieuse est ENCORE bloquée. Interdit d'y mettre la main tant qu'elle est branchée : un accident de travail ferait baisser nos indicateurs.\n\nVotre clé de l'armoire est jointe. Le code a changé. Je ne m'en souviens plus.\n\nRAPPEL : réunion ce midi sur le plan de réussite. Au moins UN prof d'histoire. Zéro, ça paraît mal.\n\nMme D, directrice";
-const CALENDAR = () => "CALENDRIER OFFICIEL DES RÉUNIONS RATÉES\n(NE PAS MONTRER À MME D)\n\nRéunions subies cette année :\n" + C().name + " ....... ||||\n" + B().name + " ....... |||\n" + P().name + " ....... |||\n\nRègle no 1 : jamais les trois absents en même temps.\nRègle no 2 : en cas d'égalité, roche-papier-ciseaux. " + C().name + " arbitre.";
+const MEMO = "OBJET : Photocopieuse (indicateur de performance no 47)\n\nLa photocopieuse est ENCORE bloquée. Interdit d'y mettre la main tant qu'elle est branchée : un accident de travail ferait baisser nos indicateurs.\n\nVotre clé de l'armoire est jointe. Le code a changé. Je ne m'en souviens plus.\n\nRAPPEL : réunion ce midi sur le plan de réussite. Présence OBLIGATOIRE de tout le département d'histoire. Je compterai les têtes.\n\nMme D, directrice";
+const CALENDAR = () => "CALENDRIER OFFICIEL DES RÉUNIONS RATÉES\n(NE PAS MONTRER À MME D)\n\nRéunions ratées cette année :\n" + C().name + " ....... ||||\n" + B().name + " ....... |||\n" + P().name + " ....... |||\n\nRègle no 1 : UN seul absent par réunion. Deux, ça paraît.\nRègle no 2 : le tour revient à celui qui en a raté le moins.\nRègle no 3 : égalité ? Roche-papier-ciseaux. " + C().name + " arbitre.";
 
 function camera() {
   award("camera");
   const nm = P().name, L = S.room === "lounge";
   let t;
   if (S.won) t = "« Trente-deux copies. Je pense que c'est la chose la plus productive que j'ai faite depuis la rentrée. »";
-  else if (S.debate === 3) t = "« " + B().name + " va à la réunion. Moi, je vais à mon cours. C'est comme ça que je vois la réussite éducative. »";
-  else if (S.debate === 4) t = "« J'ai perdu à roche-papier-ciseaux. Contre " + B().name + ". Je vais passer mon dîner à regarder des graphiques en tarte. » Long silence.";
+  else if (S.debate === 3) t = "« Ce midi, je rate la réunion. Officiellement : « rencontre de parents ». Officieusement : mon lunch. C'est ça, la réussite éducative. »";
+  else if (S.debate === 4) t = "« J'ai perdu à roche-papier-ciseaux. Contre " + B().name + ". C'est son tour de rater la réunion. Moi, je vais regarder des graphiques en tarte pendant mon dîner. » Long silence.";
   else if (has("copies")) t = "« J'ai les photocopies. Et personne est mort. Pas aujourd'hui, en tout cas. »";
-  else if (S.debate >= 1 && L) t = "« On fait le même débat chaque semaine. On a un calendrier. On a des règles. On a un arbitre. On n'a juste pas le goût d'y aller. »";
+  else if (S.debate >= 1 && L) t = "« On y va tous. C'est juste qu'à chaque fois, y en a un qui a une « urgence ». Une seule. Deux, ça paraît. On a un calendrier, des règles, un arbitre. C'est très organisé, la glande. »";
   else if (S.happy) t = "« " + B().name + " m'a donné le code. On est chums, là. Jusqu'à la fin du café. »";
   else if (L) t = "« " + B().name + " sans café, c'est une bête sauvage. Pis " + C().name + "... " + C().name + " est dans sa bulle depuis 2017. »";
   else if (S.blocked && !S.signed) t = "« Mme D se souvient pas de mon nom, mais elle sait exactement combien de fois j'ai pas signé le registre. »";
@@ -876,25 +876,25 @@ function doLook(N) {
     filter: "Un filtre à café en papier. Conique. Immaculé.", grounds: "Un paquet de café moulu « CORSÉ ». C'est la chose la plus corsée de l'école.",
     milk: "La date d'expiration est effacée. Il est peut-être bon. Il est peut-être vivant.",
     paper: "500 feuilles de papier blanc. Le luxe.", copies: "Trente-deux copies encore tièdes de votre examen. Ça sent la victoire et le toner.",
-    me: "Vous êtes " + P().desc.replace(P().name + ", ", "") + " " + P().pitch.split(". ").slice(1).join(". "),
+    me: "Vous êtes " + P().desc.replace(P().name + ", ", "") + " " + P().pitch.split(". ").slice(1).join(". ") + " Votre local : " + P().local + ".",
   };
   if (n === "mug" && has("mug")) return say(invName("mug") + ". Il y a écrit : MEILLEUR PROF D'HISTOIRE (OU PRESQUE).");
   if (inv[n] && (has(n) || n === "me")) return say(inv[n]);
   if (n === "figs") return say(P().id === "guy" ? "Vos figurines du 78e régiment de Fraser, au 1/72. Il vous en reste 1 998 à peindre. À ce rythme, vous aurez fini pour le tricentenaire." : "Les figurines de Guy-Homie. Il y a plus de soldats peints à moitié que d'élèves dans l'école.");
   if (n === "laptop") return say(P().id === "crispy" ? "Votre portable. Onglets ouverts : solitaire, petites annonces de chalets, un forum sur les espadrilles. Aucun n'est en lien avec l'histoire." : "Le portable de Crispy. Écran : un jeu de solitaire. Partie en cours depuis la rentrée.");
   if (n === "union") return say("La convention collective. 412 pages. chat-JP en a souligné 411.");
-  if (n === "meeting") return say("La réunion de Mme D, ce midi, sur le « plan d'engagement vers la réussite ». Un prof d'histoire minimum doit y être. Personne ne veut. Pas les trois absents en même temps : ça paraîtrait dans le rapport." + (S.debate === 3 ? " C'est réglé : " + B().name + " ira." : S.debate === 4 ? " C'est réglé : vous irez. Hélas." : ""));
+  if (n === "meeting") return say("La réunion de Mme D, ce midi, sur le « plan d'engagement vers la réussite ». Tout le département d'histoire doit y être. À tour de rôle, un des trois s'éclipse : un absent, ça passe. Deux, ça paraît." + (S.debate === 3 ? " Cette fois, c'est votre tour de la rater." : S.debate === 4 ? " Cette fois, c'est " + B().name + " qui la rate. Vous, vous y allez." : " C'est le tour de qui ? Personne ne s'entend."));
   if (n === "clock") return say((L ? "L'horloge au-dessus de la porte indique " : "Votre montre indique ") + clockStr() + ". La cloche sonne à 8 h 00.");
   if (n === "ceiling") return say(L ? "Des tuiles tachées. L'une d'elles a la forme d'un graphique en tarte. Mme D l'a fait encadrer." : "Les néons grésillent. L'un d'eux clignote en morse. Il dit : C-O-N-G-É.");
   if (n === "floor") return say(L ? "Un tapis brun conçu pour cacher les taches de café. Il a échoué." : "Un plancher fraîchement ciré. M. Ortiz, le concierge, en est très fier.");
   if (n === "wall") return say(L ? "Les murs sont du vert exact d'un hôpital dans un film triste." : "Des blocs de béton gris avec une bande bleue. Les couleurs de l'école, plus ou moins.");
   if (n === "door") return say(L ? "La porte qui donne sur le corridor. Et sur Mme D." : "La porte de la salle des profs. Plaque : PERSONNEL SEULEMENT. Les élèves pensent qu'il y a un spa derrière.");
   if (n === "bell") return say("La cloche sonne à 8 h 00 pile. Il est " + clockStr() + ".");
-  if (n === "class") return say("Le local 112 est au sud. Trente-deux élèves de secondaire 4 y seront à 8 h 00, que vous soyez là ou pas.");
+  if (n === "class") return say("Votre local, le " + P().local + ", est au sud. Trente-deux élèves de secondaire 4 y seront à 8 h 00, que vous soyez là ou pas.");
   if (n === "kowalski") return say("M. Kowalski, le prof d'éduc, n'est pas là. Estimez-vous chanceux.");
   if (n === "fenouil") return say("M. Fenouil a enseigné la chimie ici pendant trente ans. Puis il a essayé de réparer la photocopieuse. Il y a une petite plaque au-dessus de l'évier.");
   if (n === "mmeD" && L) return say("Mme D n'est pas là. Elle cherche probablement son bureau.");
-  if (n === "npcB" || n === "npcC") { if (!L) return say("Vous ne voyez pas ça ici."); const ch = n === "npcB" ? B() : C(); return say(ch.desc + " En ce moment, " + ch.name + " " + ch.doing + " " + ch.habit + (n === "npcB" && S.happy ? " Une tasse de café fume sur la table." : "")); }
+  if (n === "npcB" || n === "npcC") { if (!L) return say("Vous ne voyez pas ça ici."); const ch = n === "npcB" ? B() : C(); return say(ch.desc + " (Local " + ch.local + ".) En ce moment, " + ch.name + " " + ch.doing + " " + ch.habit + (n === "npcB" && S.happy ? " Une tasse de café fume sur la table." : "")); }
   if (!HERE[S.room].includes(n)) return say("Vous ne voyez pas ça ici.");
   switch (n) {
     case "mailbox": return say((S.got.memo && S.got.key) ? "Votre casier, étiqueté " + P().name.toUpperCase() + ", est vide. À part un trombone et vos rêves." : "Des casiers en bois, un par prof. Le vôtre est étiqueté " + P().name.toUpperCase() + ". Il y a quelque chose dedans.");
@@ -952,7 +952,7 @@ function act(v, N, num, move) {
     case "kill": return say("Ce genre de chose vous vaudrait une rencontre avec les ressources humaines du centre de services. Et une nouvelle carrière.");
     case "insult": return hasN("mmeD") && !L ? (near("mmeD") && die("Vous dites à Mme D, en détail, ce que vous pensez de ses indicateurs.\n\nElle sort un formulaire. Puis un deuxième. Puis un tampon.\n\nVous êtes réaffecté au centre de services scolaire, au service des statistiques, jusqu'à la retraite. Le documentaire s'arrête là pour vous.")) : say("Gardez votre énergie. Vous en avez si peu.");
     case "grieve":
-      if (me === "jp") return say("Vous déposez un grief. Votre 213e. Objet : « l'existence même des réunions du midi ». Vous ne souriez pas. Vous ne souriez jamais. Le caméraman, lui, sourit.");
+      if (me === "jp") return say("Vous déposez un grief. Votre 213e. Objet : « l'existence même des réunions du midi ». Vous gardez votre sérieux trois secondes. Puis vous éclatez de rire. Le caméraman aussi.");
       if (!L && near0("mmeD")) return die("Vous prononcez le mot « grève » à moins de trois mètres de Mme D.\n\nSes lunettes s'embuent. Elle lance une vérification surprise de votre planification. Elle est vide depuis octobre.\n\nVous passez le reste de l'année en surveillance de cafétéria. Seul. Pour toujours.");
       return say("Les griefs, c'est chat-JP qui s'en occupe. Il en a déposé 212. Il en a gagné trois. Il dit que c'est le principe qui compte.");
     case "paint":
@@ -997,11 +997,11 @@ function debate() {
   if (S.room !== "lounge") return say("Le débat se fait en salle des profs. Pas devant Mme D. Jamais devant Mme D.");
   if (!near("table")) return;
   const b = B().name, c = C().name, pn = P().name;
-  if (S.debate === 3) return say("C'est réglé : " + b + " ira à la réunion. " + b + " le rappelle à tout le monde toutes les trente secondes.");
-  if (S.debate === 4) return say("C'est réglé : vous irez à la réunion. " + c + " vous tapote l'épaule. « On va penser à toi. Un peu. »");
+  if (S.debate === 3) return say("C'est réglé : c'est votre tour de rater la réunion. " + b + " vous le reproche toutes les trente secondes.");
+  if (S.debate === 4) return say("C'est réglé : " + b + " rate la réunion, vous y allez avec " + c + ". " + c + " vous tapote l'épaule. « On va s'asseoir en arrière. »");
   if (S.debate === 0) {
     S.debate = 1; award("debate");
-    return say("« Bon. La réunion de Mme D ce midi. C'est le tour de qui ? »\n\n" + b + " : « Pas moi. J'y suis allé en novembre. »\n" + c + " : « Moi non plus, j'ai fait celle sur les indicateurs. Trois heures. J'ai vu des choses. »\n" + pn + " : « Moi j'ai... euh... »\n\nTout le monde se tourne vers le calendrier collé sur le frigidaire.");
+    return say("« Bon. La réunion de Mme D ce midi. C'est le tour de qui de la rater ? »\n\n" + b + " : « Moi ! J'en ai pas raté une depuis octobre. »\n" + c + " : « Voyons donc, c'est mon tour. J'ai fait celle sur les indicateurs au complet. Trois heures. J'ai vu des choses. »\n" + pn + " : « Moi aussi j'y ai droit... »\n\nTout le monde se tourne vers le calendrier collé sur le frigidaire.");
   }
   return say(b + " : « Le calendrier fait foi. Va le lire. »\n" + c + " : « Pis si c'est égal, c'est roche-papier-ciseaux. Comme d'habitude. C'est moi l'arbitre. »");
 }
@@ -1017,10 +1017,10 @@ function playRps(move) {
   if (move === b.rps) return say(pre + "Égalité. " + c + " soupire. « On recommence. »");
   if (beats(move, b.rps)) {
     S.debate = 3; award("rps");
-    return say(pre + b.name + " fixe sa main, trahi par son propre réflexe. « Bon. J'irai. Mais j'apporte " + (b.id === "guy" ? "mes figurines." : b.id === "crispy" ? "mon ordi." : "la convention collective. Et je pose des questions.") + " »\n\nLe caméraman fait un gros plan sur votre main victorieuse.");
+    return say(pre + b.name + " fixe sa main, trahi par son propre réflexe. « Bon. J'y vais. Encore. Mais j'apporte " + (b.id === "guy" ? "mes figurines." : b.id === "crispy" ? "mon ordi." : "la convention collective. Pis je pose des questions.") + " »\n\nC'est votre tour de rater la réunion. Votre excuse officielle : « rencontre de parents ». Le caméraman fait un gros plan sur votre main victorieuse.");
   }
   S.debate = 4;
-  return say(pre + b.name + " lève les bras. " + c + " tranche : « C'est " + P().name + " qui y va. »\n\nVous passerez votre dîner à regarder des graphiques en tarte. Quelque part, Mme D sourit sans savoir pourquoi.");
+  return say(pre + b.name + " lève les bras. " + c + " tranche : « C'est " + b.name + " qui la rate. " + P().name + ", tu viens avec moi. »\n\nVous passerez votre dîner à regarder des graphiques en tarte. Quelque part, Mme D sourit sans savoir pourquoi.");
 }
 
 function talk(n) {
@@ -1031,7 +1031,7 @@ function talk(n) {
   if (n === "mmeD" && !L) {
     if (!near("mmeD")) return;
     if (!S.signed) return say("Mme D lève les yeux de son cartable. « Ah. Bonjour... " + wrongName() + ". Vous n'avez pas signé. Signez. Je me fiche de ce que vous enseignez, il me faut une donnée. » Elle regarde autour d'elle. « C'est par où, mon bureau, déjà ? »");
-    if (!has("copies")) return say("« Vous avez signé à " + clockStr() + ". Je le note. Je note tout. Rappel : réunion ce midi, un prof d'histoire minimum. Pas zéro. Zéro, ça paraît mal dans le rapport. » Elle s'éloigne d'un pas, hésite, revient. « Ce n'était pas par là. »");
+    if (!has("copies")) return say("« Vous avez signé à " + clockStr() + ". Je le note. Je note tout. Rappel : réunion ce midi. Présence obligatoire pour tout le département d'histoire. Je compterai les têtes. Enfin, j'essaierai. » Elle s'éloigne d'un pas, hésite, revient. « Ce n'était pas par là. »");
     return say("« Des photocopies ? Parfait. Je vais pouvoir cocher une case. J'aime cocher des cases. » C'est la chose la plus chaleureuse qu'elle ait dite depuis 2019.");
   }
   if (n === "npcB" && L) {
@@ -1070,7 +1070,7 @@ function ask(N) {
       case "mmeD": return say("« Mme D ? Elle a fait enlever la machine à café de l'ancienne salle des profs. Pour « la productivité ». On a fait une minute de silence. Pis une deuxième pour le café. »");
       case "code": case "copier": return say("« Le code ? Demande à " + B().name + ". Mais pas avant son café. J'ai essayé une fois. J'ai encore la marque. »");
       case "donut": return say("« La chocolatine ? Penses-y même pas. Pas tant que " + B().name + " a pas eu son café. »");
-      case "meeting": case "calendar": return say("« La réunion ? Le calendrier est sur le frigo. Si c'est égal, roche-papier-ciseaux. Pis c'est moi l'arbitre. J'adore arbitrer. C'est assis. »");
+      case "meeting": case "calendar": return say("« La réunion ? On y va tous, mais y en a toujours un qui « a une urgence ». Un seul, sinon ça paraît. Le calendrier est sur le frigo. Si c'est égal, roche-papier-ciseaux. Pis c'est moi l'arbitre. J'adore arbitrer. C'est assis. »");
       case "camera": return say("« Les gars du documentaire ? Ils sont là depuis trois semaines. Ils ont rien filmé de productif. Ils commencent à s'inquiéter. »");
     }
     return say(C().busy);
@@ -1099,7 +1099,7 @@ function ask(N) {
     case "code": case "copier": return say("« Le code ? Je l'ai changé onze fois cette année. Je ne m'en souviens plus. » Elle plisse les yeux. « Quelqu'un dans la salle des profs le connaît toujours. Je ne sais pas comment. Ça m'agace. »");
     case "sheet": return say("« Chaque prof signe. Chaque matin. Ça fait une belle courbe. Je me fiche de la courbe des élèves, mais celle-là est magnifique. »");
     case "class": return say("« La réussite des élèves ? Oui, oui. Tant que ça paraît bien dans le tableau de bord. »");
-    case "meeting": return say("« Ce midi. Local... 214 ? 241 ? Je vous enverrai un courriel. Ou deux. Le sujet : le plan d'engagement vers la réussite. Il faut surtout qu'il ait l'air réussi. »");
+    case "meeting": return say("« Ce midi. Local... 214 ? 241 ? Je vous enverrai un courriel. Ou deux. Le sujet : le plan d'engagement vers la réussite. Il faut surtout qu'il ait l'air réussi. Tout le département d'histoire doit être là. Je compterai les têtes. » Elle compte les vôtres. Elle arrive à deux.");
     case "npcB": return say("« " + B().name + " ? Ah oui. Le... prof de... quelque chose. Il a un taux de présence de 94 %. C'est bien. Je ne sais pas ce qu'il fait, mais c'est bien. »");
     case "npcC": return say("« " + C().name + ". J'ai un dossier. Il fait quatre centimètres d'épaisseur. Il ne contient que des graphiques. »");
     case "paper": case "supply": case "key": return say("« Votre clé est dans votre casier, avec ma note. Lisez ma note. Je les écris pour qu'elles soient lues. Elles ne le sont jamais. Ça fait baisser mes indicateurs de lecture. »");
@@ -1331,13 +1331,13 @@ function die(msg) {
 function win() {
   award("deliver"); S.won = true; S.dir = null; play(SFX.win);
   const meeting = S.debate === 3
-    ? "Ce midi, c'est " + B().name + " qui ira à la réunion de Mme D. Vous, vous mangerez votre lunch en paix. Avec les pieds sur un bureau."
+    ? "Ce midi, " + B().name + " et " + C().name + " iront à la réunion de Mme D. Vous, vous avez une « rencontre de parents ». Avec votre lunch. Mme D compte deux têtes sur trois et ne remarque rien."
     : S.debate === 4
-      ? "Ce midi, vous irez à la réunion de Mme D. Vous avez perdu à roche-papier-ciseaux. Ça arrive aux meilleurs."
-      : "Ce midi, Mme D vous croise dans le corridor. « Ah ! " + wrongName() + " ! Personne d'histoire ne s'est inscrit à ma réunion. Ce sera donc vous. » Vous auriez dû régler ça en salle des profs.";
-  say("Vous entrez au local 112 à " + clockStr() + " avec 32 copies encore tièdes de votre examen.\n\nPile à l'heure, la cloche sonne. Trente-deux élèves de secondaire 4 soupirent à l'unisson.\n\n" + meeting, {
+      ? "Ce midi, vous irez à la réunion de Mme D avec " + C().name + ". " + B().name + " a gagné le droit de la rater. Ça arrive aux meilleurs."
+      : "Ce midi, faute d'avoir réglé le tour, vous allez tous les trois à la réunion de Mme D. Elle compte trois têtes sur trois. « 100 % de présence ! Ça va TELLEMENT bien paraître. » Vous auriez dû régler ça en salle des profs.";
+  say("Vous entrez au local " + P().local + " à " + clockStr() + " avec 32 copies encore tièdes de votre examen.\n\nPile à l'heure, la cloche sonne. Trente-deux élèves de secondaire 4 soupirent à l'unisson.\n\n" + meeting, {
     enter: () => say("(" + P().name + ", face caméra)\n\n« Vous savez quoi ? Aujourd'hui, j'ai travaillé. Un peu. Pis j'ai même pas eu mal. »\n\nLe caméraman zoome. Générique.", {
-      enter: () => say("FÉLICITATIONS !\n\nScore final : " + S.score + " sur " + MAX + "." + (S.score < MAX ? "\n\nIl reste des points à trouver. Fouillez. Regardez la caméra. Gagnez le débat de la réunion." : "\n\nScore parfait. Même Mme D n'a rien trouvé à redire. Elle ne sait juste pas à qui le dire.") + "\n\nENTRÉE pour rejouer.", { enter: () => restart(true), esc: () => restart(true) }),
+      enter: () => say("FÉLICITATIONS !\n\nScore final : " + S.score + " sur " + MAX + "." + (S.score < MAX ? "\n\nIl reste des points à trouver. Fouillez. Regardez la caméra. Gagnez le droit de rater la réunion." : "\n\nScore parfait. Même Mme D n'a rien trouvé à redire. Elle ne sait juste pas à qui le dire.") + "\n\nENTRÉE pour rejouer.", { enter: () => restart(true), esc: () => restart(true) }),
     }),
   });
 }
@@ -1361,7 +1361,7 @@ function restart(choose) {
 function confirmRestart() { say("ENTRÉE pour recommencer la partie.\n\nÉCHAP pour continuer celle-ci.", { enter: () => restart(true) }); }
 function intro() {
   say("École secondaire\nAntoine-de-Saint-Exupéry.\nLundi, 7 h 40.\n\nVous êtes " + P().name + ", prof d'histoire. Vous aviez toute la fin de semaine pour préparer votre examen. Vous l'avez écrit ce matin, dans l'autobus.");
-  say("Il faut 32 photocopies avant la cloche de 8 h. La photocopieuse est dans la salle des profs, avec " + B().name + " et " + C().name + ", vos collègues d'histoire.\n\nEt Mme D, la directrice, a convoqué une réunion ce midi. Il faut un prof d'histoire. Un seul. Pas les trois absents. C'est le tour de qui ? Personne ne s'entend.");
+  say("Il faut 32 photocopies avant la cloche de 8 h. La photocopieuse est dans la salle des profs, avec " + B().name + " et " + C().name + ", vos collègues d'histoire.\n\nEt Mme D, la directrice, a convoqué une réunion ce midi. Tout le monde doit y être. Mais entre vous trois, c'est la tradition : à tour de rôle, un seul s'absente. Un absent, ça passe. Deux, ça paraît. C'est le tour de qui ? Personne ne s'entend.");
   say("Flèches pour marcher. Tapez des ordres comme REGARDER, PRENDRE COURRIER ou PARLER À MME D, puis ENTRÉE.\n\nÉCHAP : menu.\nTAB : inventaire.\n\nAh, et une équipe de documentaire filme l'école.");
 }
 
@@ -1404,7 +1404,7 @@ function drawTitle() {
   text(c2, (SW - c2.length * 32) / 2 + 3, 46, 4, -1, 4, 3); text(c2, (SW - c2.length * 32) / 2, 44, 14, -1, 4, 3);
   center("École secondaire", 74, 11);
   center("Antoine-de-Saint-Exupéry", 83, 11);
-  center("3 glandeurs. 1 réunion. Qui y va ?", 96, 12);
+  center("3 glandeurs. 1 réunion. Qui la rate ?", 96, 12);
   const M = (x, y, w, h, c) => srect(140 + x * 2, 106 + y, w * 2, h, c);
   M(4, 10, 14, 24, 12); M(5, 11, 12, 1, 4); M(18, 15, 4, 2, 12); M(20, 17, 2, 10, 12); M(18, 27, 4, 2, 12); M(4, 34, 14, 2, 4);
   M(6, 18, 10, 2, 15); M(6, 22, 8, 1, 15);
@@ -1426,9 +1426,10 @@ function drawSelect() {
     const cxp = SEL_X[i] * 4 + 2, sel = i === S.pc;
     if (sel) { srect(cxp - 44, 20, 88, 1, 14); srect(cxp - 44, 100, 88, 1, 14); srect(cxp - 44, 20, 2, 81, 14); srect(cxp + 42, 20, 2, 81, 14); }
     text(ch.name, cxp - ch.name.length * 4, 106, sel ? 14 : 7);
+    text(ch.local, cxp - ch.local.length * 4, 115, sel ? 11 : 8);
   });
   const lines = wrap(CHARS[S.pc].pitch, 38);
-  lines.forEach((l, i) => text(l, 8, 122 + i * 9, 15));
+  lines.forEach((l, i) => text(l, 8, 128 + i * 9, 15));
   if ((tick >> 3) % 2) center("<  >  puis ENTRÉE", 186, 11);
 }
 // ---------- boucle principale ----------
@@ -1441,12 +1442,12 @@ function update() {
   S.t += 0.1;
   if (S.pot === "brewing" && S.t >= S.brewEnd) { S.pot = "coffee"; play(SFX.beep); say("La cafetière lâche un dernier gargouillis triomphant. Le café est prêt. " + (S.room === "lounge" ? B().name + " renifle l'air comme un chien de chasse." : "")); }
   const pa = (k, at, msg) => { if (S.t >= at && !S.warned[k]) { S.warned[k] = 1; play(SFX.pa); say(msg); } };
-  pa("10", 600, "*DING DONG* « Bonjour, ici Mme D, votre... directrice. Rappel : réunion ce midi, local... euh... je vous redis ça. Un prof d'histoire minimum. Merci de votre performance. »");
+  pa("10", 600, "*DING DONG* « Bonjour, ici Mme D, votre... directrice. Rappel : réunion ce midi, local... euh... je vous redis ça. Présence obligatoire. Je compterai les têtes. Merci de votre performance. »");
   pa("5", 900, "*DING DONG* « Cinq minutes avant la cloche. Aussi : si quelqu'un trouve mon bureau, merci de me le signaler. »");
-  pa("1", 1140, "*DING DONG* « UNE minute. » Quelque part, trente-deux élèves de secondaire 4 sont déjà au local 112. Sans surveillance. Ça sent le brûlé.");
+  pa("1", 1140, "*DING DONG* « UNE minute. » Quelque part, trente-deux élèves de secondaire 4 sont déjà au local " + P().local + ". Sans surveillance. Ça sent le brûlé.");
   if (S.t >= BELL && !Q.length) {
     play(SFX.bell);
-    return die("DRIIIIIIIIING !\n\nLa cloche de 8 h sonne. Trente-deux élèves de secondaire 4 attendent au local 112, sans prof et sans examen.\n\nQuand vous arrivez, ils ont formé un gouvernement provisoire. Mme D trouve que ça paraît bien dans le rapport : « initiative étudiante ». Vous, vous êtes dans le rapport aussi.");
+    return die("DRIIIIIIIIING !\n\nLa cloche de 8 h sonne. Trente-deux élèves de secondaire 4 attendent au local " + P().local + ", sans prof et sans examen.\n\nQuand vous arrivez, ils ont formé un gouvernement provisoire. Mme D trouve que ça paraît bien dans le rapport : « initiative étudiante ». Vous, vous êtes dans le rapport aussi.");
   }
   let dx = 0, dy = 0;
   if (S.target) {
