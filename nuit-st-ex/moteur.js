@@ -90,7 +90,7 @@
   // ==========================================
   const OUVERTURE = [
     "La surface rugueuse et froide du pupitre contre ta joue te sort d'un sommeil de plomb. Tu clignes des yeux. Ta nuque est raide. L'obscurité est presque totale. Tu te redresses en titubant, le cœur battant à tout rompre. Tu reconnais la pièce. Le local A-217. La classe de M. Plante.",
-    "Tu t'es endormi en classe, mais personne ne t'a réveillé. M. Plante n'est plus là. L'école Polyvalente Antoine-de-Saint-Exupéry est plongée dans un silence sépulcral, brisé seulement par ta propre respiration saccadée. À travers la fenêtre, le ciel de la nuit est figé. Plus de lumières de la ville, plus de bourdonnement de ventilation, plus de bruit de circulation routière. Le monde tel que tu le connaissais s'est éteint pendant que tu dormais. Tu es seul. Du moins, tu l'espères.",
+    "Tu t'es endormi en classe, mais personne ne t'a réveillé. M. Plante n'est plus là. L'école secondaire Antoine-de-Saint-Exupéry est plongée dans un silence sépulcral, brisé seulement par ta propre respiration saccadée. À travers la fenêtre, le ciel de la nuit est figé. Plus de lumières de la ville, plus de bourdonnement de ventilation, plus de bruit de circulation routière. Le monde tel que tu le connaissais s'est éteint pendant que tu dormais. Tu es seul. Du moins, tu l'espères.",
   ];
 
   const EVENEMENT_TOUR_5 =
@@ -929,6 +929,7 @@
         blocs.push({
           type: "objets",
           texte: "Tu distingues ici : " + ici.map((id) => OBJETS[id].enPlace).join(", ") + ".",
+          objets: ici.map((id) => ({ id, nom: OBJETS[id].nom })),
         });
       }
       if (lieu.locaux && lieu.locaux.length) {
@@ -1075,7 +1076,11 @@
       if (!this.locauxFouilles.includes(cle)) this.locauxFouilles.push(cle);
       if (restants.length) {
         this.localOuvert = { cle, lieu: this.lieu };
-        blocs.push({ type: "objets", texte: "Tu distingues ici : " + restants.map((id) => OBJETS[id].enPlace).join(", ") + "." });
+        blocs.push({
+          type: "objets",
+          texte: "Tu distingues ici : " + restants.map((id) => OBJETS[id].enPlace).join(", ") + ".",
+          objets: restants.map((id) => ({ id, nom: OBJETS[id].nom })),
+        });
         return blocs;
       }
       this.localOuvert = null;

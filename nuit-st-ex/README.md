@@ -1,6 +1,6 @@
 # La Nuit à St-Ex
 
-Aventure textuelle (parser) dans la Polyvalente Antoine-de-Saint-Exupéry.
+Aventure textuelle (parser) à l'École secondaire Antoine-de-Saint-Exupéry.
 
 - `moteur.js` : moteur du jeu (lieux, locaux, objets, énigmes, pièges, parser, sauvegarde).
 - `index.html` : interface. Ouvrir directement dans un navigateur. La partie se sauvegarde dans le navigateur.

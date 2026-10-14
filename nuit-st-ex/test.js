@@ -47,7 +47,7 @@ test("ouverture puis description de la classe", () => {
 });
 
 test("sha256 maison identique à celui de Node", () => {
-  for (const s of ["", "abc", "Polyvalente Antoine-de-Saint-Exupéry", "x".repeat(200)]) {
+  for (const s of ["", "abc", "École secondaire Antoine-de-Saint-Exupéry", "x".repeat(200)]) {
     assert.strictEqual(empreinte(s), sha(s));
   }
 });

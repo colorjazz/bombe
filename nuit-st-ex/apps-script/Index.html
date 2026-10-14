@@ -40,8 +40,9 @@
 
   .ecran {
     height: 100%;
+    height: 100dvh; /* suit la barre d'adresse et le clavier des téléphones */
     display: grid;
-    grid-template-rows: auto 1fr auto;
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
     max-width: 44rem;
     margin: 0 auto;
     padding-inline: 16px;
@@ -49,7 +50,7 @@
   }
 
   header {
-    padding-block: 1.25rem 0.75rem;
+    padding-block: calc(1.25rem + env(safe-area-inset-top, 0px)) 0.75rem;
     display: flex;
     justify-content: space-between;
     align-items: baseline;
@@ -117,6 +118,52 @@
   .locaux .a-revoir { color: var(--cendre); }
   .locaux .a-revoir .crochet, .locaux .compte .jaune { color: var(--jaune); }
   .locaux .compte { margin-left: 0.5rem; }
+
+  /* Éléments touchables dans le journal : locaux et objets */
+  .lien-jeu {
+    font: inherit;
+    letter-spacing: inherit;
+    color: inherit;
+    background: none;
+    border: 0;
+    padding: 0.2rem 0.1rem;
+    cursor: pointer;
+    text-decoration: underline dotted var(--ombre);
+    text-underline-offset: 0.25em;
+  }
+  .lien-jeu:hover, .lien-jeu:focus-visible { color: var(--lune); outline: none; }
+  .lien-jeu:disabled { cursor: default; text-decoration: none; color: inherit; }
+  .prendre { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+  .prendre button:disabled { opacity: 0.35; cursor: default; }
+
+  /* Barre d'actions rapides (surtout pour téléphone et tablette) */
+  #actions {
+    display: grid;
+    gap: 0.4rem;
+    padding-block: 0.6rem 0.1rem;
+    border-top: 1px solid var(--beton-2);
+    min-width: 0;
+  }
+  /* Deux rangées au maximum (sorties, puis commandes) ; elles défilent de côté si l'écran est étroit. */
+  #actions .rangee {
+    display: flex;
+    gap: 0.4rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+    min-width: 0;
+  }
+  #actions .rangee::-webkit-scrollbar { display: none; }
+  #actions .rangee button { flex: none; }
+  #actions button, .prendre button {
+    min-height: 2.5rem;
+    min-width: 2.75rem;
+    padding: 0.45rem 0.7rem;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    touch-action: manipulation;
+  }
+  #actions .direction { color: var(--cendre); border-color: var(--lune); }
+
   .systeme { color: var(--ombre); }
   .commande { color: var(--lune); margin-top: 1rem !important; }
   .commande::before { content: "› "; color: var(--ombre); }
@@ -196,7 +243,7 @@
   .finmort { color: var(--rouille); }
 
   form {
-    padding-block: 0.9rem calc(1.1rem + env(safe-area-inset-bottom, 0px));
+    padding-block: 0.6rem calc(0.9rem + env(safe-area-inset-bottom, 0px));
     border-top: 1px solid var(--beton-2);
     display: flex;
     align-items: center;
@@ -386,6 +433,19 @@
     60% { transform: translateX(-3px); } 80% { transform: translateX(2px); }
   }
 
+  /* Téléphone : texte un peu plus serré, en-tête compact */
+  @media (max-width: 520px) {
+    body { font-size: 1.02rem; line-height: 1.65; }
+    header { font-size: 0.62rem; letter-spacing: 0.12em; gap: 0.4rem 1rem; padding-block: calc(0.8rem + env(safe-area-inset-top, 0px)) 0.5rem; }
+    #journal { padding-block: 1.25rem 2rem; gap: 0.95rem; }
+    .lieu { letter-spacing: 0.22em; }
+  }
+  /* Tablette et grand écran : plus de place pour le texte */
+  @media (min-width: 900px) {
+    .ecran { max-width: 50rem; }
+    body { font-size: 1.2rem; }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: 0.01ms !important; animation-delay: 0ms !important; }
     #flash.actif { animation: none; }
@@ -396,14 +456,15 @@
 
 <div class="ecran" id="ecran">
   <header>
-    <span class="ecole">Polyvalente Antoine-de-Saint-Exupéry</span>
+    <span class="ecole">École secondaire Antoine-de-Saint-Exupéry</span>
     <span id="zone">Aile A · 2e étage</span>
     <span id="joueur"><span id="nom-joueur">Invité</span><button id="quitter" type="button">Quitter</button></span>
   </header>
   <main id="journal" aria-live="polite"></main>
+  <nav id="actions" aria-label="Actions rapides"></nav>
   <form id="saisie" autocomplete="off">
     <label for="commande">›</label>
-    <input id="commande" type="text" spellcheck="false" autocapitalize="characters" placeholder="Que fais-tu ? (AIDE)" aria-label="Commande">
+    <input id="commande" type="text" spellcheck="false" autocapitalize="characters" autocorrect="off" enterkeyhint="send" placeholder="Que fais-tu ? (AIDE)" aria-label="Commande">
   </form>
 </div>
 
@@ -551,7 +612,7 @@
   // ==========================================
   const OUVERTURE = [
     "La surface rugueuse et froide du pupitre contre ta joue te sort d'un sommeil de plomb. Tu clignes des yeux. Ta nuque est raide. L'obscurité est presque totale. Tu te redresses en titubant, le cœur battant à tout rompre. Tu reconnais la pièce. Le local A-217. La classe de M. Plante.",
-    "Tu t'es endormi en classe, mais personne ne t'a réveillé. M. Plante n'est plus là. L'école Polyvalente Antoine-de-Saint-Exupéry est plongée dans un silence sépulcral, brisé seulement par ta propre respiration saccadée. À travers la fenêtre, le ciel de la nuit est figé. Plus de lumières de la ville, plus de bourdonnement de ventilation, plus de bruit de circulation routière. Le monde tel que tu le connaissais s'est éteint pendant que tu dormais. Tu es seul. Du moins, tu l'espères.",
+    "Tu t'es endormi en classe, mais personne ne t'a réveillé. M. Plante n'est plus là. L'école secondaire Antoine-de-Saint-Exupéry est plongée dans un silence sépulcral, brisé seulement par ta propre respiration saccadée. À travers la fenêtre, le ciel de la nuit est figé. Plus de lumières de la ville, plus de bourdonnement de ventilation, plus de bruit de circulation routière. Le monde tel que tu le connaissais s'est éteint pendant que tu dormais. Tu es seul. Du moins, tu l'espères.",
   ];
 
   const EVENEMENT_TOUR_5 =
@@ -1390,6 +1451,7 @@
         blocs.push({
           type: "objets",
           texte: "Tu distingues ici : " + ici.map((id) => OBJETS[id].enPlace).join(", ") + ".",
+          objets: ici.map((id) => ({ id, nom: OBJETS[id].nom })),
         });
       }
       if (lieu.locaux && lieu.locaux.length) {
@@ -1536,7 +1598,11 @@
       if (!this.locauxFouilles.includes(cle)) this.locauxFouilles.push(cle);
       if (restants.length) {
         this.localOuvert = { cle, lieu: this.lieu };
-        blocs.push({ type: "objets", texte: "Tu distingues ici : " + restants.map((id) => OBJETS[id].enPlace).join(", ") + "." });
+        blocs.push({
+          type: "objets",
+          texte: "Tu distingues ici : " + restants.map((id) => OBJETS[id].enPlace).join(", ") + ".",
+          objets: restants.map((id) => ({ id, nom: OBJETS[id].nom })),
+        });
         return blocs;
       }
       this.localOuvert = null;
@@ -1972,10 +2038,13 @@
           // Crochet vert : visité, rien d'oublié. Crochet jaune : il reste quelque chose dedans.
           b.locaux.forEach((l, i) => {
             if (i) p.appendChild(document.createTextNode(" · "));
-            const span = document.createElement("span");
+            const span = document.createElement("button");
+            span.type = "button";
+            span.dataset.commande = "entrer " + l.nom;
+            span.classList.add("lien-jeu");
             span.textContent = l.nom;
             if (l.visite) {
-              span.className = l.aRevoir ? "a-revoir" : "visite";
+              span.classList.add(l.aRevoir ? "a-revoir" : "visite");
               const crochet = document.createElement("span");
               crochet.className = "crochet";
               crochet.textContent = " ✓";
@@ -1996,6 +2065,18 @@
             }
             p.appendChild(compte);
           }
+        } else if (b.type === "objets" && b.objets) {
+          p.textContent = b.texte;
+          const boutons = document.createElement("span");
+          boutons.className = "prendre";
+          for (const o of b.objets) {
+            const bouton = document.createElement("button");
+            bouton.type = "button";
+            bouton.dataset.commande = "prendre " + o.nom;
+            bouton.textContent = "Prendre : " + o.nom;
+            boutons.appendChild(bouton);
+          }
+          p.appendChild(boutons);
         } else if (b.type === "lieu") {
           p.textContent = b.texte;
           const s = document.createElement("small");
@@ -2126,7 +2207,8 @@
         afficher(partie.demarrer());
         sauvegarder();
       }
-      champ.focus();
+      majActions();
+      focaliser();
     }
 
     function entrerDansLeJeu(nouvelleSession, sauvegarde) {
@@ -2140,6 +2222,7 @@
       if (minuterie) envoyerSauvegarde();
       session = null;
       partie = null;
+      majActions();
       document.getElementById("mdp").value = "";
       document.getElementById("mdp2").value = "";
       choisirOnglet(false);
@@ -2223,19 +2306,70 @@
       if (document.visibilityState === "hidden" && minuterie) envoyerSauvegarde();
     });
 
-    document.getElementById("saisie").addEventListener("submit", function (e) {
-      e.preventDefault();
-      const commande = champ.value.trim();
-      champ.value = "";
-      if (!commande) return;
+    // Sur téléphone et tablette, on évite de faire surgir le clavier sans que l'élève l'ait demandé.
+    const tactile = window.matchMedia("(pointer: coarse)").matches;
+    function focaliser() {
+      if (!tactile) champ.focus();
+    }
+
+    function envoyer(commande) {
+      commande = commande.trim();
+      if (!commande || !partie) return;
       historique.push(commande);
       position = historique.length;
       afficher([{ type: "commande", texte: commande.toUpperCase() }]);
       if (NuitStEx.normaliser(commande) === "REJOUER") return nouvellePartie(null);
       const blocs = partie.executer(commande);
+      // Les boutons des réponses précédentes ne valent plus : seuls les nouveaux restent actifs.
+      journal.querySelectorAll("button[data-commande]").forEach((b) => { b.disabled = true; });
       afficher(blocs);
       if (blocs.some((b) => b.type === "fin")) enregistrerVictoire();
       sauvegarder();
+      majActions();
+    }
+
+    // Boutons : les sorties du lieu, puis les commandes de tous les jours.
+    const COMMANDES_RAPIDES = [["Regarder", "regarder"], ["Inventaire", "inventaire"], ["Carte", "carte"], ["Notes", "notes"], ["Aide", "aide"]];
+    function majActions() {
+      const barre = document.getElementById("actions");
+      barre.replaceChildren();
+      if (!partie || partie.termine) return;
+      const rangee = () => {
+        const r = document.createElement("div");
+        r.className = "rangee";
+        barre.appendChild(r);
+        return r;
+      };
+      const bouton = (r, texte, commande, classe) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.textContent = texte;
+        b.dataset.commande = commande;
+        if (classe) b.className = classe;
+        r.appendChild(b);
+      };
+      const sorties = rangee();
+      for (const sortie of partie.sortiesVisibles()) {
+        const direction = sortie.split(" ")[0];
+        bouton(sorties, sortie.includes("verrouillée") ? direction + " 🔒" : direction, direction, "direction");
+      }
+      const commandes = rangee();
+      for (const [texte, commande] of COMMANDES_RAPIDES) bouton(commandes, texte, commande);
+    }
+
+    // Un seul écouteur pour tous les boutons qui portent une commande (barre, locaux, objets).
+    document.addEventListener("click", function (e) {
+      const cible = e.target.closest("[data-commande]");
+      if (!cible) return;
+      e.preventDefault();
+      envoyer(cible.dataset.commande);
+    });
+
+    document.getElementById("saisie").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const commande = champ.value;
+      champ.value = "";
+      envoyer(commande);
     });
 
     champ.addEventListener("keydown", function (e) {
@@ -2251,8 +2385,9 @@
     });
 
     document.getElementById("rejouer").addEventListener("click", () => nouvellePartie(null));
-    journal.addEventListener("click", function () {
-      if (!window.getSelection().toString()) champ.focus();
+    journal.addEventListener("click", function (e) {
+      if (e.target.closest("button")) return;
+      if (!window.getSelection().toString()) focaliser();
     });
 
   })();
