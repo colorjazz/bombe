@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Salle de profs</title>
+<title>Prof Quest</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&display=swap">
 <style>
@@ -88,7 +88,7 @@
 </head>
 <body>
 <div class="monitor">
-  <canvas id="screen" width="320" height="200" aria-label="Écran du jeu Salle de profs"></canvas>
+  <canvas id="screen" width="320" height="200" aria-label="Écran du jeu Prof Quest"></canvas>
   <input id="kbd" type="text" maxlength="60" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Tapez un ordre">
 </div>
 <div class="pad" id="pad">
@@ -106,7 +106,7 @@
 <script>
 "use strict";
 // ============================================================
-//  SALLE DE PROFS - trois glandeurs, une photocopieuse, Mme D.
+//  PROF QUEST - trois glandeurs, une photocopieuse, Mme D.
 //  Hommage aux aventures Sierra AGI de 1987 (Police Quest).
 //  320x200 EGA, image 160x168 en pixels doubles, police 8x8.
 // ============================================================
@@ -945,7 +945,7 @@ function act(v, N, num, move) {
     case "save": return saveGame();
     case "restore": return restoreGame();
     case "restart": return confirmRestart();
-    case "quit": return say("Merci d'avoir joué à Salle de profs.\n\nENTRÉE pour recommencer, ÉCHAP pour continuer.", { enter: restart });
+    case "quit": return say("Merci d'avoir joué à Prof Quest.\n\nENTRÉE pour recommencer, ÉCHAP pour continuer.", { enter: restart });
     case "sound": S.sound = !S.sound; return say("Son : " + (S.sound ? "oui." : "non."));
     case "wait": return say("Vous attendez. C'est votre spécialité. Il est " + clockStr() + ".");
     case "swear": return say("Surveillez votre langage. Il y a peut-être des élèves. Et un micro-perche.");
@@ -1326,7 +1326,7 @@ function loungeAct(v, N, num) {
 // ---------- mort, victoire, sauvegarde ----------
 function die(msg) {
   S.dead = true; S.dir = null; S.target = null; play(SFX.death);
-  say(msg, { enter: () => say("Merci d'avoir joué à Salle de profs. La prochaine fois, respectez la procédure.\n\nENTRÉE pour recommencer.\nÉCHAP pour restaurer votre partie.", { enter: restart, esc: () => { if (!restoreGame(true)) restart(); } }) });
+  say(msg, { enter: () => say("Merci d'avoir joué à Prof Quest. La prochaine fois, respectez la procédure.\n\nENTRÉE pour recommencer.\nÉCHAP pour restaurer votre partie.", { enter: restart, esc: () => { if (!restoreGame(true)) restart(); } }) });
 }
 function win() {
   award("deliver"); S.won = true; S.dir = null; play(SFX.win);
@@ -1377,7 +1377,7 @@ function drawInv() {
   center("Une touche pour revenir au jeu", 184, 0);
 }
 const MENUS = [
-  { t: "Info", items: [["À propos", () => say("SALLE DE PROFS\nTrois profs d'histoire. Une photocopieuse. Une réunion. Et Mme D.\n\nUn hommage de fan aux aventures Sierra AGI de 1987.\n\nAucune photocopieuse n'a été maltraitée. Plusieurs profs, oui.")], ["Aide", () => act("help", [])]] },
+  { t: "Info", items: [["À propos", () => say("PROF QUEST\nTrois profs d'histoire. Une photocopieuse. Une réunion. Et Mme D.\n\nUn hommage de fan aux aventures Sierra AGI de 1987.\n\nAucune photocopieuse n'a été maltraitée. Plusieurs profs, oui.")], ["Aide", () => act("help", [])]] },
   { t: "Fichier", items: [["Sauver       <F5>", saveGame], ["Restaurer    <F7>", () => restoreGame()], ["Recommencer  <F9>", confirmRestart], ["Quitter", () => act("quit", [])]] },
   { t: "Action", items: [["Regarder", () => doLook([])], ["Inventaire  <Tab>", showInv], ["Score", () => act("score", [])], ["Heure", () => say("Votre montre indique " + clockStr() + ". La cloche sonne à 8 h.")], ["Face caméra", camera]] },
   { t: "Spécial", items: [["Son oui/non  <F2>", () => { S.sound = !S.sound; }]] },
@@ -1399,12 +1399,12 @@ function drawTitle() {
   scr.fill(1);
   srect(6, 6, SW - 12, SH - 12, 0);
   srect(8, 8, SW - 16, 1, 9); srect(8, SH - 9, SW - 16, 1, 9); srect(8, 8, 2, SH - 16, 9); srect(SW - 10, 8, 2, SH - 16, 9);
-  const c1 = "SALLE", c2 = "DE PROFS";
+  const c1 = "PROF", c2 = "QUEST";
   text(c1, (SW - c1.length * 32) / 2 + 3, 20, 4, -1, 4, 3); text(c1, (SW - c1.length * 32) / 2, 18, 14, -1, 4, 3);
   text(c2, (SW - c2.length * 32) / 2 + 3, 46, 4, -1, 4, 3); text(c2, (SW - c2.length * 32) / 2, 44, 14, -1, 4, 3);
   center("École secondaire", 74, 11);
   center("Antoine-de-Saint-Exupéry", 83, 11);
-  center("Trois glandeurs. Une réunion. Qui y va ?", 96, 12);
+  center("3 glandeurs. 1 réunion. Qui y va ?", 96, 12);
   const M = (x, y, w, h, c) => srect(140 + x * 2, 106 + y, w * 2, h, c);
   M(4, 10, 14, 24, 12); M(5, 11, 12, 1, 4); M(18, 15, 4, 2, 12); M(20, 17, 2, 10, 12); M(18, 27, 4, 2, 12); M(4, 34, 14, 2, 4);
   M(6, 18, 10, 2, 15); M(6, 22, 8, 1, 15);
