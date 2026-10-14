@@ -123,6 +123,7 @@
   const TEXTE_ALLUMER =
     "Tu plies le bâton entre tes doigts. Un craquement sec, puis une lueur verte, chimique, maladive, éclabousse tes mains. C'est faible. C'est assez.";
 
+  const TEXTE_PISTE = "Tu sens qu'il reste quelque chose, quelque part derrière ces portes.";
   const TEXTE_TATONNER =
     "Tu tâtonnes sur le carrelage glacé. Tes doigts frôlent un long morceau de métal, mais impossible de savoir ce que c'est, ni s'il y a autre chose. Il te faudrait de la lumière.";
   const TEXTE_NOIR_ABSOLU =
@@ -1959,8 +1960,8 @@
         blocs.push({
           type: "locaux",
           texte: "Locaux : " + locaux.map(marque).join(" · ") + (vus ? ` (${vus}/${locaux.length} visités)` : "") +
-            (this.secteurFouille() ? " Plus rien d'important dans ce secteur." :
-              vus * 2 >= locaux.length && vus < locaux.length && this.secteurReste() ? " Tu sens qu'il reste quelque chose, quelque part derrière ces portes." : ""),
+            (this.secteurFouille() ? " Plus rien d'important dans ce secteur." : this.pisteSecteur() ? " " + TEXTE_PISTE : ""),
+          piste: this.pisteSecteur(),
           locaux,
           vus,
           aRevoir,
@@ -1989,6 +1990,7 @@
         objets: objets.map((id) => ({ id, nom: OBJETS[id].nom })),
         locaux: this.poursuite > 0 ? [] : this.etatLocaux(),
         fouille: this.secteurFouille(),
+        piste: this.poursuite === 0 && this.pisteSecteur(),
         actions: this.termine ? [] : this.actionsProposees(objets),
         menace: this.poursuite > 0 ? { restant: this.poursuite, total: DELAI_POURSUITE } : null,
         pointSur: this.pointSurLibelle,
@@ -2000,6 +2002,13 @@
       const locaux = LIEUX[this.lieu].locaux || [];
       const vus = locaux.filter((nom) => this.locauxFouilles.includes(compact(nom))).length;
       return locaux.length > 0 && vus >= 3 && !this.secteurReste();
+    }
+
+    // La moitié du secteur visitée, et quelque chose attend encore derrière une porte.
+    pisteSecteur() {
+      const locaux = LIEUX[this.lieu].locaux || [];
+      const vus = locaux.filter((nom) => this.locauxFouilles.includes(compact(nom))).length;
+      return vus * 2 >= locaux.length && vus < locaux.length && this.secteurReste();
     }
 
     // Une page du carnet ou un objet attend encore dans un local de ce secteur.

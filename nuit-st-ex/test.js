@@ -922,6 +922,13 @@ test("retours du 3e playtest : gardien, fautes de frappe, rencontre, noir, repri
   p.executer("aller place publique 1");
   assert.strictEqual(p.lieu, 22);
 
+  // La moitié d'un secteur visitée, et une page attend encore : le jeu le laisse deviner.
+  p = partieA(2);
+  for (const n of ["A201", "A203", "A204", "A205", "A208", "A210"]) p.executer("entrer " + n);
+  assert.ok(!p.contexte().piste);
+  p.executer("entrer A213");
+  assert.ok(p.contexte().piste && !p.contexte().fouille);
+
   // « entrer 217 » dans le corridor de l'Aile A.
   p = partieA(2);
   assert.ok(!texte(p.executer("entrer 217")).includes("Il n'y a pas de local"));

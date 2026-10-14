@@ -444,6 +444,7 @@
   #panneau-locaux .grille button.visite::after { content: " ✓"; color: var(--vert); }
   #panneau-locaux .grille button.a-revoir { color: var(--cendre); border-color: var(--jaune); }
   #panneau-locaux .grille button.a-revoir::after { content: " !"; color: var(--jaune); }
+  #panneau-locaux .piste { color: var(--jaune); }
 
   form#saisie {
     padding-block: 0.55rem 0.9rem;
@@ -914,6 +915,7 @@
   const TEXTE_ALLUMER =
     "Tu plies le bâton entre tes doigts. Un craquement sec, puis une lueur verte, chimique, maladive, éclabousse tes mains. C'est faible. C'est assez.";
 
+  const TEXTE_PISTE = "Tu sens qu'il reste quelque chose, quelque part derrière ces portes.";
   const TEXTE_TATONNER =
     "Tu tâtonnes sur le carrelage glacé. Tes doigts frôlent un long morceau de métal, mais impossible de savoir ce que c'est, ni s'il y a autre chose. Il te faudrait de la lumière.";
   const TEXTE_NOIR_ABSOLU =
@@ -2750,8 +2752,8 @@
         blocs.push({
           type: "locaux",
           texte: "Locaux : " + locaux.map(marque).join(" · ") + (vus ? ` (${vus}/${locaux.length} visités)` : "") +
-            (this.secteurFouille() ? " Plus rien d'important dans ce secteur." :
-              vus * 2 >= locaux.length && vus < locaux.length && this.secteurReste() ? " Tu sens qu'il reste quelque chose, quelque part derrière ces portes." : ""),
+            (this.secteurFouille() ? " Plus rien d'important dans ce secteur." : this.pisteSecteur() ? " " + TEXTE_PISTE : ""),
+          piste: this.pisteSecteur(),
           locaux,
           vus,
           aRevoir,
@@ -2780,6 +2782,7 @@
         objets: objets.map((id) => ({ id, nom: OBJETS[id].nom })),
         locaux: this.poursuite > 0 ? [] : this.etatLocaux(),
         fouille: this.secteurFouille(),
+        piste: this.poursuite === 0 && this.pisteSecteur(),
         actions: this.termine ? [] : this.actionsProposees(objets),
         menace: this.poursuite > 0 ? { restant: this.poursuite, total: DELAI_POURSUITE } : null,
         pointSur: this.pointSurLibelle,
@@ -2791,6 +2794,13 @@
       const locaux = LIEUX[this.lieu].locaux || [];
       const vus = locaux.filter((nom) => this.locauxFouilles.includes(compact(nom))).length;
       return locaux.length > 0 && vus >= 3 && !this.secteurReste();
+    }
+
+    // La moitié du secteur visitée, et quelque chose attend encore derrière une porte.
+    pisteSecteur() {
+      const locaux = LIEUX[this.lieu].locaux || [];
+      const vus = locaux.filter((nom) => this.locauxFouilles.includes(compact(nom))).length;
+      return vus * 2 >= locaux.length && vus < locaux.length && this.secteurReste();
     }
 
     // Une page du carnet ou un objet attend encore dans un local de ce secteur.
@@ -4153,6 +4163,7 @@
           const n = b.locaux.length;
           p.appendChild(element("span", "", `${n} ${n > 1 ? "locaux" : "local"} dans ce secteur` + (b.vus ? ` · ${b.vus} visité${b.vus > 1 ? "s" : ""}` : "")));
           if (b.aRevoir) p.appendChild(element("span", "jaune", `${b.aRevoir} à revoir`));
+          if (b.piste) p.appendChild(element("span", "jaune", "il reste quelque chose ici"));
           p.appendChild(bouton("Voir les locaux", { action: "locaux" }, "lien-locaux"));
           return p;
         }
@@ -4196,7 +4207,7 @@
         case "indice":
           return element("p", "indice" + (b.rappel ? " rappel" : ""), b.texte);
         case "phrase":
-          return element("p", "phrase", "Ta phrase t'attend sur l'écran de fin : touche « Continuer ».");
+          return element("p", "phrase", "Ta phrase t'attend sur l'écran de fin, après le générique.");
         case "recompense":
           return null;
         default:
@@ -4746,6 +4757,7 @@
         }
         panneau.append(titre, grille);
         if (ctx.fouille) panneau.appendChild(element("p", "note", "Plus rien d'important dans ce secteur."));
+        else if (ctx.piste) panneau.appendChild(element("p", "note piste", "Tu sens qu'il reste quelque chose, quelque part derrière ces portes."));
         else if (ctx.locaux.some((l) => l.aRevoir)) panneau.appendChild(element("p", "note", "Encadré jaune : un objet est resté sur place."));
         barre.appendChild(panneau);
       }
@@ -4758,7 +4770,8 @@
       }
       if (ctx.locaux.length) {
         const vus = ctx.locaux.filter((l) => l.visite).length;
-        const b = bouton(`Locaux ${vus}/${ctx.locaux.length}`, { action: "locaux" }, "g-outil");
+        const b = bouton(`Locaux ${vus}/${ctx.locaux.length}` + (ctx.piste ? " ✦" : ""), { action: "locaux" }, "g-outil");
+        if (ctx.piste) b.title = "Il reste quelque chose dans ce secteur";
         b.setAttribute("aria-expanded", String(panneauLocauxOuvert));
         sorties.appendChild(b);
       }

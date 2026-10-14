@@ -444,6 +444,7 @@
   #panneau-locaux .grille button.visite::after { content: " ✓"; color: var(--vert); }
   #panneau-locaux .grille button.a-revoir { color: var(--cendre); border-color: var(--jaune); }
   #panneau-locaux .grille button.a-revoir::after { content: " !"; color: var(--jaune); }
+  #panneau-locaux .piste { color: var(--jaune); }
 
   form#saisie {
     padding-block: 0.55rem 0.9rem;
@@ -1053,6 +1054,7 @@
           const n = b.locaux.length;
           p.appendChild(element("span", "", `${n} ${n > 1 ? "locaux" : "local"} dans ce secteur` + (b.vus ? ` · ${b.vus} visité${b.vus > 1 ? "s" : ""}` : "")));
           if (b.aRevoir) p.appendChild(element("span", "jaune", `${b.aRevoir} à revoir`));
+          if (b.piste) p.appendChild(element("span", "jaune", "il reste quelque chose ici"));
           p.appendChild(bouton("Voir les locaux", { action: "locaux" }, "lien-locaux"));
           return p;
         }
@@ -1096,7 +1098,7 @@
         case "indice":
           return element("p", "indice" + (b.rappel ? " rappel" : ""), b.texte);
         case "phrase":
-          return element("p", "phrase", "Ta phrase t'attend sur l'écran de fin : touche « Continuer ».");
+          return element("p", "phrase", "Ta phrase t'attend sur l'écran de fin, après le générique.");
         case "recompense":
           return null;
         default:
@@ -1646,6 +1648,7 @@
         }
         panneau.append(titre, grille);
         if (ctx.fouille) panneau.appendChild(element("p", "note", "Plus rien d'important dans ce secteur."));
+        else if (ctx.piste) panneau.appendChild(element("p", "note piste", "Tu sens qu'il reste quelque chose, quelque part derrière ces portes."));
         else if (ctx.locaux.some((l) => l.aRevoir)) panneau.appendChild(element("p", "note", "Encadré jaune : un objet est resté sur place."));
         barre.appendChild(panneau);
       }
@@ -1658,7 +1661,8 @@
       }
       if (ctx.locaux.length) {
         const vus = ctx.locaux.filter((l) => l.visite).length;
-        const b = bouton(`Locaux ${vus}/${ctx.locaux.length}`, { action: "locaux" }, "g-outil");
+        const b = bouton(`Locaux ${vus}/${ctx.locaux.length}` + (ctx.piste ? " ✦" : ""), { action: "locaux" }, "g-outil");
+        if (ctx.piste) b.title = "Il reste quelque chose dans ce secteur";
         b.setAttribute("aria-expanded", String(panneauLocauxOuvert));
         sorties.appendChild(b);
       }
