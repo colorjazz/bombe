@@ -4,24 +4,33 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>La Nuit à St-Ex</title>
+<meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Michroma&family=Spectral:ital,wght@0,300;0,400;1,300&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Michroma&family=Spectral:ital,wght@0,300;0,400;1,300&family=IBM+Plex+Mono:wght@400;500&family=Kalam:wght@300;400&display=swap">
 <style>
-  /* Mise en page : une seule colonne étroite perdue dans le noir, comme un couloir ; le titre du lieu, large et espacé, écrase le texte. */
+  /* Mise en page : une seule colonne étroite perdue dans le noir, comme un couloir ; le titre du lieu, large et espacé,
+     écrase le texte. Les écrits trouvés (craie, lettre, carnet) gardent leur matière : tableau vert, papier, encre. */
   :root {
-    --beton: #0a0c0f;        /* fond : béton de nuit */
-    --beton-2: #12161b;      /* surfaces */
-    --cendre: #c4c8cd;       /* texte narratif, gris lunaire */
-    --ombre: #646c76;        /* texte secondaire */
+    --beton: #0b0d10;        /* fond : béton de nuit */
+    --beton-2: #13171c;      /* surfaces */
+    --beton-3: #1b2027;      /* surfaces levées (boutons pressés, panneaux) */
+    --cendre: #c6cad0;       /* texte narratif, gris lunaire */
+    --ombre: #7a828e;        /* texte secondaire */
     --lune: #9db3c9;         /* accent : lueur bleutée de la lune */
     --ecran: #f2efe6;        /* lumière crue du téléphone */
-    --rouille: #b4674a;      /* métal, cadenas */
-    --vert: #7fae86;         /* local visité, rien d'oublié */
+    --rouille: #c4724f;      /* danger, métal, cadenas */
+    --vert: #7fae86;         /* local visité, rien d'oublié ; objectif accompli */
     --jaune: #d9b44a;        /* local visité, quelque chose d'oublié */
+    --papier: #cbc3af;       /* page arrachée, enveloppe */
+    --encre: #23262c;
+    --tableau: #18211d;      /* tableau vert de classe, la nuit */
+    --craie: #e3e5dc;
     --f-titre: "Michroma", "Eurostile", "Arial Black", sans-serif;
     --f-texte: "Spectral", "Iowan Old Style", Georgia, serif;
     --f-machine: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+    --f-main: "Kalam", "Segoe Print", "Bradley Hand", cursive;
+    --menace: 0;             /* 0 à 1 : la poursuite qui se resserre */
     color-scheme: dark;
   }
 
@@ -40,152 +49,322 @@
 
   .ecran {
     height: 100%;
-    height: 100dvh; /* suit la barre d'adresse et le clavier des téléphones */
     display: grid;
     grid-template-rows: auto minmax(0, 1fr) auto auto;
     max-width: 44rem;
     margin: 0 auto;
-    padding-inline: 16px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
     box-sizing: border-box;
   }
 
   header {
-    padding-block: calc(1.25rem + env(safe-area-inset-top, 0px)) 0.75rem;
+    padding-block: 1rem 0.6rem;
     display: flex;
     justify-content: space-between;
-    align-items: baseline;
-    gap: 1rem;
+    align-items: center;
+    gap: 0.5rem 1rem;
     flex-wrap: wrap;
     border-bottom: 1px solid var(--beton-2);
     font-family: var(--f-machine);
-    font-size: 0.7rem;
-    letter-spacing: 0.18em;
+    font-size: 0.68rem;
+    letter-spacing: 0.16em;
     text-transform: uppercase;
     color: var(--ombre);
   }
   header .ecole { color: var(--cendre); }
+  header .ecole abbr { text-decoration: none; }
   #zone { color: var(--lune); }
+  .entete-droite { display: flex; gap: 0.75rem; align-items: center; }
+  #joueur { display: flex; gap: 0.6rem; align-items: center; }
+  .petit-bouton { padding: 0.25rem 0.5rem; font-size: 0.62rem; min-height: 0; }
+  #bouton-son[aria-pressed="true"] { color: var(--lune); border-color: var(--lune); }
+
+  /* Jauge de la poursuite : une pastille par geste qui reste */
+  #jauge {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-basis: 100%;
+    color: var(--rouille);
+    letter-spacing: 0.2em;
+  }
+  #jauge .pastilles { display: flex; gap: 4px; flex: 1; }
+  #jauge .pastilles i { flex: 1; height: 4px; background: var(--beton-3); }
+  #jauge .pastilles i.vive { background: var(--rouille); animation: pouls 1.1s ease-in-out infinite; }
 
   #journal {
+    position: relative;
     overflow-y: auto;
-    padding-block: 2rem 3rem;
+    padding-block: 1.75rem 3rem;
     display: flex;
     flex-direction: column;
     gap: 1.1rem;
     min-width: 0;
     scrollbar-width: thin;
-    scrollbar-color: var(--beton-2) transparent;
+    scrollbar-color: var(--beton-3) transparent;
   }
+  #journal > * { margin: 0; max-width: 62ch; animation: apparition 0.9s ease both; }
 
-  #journal p { margin: 0; max-width: 62ch; animation: apparition 1.2s ease both; }
-
-  .ouverture { font-style: italic; color: var(--cendre); }
-  .ouverture + .lieu { margin-top: 2.5rem; }
-
-  .lieu {
-    margin: 1.75rem 0 0;
+  .chapitre {
+    max-width: none !important;
+    margin: 1.5rem 0 0.25rem !important;
+    display: grid;
+    justify-items: center;
+    gap: 0.35rem;
+    padding-block: 1.25rem;
+    border-block: 1px solid var(--beton-3);
+    text-align: center;
+    animation: chapitre 2.2s ease both !important;
+  }
+  .chapitre span {
+    font-family: var(--f-machine);
+    font-size: 0.68rem;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: var(--ombre);
+  }
+  .chapitre strong {
     font-family: var(--f-titre);
     font-weight: 400;
-    font-size: clamp(1.05rem, 3.6vw, 1.6rem);
-    letter-spacing: 0.32em;
+    font-size: clamp(1.1rem, 4.6vw, 1.7rem);
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--ecran);
+    text-wrap: balance;
+  }
+
+  .lieu {
+    margin-top: 1.25rem !important;
+    font-family: var(--f-titre);
+    font-weight: 400;
+    font-size: clamp(1.02rem, 3.6vw, 1.55rem);
+    letter-spacing: 0.3em;
     line-height: 1.35;
     text-transform: uppercase;
     color: var(--cendre);
     text-wrap: balance;
-    animation: apparition 1.6s ease both;
+    animation: apparition 1.4s ease both !important;
   }
   .lieu small {
     display: block;
     margin-top: 0.4rem;
     font-family: var(--f-machine);
-    font-size: 0.65rem;
+    font-size: 0.64rem;
     letter-spacing: 0.24em;
     color: var(--ombre);
   }
 
-  .objets { color: var(--lune); }
-  .sorties, .systeme, .commande {
-    font-family: var(--f-machine);
-    font-size: 0.8rem;
-    letter-spacing: 0.06em;
-    line-height: 1.6;
-  }
-  .sorties { color: var(--ombre); letter-spacing: 0.04em; }
-  .locaux { font-family: var(--f-machine); font-size: 0.8rem; line-height: 1.8; color: var(--cendre); letter-spacing: 0.06em; }
-  .locaux .etiquette, .locaux .compte { color: var(--ombre); text-transform: uppercase; letter-spacing: 0.14em; }
-  .locaux .visite { color: var(--ombre); }
-  .locaux .crochet { color: var(--vert); }
-  .locaux .a-revoir { color: var(--cendre); }
-  .locaux .a-revoir .crochet, .locaux .compte .jaune { color: var(--jaune); }
-  .locaux .compte { margin-left: 0.5rem; }
-
-  /* Éléments touchables dans le journal : locaux et objets */
-  .lien-jeu {
+  /* Mots touchables dans les descriptions */
+  .mot {
     font: inherit;
-    letter-spacing: inherit;
-    color: inherit;
+    color: var(--ecran);
     background: none;
     border: 0;
-    padding: 0.2rem 0.1rem;
+    padding: 0;
+    letter-spacing: inherit;
+    text-transform: none;
     cursor: pointer;
     text-decoration: underline dotted var(--ombre);
-    text-underline-offset: 0.25em;
+    text-underline-offset: 0.22em;
+    text-decoration-thickness: 1px;
   }
-  .lien-jeu:hover, .lien-jeu:focus-visible { color: var(--lune); outline: none; }
-  .lien-jeu:disabled { cursor: default; text-decoration: none; color: inherit; }
-  .prendre { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
-  .prendre button:disabled { opacity: 0.35; cursor: default; }
+  .mot:hover, .mot:focus-visible { color: var(--lune); text-decoration-color: var(--lune); outline: none; }
+  .mot:disabled { cursor: default; color: inherit; text-decoration: none; }
 
-  /* Barre d'actions rapides (surtout pour téléphone et tablette) */
-  #actions {
-    display: grid;
-    gap: 0.4rem;
-    padding-block: 0.6rem 0.1rem;
-    border-top: 1px solid var(--beton-2);
-    min-width: 0;
+  .objets { color: var(--lune); }
+  .sorties, .systeme, .commande, .locaux, .sauvegarde, .objectif {
+    font-family: var(--f-machine);
+    font-size: 0.8rem;
+    letter-spacing: 0.04em;
+    line-height: 1.6;
   }
-  /* Deux rangées au maximum (sorties, puis commandes) ; elles défilent de côté si l'écran est étroit. */
-  #actions .rangee {
-    display: flex;
-    gap: 0.4rem;
-    overflow-x: auto;
-    scrollbar-width: none;
-    min-width: 0;
-  }
-  #actions .rangee::-webkit-scrollbar { display: none; }
-  #actions .rangee button { flex: none; }
-  /* Les sorties passent à la ligne : aucune ne doit rester cachée hors de l'écran. */
-  #actions .rangee.rangee-sorties { flex-wrap: wrap; overflow-x: visible; }
-  #actions button, .prendre button {
-    min-height: 2.5rem;
-    min-width: 2.75rem;
-    padding: 0.45rem 0.7rem;
-    font-size: 0.72rem;
-    letter-spacing: 0.12em;
-    touch-action: manipulation;
-  }
-  #actions .direction { color: var(--cendre); border-color: var(--lune); text-transform: none; letter-spacing: 0.04em; font-size: 0.8rem; }
-  #actions .prise { color: var(--lune); }
-  #actions [aria-expanded="true"] { border-color: var(--lune); color: var(--lune); }
-  #panneau-locaux {
-    max-height: 32vh;
-    overflow-y: auto;
-    padding: 0.4rem 0.2rem;
-    border: 1px solid var(--beton-2);
-    background: var(--beton-2);
-  }
-  #panneau-locaux p { margin: 0; line-height: 1.7; }
-  #panneau-locaux .etiquette { display: none; }
-
-  .systeme { color: var(--ombre); }
-  .commande { color: var(--lune); margin-top: 1rem !important; }
+  .sorties { color: var(--ombre); }
+  .systeme { color: var(--ombre); white-space: pre-line; }
+  .commande { color: var(--lune); margin-top: 0.9rem !important; }
   .commande::before { content: "› "; color: var(--ombre); }
+  .locaux { color: var(--ombre); display: flex; flex-wrap: wrap; gap: 0.35rem 0.75rem; align-items: baseline; }
+  .locaux .jaune { color: var(--jaune); }
+  .lien-locaux {
+    font: inherit;
+    color: var(--lune);
+    background: none;
+    border: 0;
+    padding: 0.2rem 0;
+    cursor: pointer;
+    text-decoration: underline dotted;
+    text-underline-offset: 0.25em;
+    letter-spacing: inherit;
+    text-transform: none;
+  }
+  .lien-locaux:disabled { color: var(--ombre); text-decoration: none; cursor: default; }
+  .sauvegarde { color: var(--ombre); font-size: 0.72rem; letter-spacing: 0.12em; }
+  .objectif { color: var(--lune); font-size: 0.75rem; letter-spacing: 0.08em; }
+  .objectif.accompli { color: var(--vert); }
+
+  .lecture, .ecoute {
+    color: var(--cendre);
+    font-style: italic;
+    border-left: 1px solid var(--ombre);
+    padding-left: 1rem;
+  }
+  .ecoute { border-left-style: dotted; }
+  .mural {
+    font-family: var(--f-titre);
+    font-size: 0.92rem;
+    letter-spacing: 0.12em;
+    line-height: 2;
+    color: var(--rouille);
+    padding-block: 0.5rem;
+  }
+  /* Craie sur tableau vert */
+  .craie {
+    font-family: var(--f-main);
+    font-weight: 300;
+    font-size: 1.15rem;
+    line-height: 1.55;
+    color: var(--craie);
+    background: var(--tableau);
+    padding: 1rem 1.15rem;
+    border: 6px solid var(--beton-3);
+    box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.55);
+  }
+  /* Papier : la page du carnet de R., la lettre de M. Plante */
+  .page, .lettre {
+    font-family: var(--f-main);
+    font-weight: 400;
+    font-size: 1.08rem;
+    line-height: 1.5;
+    color: var(--encre);
+    background: var(--papier);
+    padding: 1rem 1.15rem 1.1rem;
+    transform: rotate(-0.6deg);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+    max-width: 34rem !important;
+  }
+  .lettre { transform: rotate(0.5deg); }
+  .page small, .lettre small {
+    display: block;
+    margin-bottom: 0.35rem;
+    font-family: var(--f-machine);
+    font-size: 0.62rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--encre);
+    opacity: 0.7;
+  }
+
+  .evenement { color: var(--ecran); font-weight: 400; }
+  .scene { color: var(--cendre); border-left: 1px solid var(--beton-3); padding-left: 1rem; }
+  .danger {
+    color: var(--ecran);
+    font-weight: 400;
+    border-left: 2px solid var(--rouille);
+    padding-left: 1rem;
+  }
+  .menace {
+    color: var(--ecran);
+    font-style: italic;
+    display: grid;
+    gap: 0.3rem;
+  }
+  .menace small {
+    font-family: var(--f-machine);
+    font-style: normal;
+    font-size: 0.66rem;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--rouille);
+  }
+  .choc { color: var(--ecran); font-weight: 400; }
+  .succes {
+    color: var(--ecran);
+    border: 1px solid var(--lune);
+    padding: 0.85rem 1rem;
+    box-shadow: 0 0 30px rgba(157, 179, 201, 0.12);
+    animation: succes 1.6s ease both !important;
+  }
+  .indice, .indicemort {
+    font-family: var(--f-machine);
+    font-size: 0.82rem;
+    line-height: 1.6;
+    color: var(--lune);
+    border: 1px dashed var(--lune);
+    padding: 0.7rem 0.9rem;
+  }
+  .indice.rappel { color: var(--ombre); border-color: var(--beton-3); }
+  .notes {
+    white-space: pre-line;
+    font-family: var(--f-machine);
+    font-size: 0.82rem;
+    color: var(--cendre);
+    border-left: 1px solid var(--lune);
+    padding-left: 1rem;
+  }
+  .objectifs {
+    display: grid;
+    gap: 0.5rem;
+    font-family: var(--f-machine);
+    font-size: 0.82rem;
+    border-left: 1px solid var(--lune);
+    padding-left: 1rem;
+  }
+  .objectifs h3 { margin: 0; font: inherit; font-size: 0.66rem; letter-spacing: 0.3em; color: var(--ombre); }
+  .objectifs ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 0.4rem; }
+  .objectifs li { display: grid; grid-template-columns: 1.4rem 1fr; color: var(--cendre); }
+  .objectifs li::before { content: "□"; color: var(--ombre); }
+  .objectifs li.fait { color: var(--ombre); text-decoration: line-through; text-decoration-color: var(--beton-3); }
+  .objectifs li.fait::before { content: "✔"; color: var(--vert); }
+  .objectifs p { margin: 0; color: var(--ombre); font-size: 0.72rem; }
+
+  /* Le texto : l'écran du téléphone dans le noir */
+  .texto {
+    align-self: center;
+    width: min(18rem, 100%);
+    background: #050607;
+    border: 1px solid var(--beton-3);
+    border-radius: 22px;
+    padding: 0.8rem 0.9rem 1rem;
+    box-shadow: 0 0 60px rgba(242, 239, 230, 0.2);
+    animation: texto 6s ease both !important;
+    font-family: var(--f-machine);
+  }
+  .texto .tete { display: flex; justify-content: space-between; font-size: 0.64rem; letter-spacing: 0.1em; color: var(--ombre); margin-bottom: 0.7rem; }
+  .texto .tete b { color: var(--rouille); font-weight: 500; }
+  .texto .de { font-size: 0.7rem; color: var(--cendre); margin-bottom: 0.35rem; }
+  .texto .bulle {
+    background: #2a2f36;
+    color: var(--ecran);
+    border-radius: 16px 16px 16px 4px;
+    padding: 0.6rem 0.8rem;
+    font-family: var(--f-texte);
+    font-size: 1rem;
+    line-height: 1.45;
+  }
+
+  .victoire, .epilogue, .reprise { color: var(--cendre); }
+  .epilogue { font-style: italic; }
+  .reprise { font-style: italic; color: var(--ecran); }
+  .mort { color: var(--rouille); font-weight: 400; }
+  .coupure, .fin, .finmort {
+    font-family: var(--f-titre);
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    font-size: 0.86rem;
+    text-align: center;
+    max-width: none !important;
+  }
+  .coupure { margin-top: 1.5rem !important; color: var(--ombre); }
+  .fin { color: var(--lune); }
+  .finmort { color: var(--rouille); }
+  .recompense, .phrase { color: var(--ombre); text-align: center; max-width: none !important; font-family: var(--f-machine); font-size: 0.8rem; }
 
   /* Plan de l'agenda */
-  .plan { margin: 0; display: grid; gap: 1rem; animation: apparition 1.2s ease both; }
+  .plan { display: grid; gap: 1rem; max-width: none !important; }
+  .plan figure { margin: 0; overflow-x: auto; }
   .plan figcaption {
     font-family: var(--f-machine);
-    font-size: 0.65rem;
+    font-size: 0.64rem;
     letter-spacing: 0.24em;
     text-transform: uppercase;
     color: var(--ombre);
@@ -194,79 +373,68 @@
   .plan svg { display: block; max-width: 100%; height: auto; }
   .plan .lien { stroke: var(--ombre); stroke-width: 1.5; }
   .plan .case { fill: var(--beton-2); stroke: var(--ombre); stroke-width: 1; }
-  .plan .actuel .case { stroke: var(--lune); stroke-width: 2; }
+  .plan .va { cursor: pointer; }
+  .plan .va:hover .case, .plan .va:focus .case { stroke: var(--lune); fill: var(--beton-3); }
+  .plan .va:focus { outline: none; }
+  .plan .actuel .case { stroke: var(--lune); stroke-width: 2; fill: var(--beton-3); }
   .plan text { fill: var(--cendre); font-family: var(--f-machine); font-size: 10px; text-anchor: middle; }
   .plan .actuel text { fill: var(--lune); }
-  .plan .escalier { fill: var(--ombre); font-size: 9px; }
+  .plan .petit { fill: var(--ombre); font-size: 9px; }
+  .plan .marque { fill: var(--rouille); font-size: 10px; }
 
-  .mural {
-    font-family: var(--f-titre);
-    font-size: 0.95rem;
-    letter-spacing: 0.12em;
-    line-height: 2;
-    color: var(--rouille);
-    padding-block: 0.5rem;
+  /* Barre d'actions */
+  #actions {
+    display: grid;
+    gap: 0.45rem;
+    padding-block: 0.6rem 0.2rem;
+    border-top: 1px solid var(--beton-2);
+    min-width: 0;
   }
+  #actions .rangee { display: flex; flex-wrap: wrap; gap: 0.4rem; min-width: 0; }
+  #actions button {
+    min-height: 2.5rem;
+    padding: 0.4rem 0.7rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    touch-action: manipulation;
+  }
+  #actions .direction { color: var(--cendre); border-color: var(--lune); text-transform: none; letter-spacing: 0.03em; font-size: 0.8rem; }
+  #actions .direction.verrou { color: var(--ombre); border-color: var(--beton-3); }
+  #actions .direction.piege, #actions .g-danger { color: var(--rouille); border-color: var(--rouille); }
+  #actions .g-prise, #actions .g-lecture { color: var(--lune); text-transform: none; letter-spacing: 0.03em; font-size: 0.78rem; }
+  #actions .g-code, #actions .g-action { color: var(--ecran); text-transform: none; letter-spacing: 0.03em; font-size: 0.78rem; }
+  #actions .g-fin { color: var(--beton); background: var(--ecran); border-color: var(--ecran); text-transform: none; letter-spacing: 0.03em; font-size: 0.82rem; }
+  #actions .g-outil { color: var(--ombre); border-color: var(--beton-3); }
+  #actions [aria-expanded="true"] { border-color: var(--lune); color: var(--lune); background: var(--beton-2); }
+  #actions .outils { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 0.35rem; }
+  #actions .outils button { padding-inline: 0.2rem; font-size: 0.62rem; letter-spacing: 0.06em; color: var(--ombre); border-color: var(--beton-3); }
+  #actions .outils button:hover, #actions .outils button:focus-visible { color: var(--lune); border-color: var(--lune); }
+  #actions .continuer { flex: 1; min-height: 3rem; font-size: 0.85rem; color: var(--beton); background: var(--ecran); border-color: var(--ecran); }
+  #panneau-locaux {
+    max-height: 34vh;
+    overflow-y: auto;
+    padding: 0.6rem;
+    border: 1px solid var(--beton-3);
+    background: var(--beton-2);
+    display: grid;
+    gap: 0.5rem;
+  }
+  #panneau-locaux .titre { font-family: var(--f-machine); font-size: 0.64rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ombre); display: flex; justify-content: space-between; gap: 1rem; }
+  #panneau-locaux .grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(5.2rem, 1fr)); gap: 0.35rem; }
+  #panneau-locaux .grille button { min-height: 2.4rem; text-transform: none; letter-spacing: 0.02em; font-size: 0.74rem; color: var(--cendre); border-color: var(--beton-3); padding: 0.3rem; }
+  #panneau-locaux .grille button.visite { color: var(--ombre); }
+  #panneau-locaux .grille button.visite::after { content: " ✓"; color: var(--vert); }
+  #panneau-locaux .grille button.a-revoir { color: var(--cendre); border-color: var(--jaune); }
+  #panneau-locaux .grille button.a-revoir::after { content: " ✓"; color: var(--jaune); }
 
-  .evenement {
-    color: var(--ecran);
-    font-weight: 400;
-    border-left: 1px solid var(--ecran);
-    padding-left: 1rem;
-  }
-  .choc { color: var(--cendre); font-weight: 400; }
-  .victoire { color: var(--cendre); }
-  .mort { color: var(--rouille); font-weight: 400; }
-  .coupure, .fin, .finmort {
-    font-family: var(--f-titre);
-    letter-spacing: 0.32em;
-    text-transform: uppercase;
-    font-size: 0.9rem;
-    text-align: center;
-    max-width: none !important;
-  }
-  .coupure { margin-top: 2.5rem !important; color: var(--ombre); }
-  .fin { color: var(--lune); }
-  .lecture {
-    color: var(--cendre);
-    font-style: italic;
-    border-left: 1px solid var(--ombre);
-    padding-left: 1rem;
-  }
-  .notes {
-    white-space: pre-line;
-    font-family: var(--f-machine);
-    font-size: 0.85rem;
-    color: var(--cendre);
-    border-left: 1px solid var(--lune);
-    padding-left: 1rem;
-  }
-  .recompense { color: var(--cendre); text-align: center; max-width: none !important; margin-top: 1.5rem !important; }
-  .phrase, #noir .phrase {
-    font-family: var(--f-titre);
-    font-size: clamp(1rem, 3.4vw, 1.35rem);
-    letter-spacing: 0.08em;
-    line-height: 1.5;
-    color: var(--ecran);
-    text-align: center;
-    max-width: none !important;
-    text-transform: none;
-  }
-  #noir .phrase { margin: 0 0 2rem; }
-  .finmort { color: var(--rouille); }
-
-  form {
-    padding-block: 0.6rem calc(0.9rem + env(safe-area-inset-bottom, 0px));
+  form#saisie {
+    padding-block: 0.55rem 0.9rem;
     border-top: 1px solid var(--beton-2);
     display: flex;
     align-items: center;
     gap: 0.75rem;
   }
-  form label {
-    font-family: var(--f-machine);
-    color: var(--lune);
-    font-size: 1rem;
-  }
+  form#saisie label { font-family: var(--f-machine); color: var(--lune); font-size: 1rem; }
   #commande {
     flex: 1;
     min-width: 0;
@@ -281,76 +449,108 @@
     caret-color: var(--lune);
     padding-block: 0.4rem;
   }
-  #commande::placeholder { color: var(--ombre); opacity: 0.7; text-transform: none; }
-  form:focus-within { border-top-color: var(--ombre); }
+  #commande::placeholder { color: var(--ombre); opacity: 0.8; text-transform: none; }
+  form#saisie:focus-within { border-top-color: var(--ombre); }
 
   button {
     background: transparent;
     color: var(--lune);
     border: 1px solid var(--ombre);
     font-family: var(--f-machine);
-    font-size: 0.75rem;
-    letter-spacing: 0.18em;
+    font-size: 0.74rem;
+    letter-spacing: 0.16em;
     text-transform: uppercase;
     padding: 0.55rem 0.9rem;
     cursor: pointer;
   }
   button:hover, button:focus-visible { border-color: var(--lune); outline: none; }
+  button:focus-visible { box-shadow: 0 0 0 2px var(--beton), 0 0 0 3px var(--lune); }
+  button:disabled { opacity: 0.4; cursor: default; }
 
-  /* Lumière du téléphone (tour 5) */
+  /* Lumière du téléphone (texto) */
   #flash {
     position: fixed;
     inset: 0;
     pointer-events: none;
-    background: radial-gradient(circle at 50% 85%, var(--ecran), transparent 70%);
+    background: radial-gradient(circle at 50% 80%, var(--ecran), transparent 65%);
     opacity: 0;
+    z-index: 2;
   }
   #flash.actif { animation: telephone 3.2s ease-out both; }
 
-  /* Coupure au noir */
-  #noir {
+  /* La poursuite : un cadre rouille qui se resserre et bat comme un cœur */
+  #vignette {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    box-shadow: inset 0 0 calc(30px + 140px * var(--menace)) calc(6px + 50px * var(--menace)) rgba(150, 52, 28, calc(0.25 + 0.5 * var(--menace)));
+    opacity: 0;
+    transition: opacity 0.8s ease;
+  }
+  #vignette.actif { opacity: 1; animation: battement calc(1.4s - 0.8s * var(--menace)) ease-in-out infinite; }
+
+  /* Écrans plein cadre : intro, fin, accueil */
+  .plein {
     position: fixed;
     inset: 0;
     background: var(--beton);
-    opacity: 0;
-    pointer-events: none;
-    display: grid;
-    place-items: center;
-    text-align: center;
-    padding-inline: 16px;
+    overflow-y: auto;
+    padding-top: calc(2rem + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(2rem + env(safe-area-inset-bottom, 0px));
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    box-sizing: border-box;
   }
-  #noir.actif { animation: coupure 1.6s ease both; pointer-events: auto; }
-  #actions .continuer { flex: 1; min-height: 3rem; font-size: 0.85rem; color: var(--lune); border-color: var(--lune); }
+  .plein .boite { max-width: 30rem; margin: 0 auto; display: grid; gap: 1.25rem; }
+
+  #intro { z-index: 4; display: grid; align-items: center; }
+  #intro .boite { gap: 1.6rem; }
+  #intro p { margin: 0; font-style: italic; color: var(--cendre); animation: apparition 2.4s ease both; }
+  #intro p:nth-child(2) { animation-delay: 2.2s; }
+  #intro button { justify-self: start; animation: apparition 1.2s ease 4s both; }
+  #intro .passer { justify-self: end; animation: none; border-color: var(--beton-3); color: var(--ombre); }
+
+  #noir { z-index: 3; display: grid; align-items: center; }
+  #noir.actif { animation: coupure 1.4s ease both; }
   #noir h2 {
-    margin: 0 0 1.5rem;
+    margin: 0;
     font-family: var(--f-titre);
     font-weight: 400;
-    font-size: clamp(0.95rem, 3vw, 1.3rem);
-    letter-spacing: 0.4em;
+    font-size: clamp(1rem, 4.4vw, 1.45rem);
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
     color: var(--lune);
     text-wrap: balance;
   }
-  #noir p {
-    margin: 0 0 2.5rem;
-    font-family: var(--f-machine);
-    font-size: 0.7rem;
-    letter-spacing: 0.24em;
-    color: var(--ombre);
-    text-transform: uppercase;
+  #fin-mort h2 { color: var(--rouille); }
+  #noir .sur-titre { margin: 0; font-family: var(--f-machine); font-size: 0.66rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--ombre); }
+  #noir .indicemort { margin: 0; }
+  .stats { margin: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--beton-3); border: 1px solid var(--beton-3); }
+  .stats div { background: var(--beton); padding: 0.7rem 0.6rem; display: grid; gap: 0.2rem; }
+  .stats dt { font-family: var(--f-machine); font-size: 0.58rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ombre); }
+  .stats dd { margin: 0; font-family: var(--f-machine); font-size: 1rem; color: var(--ecran); font-variant-numeric: tabular-nums; }
+  .defis { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  .defis li { font-family: var(--f-machine); font-size: 0.68rem; letter-spacing: 0.08em; padding: 0.3rem 0.55rem; border: 1px solid var(--beton-3); color: var(--ombre); }
+  .defis li.reussi { border-color: var(--vert); color: var(--vert); }
+  .coffre-phrase { display: grid; gap: 0.8rem; padding: 1rem; border: 1px solid var(--lune); }
+  .coffre-phrase p { margin: 0; }
+  #phrase-finale {
+    font-family: var(--f-titre);
+    font-size: clamp(1rem, 4.2vw, 1.3rem);
+    letter-spacing: 0.06em;
+    line-height: 1.5;
+    color: var(--ecran);
+    text-align: center;
   }
+  #rang, #code-verif { color: var(--lune); font-family: var(--f-machine); font-size: 0.8rem; line-height: 1.6; margin: 0; }
+  #code-verif b { color: var(--ecran); font-size: 1.1rem; letter-spacing: 0.3em; }
+  .boutons-fin { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+  .bouton-principal { padding: 0.9rem 1.1rem; font-size: 0.78rem; color: var(--beton); background: var(--ecran); border-color: var(--ecran); }
+  .bouton-principal:hover, .bouton-principal:focus-visible { background: var(--lune); border-color: var(--lune); }
 
-  /* Écran d'accueil : invité ou compte */
-  #accueil {
-    position: fixed;
-    inset: 0;
-    z-index: 5;
-    background: var(--beton);
-    overflow-y: auto;
-    padding: calc(2rem + env(safe-area-inset-top, 0px)) 16px calc(2rem + env(safe-area-inset-bottom, 0px));
-    box-sizing: border-box;
-  }
-  .accueil-boite { max-width: 26rem; margin: 0 auto; display: grid; gap: 1.25rem; }
-  .accueil-boite h1 {
+  #accueil { z-index: 5; }
+  #accueil h1 {
     margin: 0;
     font-family: var(--f-titre);
     font-weight: 400;
@@ -360,45 +560,28 @@
     line-height: 1.4;
     text-wrap: balance;
   }
-  .accueil-boite .accroche { margin: 0; font-style: italic; }
-  .accueil-boite h2 {
+  #accueil .accroche { margin: 0; font-style: italic; }
+  #accueil h2 {
     margin: 0;
     font-family: var(--f-machine);
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     font-weight: 500;
     letter-spacing: 0.24em;
     text-transform: uppercase;
     color: var(--lune);
   }
-  .note {
-    margin: 0;
-    font-family: var(--f-machine);
-    font-size: 0.75rem;
-    line-height: 1.6;
-    color: var(--ombre);
-  }
-  .bouton-principal { width: 100%; padding: 0.9rem; font-size: 0.8rem; }
-  #bloc-compte {
-    display: grid;
-    gap: 0.9rem;
-    border-top: 1px solid var(--beton-2);
-    padding-top: 1.25rem;
-  }
+  .note { margin: 0; font-family: var(--f-machine); font-size: 0.74rem; line-height: 1.6; color: var(--ombre); }
+  .comment-jouer { margin: 0; padding: 0 0 0 1rem; display: grid; gap: 0.35rem; font-size: 0.98rem; border-left: 1px solid var(--beton-3); list-style: none; }
+  #accueil .bouton-principal { width: 100%; }
+  #bloc-compte { display: grid; gap: 0.9rem; border-top: 1px solid var(--beton-2); padding-top: 1.25rem; }
   .onglets { display: flex; gap: 0.5rem; }
-  .onglets button { flex: 1; color: var(--ombre); border-color: var(--beton-2); }
+  .onglets button { flex: 1; color: var(--ombre); border-color: var(--beton-3); }
   .onglets button[aria-pressed="true"] { color: var(--lune); border-color: var(--lune); }
   #form-compte { display: grid; gap: 0.5rem; }
-  #form-compte label {
-    font-family: var(--f-machine);
-    font-size: 0.7rem;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--ombre);
-    margin-top: 0.4rem;
-  }
+  #form-compte label { font-family: var(--f-machine); font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ombre); margin-top: 0.4rem; }
   #form-compte input {
     background: var(--beton-2);
-    border: 1px solid var(--beton-2);
+    border: 1px solid var(--beton-3);
     color: var(--cendre);
     font-family: var(--f-machine);
     font-size: 1rem;
@@ -408,39 +591,25 @@
   #form-compte input:focus-visible { border-color: var(--lune); }
   #form-compte button[type="submit"] { margin-top: 0.6rem; }
   #erreur-compte { min-height: 1.2em; color: var(--rouille); font-family: var(--f-machine); font-size: 0.8rem; margin: 0; }
-  #joueur { display: flex; gap: 0.75rem; align-items: baseline; }
-  #quitter { padding: 0.2rem 0.5rem; font-size: 0.65rem; }
-  #rang { color: var(--lune) !important; }
   #bloc-palmares { display: grid; gap: 0.9rem; }
-  #bouton-palmares { width: 100%; }
   #palmares { display: grid; gap: 0.75rem; }
   .tableau-palmares { overflow-x: auto; }
-  .tableau-palmares table {
-    width: 100%;
-    border-collapse: collapse;
-    font-family: var(--f-machine);
-    font-size: 0.8rem;
-    font-variant-numeric: tabular-nums;
-  }
-  .tableau-palmares th {
-    text-align: left;
-    font-weight: 500;
-    font-size: 0.65rem;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--ombre);
-    padding: 0.4rem 0.5rem;
-    border-bottom: 1px solid var(--beton-2);
-  }
-  .tableau-palmares td { padding: 0.45rem 0.5rem; border-bottom: 1px solid var(--beton-2); color: var(--cendre); }
+  .tableau-palmares table { width: 100%; border-collapse: collapse; font-family: var(--f-machine); font-size: 0.78rem; font-variant-numeric: tabular-nums; }
+  .tableau-palmares th { text-align: left; font-weight: 500; font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ombre); padding: 0.4rem 0.45rem; border-bottom: 1px solid var(--beton-2); }
+  .tableau-palmares td { padding: 0.45rem; border-bottom: 1px solid var(--beton-2); color: var(--cendre); }
   .tableau-palmares td.nombre, .tableau-palmares th.nombre { text-align: right; }
   .tableau-palmares tr:first-child td { color: var(--lune); }
 
   .secousse { animation: secousse 0.45s linear; }
 
   @keyframes apparition { from { opacity: 0; filter: blur(3px); } to { opacity: 1; filter: none; } }
-  @keyframes telephone { 0% { opacity: 0; } 6% { opacity: 0.55; } 55% { opacity: 0.35; } 62% { opacity: 0; } 100% { opacity: 0; } }
+  @keyframes chapitre { 0% { opacity: 0; letter-spacing: 0.6em; } 100% { opacity: 1; } }
+  @keyframes succes { 0% { opacity: 0; box-shadow: 0 0 0 rgba(157, 179, 201, 0); } 40% { opacity: 1; box-shadow: 0 0 50px rgba(157, 179, 201, 0.35); } 100% { box-shadow: 0 0 30px rgba(157, 179, 201, 0.12); } }
+  @keyframes texto { 0% { opacity: 0; transform: scale(0.96); } 8% { opacity: 1; transform: none; } 70% { opacity: 1; } 100% { opacity: 0.45; box-shadow: none; } }
+  @keyframes telephone { 0% { opacity: 0; } 6% { opacity: 0.5; } 55% { opacity: 0.3; } 62% { opacity: 0; } 100% { opacity: 0; } }
   @keyframes coupure { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes pouls { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+  @keyframes battement { 0%, 100% { opacity: 0.75; } 18% { opacity: 1; } 32% { opacity: 0.8; } 46% { opacity: 1; } }
   @keyframes secousse {
     0%, 100% { transform: none; }
     20% { transform: translateX(-6px); } 40% { transform: translateX(5px); }
@@ -449,11 +618,23 @@
 
   /* Téléphone : texte un peu plus serré, en-tête compact */
   @media (max-width: 520px) {
-    body { font-size: 1.02rem; line-height: 1.65; }
-    header { font-size: 0.62rem; letter-spacing: 0.12em; gap: 0.4rem 1rem; padding-block: calc(0.8rem + env(safe-area-inset-top, 0px)) 0.5rem; }
-    #journal { padding-block: 1.25rem 2rem; gap: 0.95rem; }
-    .lieu { letter-spacing: 0.22em; }
+    body { font-size: 1.02rem; line-height: 1.62; }
+    header { font-size: 0.6rem; letter-spacing: 0.1em; padding-block: 0.7rem 0.45rem; }
+    header .ecole, #nom-joueur { display: none; }
+    #journal { padding-block: 0.9rem 1.5rem; gap: 0.9rem; }
+    .chapitre { padding-block: 0.9rem; margin-top: 0.75rem !important; }
+    .lieu { letter-spacing: 0.2em; margin-top: 0.6rem !important; }
+    #actions { gap: 0.35rem; padding-top: 0.5rem; }
+    #actions .rangee { gap: 0.3rem; }
+    #actions button { min-height: 2.2rem; padding: 0.25rem 0.5rem; font-size: 0.66rem; }
+    #actions .direction { font-size: 0.74rem; letter-spacing: 0; }
+    #actions .g-prise, #actions .g-lecture, #actions .g-code, #actions .g-action, #actions .g-fin, #actions .g-danger { font-size: 0.72rem; letter-spacing: 0; }
+    #actions .outils { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.3rem; }
+    #actions .outils button { min-height: 2rem; font-size: 0.6rem; letter-spacing: 0.04em; }
+    form#saisie { padding-block: 0.4rem 0.7rem; }
+    .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
+  @media (min-width: 521px) { header .ecole .court { display: none; } }
   /* Tablette et grand écran : plus de place pour le texte */
   @media (min-width: 900px) {
     .ecran { max-width: 50rem; }
@@ -461,7 +642,7 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after { animation-duration: 0.01ms !important; animation-delay: 0ms !important; }
+    *, *::before, *::after { animation-duration: 0.01ms !important; animation-delay: 0ms !important; animation-iteration-count: 1 !important; }
     #flash.actif { animation: none; }
   }
 </style>
@@ -470,37 +651,76 @@
 
 <div class="ecran" id="ecran">
   <header>
-    <span class="ecole">École secondaire Antoine-de-Saint-Exupéry</span>
+    <span class="ecole"><span class="long">École secondaire Antoine-de-Saint-Exupéry</span><span class="court">St-Ex</span></span>
     <span id="zone">Aile A · 2e étage</span>
-    <span id="joueur"><span id="nom-joueur">Invité</span><button id="quitter" type="button">Quitter</button></span>
+    <span class="entete-droite">
+      <button id="bouton-son" class="petit-bouton" type="button" aria-pressed="false" title="Son et ambiance">Son : non</button>
+      <span id="joueur"><span id="nom-joueur">Invité</span><button id="quitter" class="petit-bouton" type="button">Quitter</button></span>
+    </span>
+    <div id="jauge" hidden aria-live="polite"><span id="jauge-texte">Ils arrivent</span><span class="pastilles" id="pastilles"></span></div>
   </header>
   <main id="journal" aria-live="polite"></main>
-  <nav id="actions" aria-label="Actions rapides"></nav>
+  <nav id="actions" aria-label="Actions"></nav>
   <form id="saisie" autocomplete="off">
     <label for="commande">›</label>
     <input id="commande" type="text" spellcheck="false" autocapitalize="characters" autocorrect="off" enterkeyhint="send" placeholder="Que fais-tu ? (AIDE)" aria-label="Commande">
   </form>
 </div>
 
+<div id="vignette" aria-hidden="true"></div>
 <div id="flash" aria-hidden="true"></div>
 
-<div id="noir" hidden>
-  <div>
-    <h2 id="verdict">Tu as survécu à la nuit</h2>
-    <p id="consigne-finale" hidden>Dis cette phrase en personne à M. Plante :</p>
-    <p id="phrase-finale" class="phrase" hidden></p>
-    <p id="rang" hidden></p>
-    <p>La Nuit à St-Ex</p>
-    <button id="rejouer" type="button">Rejouer</button>
+<div id="intro" class="plein" hidden>
+  <div class="boite">
+    <div id="intro-texte"></div>
+    <button id="ouvrir-yeux" class="bouton-principal" type="button">Ouvrir les yeux</button>
   </div>
 </div>
 
-<div id="accueil">
-  <div class="accueil-boite">
+<div id="noir" class="plein" hidden>
+  <div class="boite" id="fin-mort" hidden>
+    <p class="sur-titre">Coupure au noir</p>
+    <h2>La nuit a gagné</h2>
+    <p id="indice-mort" class="indicemort" hidden></p>
+    <p class="note" id="morts-nuit"></p>
+    <div class="boutons-fin">
+      <button id="reprendre" class="bouton-principal" type="button">Reprendre au moment sûr</button>
+      <button id="recommencer" type="button">Recommencer du début</button>
+    </div>
+    <p class="note" id="libelle-sur"></p>
+  </div>
+  <div class="boite" id="fin-victoire" hidden>
+    <p class="sur-titre">Générique</p>
+    <h2>Tu as survécu à la nuit</h2>
+    <dl class="stats" id="stats"></dl>
+    <ul class="defis" id="defis"></ul>
+    <div class="coffre-phrase">
+      <p class="note">Ta phrase pour M. Plante. Avant de la révéler, assure-toi que personne d'autre ne regarde ton écran.</p>
+      <button id="reveler" class="bouton-principal" type="button">Révéler la phrase</button>
+      <p id="phrase-finale" hidden></p>
+      <p class="note" id="consigne-finale" hidden>Retiens-la et va la dire en personne à M. Plante. La première personne qui la lui dit gagne un sac de bonbons.</p>
+    </div>
+    <p id="rang" hidden></p>
+    <p id="code-verif" hidden></p>
+    <p class="note" id="note-invite" hidden>Partie en invité : elle n'apparaît pas au palmarès.</p>
+    <div class="boutons-fin">
+      <button id="rejouer" type="button">Rejouer</button>
+    </div>
+  </div>
+</div>
+
+<div id="accueil" class="plein">
+  <div class="boite">
     <h1>La Nuit à St-Ex</h1>
-    <p class="accroche">Tu t'es endormi en classe. Quand tu te réveilles, l'école est plongée dans le noir.</p>
+    <p class="accroche">Tu as dormi en classe. Au réveil, l'école est plongée dans le noir, et quelque chose écoute dans les couloirs.</p>
     <button id="invite" class="bouton-principal" type="button">Jouer comme invité</button>
     <p class="note">Aucune sauvegarde : tu recommences au début à chaque fois.</p>
+    <ul class="comment-jouer">
+      <li>Touche les boutons, ou écris ce que tu veux faire (ex. : PRENDRE AGENDA).</li>
+      <li>Regarder, lire et consulter ne font jamais avancer le temps.</li>
+      <li>Ne fais pas de bruit.</li>
+    </ul>
+    <p class="note">Ambiance d'horreur, sans sang. Avec des écouteurs, active le son.</p>
     <section id="bloc-compte" hidden>
       <h2>Mon compte</h2>
       <div class="onglets" role="group" aria-label="Compte">
@@ -517,50 +737,216 @@
         <button id="bouton-compte" class="bouton-principal" type="submit">Se connecter</button>
         <p id="erreur-compte" role="alert"></p>
       </form>
-      <p class="note">Ta progression est sauvegardée et tu reprends où tu étais. Si tu meurs, tu recommences au début. N'utilise pas un mot de passe que tu utilises ailleurs.</p>
+      <p class="note">Ta progression est sauvegardée et tu reprends où tu étais. Si tu meurs, tu reprends au dernier moment sûr ; tes morts sont comptées au palmarès. N'utilise pas un mot de passe que tu utilises ailleurs.</p>
     </section>
     <section id="bloc-palmares" hidden>
       <button id="bouton-palmares" type="button" aria-expanded="false" aria-controls="palmares">Voir le palmarès</button>
       <div id="palmares" hidden>
         <p class="note">Les survivants, du temps de jeu le plus court au plus long. Seul le temps passé à jouer compte : les pauses de plus de 5 minutes sont exclues.</p>
         <div class="tableau-palmares"><table>
-          <thead><tr><th>#</th><th>Pseudo</th><th class="nombre">Temps</th><th class="nombre">Morts</th></tr></thead>
+          <thead><tr><th>#</th><th>Pseudo</th><th class="nombre">Temps</th><th class="nombre">Morts</th><th class="nombre">Indices</th></tr></thead>
           <tbody id="lignes-palmares"></tbody>
         </table></div>
       </div>
     </section>
-    <p id="sans-compte" class="note" hidden>Les comptes ne sont offerts que dans la version de l'école.</p>
+    <p id="sans-compte" class="note" hidden>Cette version n'a pas de comptes : le palmarès est offert dans la version de l'école.</p>
   </div>
 </div>
 
 <script src="moteur.js"></script>
 <script>
   (function () {
-    const journal = document.getElementById("journal");
-    const zone = document.getElementById("zone");
-    const champ = document.getElementById("commande");
-    const flash = document.getElementById("flash");
-    const noir = document.getElementById("noir");
-    const ecran = document.getElementById("ecran");
+    const $ = (id) => document.getElementById(id);
+    const journal = $("journal");
+    const zone = $("zone");
+    const champ = $("commande");
+    const flash = $("flash");
+    const noir = $("noir");
+    const ecran = $("ecran");
+    const vignette = $("vignette");
     const historique = [];
     let position = 0;
-    let partie;
+    let partie = null;
+    let introVue = false;
+    const tactile = window.matchMedia("(pointer: coarse)").matches;
+    const reduit = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+    // Typographie française : espaces insécables devant ; ! ? : » et après «.
+    const typo = (s) => String(s)
+      .replace(/ ([?!;])/g, " $1")
+      .replace(/ ([:»])/g, " $1")
+      .replace(/« /g, "« ");
+
+    function element(balise, classe, texte) {
+      const e = document.createElement(balise);
+      if (classe) e.className = classe;
+      if (texte !== undefined) e.textContent = typo(texte);
+      return e;
+    }
+
+    function bouton(texte, attributs, classe) {
+      const b = element("button", classe, texte);
+      b.type = "button";
+      for (const k in attributs || {}) b.dataset[k] = attributs[k];
+      return b;
+    }
+
+    // ==========================================
+    // SON (facultatif, coupé au départ) : tout est synthétisé, aucun fichier
+    // ==========================================
+    const Son = {
+      actif: false,
+      ctx: null,
+      fond: null,
+      preparer() {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!this.ctx && AC) this.ctx = new AC();
+        if (this.ctx && this.ctx.state === "suspended") this.ctx.resume();
+      },
+      note(freq, duree, type, volume, delai, fin) {
+        const c = this.ctx;
+        const t = c.currentTime + (delai || 0);
+        const o = c.createOscillator();
+        const g = c.createGain();
+        o.type = type || "sine";
+        o.frequency.setValueAtTime(freq, t);
+        if (fin) o.frequency.exponentialRampToValueAtTime(fin, t + duree);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(volume || 0.15, t + 0.012);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + duree);
+        o.connect(g).connect(c.destination);
+        o.start(t);
+        o.stop(t + duree + 0.05);
+      },
+      bruit(duree, volume, frequence, delai) {
+        const c = this.ctx;
+        const t = c.currentTime + (delai || 0);
+        const tampon = c.createBuffer(1, Math.floor(c.sampleRate * duree), c.sampleRate);
+        const d = tampon.getChannelData(0);
+        for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
+        const s = c.createBufferSource();
+        s.buffer = tampon;
+        const f = c.createBiquadFilter();
+        f.type = "lowpass";
+        f.frequency.value = frequence || 1200;
+        const g = c.createGain();
+        g.gain.value = volume || 0.2;
+        s.connect(f).connect(g).connect(c.destination);
+        s.start(t);
+      },
+      // Un souffle très bas, en continu, tant que le son est actif.
+      demarrerFond() {
+        if (this.fond || !this.ctx) return;
+        const c = this.ctx;
+        const o = c.createOscillator();
+        const g = c.createGain();
+        o.type = "sine";
+        o.frequency.value = 46;
+        g.gain.value = 0.025;
+        o.connect(g).connect(c.destination);
+        o.start();
+        this.fond = { o, g };
+      },
+      arreterFond() {
+        if (!this.fond) return;
+        try { this.fond.o.stop(); } catch (e) { /* déjà arrêté */ }
+        this.fond = null;
+      },
+      jouer(nom, b) {
+        if (!this.actif || !this.ctx) return;
+        try {
+          switch (nom) {
+            case "vibration":
+              for (let i = 0; i < 3; i++) this.note(92, 0.22, "square", 0.05, i * 0.32);
+              break;
+            case "bip":
+              this.note(2300, 0.42, "square", 0.08);
+              break;
+            case "choc":
+              this.bruit(0.7, 0.45, 2400);
+              this.note(70, 0.6, "sine", 0.35, 0, 40);
+              break;
+            case "coeur": {
+              const vite = b && b.total ? 1 - b.restant / b.total : 0.3;
+              this.note(58, 0.14, "sine", 0.35);
+              this.note(52, 0.16, "sine", 0.28, 0.28 - 0.12 * vite);
+              break;
+            }
+            case "succes":
+              this.note(660, 0.25, "sine", 0.09);
+              this.note(990, 0.5, "sine", 0.07, 0.14);
+              break;
+            case "mort":
+              this.note(220, 2.4, "sawtooth", 0.06, 0, 38);
+              this.bruit(1.6, 0.12, 400);
+              break;
+            case "souffle":
+              this.bruit(1.8, 0.12, 500);
+              break;
+            case "goutte":
+              this.note(1400, 0.09, "sine", 0.08, 0, 600);
+              break;
+            case "page":
+              this.bruit(0.25, 0.08, 3000);
+              break;
+          }
+        } catch (e) { /* son indisponible : on continue en silence */ }
+      },
+    };
+
+    function vibrer(motif) {
+      try { if (navigator.vibrate) navigator.vibrate(motif); } catch (e) { /* refusé */ }
+    }
+
+    function lireReglage(cle) {
+      try { return localStorage.getItem(cle); } catch (e) { return null; }
+    }
+    function ecrireReglage(cle, valeur) {
+      try { localStorage.setItem(cle, valeur); } catch (e) { /* stockage indisponible */ }
+    }
+
+    const boutonSon = $("bouton-son");
+    function choisirSon(actif) {
+      Son.actif = actif;
+      boutonSon.setAttribute("aria-pressed", String(actif));
+      boutonSon.textContent = actif ? "Son : oui" : "Son : non";
+      ecrireReglage("nuit-st-ex:son", actif ? "1" : "0");
+      if (actif) {
+        Son.preparer();
+        Son.demarrerFond();
+        Son.jouer("goutte");
+      } else {
+        Son.arreterFond();
+      }
+    }
+    boutonSon.addEventListener("click", () => choisirSon(!Son.actif));
+    // Le son ne peut démarrer qu'après un geste : la préférence est rappelée au premier toucher.
+    const sonPrefere = lireReglage("nuit-st-ex:son") === "1";
+    if (sonPrefere) {
+      boutonSon.textContent = "Son : oui";
+      document.addEventListener("pointerdown", function premier() {
+        document.removeEventListener("pointerdown", premier);
+        choisirSon(true);
+      });
+    }
+
+    // ==========================================
+    // PLAN DE L'AGENDA
+    // ==========================================
     const SVG = "http://www.w3.org/2000/svg";
     const ETAGES = [["etage", "2e étage"], ["rdc", "1er étage"]];
 
-    function el(nom, attrs, texte) {
+    function svg(nom, attrs, texte) {
       const e = document.createElementNS(SVG, nom);
       for (const k in attrs) e.setAttribute(k, attrs[k]);
       if (texte) e.textContent = texte;
       return e;
     }
 
-    // Dessine le plan de l'agenda : une case par lieu visité, étage courant en premier.
+    // Une case par lieu visité, l'étage courant en premier. Toucher une case : y aller.
     function dessinerPlan(b) {
       const W = 104, H = 46, BW = 92, BH = 30;
-      const conteneur = document.createElement("div");
-      conteneur.className = "plan";
+      const conteneur = element("div", "plan");
       const ordre = ETAGES.slice().sort((a) => (a[0] === b.etageActuel ? -1 : 1));
       for (const [etage, titre] of ordre) {
         const lieux = b.lieux.filter((l) => l.etage === etage);
@@ -570,134 +956,172 @@
         const y0 = Math.min(...lieux.map((l) => l.y));
         const colonnes = Math.max(...lieux.map((l) => l.x)) - x0 + 1;
         const rangees = Math.max(...lieux.map((l) => l.y)) - y0 + 1;
-        const svg = el("svg", {
-          viewBox: `0 0 ${colonnes * W} ${rangees * H}`,
-          width: colonnes * W,
-          role: "img",
-          "aria-label": "Plan : " + titre,
-        });
+        const dessin = svg("svg", { viewBox: `0 0 ${colonnes * W} ${rangees * H}`, width: colonnes * W, role: "img", "aria-label": "Plan : " + titre });
         const centre = (l) => [(l.x - x0) * W + W / 2, (l.y - y0) * H + H / 2];
         for (const [a, c] of b.liens) {
           if (!parId[a] || !parId[c]) continue;
           const [x1, y1] = centre(parId[a]);
           const [x2, y2] = centre(parId[c]);
-          svg.appendChild(el("line", { class: "lien", x1, y1, x2, y2 }));
+          dessin.appendChild(svg("line", { class: "lien", x1, y1, x2, y2 }));
         }
         for (const l of lieux) {
           const [cx, cy] = centre(l);
-          const g = el("g", { class: l.actuel ? "actuel" : "" });
-          g.appendChild(el("rect", { class: "case", x: cx - BW / 2, y: cy - BH / 2, width: BW, height: BH, rx: 2 }));
-          g.appendChild(el("text", { x: cx, y: cy + (l.actuel ? 0 : 3.5) }, l.nom));
-          if (l.actuel) g.appendChild(el("text", { x: cx, y: cy + 11, class: "escalier" }, "tu es ici"));
-          if (l.vertical) g.appendChild(el("text", { x: cx + BW / 2 - 7, y: cy - BH / 2 + 10, class: "escalier" }, "↕"));
-          svg.appendChild(g);
+          const g = svg("g", l.actuel ? { class: "actuel" } : { class: "va", tabindex: "0", role: "button", "data-commande": "aller " + l.destination, "aria-label": "Aller : " + l.destination });
+          g.appendChild(svg("rect", { class: "case", x: cx - BW / 2, y: cy - BH / 2, width: BW, height: BH, rx: 2 }));
+          g.appendChild(svg("text", { x: cx, y: cy + (l.actuel ? 0 : 3.5) }, l.nom));
+          if (l.actuel) g.appendChild(svg("text", { x: cx, y: cy + 11, class: "petit" }, "tu es ici"));
+          if (l.vertical) g.appendChild(svg("text", { x: cx + BW / 2 - 7, y: cy - BH / 2 + 10, class: "petit" }, "↕"));
+          if (l.marque) g.appendChild(svg("text", { x: cx - BW / 2 + 8, y: cy - BH / 2 + 11, class: "marque" }, l.marque));
+          dessin.appendChild(g);
         }
         const fig = document.createElement("figure");
-        fig.style.margin = "0";
-        const cap = document.createElement("figcaption");
-        cap.textContent = titre;
-        fig.append(cap, svg);
+        fig.append(element("figcaption", "", titre), dessin);
         conteneur.appendChild(fig);
       }
       return conteneur;
     }
 
-    // Locaux d'un couloir : chaque numéro se touche pour y entrer ; crochet vert (fait) ou jaune (à revoir).
-    function remplirLocaux(p, b) {
-      const etiquette = document.createElement("span");
-      etiquette.className = "etiquette";
-      etiquette.textContent = "Locaux : ";
-      p.appendChild(etiquette);
-      b.locaux.forEach((l, i) => {
-        if (i) p.appendChild(document.createTextNode(" · "));
-        const bouton = document.createElement("button");
-        bouton.type = "button";
-        bouton.dataset.commande = "entrer " + l.nom;
-        bouton.classList.add("lien-jeu");
-        bouton.textContent = l.nom;
-        if (l.visite) {
-          bouton.classList.add(l.aRevoir ? "a-revoir" : "visite");
-          const crochet = document.createElement("span");
-          crochet.className = "crochet";
-          crochet.textContent = " ✓";
-          crochet.title = l.aRevoir ? "Tu as laissé quelque chose ici" : "Visité";
-          bouton.appendChild(crochet);
+    // ==========================================
+    // AFFICHAGE DU JOURNAL
+    // ==========================================
+    function rendre(b) {
+      switch (b.type) {
+        case "ouverture":
+          return null; // lue sur l'écran d'introduction
+        case "carte":
+          return dessinerPlan(b);
+        case "chapitre": {
+          const d = element("div", "chapitre");
+          d.append(element("span", "", "Chapitre " + b.numero), element("strong", "", b.texte));
+          return d;
         }
-        p.appendChild(bouton);
-      });
-      if (b.vus) {
-        const compte = document.createElement("span");
-        compte.className = "compte";
-        compte.textContent = `${b.vus}/${b.locaux.length} visités`;
-        if (b.aRevoir) {
-          const jaune = document.createElement("span");
-          jaune.className = "jaune";
-          jaune.textContent = ` · ${b.aRevoir} à revoir`;
-          compte.appendChild(jaune);
+        case "lieu": {
+          const p = element("p", "lieu", b.texte);
+          p.appendChild(element("small", "", b.zone));
+          zone.textContent = b.zone;
+          return p;
         }
-        p.appendChild(compte);
+        case "texte": {
+          const p = element("p", "texte");
+          if (!b.segments) {
+            p.textContent = typo(b.texte);
+            return p;
+          }
+          for (const s of b.segments) {
+            if (typeof s === "string") p.appendChild(document.createTextNode(typo(s)));
+            else p.appendChild(bouton(s.t, { commande: s.c }, "mot"));
+          }
+          return p;
+        }
+        case "locaux": {
+          const p = element("p", "locaux");
+          const n = b.locaux.length;
+          p.appendChild(element("span", "", `${n} ${n > 1 ? "locaux" : "local"} dans ce secteur` + (b.vus ? ` · ${b.vus} visité${b.vus > 1 ? "s" : ""}` : "")));
+          if (b.aRevoir) p.appendChild(element("span", "jaune", `${b.aRevoir} à revoir`));
+          p.appendChild(bouton("Voir les locaux", { action: "locaux" }, "lien-locaux"));
+          return p;
+        }
+        case "texto": {
+          const d = element("div", "texto");
+          d.setAttribute("role", "img");
+          d.setAttribute("aria-label", "Texto de " + b.de + " : " + b.texte);
+          const tete = element("div", "tete");
+          tete.append(element("span", "", "03:12"), element("b", "", "1 %"));
+          d.append(tete, element("div", "de", b.de), element("div", "bulle", b.texte));
+          return d;
+        }
+        case "page": {
+          const d = element("div", "page");
+          d.append(element("small", "", `Carnet de R. · page ${b.numero}/${b.total}`), document.createTextNode(typo(b.texte)));
+          return d;
+        }
+        case "lettre": {
+          const d = element("div", "lettre");
+          d.append(element("small", "", "Enveloppe à ton nom"), document.createTextNode(typo(b.texte)));
+          return d;
+        }
+        case "menace": {
+          const d = element("p", "menace");
+          d.append(element("small", "", b.restant >= b.total ? "Ils arrivent" : `Encore ${b.restant} geste${b.restant > 1 ? "s" : ""}`), document.createTextNode(typo(b.texte)));
+          return d;
+        }
+        case "objectif": {
+          const p = element("p", "objectif" + (b.texte.startsWith("✔") ? " accompli" : ""), b.texte);
+          return p;
+        }
+        case "objectifs": {
+          const d = element("div", "objectifs");
+          d.appendChild(element("h3", "", "OBJECTIFS"));
+          const ul = document.createElement("ul");
+          for (const l of b.lignes) ul.appendChild(element("li", l.fait ? "fait" : "", l.texte));
+          d.append(ul, element("p", "", b.resume));
+          return d;
+        }
+        case "indice":
+          return element("p", "indice" + (b.rappel ? " rappel" : ""), b.texte);
+        case "phrase":
+          return element("p", "phrase", "Ta phrase t'attend sur l'écran de fin : touche « Continuer ».");
+        case "recompense":
+          return null;
+        default:
+          return element("p", b.type, b.texte);
       }
     }
 
-    function afficher(blocs) {
-      for (const b of blocs) {
-        if (b.type === "carte") {
-          journal.appendChild(dessinerPlan(b));
-          continue;
-        }
-        const p = document.createElement("p");
-        p.className = b.type;
-        if (b.type === "locaux") {
-          remplirLocaux(p, b);
-        } else if (b.type === "objets" && b.objets) {
-          p.textContent = b.texte;
-          const boutons = document.createElement("span");
-          boutons.className = "prendre";
-          for (const o of b.objets) {
-            const bouton = document.createElement("button");
-            bouton.type = "button";
-            bouton.dataset.commande = "prendre " + o.nom;
-            bouton.textContent = "Prendre : " + o.nom;
-            boutons.appendChild(bouton);
-          }
-          p.appendChild(boutons);
-        } else if (b.type === "lieu") {
-          p.textContent = b.texte;
-          const s = document.createElement("small");
-          s.textContent = b.zone;
-          p.appendChild(s);
-          zone.textContent = b.zone;
-        } else {
-          p.textContent = b.texte;
-        }
-        journal.appendChild(p);
-        if (b.type === "evenement") {
-          flash.classList.remove("actif");
-          void flash.offsetWidth;
-          flash.classList.add("actif");
-        }
-        if (b.type === "choc") {
-          ecran.classList.remove("secousse");
-          void ecran.offsetWidth;
-          ecran.classList.add("secousse");
-        }
-        if (b.type === "phrase") {
-          const finale = document.getElementById("phrase-finale");
-          finale.textContent = b.texte;
-          finale.hidden = false;
-          document.getElementById("consigne-finale").hidden = false;
-        }
-        if (b.type === "fin" || b.type === "finmort") {
-          // L'écran de fin attend que l'élève touche « Continuer » : il lit le texte à son rythme.
-          document.getElementById("verdict").textContent =
-            b.type === "fin" ? "Tu as survécu à la nuit" : "La nuit t'a pris";
-        }
+    function effets(b) {
+      if (b.son) Son.jouer(b.son, b);
+      if (b.type === "texto") {
+        flash.classList.remove("actif");
+        void flash.offsetWidth;
+        flash.classList.add("actif");
+        vibrer([180, 90, 180]);
       }
-      journal.scrollTop = journal.scrollHeight;
+      if (b.type === "choc") {
+        ecran.classList.remove("secousse");
+        void ecran.offsetWidth;
+        ecran.classList.add("secousse");
+        vibrer(80);
+      }
+      if (b.type === "menace") vibrer([50, 60, 50]);
+      if (b.type === "mort") vibrer([300, 100, 400]);
+      if (b.type === "page") Son.jouer("page");
+      if (b.type === "lieu" && b.id === 13) Son.jouer("goutte");
+      if (b.type === "phrase") {
+        $("phrase-finale").textContent = typo(b.texte);
+      }
+    }
+
+    // Affiche une réponse. Renvoie son premier élément (pour le défilement).
+    const ALERTES = new Set(["texto", "danger", "menace", "choc", "succes", "mort"]);
+    let alerte = null;
+    function afficher(blocs) {
+      let premier = null;
+      for (const b of blocs) {
+        const noeud = rendre(b);
+        if (noeud) {
+          journal.appendChild(noeud);
+          if (!premier) premier = noeud;
+          if (ALERTES.has(b.type) && !alerte) alerte = noeud;
+        }
+        effets(b);
+      }
+      return premier;
+    }
+
+    // Fait défiler pour que le DÉBUT de la réponse reste visible ; si la réponse contient
+    // une alerte (texto, danger, poursuite…) qui dépasse l'écran, on descend juste assez pour la voir.
+    function defiler(premier) {
+      const a = alerte;
+      alerte = null;
+      if (!premier) return;
+      let cible = Math.max(0, premier.offsetTop - 12);
+      if (a) cible = Math.max(cible, a.offsetTop + a.offsetHeight + 16 - journal.clientHeight);
+      const fin = journal.scrollHeight - journal.clientHeight;
+      journal.scrollTo({ top: Math.min(cible, fin), behavior: reduit ? "auto" : "smooth" });
     }
 
     // ==========================================
-    // COMPTES (seulement dans la version Google Apps Script)
+    // COMPTES (seulement dans la version de l'école)
     // ==========================================
     // L'invité ne sauvegarde rien. Avec un compte, la partie est envoyée au
     // serveur (Google Sheets) quelques secondes après chaque commande.
@@ -705,9 +1129,10 @@
     // vers le même déploiement Apps Script, si celui-ci répond.
     const URL_SERVEUR = "https://script.google.com/macros/s/AKfycbzGRokVF2hFcZjqHRRlidYcQRbfO6QpWHx1iq9E9rwbAuQEjkUVjk-9FYdw-MbtA2hZwg/exec";
     const run = window.google && google.script && google.script.run;
-    const accueil = document.getElementById("accueil");
+    const accueil = $("accueil");
     let session = null; // { pseudo, jeton }
     let minuterie = null;
+    let mortEnvoyee = false; // une mort n'est comptée qu'une fois au serveur
 
     function appeler(fonction, ...args) {
       if (run) {
@@ -741,16 +1166,16 @@
     function envoyerSauvegarde() {
       clearTimeout(minuterie);
       minuterie = null;
-      if (!session || !partie) return;
-      const mort = partie.termine && !partie.gagne;
-      if (partie.gagne) return; // la victoire est enregistrée à part
-      appeler("sauvegarder", session.jeton, partie.termine ? null : partie.exporter(), mort).catch((e) => {
+      if (!session || !partie || partie.gagne) return; // la victoire est enregistrée à part
+      const mort = partie.termine && !mortEnvoyee;
+      if (mort) mortEnvoyee = true;
+      appeler("sauvegarder", session.jeton, partie.exporter(), mort).catch((e) => {
         afficher([{ type: "systeme", texte: "Sauvegarde impossible : " + e.message }]);
       });
     }
 
     function sauvegarder() {
-      if (!session) return;
+      if (!session || !partie) return;
       if (partie.termine) return envoyerSauvegarde();
       clearTimeout(minuterie);
       minuterie = setTimeout(envoyerSauvegarde, 3000);
@@ -764,39 +1189,147 @@
       return h > 0 ? `${h} h ${deux(m)} min` : `${m} min ${deux(s)} s`;
     }
 
+    // Temps de jeu actif, mesuré ici pour l'écran de fin (le serveur mesure le sien pour le palmarès).
+    let tempsActif = 0;
+    let derniereAction = Date.now();
+    setInterval(() => {
+      if (partie && !partie.termine && document.visibilityState === "visible" && Date.now() - derniereAction < 5 * 60 * 1000) tempsActif += 1;
+    }, 1000);
+
     function enregistrerVictoire() {
       if (!session) return;
-      const rang = document.getElementById("rang");
-      appeler("enregistrerVictoire", session.jeton, partie.reponses())
+      appeler("enregistrerVictoire", session.jeton, partie.reponses(), partie.statistiques())
         .then((r) => {
-          rang.textContent = (r.rang === 1
+          const rang = $("rang");
+          rang.textContent = typo((r.rang === 1
             ? "Tu es la toute première personne à survivre à la nuit."
-            : `Tu es la ${r.rang}e personne à survivre à la nuit.`) + ` Temps de jeu : ${formaterTemps(r.temps)}.`;
+            : `Tu es la ${r.rang}e personne à survivre à la nuit.`) + ` Temps de jeu officiel : ${formaterTemps(r.temps)}.`);
           rang.hidden = false;
+          if (r.code) {
+            const code = $("code-verif");
+            code.replaceChildren(document.createTextNode(typo("Code de vérification à montrer à M. Plante : ")), element("b", "", r.code));
+            code.hidden = false;
+          }
         })
         .catch((e) => afficher([{ type: "systeme", texte: "Victoire non enregistrée : " + e.message }]));
     }
 
-    function nouvellePartie(sauvegarde) {
-      journal.textContent = "";
+    // ==========================================
+    // ÉCRANS : INTRO, FIN, NOUVELLE PARTIE
+    // ==========================================
+    function montrerIntro(ouverture) {
+      const texte = $("intro-texte");
+      texte.replaceChildren(...ouverture.map((b) => element("p", "", b.texte)));
+      $("intro").hidden = false;
+      $("ouvrir-yeux").focus();
+    }
+
+    function fermerIntro() {
+      $("intro").hidden = true;
+      introVue = true;
+      journal.scrollTop = 0;
+      focaliser();
+    }
+
+    function reinitialiserFin() {
       noir.classList.remove("actif");
       noir.hidden = true;
-      for (const id of ["phrase-finale", "consigne-finale", "rang"]) document.getElementById(id).hidden = true;
+      for (const id of ["fin-mort", "fin-victoire", "phrase-finale", "consigne-finale", "rang", "code-verif", "note-invite", "indice-mort"]) $(id).hidden = true;
+      $("reveler").hidden = false;
+      armerRejouer(false);
+    }
+
+    function nouvellePartie(sauvegarde) {
+      journal.textContent = "";
+      reinitialiserFin();
+      flash.classList.remove("actif");
+      panneauLocauxOuvert = false;
+      mortEnvoyee = false;
+      tempsActif = 0;
+      derniereAction = Date.now();
       if (sauvegarde) {
         partie = NuitStEx.Partie.restaurer(sauvegarde);
-        afficher(partie.reprendre());
+        if (partie.termine && (partie.gagne || !partie.pointSur)) return nouvellePartie(null);
+        const premier = afficher(partie.reprendre());
+        defiler(premier);
       } else {
         partie = new NuitStEx.Partie();
-        afficher(partie.demarrer());
+        const blocs = partie.demarrer();
+        afficher(blocs);
+        if (!introVue) montrerIntro(blocs.filter((b) => b.type === "ouverture"));
         sauvegarder();
       }
       majActions();
       focaliser();
     }
 
+    function ouvrirFin() {
+      const victoire = partie.gagne;
+      $("fin-mort").hidden = victoire;
+      $("fin-victoire").hidden = !victoire;
+      if (victoire) {
+        const s = partie.statistiques();
+        const lignes = [
+          ["Temps", formaterTemps(tempsActif)],
+          ["Actions", s.actions],
+          ["Morts", s.morts],
+          ["Indices", s.indices],
+          ["Locaux", `${s.locaux}/${s.totalLocaux}`],
+          ["Carnet de R.", `${s.pages}/${s.totalPages}`],
+        ];
+        $("stats").replaceChildren(...lignes.map(([dt, dd]) => {
+          const d = document.createElement("div");
+          d.append(element("dt", "", dt), element("dd", "", String(dd)));
+          return d;
+        }));
+        const defis = [
+          ["Sans mourir", s.morts === 0],
+          ["Sans indice", s.indices === 0],
+          ["Archiviste : 8 pages", s.pages === s.totalPages],
+          ["Explorateur : 100 locaux", s.locaux >= 100],
+        ];
+        $("defis").replaceChildren(...defis.map(([t, ok]) => element("li", ok ? "reussi" : "", (ok ? "✔ " : "") + t)));
+        $("note-invite").hidden = Boolean(session);
+      } else {
+        const d = partie.derniereMort || {};
+        const indice = $("indice-mort");
+        indice.textContent = d.indice ? typo("Ce que tu sais maintenant : " + d.indice) : "";
+        indice.hidden = !d.indice;
+        const peutReprendre = Boolean(partie.pointSur);
+        $("reprendre").hidden = !peutReprendre;
+        $("libelle-sur").textContent = peutReprendre ? typo(`Moment sûr : ${partie.pointSurLibelle}. Ce que tu as appris (calepin, locaux visités, pages) reste avec toi.`) : "";
+        const morts = partie.morts + 1;
+        $("morts-nuit").textContent = typo(`Morts cette nuit : ${morts}`);
+      }
+      noir.hidden = false;
+      noir.scrollTop = 0;
+      noir.classList.add("actif");
+      (victoire ? $("reveler") : peutOuRecommencer()).focus();
+    }
+    const peutOuRecommencer = () => ($("reprendre").hidden ? $("recommencer") : $("reprendre"));
+
+    function reprendrePartie() {
+      reinitialiserFin();
+      journal.appendChild(element("p", "coupure", "· · ·"));
+      const premier = afficher(partie.executer("continuer"));
+      mortEnvoyee = false;
+      derniereAction = Date.now();
+      sauvegarder();
+      majActions();
+      defiler(premier);
+      focaliser();
+    }
+
+    // Rejouer après une victoire efface la phrase : il faut toucher deux fois.
+    let rejouerArme = false;
+    function armerRejouer(arme) {
+      rejouerArme = arme;
+      $("rejouer").textContent = arme ? "Sûr ? La phrase va disparaître" : "Rejouer";
+    }
+
     function entrerDansLeJeu(nouvelleSession, sauvegarde) {
       session = nouvelleSession;
-      document.getElementById("nom-joueur").textContent = session ? session.pseudo : "Invité";
+      $("nom-joueur").textContent = session ? session.pseudo : "Invité";
       accueil.hidden = true;
       nouvellePartie(sauvegarde);
     }
@@ -806,8 +1339,10 @@
       session = null;
       partie = null;
       majActions();
-      document.getElementById("mdp").value = "";
-      document.getElementById("mdp2").value = "";
+      reinitialiserFin();
+      $("intro").hidden = true;
+      $("mdp").value = "";
+      $("mdp2").value = "";
       choisirOnglet(false);
       accueil.hidden = false;
     }
@@ -815,27 +1350,26 @@
     let modeCreation = false;
     function choisirOnglet(creation) {
       modeCreation = creation;
-      document.getElementById("onglet-connexion").setAttribute("aria-pressed", String(!creation));
-      document.getElementById("onglet-creation").setAttribute("aria-pressed", String(creation));
-      document.getElementById("label-mdp2").hidden = !creation;
-      document.getElementById("mdp2").hidden = !creation;
-      document.getElementById("mdp").autocomplete = creation ? "new-password" : "current-password";
-      document.getElementById("bouton-compte").textContent = creation ? "Créer mon compte" : "Se connecter";
-      document.getElementById("erreur-compte").textContent = "";
+      $("onglet-connexion").setAttribute("aria-pressed", String(!creation));
+      $("onglet-creation").setAttribute("aria-pressed", String(creation));
+      $("label-mdp2").hidden = !creation;
+      $("mdp2").hidden = !creation;
+      $("mdp").autocomplete = creation ? "new-password" : "current-password";
+      $("bouton-compte").textContent = creation ? "Créer mon compte" : "Se connecter";
+      $("erreur-compte").textContent = "";
     }
 
     serveurJoignable().then((oui) => {
-      document.getElementById(oui ? "bloc-compte" : "sans-compte").hidden = false;
-      document.getElementById("bloc-palmares").hidden = !oui;
+      $(oui ? "bloc-compte" : "sans-compte").hidden = false;
+      $("bloc-palmares").hidden = !oui;
     });
 
     function afficherPalmares() {
-      const corps = document.getElementById("lignes-palmares");
+      const corps = $("lignes-palmares");
       const ligneSeule = (texte) => {
         const tr = document.createElement("tr");
-        const td = document.createElement("td");
-        td.colSpan = 4;
-        td.textContent = texte;
+        const td = element("td", "", texte);
+        td.colSpan = 5;
         tr.appendChild(td);
         corps.replaceChildren(tr);
       };
@@ -845,11 +1379,8 @@
           if (!liste.length) return ligneSeule("Personne n'a encore survécu à la nuit.");
           corps.replaceChildren(...liste.map((g, i) => {
             const tr = document.createElement("tr");
-            for (const [valeur, classe] of [[i + 1, ""], [g.pseudo, ""], [formaterTemps(g.temps), "nombre"], [g.morts, "nombre"]]) {
-              const td = document.createElement("td");
-              td.textContent = valeur;
-              if (classe) td.className = classe;
-              tr.appendChild(td);
+            for (const [valeur, classe] of [[i + 1, ""], [g.pseudo, ""], [formaterTemps(g.temps), "nombre"], [g.morts, "nombre"], [g.indices || 0, "nombre"]]) {
+              tr.appendChild(element("td", classe, String(valeur)));
             }
             return tr;
           }));
@@ -857,42 +1388,53 @@
         .catch((e) => ligneSeule("Palmarès indisponible : " + e.message));
     }
 
-    document.getElementById("bouton-palmares").addEventListener("click", function () {
-      const panneau = document.getElementById("palmares");
+    $("bouton-palmares").addEventListener("click", function () {
+      const panneau = $("palmares");
       panneau.hidden = !panneau.hidden;
       this.setAttribute("aria-expanded", String(!panneau.hidden));
       this.textContent = panneau.hidden ? "Voir le palmarès" : "Cacher le palmarès";
       if (!panneau.hidden) afficherPalmares();
     });
-    document.getElementById("invite").addEventListener("click", () => entrerDansLeJeu(null, null));
-    document.getElementById("onglet-connexion").addEventListener("click", () => choisirOnglet(false));
-    document.getElementById("onglet-creation").addEventListener("click", () => choisirOnglet(true));
-    document.getElementById("quitter").addEventListener("click", revenirAccueil);
-    document.getElementById("form-compte").addEventListener("submit", function (e) {
+    $("invite").addEventListener("click", () => entrerDansLeJeu(null, null));
+    $("onglet-connexion").addEventListener("click", () => choisirOnglet(false));
+    $("onglet-creation").addEventListener("click", () => choisirOnglet(true));
+    $("quitter").addEventListener("click", revenirAccueil);
+    $("ouvrir-yeux").addEventListener("click", fermerIntro);
+    $("reprendre").addEventListener("click", reprendrePartie);
+    $("recommencer").addEventListener("click", () => nouvellePartie(null));
+    $("reveler").addEventListener("click", function () {
+      this.hidden = true;
+      $("phrase-finale").hidden = false;
+      $("consigne-finale").hidden = false;
+    });
+    $("rejouer").addEventListener("click", () => {
+      if (!rejouerArme) return armerRejouer(true);
+      nouvellePartie(null);
+    });
+    $("form-compte").addEventListener("submit", function (e) {
       e.preventDefault();
-      const erreur = document.getElementById("erreur-compte");
-      const bouton = document.getElementById("bouton-compte");
-      const pseudo = document.getElementById("pseudo").value.trim();
-      const mdp = document.getElementById("mdp").value;
-      if (modeCreation && mdp !== document.getElementById("mdp2").value) {
+      const erreur = $("erreur-compte");
+      const boutonCompte = $("bouton-compte");
+      const pseudo = $("pseudo").value.trim();
+      const mdp = $("mdp").value;
+      if (modeCreation && mdp !== $("mdp2").value) {
         erreur.textContent = "Les deux mots de passe ne sont pas pareils.";
         return;
       }
       erreur.textContent = "";
-      bouton.disabled = true;
+      boutonCompte.disabled = true;
       appeler(modeCreation ? "creerCompte" : "connecter", pseudo, mdp)
         .then((r) => entrerDansLeJeu({ pseudo: r.pseudo, jeton: r.jeton }, r.sauvegarde))
         .catch((err) => { erreur.textContent = err.message; })
-        .finally(() => { bouton.disabled = false; });
+        .finally(() => { boutonCompte.disabled = false; });
     });
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "hidden" && minuterie) envoyerSauvegarde();
     });
 
     // Sur téléphone et tablette, on évite de faire surgir le clavier sans que l'élève l'ait demandé.
-    const tactile = window.matchMedia("(pointer: coarse)").matches;
     function focaliser() {
-      if (!tactile) champ.focus();
+      if (!tactile && accueil.hidden && $("intro").hidden && noir.hidden) champ.focus();
     }
 
     function envoyer(commande) {
@@ -900,101 +1442,126 @@
       if (!commande || !partie) return;
       historique.push(commande);
       position = historique.length;
-      afficher([{ type: "commande", texte: commande.toUpperCase() }]);
+      derniereAction = Date.now();
       if (NuitStEx.normaliser(commande) === "REJOUER") return nouvellePartie(null);
-      const blocs = partie.executer(commande);
       // Les boutons des réponses précédentes ne valent plus : seuls les nouveaux restent actifs.
-      journal.querySelectorAll("button[data-commande]").forEach((b) => { b.disabled = true; });
+      journal.querySelectorAll("button[data-commande], button[data-action], g[data-commande]").forEach((b) => {
+        if (b.tagName === "g") { b.removeAttribute("data-commande"); b.removeAttribute("tabindex"); b.setAttribute("class", ""); } else b.disabled = true;
+      });
+      const echo = afficher([{ type: "commande", texte: commande.toUpperCase() }]);
+      const blocs = partie.executer(commande);
+      if (!partie.termine) mortEnvoyee = false;
       afficher(blocs);
       if (blocs.some((b) => b.type === "fin")) enregistrerVictoire();
       sauvegarder();
       majActions();
+      defiler(echo);
     }
 
-    // Boutons : les sorties du lieu, puis les commandes de tous les jours.
-    const COMMANDES_RAPIDES = [["Regarder", "regarder"], ["Inventaire", "inventaire"], ["Carte", "carte"], ["Notes", "notes"], ["Aide", "aide"]];
+    // ==========================================
+    // BARRE D'ACTIONS
+    // ==========================================
+    const OUTILS = [["Regarder", "regarder"], ["Écouter", "écouter"], ["Carte", "carte"], ["Objectifs", "objectifs"], ["Indice", "indice"], ["Notes", "notes"], ["Sac", "inventaire"], ["Aide", "aide"]];
     let panneauLocauxOuvert = false;
-    function majActions() {
-      const barre = document.getElementById("actions");
-      barre.replaceChildren();
-      if (!partie) return;
-      if (partie.termine) {
-        const rangeeFin = document.createElement("div");
-        rangeeFin.className = "rangee";
-        const continuer = document.createElement("button");
-        continuer.type = "button";
-        continuer.className = "continuer";
-        continuer.textContent = "Continuer →";
-        continuer.addEventListener("click", () => {
-          noir.hidden = false;
-          noir.classList.add("actif");
-          document.getElementById("rejouer").focus();
-        });
-        rangeeFin.appendChild(continuer);
-        barre.appendChild(rangeeFin);
+
+    function majJauge(menace) {
+      const jauge = $("jauge");
+      jauge.hidden = !menace;
+      vignette.classList.toggle("actif", Boolean(menace));
+      if (!menace) {
+        document.documentElement.style.setProperty("--menace", "0");
         return;
       }
+      document.documentElement.style.setProperty("--menace", String(1 - menace.restant / menace.total));
+      $("jauge-texte").textContent = menace.restant > 3 ? "Ils arrivent" : "Ils sont là";
+      $("pastilles").replaceChildren(...Array.from({ length: menace.total }, (_, i) => element("i", i < menace.restant ? "vive" : "")));
+    }
+
+    function majActions() {
+      const barre = $("actions");
+      barre.replaceChildren();
+      if (!partie) return majJauge(null);
       const ctx = partie.contexte();
-      // Liste des locaux du couloir, toujours à jour (crochets vert et jaune), ouverte à la demande.
-      if (panneauLocauxOuvert && ctx.locaux.length) {
-        const panneau = document.createElement("div");
-        panneau.id = "panneau-locaux";
-        const p = document.createElement("p");
-        p.className = "locaux";
-        remplirLocaux(p, { locaux: ctx.locaux, vus: ctx.locaux.filter((l) => l.visite).length, aRevoir: ctx.locaux.filter((l) => l.aRevoir).length });
-        panneau.appendChild(p);
-        barre.appendChild(panneau);
-      }
-      const rangee = () => {
-        const r = document.createElement("div");
-        r.className = "rangee";
+      majJauge(partie.termine ? null : ctx.menace);
+      const rangee = (classe) => {
+        const r = element("div", "rangee" + (classe ? " " + classe : ""));
         barre.appendChild(r);
         return r;
       };
-      const bouton = (r, texte, commande, classe) => {
-        const b = document.createElement("button");
-        b.type = "button";
-        b.textContent = texte;
-        b.dataset.commande = commande;
-        if (classe) b.className = classe;
-        r.appendChild(b);
-      };
+      if (partie.termine) {
+        const continuer = bouton(partie.gagne ? "Continuer : le générique →" : "Continuer →", {}, "continuer");
+        continuer.addEventListener("click", ouvrirFin);
+        rangee().appendChild(continuer);
+        return;
+      }
+      // Liste des locaux du secteur, toujours à jour (crochets vert et jaune), ouverte à la demande.
+      if (panneauLocauxOuvert && ctx.locaux.length) {
+        const panneau = element("div");
+        panneau.id = "panneau-locaux";
+        const vus = ctx.locaux.filter((l) => l.visite).length;
+        const titre = element("div", "titre");
+        titre.append(element("span", "", "Locaux du secteur"), element("span", "", `${vus}/${ctx.locaux.length} visités`));
+        const grille = element("div", "grille");
+        for (const l of ctx.locaux) {
+          const b = bouton(l.nom, { commande: "entrer " + l.nom }, l.aRevoir ? "a-revoir" : l.visite ? "visite" : "");
+          b.title = l.aRevoir ? "Tu as laissé quelque chose ici" : l.visite ? "Visité" : "Pas encore visité";
+          grille.appendChild(b);
+        }
+        panneau.append(titre, grille);
+        barre.appendChild(panneau);
+      }
       const sorties = rangee();
-      sorties.classList.add("rangee-sorties");
-      for (const sortie of ctx.sorties) {
-        const fleche = sortie.direction === "HAUT" ? "↑ " : sortie.direction === "BAS" ? "↓ " : "→ ";
-        bouton(sorties, fleche + sortie.nom + (sortie.verrouille ? " 🔒" : ""), "aller " + sortie.nom, "direction");
+      for (const s of ctx.sorties) {
+        const fleche = s.direction === "HAUT" ? "↑ " : s.direction === "BAS" ? "↓ " : "→ ";
+        const classe = "direction" + (s.piege || s.garde ? " piege" : "") + (s.verrouille ? " verrou" : "");
+        const texte = fleche + s.nom + (s.verrouille ? " 🔒" : "") + ((s.piege && s.averti) || s.garde ? " ⚠" : "");
+        sorties.appendChild(bouton(texte, { commande: "aller " + s.nom }, classe));
       }
       if (ctx.locaux.length) {
         const vus = ctx.locaux.filter((l) => l.visite).length;
-        const b = document.createElement("button");
-        b.type = "button";
-        b.id = "bouton-locaux";
-        b.textContent = `Locaux ${vus}/${ctx.locaux.length}`;
+        const b = bouton(`Locaux ${vus}/${ctx.locaux.length}`, { action: "locaux" }, "g-outil");
         b.setAttribute("aria-expanded", String(panneauLocauxOuvert));
-        b.addEventListener("click", () => {
-          panneauLocauxOuvert = !panneauLocauxOuvert;
-          majActions();
-        });
         sorties.appendChild(b);
       }
-      if (ctx.objets.length) {
-        const prises = rangee();
-        for (const o of ctx.objets) bouton(prises, "Prendre : " + o.nom, "prendre " + o.nom, "prise");
+      const contexte = ctx.actions.filter((a) => a.genre !== "outil");
+      const actions = contexte.length ? rangee() : null;
+      for (const a of contexte) {
+        const b = bouton(a.texte, a.commande ? { commande: a.commande } : { saisie: a.saisie }, "g-" + a.genre);
+        actions.appendChild(b);
       }
-      const commandes = rangee();
-      for (const [texte, commande] of COMMANDES_RAPIDES) bouton(commandes, texte, commande);
+      const outils = rangee("outils");
+      for (const [texte, commande] of OUTILS) outils.appendChild(bouton(texte, { commande }));
     }
 
-    // Un seul écouteur pour tous les boutons qui portent une commande (barre, locaux, objets).
+    // Un seul écouteur pour tout ce qui porte une commande (barre, mots, locaux, plan).
     document.addEventListener("click", function (e) {
-      const cible = e.target.closest("[data-commande]");
-      if (!cible) return;
+      const cible = e.target.closest("[data-commande], [data-action], [data-saisie]");
+      if (!cible || cible.disabled) return;
       e.preventDefault();
+      if (cible.dataset.action === "locaux") {
+        panneauLocauxOuvert = !panneauLocauxOuvert;
+        majActions();
+        return;
+      }
+      if (cible.dataset.saisie) {
+        // « Composer un code… » : le code reste à taper, c'est l'énigme.
+        champ.value = cible.dataset.saisie.toUpperCase();
+        champ.focus();
+        champ.setSelectionRange(champ.value.length, champ.value.length);
+        return;
+      }
       envoyer(cible.dataset.commande);
     });
+    // Les cases du plan se touchent aussi au clavier.
+    document.addEventListener("keydown", function (e) {
+      const cible = e.target.closest && e.target.closest("g[data-commande]");
+      if (cible && (e.key === "Enter" || e.key === " ")) {
+        e.preventDefault();
+        envoyer(cible.dataset.commande);
+      }
+    });
 
-    document.getElementById("saisie").addEventListener("submit", function (e) {
+    $("saisie").addEventListener("submit", function (e) {
       e.preventDefault();
       const commande = champ.value;
       champ.value = "";
@@ -1013,12 +1580,26 @@
       }
     });
 
-    document.getElementById("rejouer").addEventListener("click", () => nouvellePartie(null));
     journal.addEventListener("click", function (e) {
-      if (e.target.closest("button")) return;
+      if (e.target.closest("button, g")) return;
       if (!window.getSelection().toString()) focaliser();
     });
 
+    // Mise à jour de la page pendant une partie (aperçu Claude) : la partie invitée reprend où elle était.
+    const chaud = window.claude && window.claude.hot;
+    try {
+      if (chaud && chaud.snapshot) chaud.snapshot(() => (partie && !session ? { invite: partie.exporter() } : {}));
+    } catch (e) { /* aperçu indisponible */ }
+    function demarrer(donnees) {
+      if (donnees && donnees.invite) {
+        introVue = true;
+        entrerDansLeJeu(null, donnees.invite);
+      }
+    }
+    try {
+      if (chaud && chaud.ready) chaud.ready(demarrer);
+      else demarrer(chaud && chaud.data);
+    } catch (e) { /* démarrage normal par l'accueil */ }
   })();
 </script>
 </body>

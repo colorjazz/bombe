@@ -5,7 +5,8 @@
  * script est rattaché :
  *   - Comptes  : pseudo, sel, empreinte du mot de passe (jamais le mot de passe lui-même)
  *   - Parties  : la sauvegarde de chaque compte, ses morts et son temps de jeu actif
- *   - Gagnants : l'ordre d'arrivée, la date et l'heure, le temps de jeu et les morts
+ *   - Gagnants : l'ordre d'arrivée, la date et l'heure, le temps de jeu, les morts, les indices
+ *                et un code de vérification (que le gagnant montre à M. Plante)
  *
  * Le temps de jeu est mesuré ici, par le serveur, à partir des sauvegardes :
  * un écart de plus de PAUSE_MAX entre deux contacts compte comme une pause.
@@ -31,7 +32,7 @@ var SAUVEGARDES_MINIMUM = 15;
 var ENTETES = {
   Comptes: ["Pseudo", "Sel", "Empreinte du mot de passe", "Créé le"],
   Parties: ["Pseudo", "Sauvegarde", "Dernier contact", "Morts", "Temps de jeu (s)", "Sauvegardes"],
-  Gagnants: ["Rang d'arrivée", "Pseudo", "Date et heure", "Temps de jeu", "Temps (s)", "Morts", "Vérification"],
+  Gagnants: ["Rang d'arrivée", "Pseudo", "Date et heure", "Temps de jeu", "Temps (s)", "Morts", "Vérification", "Indices", "Code"],
 };
 
 function maintenant_() {
@@ -72,7 +73,7 @@ var ACTIONS = {
   connecter: function (a) { return connecter(a[0], a[1]); },
   sauvegarder: function (a) { return sauvegarder(a[0], a[1], a[2]); },
   palmares: function () { return palmares(); },
-  enregistrerVictoire: function (a) { return enregistrerVictoire(a[0], a[1]); },
+  enregistrerVictoire: function (a) { return enregistrerVictoire(a[0], a[1], a[2]); },
 };
 
 function doPost(e) {
@@ -232,7 +233,10 @@ function contact_(pseudo, compter) {
   return partie;
 }
 
-/** etat = sauvegarde de la partie, ou null pour l'effacer (mort, nouvelle partie). */
+/**
+ * etat = sauvegarde de la partie (null pour l'effacer). Après une mort, le jeu envoie quand même
+ * la partie : elle reprendra au dernier moment sûr. mort = vrai ajoute une mort au compteur.
+ */
 function sauvegarder(jeton, etat, mort) {
   var pseudo = pseudoDeSession_(jeton);
   return verrouiller_(function () {
@@ -254,28 +258,36 @@ function formaterTemps_(secondes) {
   return h > 0 ? h + " h " + deux(m) + " min" : m + " min " + deux(s) + " s";
 }
 
-function enregistrerVictoire(jeton, reponses) {
+// Code de 4 caractères montré au gagnant : M. Plante le retrouve dans l'onglet Gagnants.
+function codeVerification_() {
+  return Utilities.getUuid().replace(/[^0-9a-f]/gi, "").slice(0, 4).toUpperCase();
+}
+
+/** stats = { indices, actions, … } envoyé par le jeu ; seul le nombre d'indices est gardé. */
+function enregistrerVictoire(jeton, reponses, stats) {
   var pseudo = pseudoDeSession_(jeton);
   var valide = reponses && reponses.length === EMPREINTES_CODES.length &&
     EMPREINTES_CODES.every(function (e, i) { return sha256Hex_(String(reponses[i])) === e; });
   if (!valide) throw new Error("les réponses ne correspondent pas.");
   return verrouiller_(function () {
     var gagnants = feuille_("Gagnants");
-    var deja = gagnants.getRange(1, 1, gagnants.getLastRow(), 5).getValues();
+    var deja = gagnants.getRange(1, 1, gagnants.getLastRow(), 9).getValues();
     for (var i = 1; i < deja.length; i++) {
       if (String(deja[i][1]).toLowerCase() === pseudo.toLowerCase()) {
-        return { rang: deja[i][0], deja: true, temps: Number(deja[i][4]) || 0 };
+        return { rang: deja[i][0], deja: true, temps: Number(deja[i][4]) || 0, code: String(deja[i][8] || "") };
       }
     }
     var partie = contact_(pseudo, true);
     var suspect = partie.temps < TEMPS_MINIMUM || partie.sauvegardes < SAUVEGARDES_MINIMUM;
     var rang = deja.length; // en-tête compris : 1er gagnant = rang 1
+    var indices = Math.max(0, Math.floor(Number(stats && stats.indices) || 0));
+    var code = codeVerification_();
     gagnants.appendRow([
       rang, pseudo, maintenant_(), formaterTemps_(partie.temps), partie.temps, partie.morts,
-      suspect ? "À vérifier (trop rapide)" : "OK",
+      suspect ? "À vérifier (trop rapide)" : "OK", indices, code,
     ]);
     feuille_("Parties").getRange(partie.ligne, 2).setValues([[""]]);
-    return { rang: rang, deja: false, temps: partie.temps };
+    return { rang: rang, deja: false, temps: partie.temps, code: code };
   });
 }
 
@@ -283,11 +295,14 @@ function enregistrerVictoire(jeton, reponses) {
 function palmares() {
   var gagnants = feuille_("Gagnants");
   if (gagnants.getLastRow() < 2) return [];
-  return gagnants.getRange(2, 1, gagnants.getLastRow() - 1, 7).getValues()
+  return gagnants.getRange(2, 1, gagnants.getLastRow() - 1, 9).getValues()
     .filter(function (l) { return l[6] === "OK"; })
     .map(function (l) {
       var date = l[2] instanceof Date ? l[2] : new Date(l[2]);
-      return { arrivee: l[0], pseudo: String(l[1]), temps: Number(l[4]) || 0, morts: Number(l[5]) || 0, date: date.toISOString() };
+      return {
+        arrivee: l[0], pseudo: String(l[1]), temps: Number(l[4]) || 0, morts: Number(l[5]) || 0,
+        indices: Number(l[7]) || 0, date: date.toISOString(),
+      };
     })
     .sort(function (a, b) { return a.temps - b.temps || a.arrivee - b.arrivee; })
     .slice(0, 50);
