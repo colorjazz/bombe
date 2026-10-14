@@ -410,6 +410,9 @@
   #actions .outils button { padding-inline: 0.2rem; font-size: 0.62rem; letter-spacing: 0.06em; color: var(--ombre); border-color: var(--beton-3); }
   #actions .outils button:hover, #actions .outils button:focus-visible { color: var(--lune); border-color: var(--lune); }
   #actions .continuer { flex: 1; min-height: 3rem; font-size: 0.85rem; color: var(--beton); background: var(--ecran); border-color: var(--ecran); }
+  #actions .recommencer { min-height: 3rem; color: var(--ombre); border-color: var(--beton-3); }
+  #actions .libelle-sur { margin: 0; }
+  #actions .outils .plus { display: none; }
   #panneau-locaux {
     max-height: 34vh;
     overflow-y: auto;
@@ -523,7 +526,6 @@
     color: var(--lune);
     text-wrap: balance;
   }
-  #fin-mort h2 { color: var(--rouille); }
   #noir .sur-titre { margin: 0; font-family: var(--f-machine); font-size: 0.66rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--ombre); }
   #noir .indicemort { margin: 0; }
   .stats { margin: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--beton-3); border: 1px solid var(--beton-3); }
@@ -630,6 +632,10 @@
     #actions .direction { font-size: 0.74rem; letter-spacing: 0; }
     #actions .g-prise, #actions .g-lecture, #actions .g-code, #actions .g-action, #actions .g-fin, #actions .g-danger { font-size: 0.72rem; letter-spacing: 0; }
     #actions .outils { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.3rem; }
+    #actions .outils .plus { display: block; color: var(--lune); }
+    #actions .outils .secondaire { display: none; }
+    #actions .outils.ouvert .secondaire { display: block; }
+    #actions .fin-mort { flex-direction: column; }
     #actions .outils button { min-height: 2rem; font-size: 0.6rem; letter-spacing: 0.04em; }
     form#saisie { padding-block: 0.4rem 0.7rem; }
     .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -678,17 +684,6 @@
 </div>
 
 <div id="noir" class="plein" hidden>
-  <div class="boite" id="fin-mort" hidden>
-    <p class="sur-titre">Coupure au noir</p>
-    <h2>La nuit a gagné</h2>
-    <p id="indice-mort" class="indicemort" hidden></p>
-    <p class="note" id="morts-nuit"></p>
-    <div class="boutons-fin">
-      <button id="reprendre" class="bouton-principal" type="button">Reprendre au moment sûr</button>
-      <button id="recommencer" type="button">Recommencer du début</button>
-    </div>
-    <p class="note" id="libelle-sur"></p>
-  </div>
   <div class="boite" id="fin-victoire" hidden>
     <p class="sur-titre">Générique</p>
     <h2>Tu as survécu à la nuit</h2>
@@ -714,7 +709,7 @@
     <h1>La Nuit à St-Ex</h1>
     <p class="accroche">Tu as dormi en classe. Au réveil, l'école est plongée dans le noir, et quelque chose écoute dans les couloirs.</p>
     <button id="invite" class="bouton-principal" type="button">Jouer comme invité</button>
-    <p class="note">Aucune sauvegarde : tu recommences au début à chaque fois.</p>
+    <p class="note">Aucune sauvegarde : si tu fermes ou recharges la page, tu recommences au début. Pendant la partie, une mort te ramène au dernier moment sûr.</p>
     <ul class="comment-jouer">
       <li>Touche les boutons, ou écris ce que tu veux faire (ex. : PRENDRE AGENDA).</li>
       <li>Regarder, lire et consulter ne font jamais avancer le temps.</li>
@@ -893,16 +888,15 @@
 
   // Actions laissées au joueur entre le fracas du cadenas et l'arrivée de la chose.
   // Regarder, lire et consulter ne comptent pas : seuls les gestes qui prennent du temps.
-  const DELAI_POURSUITE = 10;
+  const DELAI_POURSUITE = 9;
 
   // Une ligne par action après le fracas, selon les actions qui restent (jamais sautée).
   const COMPTE_A_REBOURS = {
-    9: "Rien. Seulement ton cœur, qui cogne jusque dans tes oreilles.",
-    8: "Très loin, dans les profondeurs de l'école, un choc sourd. Puis un autre. Une porte qu'on enfonce.",
-    7: TEXTE_PAS_LOINTAINS,
-    6: "D'autres pas répondent aux premiers. Ils viennent de plusieurs directions à la fois.",
-    5: "Puis plus rien. Ils se sont arrêtés. Ils écoutent. Ne fais pas un geste de trop.",
-    4: "Les pas reprennent. Plus vite. Beaucoup plus près.",
+    8: "Rien. Seulement ton cœur, qui cogne jusque dans tes oreilles.",
+    7: "Très loin, dans les profondeurs de l'école, un choc sourd. Puis un autre. Une porte qu'on enfonce.",
+    6: TEXTE_PAS_LOINTAINS,
+    5: "D'autres pas répondent aux premiers. Ils viennent de plusieurs directions à la fois.",
+    4: "Puis plus rien. Ils se sont arrêtés. Ils écoutent. Puis les pas reprennent, plus vite.",
     3: TEXTE_PAS_PROCHES,
     2: "Une ombre passe devant la lueur de la lune, au bout du couloir. Puis une deuxième.",
     1: "Ils sont là. Juste là. Ne te retourne pas.",
@@ -945,8 +939,8 @@
   ]);
 
   const TEXTE_FIN_MORT = ["COUPURE AU NOIR.", "LA NUIT A GAGNÉ."];
-  const TEXTE_REPRISE =
-    "Tu rouvres les yeux d'un coup, le souffle court. Tu es encore là, au même endroit, un peu plus tôt. Ce n'était qu'un cauchemar. Pour l'instant.";
+  const TEXTE_REPRISE = (lieu) =>
+    `Tu rouvres les yeux d'un coup, le souffle court. ${lieu}, un peu plus tôt. Ce n'était qu'un cauchemar. Pour l'instant.`;
 
   // Pièges en deux temps : la première fois, on voit et on recule. Ensuite, c'est un choix.
   const AVERTISSEMENTS = {
@@ -977,6 +971,10 @@
     rencontre_cuisines: [
       "Tu fais un pas vers la porte battante. Il faudrait passer à un mètre d'elle, entre les chaises renversées. Ton cœur cogne si fort que tu as peur qu'elle l'entende. Tu recules.",
       "⚠ Pour atteindre les cuisines, il faudrait la frôler.",
+    ],
+    rencontre_cri: [
+      "Le cri monte dans ta gorge. Tu plaques ta main sur ta bouche juste à temps. Au fond de la salle, la tête de la silhouette se redresse, lentement.",
+      "⚠ Un son de plus, et elle sera sur toi.",
     ],
     rencontre_frapper: [
       "À mains nues ? Contre ça ? Tes poings tremblent rien qu'à y penser.",
@@ -1020,16 +1018,17 @@
 
   const TEXTE_VICTOIRE = [
     "Le métal de la serrure grince sous tes doigts gelés. Les lourdes chaînes glissent et s'écrasent sur les tuiles. Tu pousses les portes vitrées de toutes tes forces. L'air glacial te frappe de plein fouet. Le boulevard Robert est méconnaissable. Sous un ciel criblé d'aurores boréales malades, des carcasses de voitures s'étendent à perte de vue. Derrière toi, au fond de l'école, un cri déchire soudain le silence. Tu te mets à courir vers l'inconnu.",
-    "COUPURE AU NOIR. GÉNÉRIQUE.",
+    "COUPURE AU NOIR.",
     "FÉLICITATIONS, TU AS SURVÉCU À LA NUIT.",
   ];
 
   const EPILOGUE = [
-    "SCÈNE APRÈS LE GÉNÉRIQUE.",
+    "ÉPILOGUE.",
     "Local A-217. Personne. La lune a glissé jusqu'au tableau. Sous le problème du jour, quelqu'un a fini par écrire la réponse à la craie, de cette écriture penchée que tu connais par cœur. Juste en dessous, deux mots de plus, soulignés trois fois : « Bien joué. » Sur ton pupitre, là où ta joue reposait, un bout de craie. Encore tiède.",
   ];
-  const EPILOGUE_CARNET =
-    "Dans ta course, une pensée te traverse : la chemise grise, le trousseau de clés. R., le concierge. Il était monté te chercher.";
+  const EPILOGUE_CARNET = (epargne) =>
+    "Dans ta course, une pensée te traverse : la chemise grise, le trousseau de clés. R., le concierge. Il était monté te chercher. " +
+    (epargne ? "Tu l'as laissé derrière toi, sans le toucher." : "Tu revois ton arme s'abattre. Tu cours plus vite.");
 
   const TEXTE_RECOMPENSE =
     "Retiens bien cette phrase et va la dire en personne à M. Plante. La première personne qui la lui dit gagne un sac de bonbons :";
@@ -1240,7 +1239,7 @@
           mots: ["TABLEAU", "PERIODIQUE", "ELEMENTS", "MUR"],
           bouton: "tableau périodique",
           texte:
-            "Le tableau périodique, en couleurs délavées. Tes yeux accrochent quelques cases : 1 H Hydrogène · 2 He Hélium · 6 C Carbone · 8 O Oxygène · 11 Na Sodium · 13 Al Aluminium · 26 Fe Fer · 29 Cu Cuivre · 47 Ag Argent · 50 Sn Étain · 79 Au Or · 80 Hg Mercure · 82 Pb Plomb · 92 U Uranium.",
+            "Le tableau périodique, en couleurs délavées. Tes yeux accrochent les cases encore lisibles : 1 H Hydrogène · 2 He Hélium · 3 Li Lithium · 6 C Carbone · 7 N Azote · 8 O Oxygène · 9 F Fluor · 11 Na Sodium · 12 Mg Magnésium · 13 Al Aluminium · 14 Si Silicium · 15 P Phosphore · 16 S Soufre · 17 Cl Chlore · 19 K Potassium · 20 Ca Calcium · 22 Ti Titane · 24 Cr Chrome · 26 Fe Fer · 27 Co Cobalt · 28 Ni Nickel · 29 Cu Cuivre · 30 Zn Zinc · 31 Ga Gallium · 35 Br Brome · 47 Ag Argent · 50 Sn Étain · 53 I Iode · 55 Cs Césium · 74 W Tungstène · 78 Pt Platine · 79 Au Or · 80 Hg Mercure · 82 Pb Plomb · 86 Rn Radon · 92 U Uranium. Dans la marge, quelqu'un a écrit : « Br = liquide aussi, mais pas un métal ! »",
         },
         { mots: ["TABLES", "TABLE", "PAILLASSE", "PAILLASSES", "LABO", "LABOS", "BECHER"], texte: "De grandes tables noires, résistantes aux acides. Des éviers, des robinets à gaz. Sur l'une d'elles, un bécher renversé a laissé une auréole blanche." },
       ],
@@ -1264,6 +1263,9 @@
       zone: "Aile C · 1er étage",
       description:
         "Une mer de 600 [chaises] renversées, un chaos géométrique terrifiant. L'immense salle de l'Aile C baigne dans une lueur bleutée et malade. Au loin, les comptoirs des cuisines ressemblent à des autels abandonnés. Ton estomac se noue douloureusement. Deux couloirs longent la salle, un de chaque côté, et une porte battante mène aux cuisines.",
+      variante: (p) => p.flags.a_mange
+        ? "Une mer de 600 [chaises] renversées, un chaos géométrique terrifiant. L'immense salle de l'Aile C baigne dans une lueur bleutée et malade. Au loin, les comptoirs des cuisines ressemblent à des autels abandonnés. Deux couloirs longent la salle, un de chaque côté, et une porte battante mène aux cuisines."
+        : null,
       court: "La cafétéria et ses 600 [chaises] renversées.",
       sorties: { OUEST: 19, EST: 28, NORD: 21 },
       alias: { PORTEBATTANTE: 21, CUISINE: 21 },
@@ -1411,7 +1413,7 @@
       nom: "Couloir de l'Aile F",
       zone: "Aile F · 1er étage",
       description:
-        "L'Aile F, basse et étroite, accrochée au flanc de l'école. Les portes des classes F101 à F118 sont toutes fermées. Derrière leurs petites fenêtres, les pupitres alignés attendent des élèves qui ne viendront plus. Au bout du couloir, la cage d'escalier en demi-lune monte vers l'étage. Tout près, une [porte de secours|regarder porte] donne sur la cour.",
+        "L'Aile F, basse et étroite, accrochée au flanc de l'école. Les portes des classes F101 à F118 sont closes, mais pas verrouillées. Derrière leurs petites fenêtres, les pupitres alignés attendent des élèves qui ne viendront plus. Au bout du couloir, la cage d'escalier en demi-lune monte vers l'étage. Tout près, une [porte de secours|regarder porte] donne sur la cour.",
       court: "Le couloir de l'Aile F. La cage d'escalier en demi-lune monte vers l'étage.",
       sorties: { NORD: 19, HAUT: 16 },
       alias: { C103: 19 },
@@ -1817,6 +1819,16 @@
     "Un local d'entreposage. Des tables pliantes, des chaises empilées, une boule disco poussiéreuse : le bal de l'an dernier.",
   ];
 
+  // Un texte ordinaire déjà lu ailleurs : une ligne courte, pour ne pas relire la même chose.
+  const LOCAUX_DEJA_VUS = [
+    "Encore une classe vide. Tu ne t'attardes pas.",
+    "Les mêmes pupitres, le même silence. Rien pour toi ici.",
+    "Tu jettes un œil, rien de plus. Rien ne bouge. Rien d'utile.",
+    "Une pièce comme les autres. Tu ressors aussitôt.",
+    "Rien. Tu commences à connaître ce silence par cœur.",
+    "Vide. Tu refermes la porte doucement.",
+  ];
+
   const LOCAUX_GYM = [
     "Un gymnase plongé dans le noir. Des filets de volleyball pendent, à moitié décrochés. Ton souffle résonne sous le plafond trop haut. Rien.",
     "Un gymnase vide. Les gradins repliés contre le mur forment une falaise sombre. Tu ne t'attardes pas.",
@@ -1931,12 +1943,12 @@
     { id: "coffre", texte: "La clé est dans le coffre du secrétariat.", visible: (p) => p.faits.includes("mural") || p.faits.includes("postit") || p.pages.includes(6), fait: (p) => Boolean(p.codes[11]) },
     { id: "code_coffre", texte: "Trouver le code du coffre : la réponse au problème du tableau de M. Plante.", visible: (p) => p.faits.includes("postit") || p.faits.includes("mural"), fait: (p) => Boolean(p.codes[11]) },
     { id: "cadenas", texte: "Briser le cadenas rouillé du secrétariat. Il faut quelque chose de solide.", visible: (p) => p.visites.has(LIEU_SORTIE), fait: (p) => p.flags.cadenas_brise },
-    { id: "arme", texte: "Te fabriquer une arme (« Ne sors pas sans te défendre »).", visible: (p) => p.faits.includes("mural") || p.possede("tuyau_metal") || p.possede("lame_lourde"), fait: (p) => p.flags.arme_fabriquee },
+    { id: "arme", texte: "Te fabriquer une arme (« Ne sors pas sans te défendre »).", visible: (p) => p.faits.includes("mural") || p.possede("tuyau_metal") || p.possede("lame_lourde") || p.flags.arme_fabriquee, fait: (p) => p.flags.arme_fabriquee },
     { id: "ruban", texte: "Trouver de quoi faire tenir les pièces ensemble.", visible: (p) => p.faits.includes("sans_ruban"), fait: (p) => p.possede("ruban_adhesif") || p.flags.arme_fabriquee, faitTexte: "Tu as de quoi faire tenir les pièces ensemble." },
     { id: "force", texte: "Reprendre des forces : manger quelque chose avant de frapper.", visible: (p) => p.faits.includes("faible") || p.scenes.includes("faim2"), fait: (p) => p.flags.a_mange, faitTexte: "Tu as repris des forces." },
     { id: "depot", texte: "Ouvrir le dépôt de sciences (B247) : cadenas à deux lettres.", visible: (p) => p.visites.has(5), fait: (p) => Boolean(p.codes[5]) },
     { id: "armoire", texte: "Ouvrir l'armoire de premiers soins (F212) : cadenas à trois chiffres.", visible: (p) => p.visites.has(16) || p.pages.includes(3), fait: (p) => Boolean(p.codes[16]) },
-    { id: "lumiere", texte: "Revenir aux vestiaires avec de la lumière : quelque chose traîne par terre.", visible: (p) => p.visites.has(13), fait: (p) => p.possede("tuyau_metal") || p.flags.arme_fabriquee, faitTexte: "Tu as trouvé ce qui traînait aux vestiaires." },
+    { id: "lumiere", texte: "Revenir aux vestiaires avec de la lumière : quelque chose traîne par terre.", visible: (p) => p.faits.includes("noir13"), fait: (p) => p.possede("tuyau_metal") || p.flags.arme_fabriquee, faitTexte: "Tu as trouvé ce qui traînait aux vestiaires." },
   ];
 
   // Indices gradués. L'étape visée est la première non accomplie dont la condition est remplie.
@@ -1956,7 +1968,7 @@
       niveaux: ["Ton arme. C'est maintenant qu'elle sert : FRAPPER. Ou LANCE quelque chose d'inutile pour l'attirer ailleurs. Vite."],
     },
     {
-      id: "depot", ok: (p) => Boolean(p.codes[5]),
+      id: "depot", ok: (p) => Boolean(p.codes[5]), deja: (p) => (p.faits.includes("fiche") ? 1 : 0),
       niveaux: [
         "Aux laboratoires de sciences, tout près du carrefour de l'étage, un dépôt est fermé par un cadenas à lettres.",
         "Lis la fiche collée sur la porte du dépôt, puis le tableau périodique au mur.",
@@ -1964,7 +1976,7 @@
       ],
     },
     {
-      id: "armoire", ok: (p) => Boolean(p.codes[16]),
+      id: "armoire", ok: (p) => Boolean(p.codes[16]), deja: (p) => (p.faits.includes("gravure") ? 1 : 0),
       niveaux: [
         "Il existe une armoire de premiers soins à l'étage de l'Aile F. On y monte par l'escalier au bout du couloir de l'Aile F, ou en passant par l'étage de l'Aile C.",
         "La gravure de l'armoire parle de « la caverne » : relis la description de l'auditorium. Et la classe où tout a commencé, c'est celle où tu as ouvert les yeux.",
@@ -1975,7 +1987,7 @@
       id: "tuyau", ok: (p) => p.possede("tuyau_metal") || p.flags.arme_fabriquee, si: (p) => p.possede("baton_lumineux"),
       niveaux: [
         "Les vestiaires, au couloir des gymnases, sont plongés dans le noir complet. Quelque chose y traîne par terre.",
-        "Allume ton bâton lumineux (ALLUMER BÂTON), puis va aux vestiaires et prends ce qui traîne.",
+        "Ton bâton lumineux éclaire (ALLUMER BÂTON s'il est éteint) : va aux vestiaires et prends ce qui traîne par terre.",
       ],
     },
     {
@@ -1998,7 +2010,7 @@
       niveaux: ["Tu n'as rien mangé depuis le dîner. Une barre tendre a été oubliée sur une table de la cafétéria. MANGE-la avant de frapper."],
     },
     {
-      id: "avant_cadenas", ok: (p) => p.flags.cadenas_brise,
+      id: "avant_cadenas", ok: (p) => p.flags.cadenas_brise, deja: (p) => (p.faits.includes("postit") ? 1 : 0),
       niveaux: [
         "Le cadenas du secrétariat cédera sous ton arme. Mais le bruit va les attirer, et tu n'auras que quelques gestes. Connais-tu déjà le code du coffre ?",
         "Lis le post-it à travers la vitre du secrétariat, au couloir administratif. Résous le problème du tableau de M. Plante AVANT de frapper.",
@@ -2059,7 +2071,7 @@
   const SCENES = [
     {
       id: "descente",
-      quand: (p) => p.lieu === 6,
+      quand: (p, avant) => p.lieu === 6 && avant !== 6,
       texte: "Tu viens à peine d'atteindre le carrefour quand, quelque part dans le bâtiment, une porte claque. Une seule fois. L'écho roule entre les piliers, puis s'éteint. Tu restes immobile. Tu comptes jusqu'à soixante. Rien d'autre ne vient. Au pied de l'escalier, une chaussure de course. Une seule. Le lacet est encore noué.",
     },
     {
@@ -2113,7 +2125,7 @@
     PRENDRE: "PRENDRE", PRENDS: "PRENDRE", PREND: "PRENDRE", RAMASSER: "PRENDRE", RAMASSE: "PRENDRE", P: "PRENDRE",
     POGNER: "PRENDRE", POGNE: "PRENDRE", POGNES: "PRENDRE", ATTRAPER: "PRENDRE", ATTRAPE: "PRENDRE",
     SAISIR: "PRENDRE", SAISIS: "PRENDRE", TAKE: "PRENDRE", GET: "PRENDRE", RECUPERER: "PRENDRE", RECUPERE: "PRENDRE",
-    REGARDER: "REGARDER", REGARDE: "REGARDER", R: "REGARDER", EXAMINER: "REGARDER", EXAMINE: "REGARDER",
+    REGARDER: "REGARDER", REGARDE: "REGARDER", R: "REGARDER", L: "REGARDER", EXAMINER: "REGARDER", EXAMINE: "REGARDER",
     OBSERVER: "REGARDER", OBSERVE: "REGARDER", X: "REGARDER", FOUILLER: "REGARDER", FOUILLE: "REGARDER",
     CHECK: "REGARDER", CHECKER: "REGARDER", CHECKE: "REGARDER", LOOK: "REGARDER", VOIR: "REGARDER", VOIS: "REGARDER",
     INSPECTER: "REGARDER", INSPECTE: "REGARDER", TOUCHER: "REGARDER", TOUCHE: "REGARDER", DECRIRE: "REGARDER",
@@ -2135,11 +2147,12 @@
     CODE: "COMPOSER", COMBINAISON: "COMPOSER", ESSAYER: "COMPOSER", ESSAIE: "COMPOSER",
     TIRER: "TIRER", TIRE: "TIRER", ACTIONNER: "TIRER", ACTIONNE: "TIRER", ABAISSER: "TIRER", ABAISSE: "TIRER",
     RETOUR: "RETOUR", RETOURNER: "RETOUR", REVENIR: "RETOUR", RECULER: "RETOUR", RECULE: "RETOUR", BACK: "RETOUR",
-    SORTIR: "SORTIR", SORS: "SORTIR", FUIR: "SORTIR", FUIS: "SORTIR", QUITTER: "SORTIR",
+    SORTIR: "SORTIR", SORS: "SORTIR", FUIR: "SORTIR", FUIS: "SORTIR", QUITTER: "META",
     CARTE: "CARTE", PLAN: "CARTE", M: "CARTE", MAP: "CARTE",
     ALLUMER: "ALLUMER", ALLUME: "ALLUMER", PLIER: "ALLUMER", PLIE: "ALLUMER", CRAQUER: "ALLUMER", CRAQUE: "ALLUMER",
     INVENTAIRE: "INVENTAIRE", INV: "INVENTAIRE", I: "INVENTAIRE", SAC: "INVENTAIRE", POCHES: "INVENTAIRE",
     NOTES: "NOTES", RELIRE: "NOTES",
+    LOCAUX: "LOCAUX", LOCAL: "LOCAUX",
     AIDE: "AIDE", "?": "AIDE", HELP: "AIDE", COMMANDES: "AIDE",
     ECOUTER: "ECOUTER", ECOUTE: "ECOUTER", LISTEN: "ECOUTER", ENTENDRE: "ECOUTER",
     ATTENDRE: "ATTENDRE", ATTENDS: "ATTENDRE", PATIENTER: "ATTENDRE", CACHER: "ATTENDRE", CACHE: "ATTENDRE",
@@ -2159,10 +2172,11 @@
     PLEURER: "Tu en as envie. Tu serres les dents. Pas maintenant.", PLEURE: "Tu en as envie. Tu serres les dents. Pas maintenant.",
     PRIER: "Tu fermes les yeux une seconde. Quand tu les rouvres, l'école est toujours là.",
     CONTINUER: "Tu es bien en vie. Continue.", REPRENDRE: "Tu es bien en vie. Continue.",
+    QUITTER: "Pour quitter la partie, touche QUITTER en haut de l'écran. Pour sortir d'ici, touche une sortie.",
     defaut: "Pas besoin : la nuit garde elle-même un moment sûr à chaque étape importante.",
   };
   // Commandes qui ne coûtent ni temps de poursuite ni attente d'indice : regarder, lire, consulter.
-  const GRATUITS = new Set(["REGARDER", "LIRE", "INVENTAIRE", "CARTE", "ECOUTER", "META"]);
+  const GRATUITS = new Set(["REGARDER", "LIRE", "INVENTAIRE", "CARTE", "ECOUTER", "META", "LOCAUX"]);
 
   const MOTS_VIDES = new Set([
     "LE", "LA", "LES", "L", "UN", "UNE", "DES", "DE", "DU", "D", "AU", "AUX", "DANS",
@@ -2315,6 +2329,14 @@
     return { type: "chapitre", numero: CHAPITRES[n][0], texte: CHAPITRES[n][1] };
   }
 
+  // Autres noms des lieux : « labos », « sciences », « cafét », « gym »…
+  const SYNONYMES = {
+    LABO: 5, LABOS: 5, LABORATOIRE: 5, SCIENCES: 5, LABOSCIENCES: 5, LABORATOIRESSCIENCES: 5,
+    CAFET: 7, CAFE: 7, CAFETE: 7, CAFETERIAS: 7, CUISINE: 21, AUDITO: 8, AUDI: 8, SALLESPECTACLE: 8,
+    DIRECTION: 10, ADMINISTRATION: 10, ENTREE: 10, BIBLIO: 23, VESTIAIRE: 13, GYM: 12, GYMNASES: 12, GYM1: 14,
+    CLASSE: 1, A217: 1, CLASSEPLANTE: 1, PLANTE: 1, CENTRE: 25, PASSERELLES: 5, VIEETUDIANTE: 24,
+  };
+
   // Nom d'une destination comparé sans les petits mots (« de », « l' »), comme une commande.
   const cleNom = (nom) => normaliser(nom).split(" ").filter((m) => !MOTS_VIDES.has(m)).join("");
 
@@ -2331,6 +2353,9 @@
       this.codes = {}; // réponses trouvées, par lieu
       this.notes = []; // ce que le joueur a écrit dans le calepin
       this.indicesTrouves = []; // lectures clés recopiées automatiquement dans le calepin
+      this.indicesLus = []; // lectures clés lues, même sans calepin (recopiées quand on le prend)
+      this.objetsVus = ["telephone_mort"]; // objets déjà aperçus (on ne nomme jamais un objet jamais vu)
+      this.textesVus = []; // textes de locaux ordinaires déjà lus (la deuxième fois, une version courte)
       this.locauxFouilles = [];
       this.objetsLocaux = objetsLocauxDepart(); // objets encore dans les locaux, par numéro
       this.localOuvert = null; // local où l'on vient d'entrer : PRENDRE y fonctionne jusqu'au prochain déplacement
@@ -2348,12 +2373,14 @@
       this.silhouette = "absente"; // la rencontre de la cafétéria : absente, cafeteria, chambre_froide
       this.attente = 0;
       this.gardien = false; // une silhouette entre toi et la sortie
+      this.epargne = null; // le gardien : épargné (leurre) ou frappé
       this.pages = []; // pages du carnet de R. trouvées
       this.pointSur = null; // dernier moment sûr (état JSON) où l'on revient après une mort
       this.pointSurLibelle = null;
       this.morts = 0;
       this.indice = { etape: null, niveau: 0, actions: 0 };
       this.indicesUtilises = 0;
+      this.actionsIndice = 0; // gestes qui comptent pour débloquer l'indice suivant (ATTENDRE ne compte pas)
       this.derniereMort = null;
       this.termine = false;
       this.gagne = false;
@@ -2369,6 +2396,9 @@
         codes: this.codes,
         notes: this.notes,
         indicesTrouves: this.indicesTrouves,
+        indicesLus: this.indicesLus,
+        objetsVus: this.objetsVus,
+        textesVus: this.textesVus,
         locauxFouilles: this.locauxFouilles,
         objetsLocaux: this.objetsLocaux,
         localOuvert: this.localOuvert,
@@ -2386,12 +2416,14 @@
         silhouette: this.silhouette,
         attente: this.attente,
         gardien: this.gardien,
+        epargne: this.epargne,
         pages: this.pages,
         pointSur: this.pointSur,
         pointSurLibelle: this.pointSurLibelle,
         morts: this.morts,
         indice: this.indice,
         indicesUtilises: this.indicesUtilises,
+        actionsIndice: this.actionsIndice || 0,
         derniereMort: this.derniereMort,
         termine: this.termine,
         gagne: this.gagne,
@@ -2406,6 +2438,9 @@
         visites: new Set(s.visites || [LIEU_DEPART]),
         notes: s.notes || [],
         indicesTrouves: s.indicesTrouves || [],
+        indicesLus: s.indicesLus || s.indicesTrouves || [],
+        objetsVus: s.objetsVus || [...new Set(["telephone_mort", ...(s.inventaire || [])])],
+        textesVus: s.textesVus || [],
         objetsLocaux: s.objetsLocaux || objetsLocauxDepart(),
         localOuvert: s.localOuvert || null,
         chemin: s.chemin || (s.precedent ? [s.precedent] : []),
@@ -2444,9 +2479,15 @@
     // le calepin, les pages, les locaux visités, les dangers déjà vus, les indices et le compte des morts.
     reprendreAuPointSur() {
       const sauve = JSON.parse(this.pointSur);
+      const avantInventaire = this.inventaire.slice();
       const garder = {
         notes: this.notes,
         indicesTrouves: this.indicesTrouves,
+        indicesLus: this.indicesLus,
+        objetsVus: this.objetsVus,
+        textesVus: this.textesVus,
+        // Les scènes déjà vues ne se rejouent pas (sauf le gardien, qui dépend de la poursuite).
+        scenes: [...new Set([...(sauve.scenes || []), ...this.scenes.filter((x) => x !== "gardien")])],
         faits: this.faits,
         approches: this.approches,
         locauxFouilles: [...new Set([...(sauve.locauxFouilles || []), ...this.locauxFouilles])],
@@ -2455,6 +2496,7 @@
         morts: this.morts + 1,
         indice: this.indice,
         indicesUtilises: this.indicesUtilises,
+        actionsIndice: this.actionsIndice || 0,
         actions: this.actions,
         tour: this.tour,
         evenementVu: this.evenementVu || Boolean(sauve.evenementVu),
@@ -2464,11 +2506,10 @@
         derniereMort: null,
       };
       Object.assign(this, Partie.restaurer(sauve), garder);
-      return [
-        { type: "reprise", texte: TEXTE_REPRISE },
-        sys("Moment sûr : " + this.pointSurLibelle + "."),
-        ...this.decrireLieu(undefined, "long"),
-      ];
+      const perdus = avantInventaire.filter((id) => !this.inventaire.includes(id) && OBJETS[id]);
+      const blocs = [{ type: "reprise", texte: TEXTE_REPRISE(DESTINATIONS[this.lieu]) }];
+      if (perdus.length) blocs.push(sys("Ce que tu avais ramassé depuis est retourné à sa place : " + perdus.map((id) => OBJETS[id].nom).join(", ") + "."));
+      return [...blocs, ...this.decrireLieu(undefined, "long")];
     }
 
     // Sortie : liste de blocs { type, texte } que l'interface affiche.
@@ -2508,6 +2549,15 @@
       if (!this.dansLeNoir() && this.objetsParLieu[this.lieu].includes(id)) return true;
       const local = this.localOuvert && this.localOuvert.lieu === this.lieu ? this.localOuvert.cle : null;
       return Boolean(local && (this.objetsLocaux[local] || []).includes(id));
+    }
+
+    voir(ids) {
+      for (const id of ids) if (!this.objetsVus.includes(id)) this.objetsVus.push(id);
+    }
+
+    // « Il n'y a pas de tuyau de métal ici » apprendrait qu'il existe : un objet jamais vu n'est pas nommé.
+    absent(id) {
+      return sys(this.objetsVus.includes(id) ? "Il n'y a pas " + OBJETS[id].pas + " ici." : "Tu ne vois pas ça ici.");
     }
 
     silhouetteIci() {
@@ -2573,6 +2623,7 @@
     // Sortie désignée par son nom (« cafétéria », « place publique 1 », « escalier », « passerelle »), ou un message si ambigu.
     trouverSortie(cible) {
       if (!cible || cible.length < 3) return null;
+      if (SYNONYMES[cible]) cible = cleNom(DESTINATIONS[SYNONYMES[cible]]);
       const sorties = this.sorties();
       const alias = LIEUX[this.lieu].alias || {};
       for (const mot in alias) {
@@ -2599,17 +2650,20 @@
       let brut = mode === "court" ? (typeof lieu.court === "function" ? lieu.court(this) : lieu.court) : null;
       if (!brut) brut = (lieu.variante && lieu.variante(this)) || lieu.description;
       const { texte, segments } = lier(brut);
+      const introUtile = intro && !texte.startsWith(intro) ? intro : null;
       const blocs = [
         { type: "lieu", texte: lieu.nom, zone: lieu.zone, id: this.lieu },
-        { type: "texte", texte: intro ? intro + " " + texte : texte, segments: intro ? [intro + " ", ...segments] : segments },
+        { type: "texte", texte: introUtile ? introUtile + " " + texte : texte, segments: introUtile ? [introUtile + " ", ...segments] : segments },
       ];
       if (this.silhouetteIci()) blocs.push({ type: "danger", texte: TEXTE_SILHOUETTE_PRESENTE });
       if (this.gardienIci()) blocs.push({ type: "danger", texte: TEXTE_GARDIEN_PRESENT });
       const ici = this.objetsParLieu[this.lieu];
       if (this.dansLeNoir()) {
+        if (ici.length && !this.faits.includes("noir" + this.lieu)) this.faits.push("noir" + this.lieu);
         blocs.push({ type: "objets", texte: (ici.length && lieu.noirIndice) || "Il fait trop noir pour distinguer quoi que ce soit." });
         if (this.possede("baton_lumineux")) blocs.push(sys("Tu tâtes ta poche : le bâton lumineux. Il faut le plier pour qu'il s'allume (ALLUMER BÂTON)."));
       } else if (ici.length) {
+        this.voir(ici);
         blocs.push({
           type: "objets",
           texte: "Tu distingues ici : " + ici.map((id) => OBJETS[id].enPlace).join(", ") + ".",
@@ -2651,10 +2705,23 @@
         sorties: this.sorties(),
         objets: objets.map((id) => ({ id, nom: OBJETS[id].nom })),
         locaux: this.poursuite > 0 ? [] : this.etatLocaux(),
+        fouille: this.secteurFouille(),
         actions: this.termine ? [] : this.actionsProposees(objets),
         menace: this.poursuite > 0 ? { restant: this.poursuite, total: DELAI_POURSUITE } : null,
         pointSur: this.pointSurLibelle,
       };
+    }
+
+    // Après quelques locaux visités, on dit quand il ne reste plus rien d'important dans le secteur.
+    secteurFouille() {
+      const locaux = LIEUX[this.lieu].locaux || [];
+      const vus = locaux.filter((nom) => this.locauxFouilles.includes(compact(nom))).length;
+      const reste = locaux.some((nom) => {
+        const cle = compact(nom);
+        const sp = LOCAUX_SPECIAUX[cle];
+        return (sp && sp.page && !this.pages.includes(sp.page)) || (this.objetsLocaux[cle] || []).length > 0;
+      });
+      return locaux.length > 0 && vus >= 3 && !reste;
     }
 
     // Boutons d'action selon la situation : { texte, commande, genre } ; saisie : texte à compléter au clavier.
@@ -2663,7 +2730,7 @@
       const ajouter = (texte, commande, genre, extra) => a.push(Object.assign({ texte, commande, genre }, extra || {}));
       const leurres = LEURRES.filter((id) => this.possede(id));
       if (this.gardienIci()) {
-        if (this.possede("arme_artisanale")) ajouter("Frapper", "frapper silhouette", "danger");
+        if (this.possede("arme_artisanale")) ajouter("Frapper", "frapper silhouette", "action");
         for (const id of leurres) ajouter("Lancer : " + OBJETS[id].nom, "lancer " + OBJETS[id].nom, "action");
       }
       if (this.silhouetteIci()) {
@@ -2671,16 +2738,18 @@
         for (const id of leurres) ajouter("Lancer : " + OBJETS[id].nom, "lancer " + OBJETS[id].nom, "action");
       }
       for (const id of objets) ajouter("Prendre : " + OBJETS[id].nom, "prendre " + OBJETS[id].nom, "prise");
-      if (!this.dansLeNoir()) {
+      const danger = this.gardienIci() || this.silhouetteIci();
+      if (!this.dansLeNoir() && !danger) {
         for (const l of this.lectures()) if (l.bouton) ajouter("Lire : " + l.bouton, "lire " + l.bouton, "lecture");
       }
+      if (this.localOuvert && this.localOuvert.lieu === this.lieu) ajouter("Ressortir", "sortir", "action");
       if (CODES[this.lieu] && !this.codes[this.lieu]) ajouter("Composer un code…", null, "code", { saisie: "composer " });
       const pieces = PIECES_ARME.filter((id) => this.possede(id));
       if (!this.flags.arme_fabriquee && pieces.length >= 2) ajouter("Combiner", "combiner " + pieces.map((id) => OBJETS[id].nom).join(" et "), "action");
       if (this.possede("barre_tendre")) ajouter("Manger : barre tendre", "manger barre tendre", "action");
       if (this.possede("baton_lumineux") && !this.flags.lumiere) ajouter("Allumer : bâton lumineux", "allumer bâton", "action");
       if (this.lieu === LIEU_SORTIE && !this.flags.cadenas_brise && this.possede("arme_artisanale")) ajouter("Frapper le cadenas", "frapper cadenas", "danger");
-      if (this.lieu === LIEU_SORTIE && this.possede("cle_principale")) ajouter("Utiliser la clé principale", "utiliser clé principale", "fin");
+      if (this.lieu === LIEU_SORTIE && this.possede("cle_principale")) ajouter("Utiliser la clé principale", "utiliser clé principale", this.gardien ? "action" : "fin");
       ajouter("Regarder", "regarder", "outil");
       ajouter("Écouter", "écouter", "outil");
       return a;
@@ -2715,12 +2784,15 @@
         this.silhouette, this.attente, this.gardien, this.approches.length, this.pages.length, this.localOuvert,
       ]);
       const sigAvant = signature();
+      const lieuAvant = this.lieu;
       this._gratuit = false;
       const blocs = this.traiter(c);
       // Seuls les gestes qui prennent du temps comptent : regarder, lire, consulter, une faute de frappe
       // ou un refus du jeu (message système seul, rien n'a changé) sont gratuits.
       const gratuit = this._gratuit || GRATUITS.has(c.verbe) || (signature() === sigAvant && blocs.every((b) => b.type === "systeme"));
       if (!gratuit) this.actions += 1;
+      // Attendre sur place ne fait pas avancer l'attente des indices (sinon : 12 × ATTENDRE).
+      if (!gratuit && c.verbe !== "ATTENDRE") this.actionsIndice = (this.actionsIndice || 0) + 1;
       if (this.termine) return blocs;
 
       if (enPoursuite && !gratuit && this.poursuite > 0) {
@@ -2729,7 +2801,8 @@
         blocs.push({ type: "menace", texte: COMPTE_A_REBOURS[this.poursuite] || TEXTE_PAS_PROCHES, restant: this.poursuite, total: DELAI_POURSUITE, son: "coeur" });
       }
 
-      if (this.tour >= TOUR_EVENEMENT && !this.evenementVu) {
+      // Le texto arrive au réveil : dans la classe au 5e geste, ou dès qu'on met le pied dans le corridor.
+      if (!this.evenementVu && (this.tour >= TOUR_EVENEMENT || (this.lieu === 2 && this.tour >= 2))) {
         this.evenementVu = true;
         blocs.push(
           { type: "evenement", texte: TEXTO_AVANT },
@@ -2738,7 +2811,7 @@
         );
       } else if (!blocs.some((b) => b.type === "danger" || b.type === "chapitre")) {
         // Une scène au plus par action, jamais en même temps qu'un danger.
-        const scene = SCENES.find((s) => !this.scenes.includes(s.id) && s.quand(this));
+        const scene = SCENES.find((s) => !this.scenes.includes(s.id) && s.quand(this, lieuAvant));
         if (scene) {
           this.scenes.push(scene.id);
           blocs.push({ type: "scene", texte: scene.texte });
@@ -2784,6 +2857,10 @@
         case "ALLUMER": return this.allumer(c);
         case "CARTE": return this.carte();
         case "INVENTAIRE": return this.afficherInventaire();
+        case "LOCAUX": {
+          const b = this.decrireLieu().find((x) => x.type === "locaux");
+          return b ? [b] : [sys("Il n'y a pas de locaux à visiter ici.")];
+        }
         case "ECOUTER": return this.ecouter();
         case "ATTENDRE": return this.attendre();
         case "CRIER": return this.crier();
@@ -2812,15 +2889,15 @@
           this.attente += 1;
           if (this.attente >= 2) {
             this.silhouette = "chambre_froide";
-            return [{ type: "scene", texte: TEXTE_RENCONTRE_PASSEE }];
+            return [{ type: "scene", texte: TEXTE_RENCONTRE_PASSEE }, this.marquerPointSur("la cafétéria, la silhouette partie")];
           }
           return [{ type: "danger", texte: TEXTE_RENCONTRE_ATTENTE }];
         case "ECOUTER":
           return [{ type: "ecoute", texte: ECOUTE_SILHOUETTE }];
         case "CRIER":
-          return this.mort(MORT_CRI);
+          return this.piege("rencontre_cri", MORT_CRI);
         case "FRAPPER":
-          if (c.objets.includes("baton_lumineux")) return null;
+          if (c.objets.includes("baton_lumineux") || c.decors.includes("FENETRE")) return null;
           return this.piege("rencontre_frapper", MORT_RENCONTRE);
         case "PRENDRE":
         case "MANGER":
@@ -2839,6 +2916,7 @@
           if (c.decors.includes("FENETRE") || c.objets.includes("baton_lumineux")) return null;
           if (!this.possede("arme_artisanale")) return this.piege("rencontre_frapper", MORT_RENCONTRE);
           this.gardien = false;
+          this.epargne = false;
           return [{ type: "choc", texte: TEXTE_GARDIEN_FRAPPE, son: "choc" }];
         case "UTILISER":
           if (c.objets.includes("arme_artisanale")) return this.traiterGardien(Object.assign({}, c, { verbe: "FRAPPER", objets: [] }));
@@ -2860,7 +2938,7 @@
         case "ATTENDRE":
           return [{ type: "texte", texte: "Attendre ? Derrière toi, les pas se rapprochent. Elle ne partira pas toute seule." }];
         case "CRIER":
-          return this.mort(MORT_CRI);
+          return this.piege("rencontre_cri", MORT_CRI);
         case "ECOUTER":
           return [{ type: "ecoute", texte: "Le tintement des clés à sa ceinture. Et, derrière toi, les pas qui se rapprochent." }];
         default:
@@ -2927,6 +3005,7 @@
     // Chaque pas compte comme une action. Refusé pendant la poursuite ; s'arrête si quelque chose arrive.
     trajet(cible) {
       if (!cible || cible.length < 3) return null;
+      cible = SYNONYMES[cible] ? cleNom(DESTINATIONS[SYNONYMES[cible]]) : cible;
       const exact = (id) => cleNom(DESTINATIONS[id]) === cible || compact(DESTINATIONS[id]) === cible;
       const proche = (id) => exact(id) || cleNom(DESTINATIONS[id]).includes(cible);
       if (exact(this.lieu)) return [sys("Tu y es déjà.")];
@@ -2934,6 +3013,8 @@
       let candidats = visites.filter(exact);
       if (!candidats.length) candidats = visites.filter(proche);
       if (!candidats.length && proche(this.lieu)) return [sys("Tu y es déjà.")];
+      const exactInconnu = Object.keys(DESTINATIONS).map(Number).find((id) => id !== this.lieu && exact(id) && !this.visites.has(id));
+      if (exactInconnu) return [sys(`Tu ne sais pas encore comment te rendre à : ${DESTINATIONS[exactInconnu]}. Explore pour trouver le chemin.`)];
       if (!candidats.length) {
         const inconnus = Object.keys(DESTINATIONS).map(Number).filter((id) => id !== this.lieu && proche(id));
         if (inconnus.length === 1) return [sys(`Tu ne sais pas encore comment te rendre à : ${DESTINATIONS[inconnus[0]]}. Explore pour trouver le chemin.`)];
@@ -2998,12 +3079,13 @@
         this.chapitres.push(2);
         blocs.push(chapitre(2));
       }
-      blocs.push(...this.decrireLieu(origine, premiere && this.poursuite === 0 ? "long" : "court"));
+      blocs.push(...this.decrireLieu(origine, premiere ? "long" : "court"));
       // La silhouette de la cafétéria apparaît au milieu de la partie, avant qu'on ait la lame.
-      if (dest === LIEU_CAFETERIA && this.silhouette === "absente" && this.actions >= 10 && this.poursuite === 0 &&
+      if (dest === LIEU_CAFETERIA && this.silhouette === "absente" && this.poursuite === 0 &&
           !this.possede("lame_lourde") && !this.flags.arme_fabriquee) {
         this.silhouette = "cafeteria";
         this.attente = 0;
+        this.marquerPointSur("la cafétéria, face à la silhouette");
         blocs.splice(blocs.findIndex((b) => b.type === "texte") + 1, 0, { type: "danger", texte: TEXTE_RENCONTRE, son: "souffle" }, sys("Ne fais aucun bruit."));
       }
       // La silhouette à la chemise grise : entre toi et la sortie, la clé en main.
@@ -3053,6 +3135,12 @@
       let description = special && special.objet && !restants.length ? special.objetSorti : texteLocal(nom);
       const pageDejaPrise = special && special.page && this.pages.includes(special.page);
       if (pageDejaPrise) description = "Il n'y a plus rien ici : la page du carnet est dans ta poche.";
+      // Un texte ordinaire déjà lu ailleurs revient en version courte : on ne relit pas dix fois le tambour.
+      const ordinaire = !special && TEXTES_LOCAUX[cle];
+      if (ordinaire) {
+        if (this.textesVus.includes(description) && !this.locauxFouilles.includes(cle)) description = LOCAUX_DEJA_VUS[hachage(cle) % LOCAUX_DEJA_VUS.length];
+        else if (!this.textesVus.includes(description)) this.textesVus.push(description);
+      }
       const blocs = [{ type: "texte", texte: `Tu entres dans le local ${nom}. ${description}` }];
       if (!this.locauxFouilles.includes(cle)) this.locauxFouilles.push(cle);
       if (special && special.fait && !this.faits.includes(special.fait)) this.faits.push(special.fait);
@@ -3063,11 +3151,13 @@
       }
       if (restants.length) {
         this.localOuvert = { cle, lieu: this.lieu };
+        this.voir(restants);
         blocs.push({
           type: "objets",
           texte: "Tu distingues ici : " + restants.map((id) => OBJETS[id].enPlace).join(", ") + ".",
           objets: restants.map((id) => ({ id, nom: OBJETS[id].nom })),
         });
+        blocs.push(sys("Prends-le, ou ressors : si tu pars sans, il restera ici."));
         return blocs;
       }
       this.localOuvert = null;
@@ -3119,6 +3209,8 @@
         if (c.cleAbsente) return [sys("Il n'y a pas de clé ici.")];
         const lu = this.lecture(c);
         if (lu) return [sys(lu.prendre || "Tu n'as pas besoin de ça.")];
+        const g = this.motGlobal(c);
+        if (g) return [sys(g)];
         return [sys(c.mots.length ? "Tu ne vois pas ça ici." : "Prendre quoi ?")];
       }
       const blocs = [];
@@ -3144,14 +3236,35 @@
           this.objetsParLieu[this.lieu] = ici.filter((x) => x !== id);
           this.inventaire.push(id);
           blocs.push(sys(pris));
+          if (id === "calepin") blocs.push(...this.recopier());
           if (id === "lame_lourde" && this.silhouette === "chambre_froide" && this.lieu === LIEU_CUISINES) {
             blocs.push({ type: "scene", texte: TEXTE_COUPERET });
           }
         } else {
-          blocs.push(sys("Il n'y a pas " + OBJETS[id].pas + " ici."));
+          blocs.push(this.absent(id));
         }
       }
+      // Chaque objet ramassé est un moment sûr (en silence) : une mort ne le fera plus perdre.
+      if (this.poursuite === 0 && !this.silhouetteIci() && ids.some((id) => this.possede(id))) this.marquerPointSur(DESTINATIONS[this.lieu]);
       return blocs;
+    }
+
+    // En prenant le calepin, on recopie ce qu'on a déjà lu d'important.
+    recopier() {
+      const nouveaux = this.indicesLus.filter((t) => !this.indicesTrouves.includes(t));
+      if (!nouveaux.length) return [];
+      this.indicesTrouves.push(...nouveaux);
+      const seul = nouveaux.length === 1 && nouveaux[0].startsWith("Tableau");
+      return [sys(seul ? "Tu recopies en vitesse le problème du tableau dans ton calepin." : "Tu recopies en vitesse dans ton calepin ce que tu as déjà lu.")];
+    }
+
+    // Mots du décor qui méritent une réponse partout (et un indice sans le nommer).
+    motGlobal(c) {
+      if (c.mots.some((m) => ["VADROUILLE", "VADROUILLES", "BALAI", "BALAIS", "MOP"].includes(m))) {
+        return "Le manche de la vadrouille est en plastique creux : il plierait au premier coup. Il te faudrait du métal.";
+      }
+      if (c.mots.some((m) => ["CHAISE", "CHAISES", "PUPITRE", "PUPITRES"].includes(m))) return "Trop lourd, trop bruyant. Tu ne vas pas te promener avec ça.";
+      return null;
     }
 
     // La lecture du lieu que vise la commande (mots exacts, puis fautes de frappe).
@@ -3171,6 +3284,7 @@
     lu(l) {
       if (l.fait && !this.faits.includes(l.fait)) this.faits.push(l.fait);
       const blocs = [{ type: l.type || "lecture", texte: l.texte }];
+      if (l.indice && !this.indicesLus.includes(l.indice)) this.indicesLus.push(l.indice);
       if (l.indice && this.possede("calepin") && !this.indicesTrouves.includes(l.indice)) {
         this.indicesTrouves.push(l.indice);
         blocs.push(sys("Recopié dans ton calepin."));
@@ -3195,9 +3309,11 @@
           const lumiere = id === "baton_lumineux" && this.flags.lumiere ? " Il luit d'une lueur verte, faible et têtue." : "";
           return [{ type: "texte", texte: OBJETS[id].description + lumiere }];
         }
-        return [sys("Il n'y a pas " + OBJETS[id].pas + " ici.")];
+        return [this.absent(id)];
       }
       if (c.cleAbsente) return [sys("Il n'y a pas de clé ici.")];
+      const g = this.motGlobal(c);
+      if (g) return [sys(g)];
       const decor = c.decors[0];
       if (this.lieu === LIEU_SORTIE) {
         if (decor === "CADENAS" || decor === "SECRETARIAT") {
@@ -3234,7 +3350,7 @@
       const enMain = PIECES_ARME.filter((id) => this.possede(id));
       const veutArme = nommees.length >= 2 || c.objets.includes("arme_artisanale") || (c.objets.length === 0 && enMain.length >= 2) ||
         (nommees.length === 1 && enMain.length >= 2);
-      if (!veutArme) return [sys("Combiner quoi avec quoi ? (ex. : COMBINER TUYAU ET LAME)")];
+      if (!veutArme) return [sys("Combiner quoi avec quoi ? Tape COMBINER suivi de deux objets que tu portes.")];
       if (!this.possede("tuyau_metal") && !this.possede("lame_lourde")) return [sys("Il te manque un manche solide et quelque chose de tranchant.")];
       if (!this.possede("tuyau_metal")) return [sys("Il te manque un manche solide.")];
       if (!this.possede("lame_lourde")) return [sys("Il te manque quelque chose de tranchant.")];
@@ -3260,6 +3376,7 @@
         return [sys("Tu n'as rien à manger.")];
       }
       this.flags.a_mange = true;
+      if (this.poursuite === 0 && !this.silhouetteIci()) this.marquerPointSur(DESTINATIONS[this.lieu]);
       return [{ type: "texte", texte: TEXTE_MANGER }];
     }
 
@@ -3268,6 +3385,9 @@
       if (c.decors.includes("FENETRE")) return this.piege("fenetre", MORT_FENETRE);
       if (c.decors.includes("ALARME")) return this.tirer(c);
       const cadenas = c.decors.includes("CADENAS") || c.decors.includes("SECRETARIAT");
+      if (this.lieu === LIEU_SORTIE && this.flags.cadenas_brise && this.scenes.includes("gardien") && !this.gardien && !cadenas) {
+        return [sys("Il n'y a plus rien à frapper. Les portes. Maintenant.")];
+      }
       if (this.lieu === LIEU_SORTIE && (cadenas || c.mots.length === 0 || c.objets.includes("arme_artisanale") || c.objets.includes("tuyau_metal") || c.decors.includes("PORTE"))) {
         if (c.decors.includes("CHAINES")) return [sys("Les chaînes sont trop épaisses. Il te faut la clé principale.")];
         return this.frapperCadenas();
@@ -3385,6 +3505,12 @@
       }
       if (c.objets.includes("agenda")) return this.carte();
       if (c.objets.includes("calepin")) return this.lireNotes();
+      if (this.lieu === LIEU_CUISINES && c.mots.some((m) => ["CHAMBRE", "FROIDE", "FRIGO"].includes(m)) && this.silhouette === "chambre_froide") {
+        return [{ type: "danger", texte: "Tu poses la main sur la poignée glacée. De l'autre côté, le frottement s'arrête net. Tu lâches la poignée. Lentement. Jamais tu n'ouvriras cette porte." }];
+      }
+      if (this.lieu === 13 && c.mots.some((m) => ["CASIER", "CASIERS"].includes(m))) {
+        return [{ type: "texte", texte: this.flags.lumiere ? "Le casier aux traces mouillées. Tu tends la main vers la poignée… et tu la retires. Tu ne l'ouvriras jamais." : "Dans le noir, tes doigts trouvent des portes de casier froides. Tu n'iras pas plus loin sans lumière." }];
+      }
       if (c.decors.includes("TIROIR")) {
         const l = this.lectures().find((x) => x.mots.includes("TIROIR"));
         return l ? this.lu(l) : [sys("Il n'y a pas de tiroir à ouvrir ici.")];
@@ -3488,7 +3614,7 @@
     lancer(c) {
       const leurres = LEURRES.filter((id) => this.possede(id));
       if (!c.objets.length) {
-        return [sys("Lancer quoi ?" + (leurres.length ? " (ex. : LANCER " + OBJETS[leurres[0]].nom.toUpperCase() + ")" : ""))];
+        return [sys("Lancer quoi ? Tape LANCER suivi d'un objet que tu portes.")];
       }
       const id = c.objets[0];
       if (!this.possede(id)) return [sys("Tu n'as pas " + OBJETS[id].pas + ".")];
@@ -3502,6 +3628,7 @@
       if (this.gardienIci()) {
         this.retirer(id);
         this.gardien = false;
+        this.epargne = true;
         return [{ type: "choc", texte: TEXTE_GARDIEN_LANCER(nom), son: "choc" }];
       }
       return [sys("Faire du bruit pour rien ? Mauvaise idée. Garde-le pour le bon moment.")];
@@ -3567,17 +3694,19 @@
     donnerIndice() {
       const etape = INDICES.find((e) => !e.ok(this) && (!e.si || e.si(this)));
       if (!etape) return [sys("Tu sais tout ce qu'il faut savoir. Fonce.")];
-      if (this.indice.etape !== etape.id) this.indice = { etape: etape.id, niveau: 0, actions: 0 };
+      if (this.indice.etape !== etape.id) this.indice = { etape: etape.id, niveau: etape.deja ? Math.min(etape.deja(this), etape.niveaux.length - 1) : 0, actions: 0, neuf: true };
       const max = etape.niveaux.length;
       const urgent = etape.id === "silhouette" || etape.id === "gardien" || etape.id === "coffre";
-      const attente = this.indice.niveau === 0 || urgent ? 0 : this.indice.actions + ATTENTE_INDICE - this.actions;
+      const fait = this.actionsIndice || 0;
+      const attente = this.indice.neuf || urgent ? 0 : this.indice.actions + ATTENTE_INDICE - fait;
       if (this.indice.niveau >= max || attente > 0) {
         const n = this.indice.niveau;
         const suite = n >= max ? "" : ` Cherche encore un peu : l'indice suivant se débloque dans ${attente} action${attente > 1 ? "s" : ""}.`;
         return [{ type: "indice", texte: `Indice ${n}/${max} : ${etape.niveaux[n - 1]}${suite}`, rappel: true }];
       }
       this.indice.niveau += 1;
-      this.indice.actions = this.actions;
+      this.indice.actions = fait;
+      this.indice.neuf = false;
       this.indicesUtilises += 1;
       return [{ type: "indice", texte: `Indice ${this.indice.niveau}/${max} : ${etape.niveaux[this.indice.niveau - 1]}` }];
     }
@@ -3595,8 +3724,8 @@
       ];
       if (indice) blocs.push({ type: "indicemort", texte: "Ce que tu sais maintenant : " + indice });
       blocs.push(sys(this.pointSur
-        ? `Touche « Continuer » : tu reprendras au dernier moment sûr (${this.pointSurLibelle}). Ou tape REJOUER pour tout recommencer.`
-        : "Tape REJOUER pour recommencer."));
+        ? `Tu peux reprendre au dernier moment sûr (${this.pointSurLibelle}), ou tout recommencer.`
+        : "Tu peux tout recommencer."));
       return blocs;
     }
 
@@ -3615,6 +3744,7 @@
         pages: this.pages.length,
         totalPages: PAGES.length,
         serrures: ORDRE_CODES.filter((id) => this.codes[id]).length,
+        epargne: this.epargne === true,
       };
     }
 
@@ -3629,7 +3759,7 @@
         { type: "coupure", texte: EPILOGUE[0] },
         { type: "epilogue", texte: EPILOGUE[1] },
       ];
-      if (this.pages.length === PAGES.length) blocs.push({ type: "epilogue", texte: EPILOGUE_CARNET });
+      if (this.pages.length === PAGES.length) blocs.splice(1, 0, { type: "victoire", texte: EPILOGUE_CARNET(this.epargne === true) });
       blocs.push(
         { type: "fin", texte: TEXTE_VICTOIRE[2] },
         { type: "recompense", texte: TEXTE_RECOMPENSE },
@@ -3989,7 +4119,7 @@
     }
 
     // Affiche une réponse. Renvoie son premier élément (pour le défilement).
-    const ALERTES = new Set(["texto", "danger", "menace", "choc", "succes", "mort"]);
+    const ALERTES = new Set(["texto", "danger", "menace", "choc", "succes", "mort", "page", "chapitre"]);
     let alerte = null;
     function afficher(blocs) {
       let premier = null;
@@ -4012,7 +4142,8 @@
       alerte = null;
       if (!premier) return;
       let cible = Math.max(0, premier.offsetTop - 12);
-      if (a) cible = Math.max(cible, a.offsetTop + a.offsetHeight + 16 - journal.clientHeight);
+      if (a) cible = Math.max(cible, Math.min(a.offsetTop + a.offsetHeight + 16 - journal.clientHeight, a.offsetTop - 12));
+      if (partie && partie.termine && !partie.gagne) cible = journal.scrollHeight; // la mort : on lit jusqu'à la leçon
       const fin = journal.scrollHeight - journal.clientHeight;
       journal.scrollTo({ top: Math.min(cible, fin), behavior: reduit ? "auto" : "smooth" });
     }
@@ -4131,7 +4262,7 @@
     function reinitialiserFin() {
       noir.classList.remove("actif");
       noir.hidden = true;
-      for (const id of ["fin-mort", "fin-victoire", "phrase-finale", "consigne-finale", "rang", "code-verif", "note-invite", "indice-mort"]) $(id).hidden = true;
+      for (const id of ["fin-victoire", "phrase-finale", "consigne-finale", "rang", "code-verif", "note-invite"]) $(id).hidden = true;
       $("reveler").hidden = false;
       armerRejouer(false);
     }
@@ -4161,10 +4292,8 @@
     }
 
     function ouvrirFin() {
-      const victoire = partie.gagne;
-      $("fin-mort").hidden = victoire;
-      $("fin-victoire").hidden = !victoire;
-      if (victoire) {
+      $("fin-victoire").hidden = false;
+      {
         const s = partie.statistiques();
         const lignes = [
           ["Temps", formaterTemps(tempsActif)],
@@ -4184,26 +4313,16 @@
           ["Sans indice", s.indices === 0],
           ["Archiviste : 8 pages", s.pages === s.totalPages],
           ["Explorateur : 100 locaux", s.locaux >= 100],
+          ["Sans violence", s.epargne],
         ];
         $("defis").replaceChildren(...defis.map(([t, ok]) => element("li", ok ? "reussi" : "", (ok ? "✔ " : "") + t)));
         $("note-invite").hidden = Boolean(session);
-      } else {
-        const d = partie.derniereMort || {};
-        const indice = $("indice-mort");
-        indice.textContent = d.indice ? typo("Ce que tu sais maintenant : " + d.indice) : "";
-        indice.hidden = !d.indice;
-        const peutReprendre = Boolean(partie.pointSur);
-        $("reprendre").hidden = !peutReprendre;
-        $("libelle-sur").textContent = peutReprendre ? typo(`Moment sûr : ${partie.pointSurLibelle}. Ce que tu as appris (calepin, locaux visités, pages) reste avec toi.`) : "";
-        const morts = partie.morts + 1;
-        $("morts-nuit").textContent = typo(`Morts cette nuit : ${morts}`);
       }
       noir.hidden = false;
       noir.scrollTop = 0;
       noir.classList.add("actif");
-      (victoire ? $("reveler") : peutOuRecommencer()).focus();
+      $("reveler").focus();
     }
-    const peutOuRecommencer = () => ($("reprendre").hidden ? $("recommencer") : $("reprendre"));
 
     function reprendrePartie() {
       reinitialiserFin();
@@ -4297,8 +4416,6 @@
     $("onglet-creation").addEventListener("click", () => choisirOnglet(true));
     $("quitter").addEventListener("click", revenirAccueil);
     $("ouvrir-yeux").addEventListener("click", fermerIntro);
-    $("reprendre").addEventListener("click", reprendrePartie);
-    $("recommencer").addEventListener("click", () => nouvellePartie(null));
     $("reveler").addEventListener("click", function () {
       this.hidden = true;
       $("phrase-finale").hidden = false;
@@ -4358,8 +4475,10 @@
     // ==========================================
     // BARRE D'ACTIONS
     // ==========================================
-    const OUTILS = [["Regarder", "regarder"], ["Écouter", "écouter"], ["Carte", "carte"], ["Objectifs", "objectifs"], ["Indice", "indice"], ["Notes", "notes"], ["Sac", "inventaire"], ["Aide", "aide"]];
+    // Les trois premiers outils restent toujours visibles ; sur téléphone, les autres se replient derrière « Plus ».
+    const OUTILS = [["Regarder", "regarder"], ["Carte", "carte"], ["Indice", "indice"], ["Écouter", "écouter"], ["Objectifs", "objectifs"], ["Notes", "notes"], ["Sac", "inventaire"], ["Aide", "aide"]];
     let panneauLocauxOuvert = false;
+    let outilsOuverts = false;
 
     function majJauge(menace) {
       const jauge = $("jauge");
@@ -4385,10 +4504,24 @@
         barre.appendChild(r);
         return r;
       };
-      if (partie.termine) {
-        const continuer = bouton(partie.gagne ? "Continuer : le générique →" : "Continuer →", {}, "continuer");
+      if (partie.termine && partie.gagne) {
+        const continuer = bouton("Continuer : le générique →", {}, "continuer");
         continuer.addEventListener("click", ouvrirFin);
         rangee().appendChild(continuer);
+        return;
+      }
+      if (partie.termine) {
+        // La mort : reprendre au dernier moment sûr, ou tout recommencer, directement.
+        const r = rangee("fin-mort");
+        if (partie.pointSur) {
+          const reprendre = bouton("Reprendre au moment sûr", {}, "continuer");
+          reprendre.addEventListener("click", reprendrePartie);
+          r.appendChild(reprendre);
+        }
+        const recommencer = bouton("Recommencer du début", {}, "recommencer");
+        recommencer.addEventListener("click", () => nouvellePartie(null));
+        r.appendChild(recommencer);
+        if (partie.pointSur) barre.appendChild(element("p", "note libelle-sur", `Moment sûr : ${partie.pointSurLibelle} · morts cette nuit : ${partie.morts + 1}`));
         return;
       }
       // Liste des locaux du secteur, toujours à jour (crochets vert et jaune), ouverte à la demande.
@@ -4405,6 +4538,8 @@
           grille.appendChild(b);
         }
         panneau.append(titre, grille);
+        if (ctx.fouille) panneau.appendChild(element("p", "note", "Plus rien d'important dans ce secteur."));
+        else if (ctx.locaux.some((l) => l.aRevoir)) panneau.appendChild(element("p", "note", "Encadré jaune : un objet est resté sur place."));
         barre.appendChild(panneau);
       }
       const sorties = rangee();
@@ -4426,8 +4561,11 @@
         const b = bouton(a.texte, a.commande ? { commande: a.commande } : { saisie: a.saisie }, "g-" + a.genre);
         actions.appendChild(b);
       }
-      const outils = rangee("outils");
-      for (const [texte, commande] of OUTILS) outils.appendChild(bouton(texte, { commande }));
+      const outils = rangee("outils" + (outilsOuverts ? " ouvert" : ""));
+      OUTILS.forEach(([texte, commande], i) => outils.appendChild(bouton(texte, { commande }, i >= 3 ? "secondaire" : "")));
+      const plus = bouton(outilsOuverts ? "Moins ▴" : "Plus ▾", { action: "outils" }, "plus");
+      plus.setAttribute("aria-expanded", String(outilsOuverts));
+      outils.insertBefore(plus, outils.children[3]);
     }
 
     // Un seul écouteur pour tout ce qui porte une commande (barre, mots, locaux, plan).
@@ -4435,6 +4573,11 @@
       const cible = e.target.closest("[data-commande], [data-action], [data-saisie]");
       if (!cible || cible.disabled) return;
       e.preventDefault();
+      if (cible.dataset.action === "outils") {
+        outilsOuverts = !outilsOuverts;
+        majActions();
+        return;
+      }
       if (cible.dataset.action === "locaux") {
         panneauLocauxOuvert = !panneauLocauxOuvert;
         majActions();

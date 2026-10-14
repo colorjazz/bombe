@@ -448,7 +448,7 @@ test("la poursuite : seuls les gestes qui prennent du temps comptent ; traîner 
   for (let i = 0; i < DELAI_POURSUITE; i++) r.push(p.executer("attendre"));
   assert.ok(r[0].some((b) => b.type === "menace" && b.restant === DELAI_POURSUITE - 1 && b.total === DELAI_POURSUITE));
   assert.ok(texte(r[2]).includes("Des pas"));
-  assert.ok(texte(r[6]).includes("se rapprochent"));
+  assert.ok(texte(r[5]).includes("se rapprochent"));
   assert.ok(p.termine);
   assert.ok(r[DELAI_POURSUITE - 1].some((b) => b.type === "finmort"));
   // Reprise : devant le cadenas intact, avec l'arme et la force.
@@ -499,7 +499,11 @@ test("la silhouette de la cafétéria : attendre, lancer, ou mourir", () => {
   assert.ok(p.termine);
 
   p = arrivee();
+  const cri = p.executer("crier");
+  assert.ok(!p.termine && texte(cri).includes("⚠"), "crier devant elle : d'abord un avertissement");
   assert.ok(texte(p.executer("crier")).includes("Cette fois, tu cries"));
+  p.executer("continuer");
+  assert.ok(p.silhouetteIci(), "reprise devant la silhouette, pas au réveil");
 });
 
 test("le gardien de la sortie : frapper, ou lancer un leurre", () => {
@@ -537,7 +541,9 @@ test("indices gradués : jamais un code, jamais le nombre de sièges ; le niveau
   assert.ok(texte(p.executer("indice")).startsWith("Indice 1/3"));
   assert.ok(texte(p.executer("indice")).includes("se débloque dans 12 actions"));
   assert.strictEqual(p.indicesUtilises, 1);
-  p.actions += 12;
+  for (let i = 0; i < 12; i++) p.executer("attendre");
+  assert.ok(texte(p.executer("indice")).includes("se débloque dans 12 actions"), "attendre sur place ne compte pas");
+  p.actionsIndice += 12;
   assert.ok(texte(p.executer("indice")).startsWith("Indice 2/3"));
   assert.strictEqual(p.indicesUtilises, 2);
 });
@@ -740,6 +746,80 @@ test("statistiques de fin", () => {
   assert.strictEqual(s.totalPages, 8);
 });
 
+test("retours du 2e playtest : calepin, silhouette, objets jamais vus, texto, reprise, objectifs, synonymes", () => {
+  // Le tableau lu AVANT de prendre le calepin est recopié quand on le prend.
+  let p = new Partie();
+  p.demarrer();
+  p.executer("lire tableau");
+  assert.ok(texte(p.executer("prendre calepin")).includes("Tu recopies en vitesse le problème du tableau"));
+  assert.ok(p.executer("notes")[0].texte.includes("1000 $"));
+  // La silhouette est là dès la première entrée, même en arrivant vite.
+  p = partieA(19);
+  p.actions = 0;
+  p.executer("e");
+  assert.ok(p.silhouetteIci());
+  // Un objet jamais vu n'est pas nommé.
+  p = partieA(13);
+  assert.ok(texte(p.executer("prendre barre")).includes("Tu ne vois pas ça ici"));
+  assert.ok(!texte(p.executer("prendre manche")).includes("tuyau"));
+  assert.ok(!texte(p.executer("combiner ruban vadrouille")).includes("TUYAU"));
+  assert.ok(texte(p.executer("prendre vadrouille")).includes("plastique creux"));
+  // Le texto arrive dès le corridor, pas aux Laboratoires.
+  p = new Partie();
+  p.demarrer();
+  const r = jouer(p, ["prendre agenda", "o"]);
+  assert.ok(r.some((b) => b.type === "texto"));
+  // La reprise dit où l'on est, et ce qui est retourné à sa place.
+  p = partieA(5);
+  p.marquerPointSur("Laboratoires");
+  p.inventaire.push("lampe_morte");
+  jouer(p, ["crier", "crier"]);
+  const rep = texte(p.executer("continuer"));
+  assert.ok(rep.includes("Laboratoires, un peu plus tôt") && rep.includes("retourné à sa place : lampe de poche"));
+  // Ramasser un objet crée un moment sûr : on ne le perd plus.
+  p = partieA(21);
+  p.executer("prendre lame");
+  jouer(p, ["crier", "crier", "continuer"]);
+  assert.ok(p.possede("lame_lourde"));
+  // L'objectif de l'arme reste coché après COMBINER.
+  p = new Partie();
+  p.inventaire.push("tuyau_metal", "lame_lourde", "ruban_adhesif");
+  p.executer("combiner");
+  assert.ok(p.executer("objectifs")[0].lignes.some((l) => l.fait && l.texte.includes("arme")));
+  // Synonymes et « aile c » exact.
+  p = partieA(3);
+  p.executer("labos");
+  assert.strictEqual(p.lieu, 5);
+  p = partieA(7);
+  p.silhouette = "chambre_froide";
+  p.visites.add(28);
+  assert.ok(texte(p.executer("aller aile c")).length > 0 && p.lieu === 19, "« aile c » mène à l'Aile C, pas à l'Aile C est");
+  // QUITTER ne déplace pas ; la porte de la chambre froide ne s'ouvre pas.
+  p = partieA(2);
+  p.executer("quitter");
+  assert.strictEqual(p.lieu, 2);
+  p = partieA(21);
+  p.silhouette = "chambre_froide";
+  assert.ok(texte(p.executer("ouvrir chambre froide")).includes("frottement s'arrête"));
+  // Un indice qui répète ce qu'on sait déjà commence plus loin.
+  p = partieA(16);
+  p.executer("lire gravure");
+  p.codes[5] = "x";
+  assert.ok(texte(p.executer("indice")).startsWith("Indice 2/3"));
+  // Épargner le gardien se voit à la fin.
+  p = partieA(10);
+  p.codes = { 5: "a", 16: "b", 11: "c" };
+  p.flags.cadenas_brise = true;
+  p.gardien = true;
+  p.scenes.push("gardien");
+  p.poursuite = 5;
+  p.inventaire.push("cle_principale", "cle_doree", "arme_artisanale");
+  p.pages = [1, 2, 3, 4, 5, 6, 7, 8];
+  p.executer("lancer clé dorée");
+  const fin = p.executer("utiliser clé principale");
+  assert.ok(texte(fin).includes("sans le toucher") && p.statistiques().epargne);
+});
+
 // ==========================================
 // Serveur Apps Script, avec un faux Google Sheets en mémoire
 // ==========================================
@@ -932,7 +1012,7 @@ testSolution("OUVRIR PORTE avec la clé déclenche aussi la victoire", ([labo, a
   p.inventaire.push("cle_principale");
   const r = p.executer("ouvrir porte");
   assert.ok(p.termine);
-  assert.strictEqual(r[1].texte, "COUPURE AU NOIR. GÉNÉRIQUE.");
+  assert.strictEqual(r[1].texte, "COUPURE AU NOIR.");
 });
 
 console.log(`\n${n} tests réussis` + (sautes ? `, ${sautes} sautés (SOLUTION absente).` : "."));

@@ -410,6 +410,9 @@
   #actions .outils button { padding-inline: 0.2rem; font-size: 0.62rem; letter-spacing: 0.06em; color: var(--ombre); border-color: var(--beton-3); }
   #actions .outils button:hover, #actions .outils button:focus-visible { color: var(--lune); border-color: var(--lune); }
   #actions .continuer { flex: 1; min-height: 3rem; font-size: 0.85rem; color: var(--beton); background: var(--ecran); border-color: var(--ecran); }
+  #actions .recommencer { min-height: 3rem; color: var(--ombre); border-color: var(--beton-3); }
+  #actions .libelle-sur { margin: 0; }
+  #actions .outils .plus { display: none; }
   #panneau-locaux {
     max-height: 34vh;
     overflow-y: auto;
@@ -523,7 +526,6 @@
     color: var(--lune);
     text-wrap: balance;
   }
-  #fin-mort h2 { color: var(--rouille); }
   #noir .sur-titre { margin: 0; font-family: var(--f-machine); font-size: 0.66rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--ombre); }
   #noir .indicemort { margin: 0; }
   .stats { margin: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--beton-3); border: 1px solid var(--beton-3); }
@@ -630,6 +632,10 @@
     #actions .direction { font-size: 0.74rem; letter-spacing: 0; }
     #actions .g-prise, #actions .g-lecture, #actions .g-code, #actions .g-action, #actions .g-fin, #actions .g-danger { font-size: 0.72rem; letter-spacing: 0; }
     #actions .outils { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.3rem; }
+    #actions .outils .plus { display: block; color: var(--lune); }
+    #actions .outils .secondaire { display: none; }
+    #actions .outils.ouvert .secondaire { display: block; }
+    #actions .fin-mort { flex-direction: column; }
     #actions .outils button { min-height: 2rem; font-size: 0.6rem; letter-spacing: 0.04em; }
     form#saisie { padding-block: 0.4rem 0.7rem; }
     .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -678,17 +684,6 @@
 </div>
 
 <div id="noir" class="plein" hidden>
-  <div class="boite" id="fin-mort" hidden>
-    <p class="sur-titre">Coupure au noir</p>
-    <h2>La nuit a gagné</h2>
-    <p id="indice-mort" class="indicemort" hidden></p>
-    <p class="note" id="morts-nuit"></p>
-    <div class="boutons-fin">
-      <button id="reprendre" class="bouton-principal" type="button">Reprendre au moment sûr</button>
-      <button id="recommencer" type="button">Recommencer du début</button>
-    </div>
-    <p class="note" id="libelle-sur"></p>
-  </div>
   <div class="boite" id="fin-victoire" hidden>
     <p class="sur-titre">Générique</p>
     <h2>Tu as survécu à la nuit</h2>
@@ -714,7 +709,7 @@
     <h1>La Nuit à St-Ex</h1>
     <p class="accroche">Tu as dormi en classe. Au réveil, l'école est plongée dans le noir, et quelque chose écoute dans les couloirs.</p>
     <button id="invite" class="bouton-principal" type="button">Jouer comme invité</button>
-    <p class="note">Aucune sauvegarde : tu recommences au début à chaque fois.</p>
+    <p class="note">Aucune sauvegarde : si tu fermes ou recharges la page, tu recommences au début. Pendant la partie, une mort te ramène au dernier moment sûr.</p>
     <ul class="comment-jouer">
       <li>Touche les boutons, ou écris ce que tu veux faire (ex. : PRENDRE AGENDA).</li>
       <li>Regarder, lire et consulter ne font jamais avancer le temps.</li>
@@ -1092,7 +1087,7 @@
     }
 
     // Affiche une réponse. Renvoie son premier élément (pour le défilement).
-    const ALERTES = new Set(["texto", "danger", "menace", "choc", "succes", "mort"]);
+    const ALERTES = new Set(["texto", "danger", "menace", "choc", "succes", "mort", "page", "chapitre"]);
     let alerte = null;
     function afficher(blocs) {
       let premier = null;
@@ -1115,7 +1110,8 @@
       alerte = null;
       if (!premier) return;
       let cible = Math.max(0, premier.offsetTop - 12);
-      if (a) cible = Math.max(cible, a.offsetTop + a.offsetHeight + 16 - journal.clientHeight);
+      if (a) cible = Math.max(cible, Math.min(a.offsetTop + a.offsetHeight + 16 - journal.clientHeight, a.offsetTop - 12));
+      if (partie && partie.termine && !partie.gagne) cible = journal.scrollHeight; // la mort : on lit jusqu'à la leçon
       const fin = journal.scrollHeight - journal.clientHeight;
       journal.scrollTo({ top: Math.min(cible, fin), behavior: reduit ? "auto" : "smooth" });
     }
@@ -1234,7 +1230,7 @@
     function reinitialiserFin() {
       noir.classList.remove("actif");
       noir.hidden = true;
-      for (const id of ["fin-mort", "fin-victoire", "phrase-finale", "consigne-finale", "rang", "code-verif", "note-invite", "indice-mort"]) $(id).hidden = true;
+      for (const id of ["fin-victoire", "phrase-finale", "consigne-finale", "rang", "code-verif", "note-invite"]) $(id).hidden = true;
       $("reveler").hidden = false;
       armerRejouer(false);
     }
@@ -1264,10 +1260,8 @@
     }
 
     function ouvrirFin() {
-      const victoire = partie.gagne;
-      $("fin-mort").hidden = victoire;
-      $("fin-victoire").hidden = !victoire;
-      if (victoire) {
+      $("fin-victoire").hidden = false;
+      {
         const s = partie.statistiques();
         const lignes = [
           ["Temps", formaterTemps(tempsActif)],
@@ -1287,26 +1281,16 @@
           ["Sans indice", s.indices === 0],
           ["Archiviste : 8 pages", s.pages === s.totalPages],
           ["Explorateur : 100 locaux", s.locaux >= 100],
+          ["Sans violence", s.epargne],
         ];
         $("defis").replaceChildren(...defis.map(([t, ok]) => element("li", ok ? "reussi" : "", (ok ? "✔ " : "") + t)));
         $("note-invite").hidden = Boolean(session);
-      } else {
-        const d = partie.derniereMort || {};
-        const indice = $("indice-mort");
-        indice.textContent = d.indice ? typo("Ce que tu sais maintenant : " + d.indice) : "";
-        indice.hidden = !d.indice;
-        const peutReprendre = Boolean(partie.pointSur);
-        $("reprendre").hidden = !peutReprendre;
-        $("libelle-sur").textContent = peutReprendre ? typo(`Moment sûr : ${partie.pointSurLibelle}. Ce que tu as appris (calepin, locaux visités, pages) reste avec toi.`) : "";
-        const morts = partie.morts + 1;
-        $("morts-nuit").textContent = typo(`Morts cette nuit : ${morts}`);
       }
       noir.hidden = false;
       noir.scrollTop = 0;
       noir.classList.add("actif");
-      (victoire ? $("reveler") : peutOuRecommencer()).focus();
+      $("reveler").focus();
     }
-    const peutOuRecommencer = () => ($("reprendre").hidden ? $("recommencer") : $("reprendre"));
 
     function reprendrePartie() {
       reinitialiserFin();
@@ -1400,8 +1384,6 @@
     $("onglet-creation").addEventListener("click", () => choisirOnglet(true));
     $("quitter").addEventListener("click", revenirAccueil);
     $("ouvrir-yeux").addEventListener("click", fermerIntro);
-    $("reprendre").addEventListener("click", reprendrePartie);
-    $("recommencer").addEventListener("click", () => nouvellePartie(null));
     $("reveler").addEventListener("click", function () {
       this.hidden = true;
       $("phrase-finale").hidden = false;
@@ -1461,8 +1443,10 @@
     // ==========================================
     // BARRE D'ACTIONS
     // ==========================================
-    const OUTILS = [["Regarder", "regarder"], ["Écouter", "écouter"], ["Carte", "carte"], ["Objectifs", "objectifs"], ["Indice", "indice"], ["Notes", "notes"], ["Sac", "inventaire"], ["Aide", "aide"]];
+    // Les trois premiers outils restent toujours visibles ; sur téléphone, les autres se replient derrière « Plus ».
+    const OUTILS = [["Regarder", "regarder"], ["Carte", "carte"], ["Indice", "indice"], ["Écouter", "écouter"], ["Objectifs", "objectifs"], ["Notes", "notes"], ["Sac", "inventaire"], ["Aide", "aide"]];
     let panneauLocauxOuvert = false;
+    let outilsOuverts = false;
 
     function majJauge(menace) {
       const jauge = $("jauge");
@@ -1488,10 +1472,24 @@
         barre.appendChild(r);
         return r;
       };
-      if (partie.termine) {
-        const continuer = bouton(partie.gagne ? "Continuer : le générique →" : "Continuer →", {}, "continuer");
+      if (partie.termine && partie.gagne) {
+        const continuer = bouton("Continuer : le générique →", {}, "continuer");
         continuer.addEventListener("click", ouvrirFin);
         rangee().appendChild(continuer);
+        return;
+      }
+      if (partie.termine) {
+        // La mort : reprendre au dernier moment sûr, ou tout recommencer, directement.
+        const r = rangee("fin-mort");
+        if (partie.pointSur) {
+          const reprendre = bouton("Reprendre au moment sûr", {}, "continuer");
+          reprendre.addEventListener("click", reprendrePartie);
+          r.appendChild(reprendre);
+        }
+        const recommencer = bouton("Recommencer du début", {}, "recommencer");
+        recommencer.addEventListener("click", () => nouvellePartie(null));
+        r.appendChild(recommencer);
+        if (partie.pointSur) barre.appendChild(element("p", "note libelle-sur", `Moment sûr : ${partie.pointSurLibelle} · morts cette nuit : ${partie.morts + 1}`));
         return;
       }
       // Liste des locaux du secteur, toujours à jour (crochets vert et jaune), ouverte à la demande.
@@ -1508,6 +1506,8 @@
           grille.appendChild(b);
         }
         panneau.append(titre, grille);
+        if (ctx.fouille) panneau.appendChild(element("p", "note", "Plus rien d'important dans ce secteur."));
+        else if (ctx.locaux.some((l) => l.aRevoir)) panneau.appendChild(element("p", "note", "Encadré jaune : un objet est resté sur place."));
         barre.appendChild(panneau);
       }
       const sorties = rangee();
@@ -1529,8 +1529,11 @@
         const b = bouton(a.texte, a.commande ? { commande: a.commande } : { saisie: a.saisie }, "g-" + a.genre);
         actions.appendChild(b);
       }
-      const outils = rangee("outils");
-      for (const [texte, commande] of OUTILS) outils.appendChild(bouton(texte, { commande }));
+      const outils = rangee("outils" + (outilsOuverts ? " ouvert" : ""));
+      OUTILS.forEach(([texte, commande], i) => outils.appendChild(bouton(texte, { commande }, i >= 3 ? "secondaire" : "")));
+      const plus = bouton(outilsOuverts ? "Moins ▴" : "Plus ▾", { action: "outils" }, "plus");
+      plus.setAttribute("aria-expanded", String(outilsOuverts));
+      outils.insertBefore(plus, outils.children[3]);
     }
 
     // Un seul écouteur pour tout ce qui porte une commande (barre, mots, locaux, plan).
@@ -1538,6 +1541,11 @@
       const cible = e.target.closest("[data-commande], [data-action], [data-saisie]");
       if (!cible || cible.disabled) return;
       e.preventDefault();
+      if (cible.dataset.action === "outils") {
+        outilsOuverts = !outilsOuverts;
+        majActions();
+        return;
+      }
       if (cible.dataset.action === "locaux") {
         panneauLocauxOuvert = !panneauLocauxOuvert;
         majActions();
