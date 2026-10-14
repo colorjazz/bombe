@@ -105,12 +105,15 @@ function onglet_(ss, nom, entetes) {
   else feuille.getRange(1, 1, 1, entetes.length).setValues([entetes]);
   feuille.setFrozenRows(1);
   feuille.getRange(1, 1, 1, entetes.length).setFontWeight("bold");
+  // Les pseudos restent du texte : sinon Sheets change « 007 » en 7 et « 3-4 » en date.
+  var colonnePseudo = entetes.indexOf("Pseudo") + 1;
+  if (colonnePseudo > 0) feuille.getRange(1, colonnePseudo, feuille.getMaxRows(), 1).setNumberFormat("@");
   return feuille;
 }
 
 function feuille_(nom) {
   var id = PropertiesService.getScriptProperties().getProperty("CLASSEUR");
-  if (!id) throw new Error("Le jeu n'est pas encore installé. Demande à ton enseignant.");
+  if (!id) throw new Error("Le jeu n'est pas encore installé. Demande à ton enseignant ou à ton enseignante.");
   return SpreadsheetApp.openById(id).getSheetByName(nom);
 }
 
@@ -274,7 +277,13 @@ function enregistrerVictoire(jeton, reponses, stats) {
     var deja = gagnants.getRange(1, 1, gagnants.getLastRow(), 9).getValues();
     for (var i = 1; i < deja.length; i++) {
       if (String(deja[i][1]).toLowerCase() === pseudo.toLowerCase()) {
-        return { rang: deja[i][0], deja: true, temps: Number(deja[i][4]) || 0, code: String(deja[i][8] || "") };
+        // Victoire d'avant les codes de vérification : on lui en donne un maintenant.
+        var ancien = String(deja[i][8] || "");
+        if (!ancien) {
+          ancien = codeVerification_();
+          gagnants.getRange(i + 1, 9).setValues([[ancien]]);
+        }
+        return { rang: deja[i][0], deja: true, temps: Number(deja[i][4]) || 0, morts: Number(deja[i][5]) || 0, code: ancien };
       }
     }
     var partie = contact_(pseudo, true);
@@ -287,7 +296,7 @@ function enregistrerVictoire(jeton, reponses, stats) {
       suspect ? "À vérifier (trop rapide)" : "OK", indices, code,
     ]);
     feuille_("Parties").getRange(partie.ligne, 2).setValues([[""]]);
-    return { rang: rang, deja: false, temps: partie.temps, code: code };
+    return { rang: rang, deja: false, temps: partie.temps, morts: partie.morts, code: code };
   });
 }
 

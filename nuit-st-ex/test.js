@@ -182,7 +182,7 @@ test("entrer dans les locaux : vides, fausses pistes, objets inutiles, F209", ()
   assert.ok(texte(p.executer("entrer B268")).includes("« La vulnérabilité c'est précieux. »"));
   p.lieu = 2;
   r = p.executer("entrer C224");
-  assert.ok(texte(r).includes("ne donne pas ici"));
+  assert.ok(texte(r).includes("n'est pas ici"));
   p.executer("entrer a217");
   assert.strictEqual(p.lieu, 1);
   p.lieu = 27;
@@ -213,11 +213,11 @@ test("entrer dans les locaux : vides, fausses pistes, objets inutiles, F209", ()
   for (const nom of ["A120", "B272A", "Gym 3", "C130"]) assert.ok(texteLocal(nom).length > 20);
   p.lieu = 10;
   for (const cmd of ["réception", "Magasin", "entrer dans la réception", "aller au magasin"]) {
-    assert.ok(texte(p.executer(cmd)).includes("Tu entres dans le local"), cmd);
+    assert.ok(texte(p.executer(cmd)).startsWith("Tu entres. "), cmd);
   }
   p.lieu = 12;
   for (const cmd of ["gym 2", "Salle d'entraînement", "salle d entrainement", "entrer gymnase 4"]) {
-    assert.ok(texte(p.executer(cmd)).includes("Tu entres dans le local"), cmd);
+    assert.ok(texte(p.executer(cmd)).startsWith("Tu entres. "), cmd);
   }
   assert.ok(texte(p.executer("salle d'entraînement")).includes("miroirs"));
   p.lieu = 16;
@@ -268,7 +268,7 @@ test("mort puis reprise au dernier moment sûr : le monde revient, ce qu'on a ap
   assert.ok(p.locauxFouilles.includes("B176"));
   jouer(p, ["crier", "crier"]);
   assert.ok(p.termine && !p.gagne);
-  assert.ok(texte(p.executer("regarder")).includes("Continuer"));
+  assert.ok(texte(p.executer("regarder")).includes("Reprendre au moment sûr"));
   const r = p.executer("continuer");
   assert.strictEqual(r[0].type, "reprise");
   assert.ok(!p.termine);
@@ -292,7 +292,7 @@ test("porte du secrétariat verrouillée tant que le cadenas tient ; le post-it 
   assert.strictEqual(p.lieu, 10);
   assert.ok(texte(r).includes("verrouillée"));
   const l = p.executer("lire post-it");
-  assert.ok(texte(l).includes("la réponse au problème au tableau de Plante"));
+  assert.ok(texte(l).includes("la réponse au problème écrit au tableau de Plante"));
   assert.ok(p.faits.includes("postit"));
 });
 
@@ -684,7 +684,7 @@ test("déplacements par nom, RETOUR en pile, voyage rapide, et plus de points ca
   p.executer("aller classe de m. plante");
   p.executer("aller étage de l'aile h");
   assert.strictEqual(p.lieu, 17, "voyage rapide vers un lieu déjà visité");
-  assert.ok(texte(p.executer("aller cafétéria")).includes("Tu ne sais pas encore comment te rendre"));
+  assert.ok(texte(p.executer("aller cafétéria")).includes("Tu ne connais pas encore le chemin"));
   p.executer("aller carrefour de l'étage");
   p.executer("descendre l'escalier");
   assert.strictEqual(p.lieu, 6);
@@ -752,7 +752,7 @@ test("retours du 2e playtest : calepin, silhouette, objets jamais vus, texto, re
   p.demarrer();
   p.executer("lire tableau");
   assert.ok(texte(p.executer("prendre calepin")).includes("Tu recopies en vitesse le problème du tableau"));
-  assert.ok(p.executer("notes")[0].texte.includes("1000 $"));
+  assert.ok(p.executer("notes")[0].texte.includes("1 000 $"));
   // La silhouette est là dès la première entrée, même en arrivant vite.
   p = partieA(19);
   p.actions = 0;
@@ -823,6 +823,110 @@ test("retours du 2e playtest : calepin, silhouette, objets jamais vus, texto, re
 // ==========================================
 // Serveur Apps Script, avec un faux Google Sheets en mémoire
 // ==========================================
+test("retours du 3e playtest : gardien, fautes de frappe, rencontre, noir, reprise, codes, noms exacts", () => {
+  // Le gardien ne se contourne pas en « sortant ».
+  const gardien = () => {
+    const p = partieA(11);
+    p.flags.cadenas_brise = true;
+    p.flags.a_mange = true;
+    p.poursuite = 8;
+    p.codes = { 5: "a", 16: "b", 11: "c" };
+    p.inventaire.push("arme_artisanale", "cle_principale");
+    p.executer("ouest");
+    assert.ok(p.gardien);
+    return p;
+  };
+  for (const cmd of ["sortir par la porte", "fuir vite", "sors d'ici", "sortir maintenant", "sortir dehors", "ressortir"]) {
+    const p = gardien();
+    const avant = p.poursuite;
+    assert.ok(texte(p.executer(cmd)).includes("Tu ne passeras pas"), cmd);
+    assert.ok(!p.termine && p.gardien && p.poursuite === avant, cmd);
+    assert.ok(!p.contexte().actions.some((a) => a.commande === "utiliser clé principale"), "pas de bouton trompeur");
+  }
+
+  // Une faute de frappe ne produit jamais un geste bruyant ; un mot connu n'est pas corrigé.
+  for (const mot of ["classe", "tasse", "casier", "frise", "basse", "craie", "titre", "centre"]) {
+    const c = analyser(mot);
+    assert.ok(!["FRAPPER", "CRIER", "TIRER", "LANCER"].includes(c.verbe), mot + " → " + c.verbe);
+  }
+  for (const cmd of ["passer par la porte du secrétariat", "passe au secrétariat"]) {
+    assert.strictEqual(analyser(cmd).verbe, "ALLER", cmd);
+  }
+  let p = partieA(10);
+  p.inventaire.push("arme_artisanale");
+  p.flags.a_mange = true;
+  for (const cmd of ["passer par la porte du secrétariat", "classe", "tasse"]) p.executer(cmd);
+  assert.ok(!p.flags.cadenas_brise && p.poursuite === 0, "le cadenas ne saute pas par accident");
+  assert.strictEqual(analyser("tâter le sol").verbe, "REGARDER");
+  assert.strictEqual(analyser("tatonner").verbe, "REGARDER");
+  assert.strictEqual(analyser("local A120").verbe, "ENTRER");
+  assert.strictEqual(analyser("salle B145").verbe, "ENTRER");
+  assert.strictEqual(analyser("classe A209").verbe, "ENTRER");
+
+  // Dans le noir des vestiaires, on tâtonne.
+  p = partieA(13);
+  assert.ok(texte(p.executer("tâter le sol")).includes("Tu tâtonnes"));
+  assert.ok(texte(p.executer("prendre le truc par terre")).includes("Tu tâtonnes"));
+
+  // Devant la silhouette, « manger pomme » n'est pas un bruit.
+  p = partieA(19);
+  p.actions = 20;
+  p.executer("e");
+  assert.ok(p.silhouetteIci());
+  assert.ok(p.contexte().actions.some((a) => a.genre === "danger" && a.texte.startsWith("⚠ Prendre")), "prendre devant elle est marqué");
+  p.executer("prendre barre");
+  p.executer("manger pomme");
+  assert.ok(!p.termine && p.objetsParLieu[7].includes("barre_tendre"), "manger pomme ne tue pas et ne mange rien");
+
+  // Une vieille sauvegarde prise en pleine poursuite ne boucle pas sur la mort.
+  p = partieA(6);
+  p.flags.cadenas_brise = true;
+  p.poursuite = 1;
+  const d = p.exporter();
+  delete d.pointSur;
+  const v = Partie.restaurer(JSON.parse(JSON.stringify(d)));
+  v.reprendre();
+  assert.ok(v.poursuite === 0 && !v.flags.cadenas_brise && v.lieu === 10);
+  v.executer("attendre");
+  assert.ok(!v.termine);
+
+  // CARTE qui prend l'agenda est un moment sûr.
+  p = new Partie();
+  p.demarrer();
+  p.executer("carte");
+  assert.ok(JSON.parse(p.pointSur).inventaire.includes("agenda"));
+
+  // Le code tapé seul, ou avec OUVRIR / UTILISER, devant une serrure.
+  for (const cmd of ["1234", "ouvrir 1234", "utiliser 1234", "ouvrir coffre avec 1234"]) {
+    p = partieA(11);
+    assert.ok(!texte(p.executer(cmd)).includes("Je ne comprends pas") && !texte(p.executer(cmd)).includes("Utiliser quoi"), cmd);
+  }
+
+  // « ouvrir les portes doubles » vise le gymnase 6, pas la porte de secours.
+  p = partieA(20);
+  assert.ok(texte(p.executer("ouvrir les portes doubles")).includes("portes doubles"));
+  assert.ok(p.approches.includes("gym6") && !p.approches.includes("secours"));
+
+  // Un nom exact déjà visité passe avant une sortie qui le contient.
+  p = partieA(3);
+  p.visites.add(8);
+  p.visites.add(6);
+  p.visites.add(2);
+  const r = texte(p.executer("aller auditorium"));
+  assert.ok(p.lieu !== 4, "pas le balcon : " + r);
+
+  // Une sortie aperçue d'un lieu visité se rejoint par son nom.
+  p = partieA(12);
+  p.executer("aller gymnase 1");
+  assert.strictEqual(p.lieu, 14);
+  p.executer("aller place publique 1");
+  assert.strictEqual(p.lieu, 22);
+
+  // « entrer 217 » dans le corridor de l'Aile A.
+  p = partieA(2);
+  assert.ok(!texte(p.executer("entrer 217")).includes("Il n'y a pas de local"));
+});
+
 function serveurSimule() {
   const vm = require("vm");
   const fs = require("fs");
@@ -835,8 +939,10 @@ function serveurSimule() {
       getValue: () => ((lignes[r - 1] || [])[c - 1] ?? ""),
       setValues: (v) => v.forEach((ligne, i) => ligne.forEach((x, j) => { (lignes[r - 1 + i] ||= [])[c - 1 + j] = x; })),
       setFontWeight: () => {},
+      setNumberFormat: (f) => { formats.push([c, f]); },
     });
-    return { lignes, appendRow: (r) => lignes.push(r.slice()), getLastRow: () => lignes.length, getRange: plage, setFrozenRows: () => {} };
+    const formats = [];
+    return { lignes, formats, appendRow: (r) => lignes.push(r.slice()), getLastRow: () => lignes.length, getMaxRows: () => 1000, getRange: plage, setFrozenRows: () => {} };
   }
   const ss = { feuilles: {}, getId: () => "classeur-1", getSheetByName(n) { return this.feuilles[n] || null; }, insertSheet(n) { return (this.feuilles[n] = nouvelleFeuille()); } };
   classeurs["classeur-1"] = ss;
@@ -970,6 +1076,13 @@ testSolution("serveur : palmarès par temps, indices et code de vérification, v
   assert.strictEqual(ss.feuilles.Gagnants.lignes[3][6], "À vérifier (trop rapide)");
   const encore = s.enregistrerVictoire(lente.jeton, reponses, { indices: 9 });
   assert.ok(encore.deja && encore.rang === 1 && encore.code === v.code);
+  assert.strictEqual(typeof v.morts, "number");
+  // Un gagnant d'avant les codes de vérification en reçoit un.
+  ss.feuilles.Gagnants.lignes[1][8] = "";
+  const vieux = s.enregistrerVictoire(lente.jeton, reponses);
+  assert.ok(/^[0-9A-F]{4}$/.test(vieux.code) && ss.feuilles.Gagnants.lignes[1][8] === vieux.code);
+  assert.ok(ss.feuilles.Comptes.formats.some(([c, f]) => c === 1 && f === "@"), "pseudos en texte");
+  assert.ok(ss.feuilles.Gagnants.formats.some(([c, f]) => c === 2 && f === "@"));
   const p = s.palmares();
   assert.deepStrictEqual(p.map((g) => g.pseudo), ["Rapide", "Lente"]);
   assert.deepStrictEqual(p.map((g) => g.indices), [0, 3]);

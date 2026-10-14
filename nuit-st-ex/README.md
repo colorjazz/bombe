@@ -13,11 +13,15 @@ sorties, Prendre, Lire, Composer un code, Combiner, Manger, Allumer, Frapper, At
 Les mots soulignés dans les descriptions se touchent aussi (REGARDER ce mot).
 
 - Déplacements : toucher une sortie, ou ALLER <destination> (ex. : ALLER CAFÉTÉRIA). Un lieu déjà visité ?
-  ALLER l'y mène tout seul (voyage rapide), ou toucher sa case sur la CARTE. RETOUR remonte le chemin.
+  ALLER l'y mène tout seul (voyage rapide), comme vers une sortie déjà aperçue, ou toucher sa case sur
+  la CARTE. RETOUR remonte le chemin. RESSORTIR quitte un local.
 - Commandes : ENTRER <local>, PRENDRE (ou PRENDRE TOUT), REGARDER, LIRE, COMBINER, MANGER, FRAPPER, UTILISER,
   OUVRIR, ALLUMER, COMPOSER <code>, ÉCOUTER, ATTENDRE, LANCER, CRIER, CARTE, INVENTAIRE (I), OBJECTIFS,
   INDICE, NOTES, AIDE, REJOUER. Les anciens raccourcis N, S, E, O, HAUT, BAS fonctionnent encore.
-- Le parser comprend les fautes de frappe courantes, « je prends… », « pogne », « check », « débarrer ».
+- Le parser comprend les fautes de frappe courantes, « je prends… », « pogne », « check », « débarrer »,
+  « tâter », « local A120 », « entrer 217 », un code tapé seul devant une serrure. Une faute de frappe ne
+  devient jamais un geste bruyant (frapper, crier, tirer, lancer), et un mot que le jeu connaît
+  (« classe », « craie ») n'est jamais « corrigé ».
 - Avec le calepin (bureau de M. Plante) : NOTER <texte>, NOTES, EFFACER NOTES. Les lectures clés
   (tableau, fiche, gravure, mur, post-it) s'y recopient toutes seules ; le nombre de sièges, non.
 
@@ -28,16 +32,18 @@ Les mots soulignés dans les descriptions se touchent aussi (REGARDER ce mot).
   dangers déjà vus restent. Les morts sont comptées (écran de fin, palmarès).
 - **Pièges en deux temps** : portes de secours, gymnase 6, avertisseur, vitre, cri. La première fois,
   on voit et on recule ; la deuxième fois, c'est la mort.
-- **La poursuite** (après le cadenas) : 10 gestes. Regarder, lire, consulter et les fautes de frappe ne
-  comptent pas. Une jauge et un cadre rouge montrent le temps qui reste. Un mauvais code au coffre coûte
-  un geste de plus.
+- **La poursuite** (après le cadenas) : 9 gestes (8, plus le dernier s'il te fait sortir). Regarder, lire,
+  consulter et les fautes de frappe ne comptent pas. Une jauge et un cadre rouge montrent le temps qui
+  reste. Un mauvais code au coffre coûte un geste de plus, et le jeu le dit. Le chemin le plus court en
+  demande 5.
 - **INDICE** : trois niveaux (où chercher, quoi relier, la méthode), le suivant après 12 gestes.
   Jamais un code, jamais le nombre de sièges. Le nombre d'indices est compté au palmarès.
 - **OBJECTIFS** : le journal se remplit à mesure qu'on découvre l'école.
 - **Rencontres** : une silhouette à la cafétéria (ATTENDRE ou LANCER un objet inutile), et une autre
   entre toi et la sortie, la clé en main (FRAPPER avec l'arme ou LANCER).
 - **Le carnet de R.** : 8 pages cachées dans des locaux, une par grande zone. Elles racontent l'après-midi
-  de l'évacuation, et certaines aident.
+  de l'évacuation, et certaines aident. Quand on a visité la moitié d'un secteur où il reste une page ou
+  un objet, la liste des locaux le laisse deviner ; quand il n'y reste plus rien, elle le dit.
 - Quatre chapitres, des scènes qui reviennent une seule fois, des descriptions qui changent avec ce qui
   s'est passé, et un épilogue après le générique.
 - Son facultatif (coupé au départ), synthétisé dans la page : vibration du texto, bip du coffre, cœur
@@ -56,7 +62,8 @@ Pour tester la partie complète, passer la solution en variable d'environnement 
 
 L'écran d'accueil propose deux choix :
 
-- **Jouer comme invité** : aucune sauvegarde, on recommence au début à chaque fois.
+- **Jouer sans compte** : aucune sauvegarde, on recommence au début à chaque fois. Quitter demande
+  une confirmation (la partie serait perdue).
 - **Mon compte** : un pseudo et un mot de passe. La partie est sauvegardée et reprend où on l'a laissée.
   Une mort ramène au dernier moment sûr (la mort est comptée).
 
@@ -85,7 +92,9 @@ Le classeur garde trois onglets :
 Le palmarès (bouton sur l'écran d'accueil) classe les victoires vérifiées du temps le plus court au plus long,
 avec les morts et les indices.
 
-Après une mise à jour de `Code.gs`, relancer `installer` : les en-têtes des onglets sont mis à jour sans rien effacer.
+Après une mise à jour de `Code.gs`, relancer `installer` : les en-têtes des onglets sont mis à jour sans rien effacer,
+et la colonne des pseudos passe en format texte (sinon Sheets change « 007 » en 7). Un gagnant d'avant les codes
+de vérification reçoit son code la prochaine fois qu'il ouvre son écran de fin.
 
 ### Installation (une seule fois)
 
