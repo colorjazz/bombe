@@ -319,7 +319,8 @@
     text-align: center;
     padding-inline: 16px;
   }
-  #noir.actif { animation: coupure 2.5s 6s ease both; pointer-events: auto; }
+  #noir.actif { animation: coupure 1.6s ease both; pointer-events: auto; }
+  #actions .continuer { flex: 1; min-height: 3rem; font-size: 0.85rem; color: var(--lune); border-color: var(--lune); }
   #noir h2 {
     margin: 0 0 1.5rem;
     font-family: var(--f-titre);
@@ -2209,10 +2210,9 @@
           document.getElementById("consigne-finale").hidden = false;
         }
         if (b.type === "fin" || b.type === "finmort") {
+          // L'écran de fin attend que l'élève touche « Continuer » : il lit le texte à son rythme.
           document.getElementById("verdict").textContent =
             b.type === "fin" ? "Tu as survécu à la nuit" : "La nuit t'a pris";
-          noir.hidden = false;
-          noir.classList.add("actif");
         }
       }
       journal.scrollTop = journal.scrollHeight;
@@ -2439,7 +2439,23 @@
     function majActions() {
       const barre = document.getElementById("actions");
       barre.replaceChildren();
-      if (!partie || partie.termine) return;
+      if (!partie) return;
+      if (partie.termine) {
+        const rangeeFin = document.createElement("div");
+        rangeeFin.className = "rangee";
+        const continuer = document.createElement("button");
+        continuer.type = "button";
+        continuer.className = "continuer";
+        continuer.textContent = "Continuer →";
+        continuer.addEventListener("click", () => {
+          noir.hidden = false;
+          noir.classList.add("actif");
+          document.getElementById("rejouer").focus();
+        });
+        rangeeFin.appendChild(continuer);
+        barre.appendChild(rangeeFin);
+        return;
+      }
       const ctx = partie.contexte();
       // Liste des locaux du couloir, toujours à jour (crochets vert et jaune), ouverte à la demande.
       if (panneauLocauxOuvert && ctx.locaux.length) {
