@@ -267,7 +267,7 @@ let wrongI = 0;
 const wrongName = () => WRONG_NAMES[wrongI++ % WRONG_NAMES.length];
 
 // ---------- état du jeu ----------
-const POINTS = { signin: 5, board: 1, water: 1, camera: 1, wake: 2, memo: 2, readmemo: 3, key: 5, mug: 3, filter: 3, grounds: 3,
+const POINTS = { signin: 5, board: 1, water: 1, camera: 1, locker: 1, wake: 2, memo: 2, readmemo: 3, key: 5, mug: 3, filter: 3, grounds: 3,
   fillpot: 5, brew: 5, pour: 5, milk: 2, gift: 10, donut: 3, unlock: 5, paper: 5, unplug: 5, jam: 5,
   plugin: 2, loadpaper: 5, code: 5, copy: 10, debate: 2, calendar: 3, rps: 10, deliver: 10 };
 const MAX = Object.values(POINTS).reduce((a, b) => a + b, 0);
@@ -613,7 +613,7 @@ function goRoom(r, x, y, face) {
 
 // ---------- analyseur (parser) ----------
 const strip = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "");
-const FILLER = new Set("le la les l un une des du de d au aux a ma mon mes ta ton sa son ses ce cet cette ces avec dans sur sous pour par en et puis svp plait s il vous te je j qu que t n ne pas vers chez contre tres encore maintenant vite nouveau nouvelle frais fraiche vieux vieille peu quoi comme est c ca cela ceci propos m y coince coincee bloque bloquee bien doucement fond tout donc ben pis tsu tse la".split(" "));
+const FILLER = new Set("le la les l un une des du de d au aux a ma mon mes ta ton sa son ses ce cet cette ces avec dans sur sous pour par en et puis svp plait s il vous te je j qu que t n ne pas vers chez contre tres encore maintenant vite nouveau nouvelle frais fraiche vieux vieille peu quoi comme est c ca cela ceci propos m y coince coincee bloque bloquee bien doucement fond tout donc ben pis tsu tse la rouge bleu bleue bleus bleues blanc blanche vert verte jaune rose beige brun brune petit petite gros grosse premier premiere".split(" "));
 const VOC = {};
 function syn(canon, list) { for (const w of list.split(" ")) VOC[w] = canon; }
 // verbes
@@ -675,7 +675,8 @@ syn("compute", "pianoter pianote naviguer navigue clavarder");
 // noms
 syn("memo", "note memo lettre circulaire courriel");
 syn("key", "cle clef cles clefs");
-syn("mailbox", "casier casiers courrier pigeonnier");
+syn("mailbox", "courrier pigeonnier");
+syn("casier", "casier casiers");
 syn("box", "boite carton");
 syn("feuille", "feuille feuilles");
 syn("sheet", "registre presences liste pupitre");
@@ -699,8 +700,9 @@ syn("maker", "cafetiere percolateur");
 syn("machine", "machine");
 syn("filter", "filtre filtres");
 syn("grounds", "moulu paquet poudre");
-syn("cabinet", "armoires placard placards etagere etageres");
-syn("supply", "armoire fournitures reserve");
+syn("cabinet", "armoire armoires placard placards etagere etageres");
+syn("upperc", "haut dessus bois");
+syn("supply", "fournitures reserve grise gris metal metallique grande");
 syn("paper", "papier rame ramette");
 syn("copier", "photocopieuse photocopieur copieur imprimante toner vitre ecran");
 syn("copies", "copies photocopies exemplaires");
@@ -753,7 +755,7 @@ function parse(raw) {
        .replace(/ regarder autour /g, " regarder salle ").replace(/ quelle heure /g, " regarder horloge ")
        .replace(/ mot de passe /g, " code ").replace(/ micro ondes /g, " micro ")
        .replace(/ pains? au chocolat /g, " chocolatine ").replace(/ machine a cafe /g, " cafetiere ")
-       .replace(/ salle des profs /g, " profs ").replace(/ casiers? des profs /g, " casier ")
+       .replace(/ salle des profs /g, " profs ").replace(/ casiers? des profs /g, " pigeonnier ").replace(/ casiers? des eleves /g, " cases ")
        .replace(/ cases? des eleves /g, " cases ").replace(/ cafe moulu /g, " moulu ")
        .replace(/ face camera /g, " camera ").replace(/ petit prince /g, " prince ")
        .replace(/ roche papier ciseaux /g, " roche ").replace(/ c est (le )?tour de qui /g, " reunion ")
@@ -794,7 +796,9 @@ function resolve(N) {
     if (n === "machine") return N.includes("copier") || N.includes("copyv") ? "copier" : N.includes("coffee") ? "maker" : L ? nearest(["copier", "maker"]) : "machine";
     if (n === "box") return N.includes("grounds") || N.includes("coffee") ? "grounds" : L ? "donut" : "mailbox";
     if (n === "person") return L ? "npcB" : "mmeD";
-    if (n === "cabinet") return N.includes("supply") ? "supply" : L ? nearest(["cabinet", "supply"]) : "locker";
+    if (n === "cabinet") return N.includes("supply") ? "supply" : N.includes("upperc") ? "cabinet" : L ? nearest(["cabinet", "supply"]) : "locker";
+    if (n === "upperc") return L ? "cabinet" : "locker";
+    if (n === "casier") return L ? "locker" : nearest(["mailbox", "locker"]);
     if (n === "water") return L ? "water" : "fountain";
     if (n === "lounge") return L ? "room" : "door";
     if (n === "hall") return L ? "door" : "room";
@@ -1133,7 +1137,12 @@ function hallAct(v, N, num) {
     if (!near("fountain")) return;
     award("water"); return say("Vous vous penchez très bas et aspirez. Tiède, vaguement métallique. Le même goût depuis 1962.");
   }
-  if (v === "open" && hasN("locker")) return near("locker") && say("Ouvrir une case d'élève avant 8 h ? Personne n'est prêt pour ce qu'il y a dedans.");
+  if (v === "open" && hasN("locker")) {
+    if (!near("locker")) return;
+    if (S.got.locker) return say("Vous rouvrez la case. Le lunch de 2019 vous fait un signe de la main. Vous refermez vite.");
+    award("locker");
+    return say("Vous ouvrez une case au hasard. Dedans : un lunch de 2019 qui respire, quatorze cellulaires confisqués, un manuel d'histoire jamais ouvert (le vôtre ?) et une figurine de Montcalm à moitié peinte.\n\nGuy-Homie la cherche depuis trois ans. Vous refermez doucement.");
+  }
   if (v === "open" && hasN("door")) return say("Marchez simplement dedans.");
   if (v === "give") return say(hasN("mmeD") ? "« Je n'accepte pas les cadeaux, " + wrongName() + ". Ça paraîtrait mal. »" : "Personne ici n'en veut.");
   if (v === "take" && hasN("sheet")) return say("Voler le registre ? Mme D vous retrouverait. Elle retrouve toujours tout. Sauf son bureau.");
@@ -1249,7 +1258,7 @@ function loungeAct(v, N, num) {
   if (v === "unlock" || (v === "use" && hasN("key")) || (v === "open" && hasN("supply"))) {
     if (!near("supply")) return;
     if (S.supplyUnlocked) return say("Elle est déjà ouverte.");
-    if (!has("key")) return say(v === "open" ? "Barrée. Mme D garde le bon papier sous clé, comme les joyaux de la Couronne." : "Vous n'avez pas de clé qui fait.");
+    if (!has("key")) return say((v === "open" ? "Barrée. Mme D garde le bon papier sous clé, comme les joyaux de la Couronne." : "Vous n'avez pas de clé qui fait.") + " La clé est peut-être dans votre casier, dans le corridor.");
     S.supplyUnlocked = true; award("unlock");
     return say("La clé en laiton tourne avec un clic satisfaisant. L'armoire s'ouvre : brocheuses, toner, et sur la tablette du haut, une ramette de papier neuve. Elle brille.");
   }
