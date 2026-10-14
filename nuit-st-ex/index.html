@@ -26,6 +26,7 @@
     --encre: #23262c;
     --tableau: #18211d;      /* tableau vert de classe, la nuit */
     --craie: #e3e5dc;
+    --trait: #5a626e;        /* bordure des outils, lisible sur le béton */
     --f-titre: "Michroma", "Eurostile", "Arial Black", sans-serif;
     --f-texte: "Spectral", "Iowan Old Style", Georgia, serif;
     --f-machine: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
@@ -49,14 +50,20 @@
 
   .ecran {
     height: 100%;
+    height: 100dvh;
     display: grid;
     grid-template-rows: auto minmax(0, 1fr) auto auto;
+    grid-template-columns: minmax(0, 1fr);
     max-width: 44rem;
     margin: 0 auto;
     padding-left: max(16px, env(safe-area-inset-left, 0px));
     padding-right: max(16px, env(safe-area-inset-right, 0px));
     box-sizing: border-box;
   }
+  .ecran > header { grid-row: 1; }
+  .ecran > #journal { grid-row: 2; }
+  .ecran > #actions { grid-row: 3; }
+  .ecran > #saisie { grid-row: 4; }
 
   header {
     padding-block: 1rem 0.6rem;
@@ -72,12 +79,15 @@
     text-transform: uppercase;
     color: var(--ombre);
   }
-  header .ecole { color: var(--cendre); }
+  .ligne-entete { display: flex; flex-wrap: nowrap; align-items: center; gap: 1rem; flex: 1 1 100%; min-width: 0; }
+  header .ecole { color: var(--cendre); flex: 0 1000 auto; }
   header .ecole abbr { text-decoration: none; }
-  #zone { color: var(--lune); }
-  .entete-droite { display: flex; gap: 0.75rem; align-items: center; }
+  #zone { color: var(--lune); flex: 1 1 auto; }
+  header .ecole, #zone { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .entete-droite { display: flex; gap: 1rem; align-items: center; flex-shrink: 0; }
   #joueur { display: flex; gap: 0.6rem; align-items: center; }
-  .petit-bouton { padding: 0.25rem 0.5rem; font-size: 0.62rem; min-height: 0; }
+  .petit-bouton { padding: 0.35rem 0.6rem; font-size: 0.62rem; min-height: 32px; }
+  #quitter.arme { color: var(--rouille); border-color: var(--rouille); }
   #bouton-son[aria-pressed="true"] { color: var(--lune); border-color: var(--lune); }
 
   /* Jauge de la poursuite : une pastille par geste qui reste */
@@ -103,8 +113,9 @@
     min-width: 0;
     scrollbar-width: thin;
     scrollbar-color: var(--beton-3) transparent;
+    overflow-x: clip;
   }
-  #journal > * { margin: 0; max-width: 62ch; animation: apparition 0.9s ease both; }
+  #journal > * { margin: 0; max-width: 62ch; animation: apparition 0.5s ease both; }
 
   .chapitre {
     max-width: none !important;
@@ -144,7 +155,7 @@
     text-transform: uppercase;
     color: var(--cendre);
     text-wrap: balance;
-    animation: apparition 1.4s ease both !important;
+    animation: apparition-flou 1.4s ease both !important;
   }
   .lieu small {
     display: block;
@@ -169,8 +180,10 @@
     text-underline-offset: 0.22em;
     text-decoration-thickness: 1px;
   }
-  .mot:hover, .mot:focus-visible { color: var(--lune); text-decoration-color: var(--lune); outline: none; }
+  .mot:hover, .mot:focus-visible { color: var(--lune); text-decoration-color: var(--lune); }
+  .mot:focus-visible { outline: 2px solid var(--lune); outline-offset: 2px; border-radius: 2px; }
   .mot:disabled { cursor: default; color: inherit; text-decoration: none; }
+  .mot:disabled, .lien-locaux:disabled { opacity: 1; }
 
   .objets { color: var(--lune); }
   .sorties, .systeme, .commande, .locaux, .sauvegarde, .objectif {
@@ -398,16 +411,16 @@
     letter-spacing: 0.1em;
     touch-action: manipulation;
   }
-  #actions .direction { color: var(--cendre); border-color: var(--lune); text-transform: none; letter-spacing: 0.03em; font-size: 0.8rem; }
-  #actions .direction.verrou { color: var(--ombre); border-color: var(--beton-3); }
+  #actions .direction { color: var(--cendre); border-color: var(--lune); background: var(--beton-2); text-transform: none; letter-spacing: 0.03em; font-size: 0.8rem; }
+  #actions .direction.verrou { color: var(--ombre); border-color: var(--beton-3); background: transparent; }
   #actions .direction.piege, #actions .g-danger { color: var(--rouille); border-color: var(--rouille); }
   #actions .g-prise, #actions .g-lecture { color: var(--lune); text-transform: none; letter-spacing: 0.03em; font-size: 0.78rem; }
   #actions .g-code, #actions .g-action { color: var(--ecran); text-transform: none; letter-spacing: 0.03em; font-size: 0.78rem; }
   #actions .g-fin { color: var(--beton); background: var(--ecran); border-color: var(--ecran); text-transform: none; letter-spacing: 0.03em; font-size: 0.82rem; }
-  #actions .g-outil { color: var(--ombre); border-color: var(--beton-3); }
+  #actions .g-outil { color: var(--ombre); border-color: var(--trait); }
   #actions [aria-expanded="true"] { border-color: var(--lune); color: var(--lune); background: var(--beton-2); }
   #actions .outils { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 0.35rem; }
-  #actions .outils button { padding-inline: 0.2rem; font-size: 0.62rem; letter-spacing: 0.06em; color: var(--ombre); border-color: var(--beton-3); }
+  #actions .outils button { padding-inline: 0.2rem; font-size: 0.62rem; letter-spacing: 0.06em; color: var(--ombre); border-color: var(--trait); }
   #actions .outils button:hover, #actions .outils button:focus-visible { color: var(--lune); border-color: var(--lune); }
   #actions .continuer { flex: 1; min-height: 3rem; font-size: 0.85rem; color: var(--beton); background: var(--ecran); border-color: var(--ecran); }
   #actions .recommencer { min-height: 3rem; color: var(--ombre); border-color: var(--beton-3); }
@@ -422,13 +435,15 @@
     display: grid;
     gap: 0.5rem;
   }
-  #panneau-locaux .titre { font-family: var(--f-machine); font-size: 0.64rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ombre); display: flex; justify-content: space-between; gap: 1rem; }
+  #panneau-locaux .titre { font-family: var(--f-machine); font-size: 0.64rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ombre); display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+  #panneau-locaux .titre span:first-child { flex: 1; }
+  #panneau-locaux .fermer { min-width: 44px; min-height: 44px; padding: 0.3rem 0.6rem; font-size: 0.66rem; color: var(--cendre); border-color: var(--trait); }
   #panneau-locaux .grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(5.2rem, 1fr)); gap: 0.35rem; }
   #panneau-locaux .grille button { min-height: 2.4rem; text-transform: none; letter-spacing: 0.02em; font-size: 0.74rem; color: var(--cendre); border-color: var(--beton-3); padding: 0.3rem; }
   #panneau-locaux .grille button.visite { color: var(--ombre); }
   #panneau-locaux .grille button.visite::after { content: " ✓"; color: var(--vert); }
   #panneau-locaux .grille button.a-revoir { color: var(--cendre); border-color: var(--jaune); }
-  #panneau-locaux .grille button.a-revoir::after { content: " ✓"; color: var(--jaune); }
+  #panneau-locaux .grille button.a-revoir::after { content: " !"; color: var(--jaune); }
 
   form#saisie {
     padding-block: 0.55rem 0.9rem;
@@ -509,9 +524,9 @@
 
   #intro { z-index: 4; display: grid; align-items: center; }
   #intro .boite { gap: 1.6rem; }
-  #intro p { margin: 0; font-style: italic; color: var(--cendre); animation: apparition 2.4s ease both; }
+  #intro p { margin: 0; font-style: italic; color: var(--cendre); animation: apparition-flou 2.4s ease both; }
   #intro p:nth-child(2) { animation-delay: 2.2s; }
-  #intro button { justify-self: start; animation: apparition 1.2s ease 4s both; }
+  #intro button { justify-self: start; animation: apparition-flou 1.2s ease 4s both; }
   #intro .passer { justify-self: end; animation: none; border-color: var(--beton-3); color: var(--ombre); }
 
   #noir { z-index: 3; display: grid; align-items: center; }
@@ -533,8 +548,8 @@
   .stats dt { font-family: var(--f-machine); font-size: 0.58rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ombre); }
   .stats dd { margin: 0; font-family: var(--f-machine); font-size: 1rem; color: var(--ecran); font-variant-numeric: tabular-nums; }
   .defis { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 0.4rem; }
-  .defis li { font-family: var(--f-machine); font-size: 0.68rem; letter-spacing: 0.08em; padding: 0.3rem 0.55rem; border: 1px solid var(--beton-3); color: var(--ombre); }
-  .defis li.reussi { border-color: var(--vert); color: var(--vert); }
+  .defis li { font-family: var(--f-machine); font-size: 0.68rem; letter-spacing: 0.08em; padding: 0.3rem 0.75rem; border: 1px dashed var(--trait); border-radius: 999px; color: var(--ombre); }
+  .defis li.reussi { border-style: solid; border-color: var(--vert); color: var(--vert); }
   .coffre-phrase { display: grid; gap: 0.8rem; padding: 1rem; border: 1px solid var(--lune); }
   .coffre-phrase p { margin: 0; }
   #phrase-finale {
@@ -604,7 +619,8 @@
 
   .secousse { animation: secousse 0.45s linear; }
 
-  @keyframes apparition { from { opacity: 0; filter: blur(3px); } to { opacity: 1; filter: none; } }
+  @keyframes apparition { from { opacity: 0; translate: 0 4px; } to { opacity: 1; translate: none; } }
+  @keyframes apparition-flou { from { opacity: 0; filter: blur(3px); } to { opacity: 1; filter: none; } }
   @keyframes chapitre { 0% { opacity: 0; letter-spacing: 0.6em; } 100% { opacity: 1; } }
   @keyframes succes { 0% { opacity: 0; box-shadow: 0 0 0 rgba(157, 179, 201, 0); } 40% { opacity: 1; box-shadow: 0 0 50px rgba(157, 179, 201, 0.35); } 100% { box-shadow: 0 0 30px rgba(157, 179, 201, 0.12); } }
   @keyframes texto { 0% { opacity: 0; transform: scale(0.96); } 8% { opacity: 1; transform: none; } 70% { opacity: 1; } 100% { opacity: 0.45; box-shadow: none; } }
@@ -621,24 +637,46 @@
   /* Téléphone : texte un peu plus serré, en-tête compact */
   @media (max-width: 520px) {
     body { font-size: 1.02rem; line-height: 1.62; }
-    header { font-size: 0.6rem; letter-spacing: 0.1em; padding-block: 0.7rem 0.45rem; }
+    header { font-size: 0.68rem; letter-spacing: 0.1em; padding-block: 0.7rem 0.45rem; }
     header .ecole, #nom-joueur { display: none; }
+    .lieu small, .chapitre span { font-size: 0.72rem; }
     #journal { padding-block: 0.9rem 1.5rem; gap: 0.9rem; }
     .chapitre { padding-block: 0.9rem; margin-top: 0.75rem !important; }
     .lieu { letter-spacing: 0.2em; margin-top: 0.6rem !important; }
-    #actions { gap: 0.35rem; padding-top: 0.5rem; }
+    #actions { gap: 0.35rem; padding-top: 0.5rem; max-height: 40vh; overflow-y: auto; }
     #actions .rangee { gap: 0.3rem; }
-    #actions button { min-height: 2.2rem; padding: 0.25rem 0.5rem; font-size: 0.66rem; }
-    #actions .direction { font-size: 0.74rem; letter-spacing: 0; }
-    #actions .g-prise, #actions .g-lecture, #actions .g-code, #actions .g-action, #actions .g-fin, #actions .g-danger { font-size: 0.72rem; letter-spacing: 0; }
+    #actions .rangee:not(.outils):not(.fin-mort):not(.fin-gagne) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    #actions .rangee:not(.outils):not(.fin-mort):not(.fin-gagne) button { white-space: normal; line-height: 1.15; text-align: left; }
+    #actions button { min-height: 2.75rem; padding: 0.3rem 0.55rem; font-size: 0.75rem; }
+    #actions .direction { font-size: 0.8rem; letter-spacing: 0; }
+    #actions .g-prise, #actions .g-lecture, #actions .g-code, #actions .g-action, #actions .g-fin, #actions .g-danger { font-size: 0.78rem; letter-spacing: 0; }
     #actions .outils { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.3rem; }
     #actions .outils .plus { display: block; color: var(--lune); }
     #actions .outils .secondaire { display: none; }
     #actions .outils.ouvert .secondaire { display: block; }
     #actions .fin-mort { flex-direction: column; }
-    #actions .outils button { min-height: 2rem; font-size: 0.6rem; letter-spacing: 0.04em; }
+    #actions .fin-mort button, #actions .fin-gagne button { white-space: normal; letter-spacing: 0.06em; }
+    #actions .outils button { min-height: 2.5rem; font-size: 0.7rem; letter-spacing: 0.04em; }
+    #panneau-locaux {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 3;
+      max-height: 62vh;
+      overflow-y: auto;
+      padding: 0.9rem max(16px, env(safe-area-inset-left)) calc(0.9rem + env(safe-area-inset-bottom));
+      border-radius: 14px 14px 0 0;
+      box-shadow: 0 -24px 48px rgba(0, 0, 0, 0.75);
+    }
     form#saisie { padding-block: 0.4rem 0.7rem; }
     .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .stats dt { font-size: 0.66rem; }
+  }
+  /* Tactile : les boutons remplacent les listes de sorties et de locaux ; le clavier ouvert, on ne garde que le texte. */
+  @media (pointer: coarse) {
+    #journal .sorties, #journal .locaux { display: none; }
+    .ecran:has(#commande:focus) header, .ecran:has(#commande:focus) #actions, .ecran:has(#commande:focus) #panneau-locaux { display: none; }
   }
   @media (min-width: 521px) { header .ecole .court { display: none; } }
   /* Tablette et grand écran : plus de place pour le texte */
@@ -657,12 +695,14 @@
 
 <div class="ecran" id="ecran">
   <header>
-    <span class="ecole"><span class="long">École secondaire Antoine-de-Saint-Exupéry</span><span class="court">St-Ex</span></span>
-    <span id="zone">Aile A · 2e étage</span>
-    <span class="entete-droite">
-      <button id="bouton-son" class="petit-bouton" type="button" aria-pressed="false" title="Son et ambiance">Son : non</button>
-      <span id="joueur"><span id="nom-joueur">Invité</span><button id="quitter" class="petit-bouton" type="button">Quitter</button></span>
-    </span>
+    <div class="ligne-entete">
+      <span class="ecole"><span class="long">École secondaire Antoine-de-Saint-Exupéry</span><span class="court">St-Ex</span></span>
+      <span id="zone">Aile A · 2e étage</span>
+      <span class="entete-droite">
+        <button id="bouton-son" class="petit-bouton" type="button" aria-pressed="false" title="Son et ambiance">Son : non</button>
+        <span id="joueur"><span id="nom-joueur">Sans compte</span><button id="quitter" class="petit-bouton" type="button">Quitter</button></span>
+      </span>
+    </div>
     <div id="jauge" hidden aria-live="polite"><span id="jauge-texte">Ils arrivent</span><span class="pastilles" id="pastilles"></span></div>
   </header>
   <main id="journal" aria-live="polite"></main>
@@ -697,7 +737,7 @@
     </div>
     <p id="rang" hidden></p>
     <p id="code-verif" hidden></p>
-    <p class="note" id="note-invite" hidden>Partie en invité : elle n'apparaît pas au palmarès.</p>
+    <p class="note" id="note-invite" hidden>Partie sans compte : elle n'apparaît pas au palmarès.</p>
     <div class="boutons-fin">
       <button id="rejouer" type="button">Rejouer</button>
     </div>
@@ -708,7 +748,7 @@
   <div class="boite">
     <h1>La Nuit à St-Ex</h1>
     <p class="accroche">Tu as dormi en classe. Au réveil, l'école est plongée dans le noir, et quelque chose écoute dans les couloirs.</p>
-    <button id="invite" class="bouton-principal" type="button">Jouer comme invité</button>
+    <button id="invite" class="bouton-principal" type="button">Jouer sans compte</button>
     <p class="note">Aucune sauvegarde : si tu fermes ou recharges la page, tu recommences au début. Pendant la partie, une mort te ramène au dernier moment sûr.</p>
     <ul class="comment-jouer">
       <li>Touche les boutons, ou écris ce que tu veux faire (ex. : PRENDRE AGENDA).</li>
@@ -737,7 +777,7 @@
     <section id="bloc-palmares" hidden>
       <button id="bouton-palmares" type="button" aria-expanded="false" aria-controls="palmares">Voir le palmarès</button>
       <div id="palmares" hidden>
-        <p class="note">Les survivants, du temps de jeu le plus court au plus long. Seul le temps passé à jouer compte : les pauses de plus de 5 minutes sont exclues.</p>
+        <p class="note">Les personnes qui ont survécu, du temps de jeu le plus court au plus long. Seul le temps passé à jouer compte : les pauses de plus de 5 minutes sont exclues.</p>
         <div class="tableau-palmares"><table>
           <thead><tr><th>#</th><th>Pseudo</th><th class="nombre">Temps</th><th class="nombre">Morts</th><th class="nombre">Indices</th></tr></thead>
           <tbody id="lignes-palmares"></tbody>
@@ -1027,7 +1067,8 @@
         }
         case "page": {
           const d = element("div", "page");
-          d.append(element("small", "", `Carnet de R. · page ${b.numero}/${b.total}`), document.createTextNode(typo(b.texte)));
+          const trouvees = b.trouvees !== undefined ? b.trouvees : partie ? partie.pages.length : b.numero;
+          d.append(element("small", "", `Carnet de R. · feuillet n°\u00a0${b.numero} · ${trouvees}/${b.total} trouvées`), document.createTextNode(typo(b.texte)));
           return d;
         }
         case "lettre": {
@@ -1111,7 +1152,11 @@
       if (!premier) return;
       let cible = Math.max(0, premier.offsetTop - 12);
       if (a) cible = Math.max(cible, Math.min(a.offsetTop + a.offsetHeight + 16 - journal.clientHeight, a.offsetTop - 12));
-      if (partie && partie.termine && !partie.gagne) cible = journal.scrollHeight; // la mort : on lit jusqu'à la leçon
+      if (partie && partie.termine && !partie.gagne) {
+        // La mort : on lit le récit de la mort, la leçon suit juste dessous.
+        const morts = journal.querySelectorAll(".mort");
+        if (morts.length) cible = Math.max(0, morts[morts.length - 1].offsetTop - 12);
+      }
       const fin = journal.scrollHeight - journal.clientHeight;
       journal.scrollTo({ top: Math.min(cible, fin), behavior: reduit ? "auto" : "smooth" });
     }
@@ -1119,7 +1164,7 @@
     // ==========================================
     // COMPTES (seulement dans la version de l'école)
     // ==========================================
-    // L'invité ne sauvegarde rien. Avec un compte, la partie est envoyée au
+    // Sans compte, rien n'est sauvegardé. Avec un compte, la partie est envoyée au
     // serveur (Google Sheets) quelques secondes après chaque commande.
     // Servi par Apps Script : google.script.run. Ailleurs (Netlify) : appels HTTP
     // vers le même déploiement Apps Script, si celui-ci répond.
@@ -1129,6 +1174,7 @@
     let session = null; // { pseudo, jeton }
     let minuterie = null;
     let mortEnvoyee = false; // une mort n'est comptée qu'une fois au serveur
+    let mortsServeur = null; // compte officiel renvoyé à la victoire (partie avec compte)
 
     function appeler(fonction, ...args) {
       if (run) {
@@ -1201,6 +1247,10 @@
             ? "Tu es la toute première personne à survivre à la nuit."
             : `Tu es la ${r.rang}e personne à survivre à la nuit.`) + ` Temps de jeu officiel : ${formaterTemps(r.temps)}.`);
           rang.hidden = false;
+          if (typeof r.morts === "number") {
+            mortsServeur = r.morts;
+            if (!$("fin-victoire").hidden) remplirFin();
+          }
           if (r.code) {
             const code = $("code-verif");
             code.replaceChildren(document.createTextNode(typo("Code de vérification à montrer à M. Plante : ")), element("b", "", r.code));
@@ -1213,16 +1263,30 @@
     // ==========================================
     // ÉCRANS : INTRO, FIN, NOUVELLE PARTIE
     // ==========================================
+    // Sous un écran plein cadre (accueil, intro, fin), le jeu ne doit pas être atteignable au clavier ni au lecteur d'écran.
+    function majInerte() {
+      ecran.inert = !accueil.hidden || !$("intro").hidden || !noir.hidden;
+    }
+
     function montrerIntro(ouverture) {
       const texte = $("intro-texte");
+      const yeux = $("ouvrir-yeux");
       texte.replaceChildren(...ouverture.map((b) => element("p", "", b.texte)));
+      // Pas de toucher accidentel avant que le bouton ait fini d'apparaître.
+      yeux.style.pointerEvents = "none";
+      const activer = () => { yeux.style.pointerEvents = "auto"; };
+      yeux.addEventListener("animationend", activer, { once: true });
+      setTimeout(activer, 6000);
       $("intro").hidden = false;
-      $("ouvrir-yeux").focus();
+      $("intro").scrollTop = 0;
+      majInerte();
+      yeux.focus({ preventScroll: true });
     }
 
     function fermerIntro() {
       $("intro").hidden = true;
       introVue = true;
+      majInerte();
       journal.scrollTop = 0;
       focaliser();
     }
@@ -1233,13 +1297,19 @@
       for (const id of ["fin-victoire", "phrase-finale", "consigne-finale", "rang", "code-verif", "note-invite"]) $(id).hidden = true;
       $("reveler").hidden = false;
       armerRejouer(false);
+      majInerte();
     }
 
     function nouvellePartie(sauvegarde) {
+      // Sans compte, recommencer sans quitter garde les morts de la nuit (avec un compte, le serveur les compte).
+      const morts = !session && partie && !partie.gagne ? partie.morts + (partie.termine && !partie.gagne ? 1 : 0) : 0;
       journal.textContent = "";
       reinitialiserFin();
       flash.classList.remove("actif");
       panneauLocauxOuvert = false;
+      rejouerConfirme = false;
+      desarmerQuitter();
+      mortsServeur = null;
       mortEnvoyee = false;
       tempsActif = 0;
       derniereAction = Date.now();
@@ -1250,6 +1320,7 @@
         defiler(premier);
       } else {
         partie = new NuitStEx.Partie();
+        if (!session) partie.morts = morts;
         const blocs = partie.demarrer();
         afficher(blocs);
         if (!introVue) montrerIntro(blocs.filter((b) => b.type === "ouverture"));
@@ -1259,37 +1330,41 @@
       focaliser();
     }
 
+    function remplirFin() {
+      const s = partie.statistiques();
+      if (mortsServeur !== null) s.morts = mortsServeur;
+      const lignes = [
+        ["Temps", formaterTemps(tempsActif)],
+        ["Actions", s.actions],
+        ["Morts", s.morts],
+        ["Indices", s.indices],
+        ["Locaux", `${s.locaux}/${s.totalLocaux}`],
+        ["Carnet de R.", `${s.pages}/${s.totalPages}`],
+      ];
+      $("stats").replaceChildren(...lignes.map(([dt, dd]) => {
+        const d = document.createElement("div");
+        d.append(element("dt", "", dt), element("dd", "", String(dd)));
+        return d;
+      }));
+      const defis = [
+        ["Sans mourir", s.morts === 0],
+        ["Sans indice", s.indices === 0],
+        ["Archiviste : 8 pages", s.pages === s.totalPages],
+        ["Exploration : 100 locaux", s.locaux >= 100],
+        ["Sans violence", s.epargne],
+      ];
+      $("defis").replaceChildren(...defis.map(([t, ok]) => element("li", ok ? "reussi" : "", (ok ? "✔ " : "") + t)));
+      $("note-invite").hidden = Boolean(session);
+    }
+
     function ouvrirFin() {
       $("fin-victoire").hidden = false;
-      {
-        const s = partie.statistiques();
-        const lignes = [
-          ["Temps", formaterTemps(tempsActif)],
-          ["Actions", s.actions],
-          ["Morts", s.morts],
-          ["Indices", s.indices],
-          ["Locaux", `${s.locaux}/${s.totalLocaux}`],
-          ["Carnet de R.", `${s.pages}/${s.totalPages}`],
-        ];
-        $("stats").replaceChildren(...lignes.map(([dt, dd]) => {
-          const d = document.createElement("div");
-          d.append(element("dt", "", dt), element("dd", "", String(dd)));
-          return d;
-        }));
-        const defis = [
-          ["Sans mourir", s.morts === 0],
-          ["Sans indice", s.indices === 0],
-          ["Archiviste : 8 pages", s.pages === s.totalPages],
-          ["Explorateur : 100 locaux", s.locaux >= 100],
-          ["Sans violence", s.epargne],
-        ];
-        $("defis").replaceChildren(...defis.map(([t, ok]) => element("li", ok ? "reussi" : "", (ok ? "✔ " : "") + t)));
-        $("note-invite").hidden = Boolean(session);
-      }
+      remplirFin();
       noir.hidden = false;
       noir.scrollTop = 0;
       noir.classList.add("actif");
-      $("reveler").focus();
+      majInerte();
+      $("reveler").focus({ preventScroll: true });
     }
 
     function reprendrePartie() {
@@ -1308,13 +1383,14 @@
     let rejouerArme = false;
     function armerRejouer(arme) {
       rejouerArme = arme;
-      $("rejouer").textContent = arme ? "Sûr ? La phrase va disparaître" : "Rejouer";
+      $("rejouer").textContent = arme ? "Vraiment ? La phrase va disparaître" : "Rejouer";
     }
 
     function entrerDansLeJeu(nouvelleSession, sauvegarde) {
       session = nouvelleSession;
-      $("nom-joueur").textContent = session ? session.pseudo : "Invité";
+      $("nom-joueur").textContent = session ? session.pseudo : "Sans compte";
       accueil.hidden = true;
+      majInerte();
       nouvellePartie(sauvegarde);
     }
 
@@ -1322,6 +1398,12 @@
       if (minuterie) envoyerSauvegarde();
       session = null;
       partie = null;
+      desarmerQuitter();
+      rejouerConfirme = false;
+      historique.length = 0;
+      position = 0;
+      champ.value = "";
+      journal.textContent = "";
       majActions();
       reinitialiserFin();
       $("intro").hidden = true;
@@ -1329,6 +1411,23 @@
       $("mdp2").value = "";
       choisirOnglet(false);
       accueil.hidden = false;
+      majInerte();
+    }
+
+    // Quitter une partie sans compte la perd : il faut toucher deux fois.
+    let quitterArme = null;
+    function desarmerQuitter() {
+      clearTimeout(quitterArme);
+      quitterArme = null;
+      $("quitter").textContent = "Quitter";
+      $("quitter").classList.remove("arme");
+    }
+    function quitter() {
+      if (quitterArme || !partie || partie.termine || session) return revenirAccueil();
+      const b = $("quitter");
+      b.textContent = typo("Quitter ? Partie perdue");
+      b.classList.add("arme");
+      quitterArme = setTimeout(desarmerQuitter, 4000);
     }
 
     let modeCreation = false;
@@ -1343,6 +1442,7 @@
       $("erreur-compte").textContent = "";
     }
 
+    majInerte();
     serveurJoignable().then((oui) => {
       $(oui ? "bloc-compte" : "sans-compte").hidden = false;
       $("bloc-palmares").hidden = !oui;
@@ -1382,7 +1482,7 @@
     $("invite").addEventListener("click", () => entrerDansLeJeu(null, null));
     $("onglet-connexion").addEventListener("click", () => choisirOnglet(false));
     $("onglet-creation").addEventListener("click", () => choisirOnglet(true));
-    $("quitter").addEventListener("click", revenirAccueil);
+    $("quitter").addEventListener("click", quitter);
     $("ouvrir-yeux").addEventListener("click", fermerIntro);
     $("reveler").addEventListener("click", function () {
       this.hidden = true;
@@ -1422,10 +1522,19 @@
     function envoyer(commande) {
       commande = commande.trim();
       if (!commande || !partie) return;
+      if (partie.gagne) { ouvrirFin(); return; }
       historique.push(commande);
       position = historique.length;
       derniereAction = Date.now();
-      if (NuitStEx.normaliser(commande) === "REJOUER") return nouvellePartie(null);
+      if (NuitStEx.normaliser(commande) === "REJOUER") {
+        // Après une mort, on recommence tout de suite ; en pleine partie, on demande confirmation.
+        if (partie.termine || rejouerConfirme) return nouvellePartie(null);
+        rejouerConfirme = true;
+        const echo = afficher([{ type: "commande", texte: commande.toUpperCase() }, { type: "systeme", texte: "Tout recommencer ? Retape REJOUER pour confirmer." }]);
+        defiler(echo);
+        return;
+      }
+      rejouerConfirme = false;
       // Les boutons des réponses précédentes ne valent plus : seuls les nouveaux restent actifs.
       journal.querySelectorAll("button[data-commande], button[data-action], g[data-commande]").forEach((b) => {
         if (b.tagName === "g") { b.removeAttribute("data-commande"); b.removeAttribute("tabindex"); b.setAttribute("class", ""); } else b.disabled = true;
@@ -1437,16 +1546,19 @@
       if (blocs.some((b) => b.type === "fin")) enregistrerVictoire();
       sauvegarder();
       majActions();
+      // Au tactile, le clavier cache les boutons : on le ferme quand la situation exige de les voir.
+      if (matchMedia("(pointer:coarse)").matches && (partie.termine || blocs.some((b) => ["danger", "choc", "menace"].includes(b.type)))) champ.blur();
       defiler(echo);
     }
 
     // ==========================================
     // BARRE D'ACTIONS
     // ==========================================
-    // Les trois premiers outils restent toujours visibles ; sur téléphone, les autres se replient derrière « Plus ».
-    const OUTILS = [["Regarder", "regarder"], ["Carte", "carte"], ["Indice", "indice"], ["Écouter", "écouter"], ["Objectifs", "objectifs"], ["Notes", "notes"], ["Sac", "inventaire"], ["Aide", "aide"]];
+    // Les trois premiers outils (regarder, écouter, carte) restent toujours visibles ; sur téléphone, les autres se replient derrière « Plus ».
+    const OUTILS = [["Regarder", "regarder"], ["Écouter", "écouter"], ["Carte", "carte"], ["Indice", "indice"], ["Objectifs", "objectifs"], ["Notes", "notes"], ["Sac", "inventaire"], ["Aide", "aide"]];
     let panneauLocauxOuvert = false;
     let outilsOuverts = false;
+    let rejouerConfirme = false; // REJOUER tapé en pleine partie : il faut le retaper
 
     function majJauge(menace) {
       const jauge = $("jauge");
@@ -1461,9 +1573,30 @@
       $("pastilles").replaceChildren(...Array.from({ length: menace.total }, (_, i) => element("i", i < menace.restant ? "vive" : "")));
     }
 
+    // Fin gagnée : on lit d'abord tout le journal, puis on passe au générique.
+    const journalEnBas = () => journal.scrollTop + journal.clientHeight >= journal.scrollHeight - 8;
+    function majBoutonFin() {
+      const b = $("continuer-fin");
+      if (b) b.textContent = journalEnBas() ? "Continuer : le générique →" : "Lire la suite ↓";
+    }
+    journal.addEventListener("scroll", majBoutonFin, { passive: true });
+    if (window.ResizeObserver) new ResizeObserver(majBoutonFin).observe(journal);
+
     function majActions() {
       const barre = $("actions");
+      // Le bouton qui avait le focus le retrouve après reconstruction (ou le premier bouton).
+      const cleDe = (b) => b.dataset.action || b.dataset.commande || b.dataset.saisie || b.id || b.textContent;
+      const actif = document.activeElement;
+      const cle = actif && actif !== barre && barre.contains(actif) ? cleDe(actif) : null;
       barre.replaceChildren();
+      if (cle !== null) {
+        queueMicrotask(() => {
+          const boutons = [...barre.querySelectorAll("button")];
+          const b = boutons.find((x) => cleDe(x) === cle) || boutons[0];
+          if (b) b.focus({ preventScroll: true });
+        });
+      }
+      champ.placeholder = partie && partie.termine && !partie.gagne ? (partie.pointSur ? "REPRENDRE ou REJOUER" : "REJOUER") : "Que fais-tu ? (AIDE)";
       if (!partie) return majJauge(null);
       const ctx = partie.contexte();
       majJauge(partie.termine ? null : ctx.menace);
@@ -1474,8 +1607,13 @@
       };
       if (partie.termine && partie.gagne) {
         const continuer = bouton("Continuer : le générique →", {}, "continuer");
-        continuer.addEventListener("click", ouvrirFin);
-        rangee().appendChild(continuer);
+        continuer.id = "continuer-fin";
+        continuer.addEventListener("click", () => {
+          if (journalEnBas()) ouvrirFin();
+          else journal.scrollBy({ top: journal.clientHeight * 0.8, behavior: reduit ? "auto" : "smooth" });
+        });
+        rangee("fin-gagne").appendChild(continuer);
+        majBoutonFin();
         return;
       }
       if (partie.termine) {
@@ -1483,6 +1621,7 @@
         const r = rangee("fin-mort");
         if (partie.pointSur) {
           const reprendre = bouton("Reprendre au moment sûr", {}, "continuer");
+          reprendre.id = "reprendre";
           reprendre.addEventListener("click", reprendrePartie);
           r.appendChild(reprendre);
         }
@@ -1498,7 +1637,7 @@
         panneau.id = "panneau-locaux";
         const vus = ctx.locaux.filter((l) => l.visite).length;
         const titre = element("div", "titre");
-        titre.append(element("span", "", "Locaux du secteur"), element("span", "", `${vus}/${ctx.locaux.length} visités`));
+        titre.append(element("span", "", "Locaux du secteur"), element("span", "", `${vus}/${ctx.locaux.length} visités`), bouton("Fermer ✕", { action: "locaux" }, "fermer"));
         const grille = element("div", "grille");
         for (const l of ctx.locaux) {
           const b = bouton(l.nom, { commande: "entrer " + l.nom }, l.aRevoir ? "a-revoir" : l.visite ? "visite" : "");
@@ -1558,10 +1697,19 @@
         champ.setSelectionRange(champ.value.length, champ.value.length);
         return;
       }
+      if (cible.closest("#panneau-locaux")) panneauLocauxOuvert = false;
       envoyer(cible.dataset.commande);
     });
     // Les cases du plan se touchent aussi au clavier.
     document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && panneauLocauxOuvert && partie && !partie.termine) {
+        e.preventDefault();
+        panneauLocauxOuvert = false;
+        majActions();
+        const locaux = $("actions").querySelector('[data-action="locaux"]');
+        if (locaux) queueMicrotask(() => locaux.focus({ preventScroll: true }));
+        return;
+      }
       const cible = e.target.closest && e.target.closest("g[data-commande]");
       if (cible && (e.key === "Enter" || e.key === " ")) {
         e.preventDefault();
@@ -1593,7 +1741,7 @@
       if (!window.getSelection().toString()) focaliser();
     });
 
-    // Mise à jour de la page pendant une partie (aperçu Claude) : la partie invitée reprend où elle était.
+    // Mise à jour de la page pendant une partie (aperçu Claude) : la partie sans compte reprend où elle était.
     const chaud = window.claude && window.claude.hot;
     try {
       if (chaud && chaud.snapshot) chaud.snapshot(() => (partie && !session ? { invite: partie.exporter() } : {}));
