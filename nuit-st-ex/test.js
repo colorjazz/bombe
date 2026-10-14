@@ -325,7 +325,7 @@ test("contexte des boutons : objets restants et locaux, sans REGARDER", () => {
   assert.deepStrictEqual(p.contexte().objets.map((o) => o.id), ["agenda", "calepin"]);
   p.executer("prendre agenda");
   assert.deepStrictEqual(p.contexte().objets.map((o) => o.id), ["calepin"]); // le calepin reste proposé
-  assert.deepStrictEqual(p.contexte().sorties, ["OUEST"]);
+  assert.deepStrictEqual(p.contexte().sorties.map((x) => x.nom), ["Aile A"]);
   p.executer("o");
   p.executer("entrer a215");
   const ctx = p.contexte();
@@ -339,6 +339,41 @@ test("contexte des boutons : objets restants et locaux, sans REGARDER", () => {
   assert.ok(p.contexte().locaux.find((l) => l.nom === "B145").aRevoir);
   p.lieu = 13;
   assert.deepStrictEqual(p.contexte().objets, []); // vestiaires dans le noir : rien à prendre
+});
+
+test("déplacements par nom de destination, RETOUR, et plus de points cardinaux dans les textes", () => {
+  const p = new Partie();
+  assert.deepStrictEqual(p.sortiesVisibles(), ["→ Aile A"]);
+  p.executer("aller aile A");
+  assert.strictEqual(p.lieu, 2);
+  p.executer("aller au carrefour de l'étage");
+  assert.strictEqual(p.lieu, 3);
+  assert.deepStrictEqual(p.sortiesVisibles(), ["→ Aile A", "→ Balcon de l'auditorium", "→ Laboratoires", "→ Centre pédagogique", "↓ Carrefour principal"]);
+  p.executer("laboratoires");
+  assert.strictEqual(p.lieu, 5);
+  p.executer("retour");
+  assert.strictEqual(p.lieu, 3);
+  p.executer("descendre l'escalier");
+  assert.strictEqual(p.lieu, 6);
+  p.executer("place publique 1");
+  assert.strictEqual(p.lieu, 22);
+  p.lieu = 6;
+  assert.ok(texte(p.executer("aller place publique")).includes("Lequel ?"));
+  p.executer("entrer bibliothèque"); // pas un local de ce couloir : c'est une destination
+  assert.strictEqual(p.lieu, 6); // la bibliothèque ne donne pas sur le carrefour
+  p.lieu = 10;
+  p.executer("entrer dans la bibliothèque");
+  assert.strictEqual(p.lieu, 23);
+  p.lieu = 10;
+  assert.ok(texte(p.executer("aller secrétariat")).includes("verrouillée"));
+  assert.ok(p.sortiesVisibles().includes("→ Secrétariat (verrouillée)"));
+  p.lieu = 20;
+  assert.ok(p.sortiesVisibles().includes("→ Porte de secours (boulevard Robert)"));
+  p.executer("aller porte de secours");
+  assert.ok(p.termine);
+  for (const id in LIEUX) {
+    assert.ok(!/\b(NORD|SUD|EST|OUEST)\b|\((HAUT|BAS)\)/.test(LIEUX[id].description), "direction dans " + LIEUX[id].nom);
+  }
 });
 
 test("sauvegarde et reprise", () => {

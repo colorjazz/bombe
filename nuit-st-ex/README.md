@@ -6,7 +6,9 @@ Aventure textuelle (parser) à l'École secondaire Antoine-de-Saint-Exupéry.
 - `index.html` : interface. Ouvrir directement dans un navigateur. La partie se sauvegarde dans le navigateur.
 - `test.js` : tests du moteur, `node nuit-st-ex/test.js`.
 
-Commandes : NORD, SUD, EST, OUEST, HAUT, BAS (N, S, E, O, H, B), ENTRER <local>, PRENDRE, REGARDER, LIRE,
+Déplacements : toucher une sortie, ou ALLER <destination> (ex. : ALLER CAFÉTÉRIA), RETOUR.
+Les anciens raccourcis N, S, E, O, HAUT, BAS fonctionnent encore.
+Commandes : ENTRER <local>, PRENDRE, REGARDER, LIRE,
 COMBINER, MANGER, FRAPPER, UTILISER, OUVRIR, ALLUMER, COMPOSER <code>, CARTE, INVENTAIRE (I), AIDE, REJOUER.
 Avec le calepin (bureau de M. Plante) : NOTER <texte>, NOTES, EFFACER NOTES. Écrire ne coûte pas de tour.
 

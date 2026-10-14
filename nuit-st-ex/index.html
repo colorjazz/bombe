@@ -110,7 +110,7 @@
     letter-spacing: 0.06em;
     line-height: 1.6;
   }
-  .sorties { color: var(--ombre); text-transform: uppercase; letter-spacing: 0.14em; }
+  .sorties { color: var(--ombre); letter-spacing: 0.04em; }
   .locaux { font-family: var(--f-machine); font-size: 0.8rem; line-height: 1.8; color: var(--cendre); letter-spacing: 0.06em; }
   .locaux .etiquette, .locaux .compte { color: var(--ombre); text-transform: uppercase; letter-spacing: 0.14em; }
   .locaux .visite { color: var(--ombre); }
@@ -154,6 +154,8 @@
   }
   #actions .rangee::-webkit-scrollbar { display: none; }
   #actions .rangee button { flex: none; }
+  /* Les sorties passent à la ligne : aucune ne doit rester cachée hors de l'écran. */
+  #actions .rangee.rangee-sorties { flex-wrap: wrap; overflow-x: visible; }
   #actions button, .prendre button {
     min-height: 2.5rem;
     min-width: 2.75rem;
@@ -162,7 +164,7 @@
     letter-spacing: 0.12em;
     touch-action: manipulation;
   }
-  #actions .direction { color: var(--cendre); border-color: var(--lune); }
+  #actions .direction { color: var(--cendre); border-color: var(--lune); text-transform: none; letter-spacing: 0.04em; font-size: 0.8rem; }
   #actions .prise { color: var(--lune); }
   #actions [aria-expanded="true"] { border-color: var(--lune); color: var(--lune); }
   #panneau-locaux {
@@ -942,9 +944,10 @@
         r.appendChild(b);
       };
       const sorties = rangee();
+      sorties.classList.add("rangee-sorties");
       for (const sortie of ctx.sorties) {
-        const direction = sortie.split(" ")[0];
-        bouton(sorties, sortie.includes("verrouillée") ? direction + " 🔒" : direction, direction, "direction");
+        const fleche = sortie.direction === "HAUT" ? "↑ " : sortie.direction === "BAS" ? "↓ " : "→ ";
+        bouton(sorties, fleche + sortie.nom + (sortie.verrouille ? " 🔒" : ""), "aller " + sortie.nom, "direction");
       }
       if (ctx.locaux.length) {
         const vus = ctx.locaux.filter((l) => l.visite).length;
