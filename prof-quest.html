@@ -228,19 +228,19 @@ function drawBox(msg) {
 }
 
 
-// ---------- les trois glandeurs (tous profs d'histoire) ----------
+// ---------- les personnages ----------
 const CHARS = [
-  { id: "jp", name: "chat-JP", local: "B218",
+  { id: "jp", name: "chat-JP", local: "B218", path: "glande",
     c: { hair: 6, skin: 12, shirt: 15, vest: 8, tie: 4, pants: 0, shoes: 0, stache: 6 },
     rps: "roche",
     pitch: "Prof d'histoire et délégué syndical. Pince-sans-rire. Connaît la convention collective par coeur. Garde son sérieux trois secondes, puis éclate de rire.",
     desc: "chat-JP, prof d'histoire et délégué syndical. Moustache, cardigan gris, cordon rouge du syndicat. Pince-sans-rire... jusqu'à ce qu'il craque de rire.",
     doing: "lit la convention collective, article 8-6.03, en soulignant au crayon de plomb.",
     habit: "Son poing gauche reste fermé sur la table. Comme toujours.",
-    busy: "« Pas maintenant. Je relis l'article sur les pauses. Ironiquement, je n'en prends jamais. »",
+    busy: "« Pas maintenant. Je relis l'article sur les pauses. Ironiquement, j'en prends jamais. » Il se retient trois secondes, puis éclate de rire.",
     hint: "« chat-JP ? Il joue toujours roche. Le poing levé. Solidarité syndicale. Il est pas capable de s'en empêcher. »",
     quiz: "Examen d'histoire, sec. 4 : « La grève de l'amiante de 1949 ». Question 1 : Pourquoi c'est important ? Question 2 : Avez-vous signé votre carte syndicale ?" },
-  { id: "guy", name: "Guy-Homie", local: "B221",
+  { id: "guy", name: "Guy-Homie", local: "B221", path: "glande",
     c: { hair: 0, skin: 12, shirt: 2, vest: 2, tie: 10, pants: 1, shoes: 6, style: "loupe" },
     rps: "ciseaux",
     pitch: "Prof d'histoire. Peinture des figurines de la bataille des plaines d'Abraham, au 1/72. Depuis 2011. Il en est au deuxième soldat.",
@@ -250,7 +250,7 @@ const CHARS = [
     busy: "« Chut. Je fais les boutons de l'uniforme de Wolfe. Si je respire, je rate. »",
     hint: "« Guy-Homie ? Ciseaux. Toujours. Il garde ses doigts comme sur son pinceau, même quand il dort. »",
     quiz: "Examen d'histoire, sec. 4 : « 1759, les plaines d'Abraham ». Question 1 : Qui a gagné ? Question 2 : De quelle couleur étaient les boutons de Wolfe ? (Précisez la marque de peinture.)" },
-  { id: "crispy", name: "Crispy", local: "A217",
+  { id: "crispy", name: "Crispy", local: "A217", path: "glande",
     c: { hair: 14, skin: 12, shirt: 9, vest: 9, tie: 15, pants: 8, shoes: 15, style: "spiky" },
     rps: "papier",
     pitch: "Prof d'histoire. Les pieds toujours sur le bureau, toujours sur son ordi. Personne ne sait ce que Crispy fait dessus. Pas de la correction.",
@@ -260,7 +260,53 @@ const CHARS = [
     busy: "« Deux secondes, je suis en train de... euh... planifier. » L'écran affiche un jeu de solitaire.",
     hint: "« Crispy ? Papier. La main à plat, comme sur son pavé tactile. Chaque fois. »",
     quiz: "Examen d'histoire, sec. 4 : « La Révolution tranquille ». Question 1 : Qu'est-ce qui a changé en 1960 ? Question 2 : Expliquez pourquoi votre prof a les pieds sur le bureau." },
+  { id: "sabrina", name: "Sabrina", path: "sabrina",
+    c: { hair: 6, skin: 12, shirt: 15, vest: 13, tie: 15, pants: 1, shoes: 0, style: "long" },
+    pitch: "Jeune prof et nouvelle maman, de retour de congé. Douce, responsable, bienveillante. Dort trois heures par nuit, en morceaux.",
+    desc: "Sabrina, jeune prof. Cardigan rose, cernes de nouvelle maman, et un sourire qui désarme tout le monde. Même Mme D, presque.",
+    doing: "regarde des photos de son bébé sur son cellulaire, en souriant.",
+    busy: "« Regarde ! Il a fait son premier gros rot ce matin. » Sabrina vous montre une photo. Elle est floue. Elle est parfaite.",
+    quiz: "Examen d'histoire adapté : « La Nouvelle-France ». Gros caractères, pictogrammes, et un petit mot d'encouragement au bas de chaque page." },
+  { id: "marc", name: "Marc-André", path: "marc",
+    c: { hair: 14, skin: 12, shirt: 0, vest: 0, tie: 10, pants: 1, shoes: 15, glasses: true },
+    pitch: "Jeune prof, gamer, fou des jeux de société. Lunettes, cheveux blonds, toujours un dé à 20 faces dans la poche. Il le lance pour décider s'il corrige.",
+    desc: "Marc-André, jeune prof. Lunettes, cheveux blonds, t-shirt noir avec un dragon en pixels.",
+    doing: "lit les règles d'un jeu de société de 300 pages. Pour le plaisir.",
+    busy: "« Attends, je calcule mon combo. Si je joue le Chevalier avant le Monopole... » Marc-André est perdu dans sa tête." },
+  { id: "gen", name: "Geneviève", path: "gen",
+    c: { hair: 6, skin: 12, shirt: 15, vest: 3, tie: 15, pants: 8, shoes: 0, style: "bun", glasses: true },
+    pitch: "Toujours au travail. Arrivée à 6 h 15, partira à 18 h. Réservée, sage, réfléchie. Celle à qui tout le monde demande conseil.",
+    desc: "Geneviève. Chignon, lunettes, chemisier sarcelle. Elle travaille. Elle travaille toujours.",
+    doing: "corrige une pile de copies, en silence, avec méthode.",
+    busy: "Geneviève lève les yeux, réfléchit, et dit doucement : « Chaque chose en son temps. » Puis elle retourne à sa correction.",
+    quiz: "Le « Plan d'engagement vers la réussite » de Mme D. 14 pages, 9 graphiques en tarte, 0 élève consulté." },
+  { id: "sophie", name: "Sophie", path: "gen",
+    c: { hair: 0, skin: 12, shirt: 15, vest: 10, tie: 15, pants: 1, shoes: 15, style: "pony" },
+    pitch: "Jeune prof. Arrive tôt pour corriger. Planifie sans relâche, en couleurs, jusqu'en juin. A toujours une histoire d'élève à raconter.",
+    desc: "Sophie, jeune prof. Queue de cheval, chandail vert lime, un agenda à onglets de couleur sous le bras.",
+    doing: "planifie le mois de mars. On est en octobre.",
+    busy: "« Attends, faut que je te raconte ! Hier, un élève m'a demandé si Jacques Cartier avait Instagram. » Sophie rit déjà." },
+  { id: "melanie", name: "Mélanie", path: "cafe",
+    c: { hair: 4, skin: 12, shirt: 5, vest: 5, tie: 5, pants: 0, shoes: 0, style: "long" },
+    pitch: "Chiale souvent. Critique tout. Cynique de calibre olympique. Co-responsable du comité café avec Guy, le seul comité qui sert à quelque chose.",
+    desc: "Mélanie. Cheveux roux, chandail mauve, bras croisés en permanence. Elle a déjà trouvé trois choses à critiquer depuis votre arrivée.",
+    doing: "chiale contre l'horaire, la cafétéria, le chauffage et la police d'écriture des courriels de Mme D.",
+    busy: "« Pis là, tu sais-tu c'est quoi le pire ? Non, attends, y en a plusieurs. » Mélanie commence une liste. Elle est longue." },
+  { id: "vieux", name: "Guy", path: "cafe",
+    c: { hair: 7, skin: 12, shirt: 15, vest: 6, tie: 6, pants: 8, shoes: 0, style: "bald", stache: 7 },
+    pitch: "Le plus vieux prof de l'école. Fumeur. Co-responsable du comité café avec Mélanie. A connu six directeurs. Leur a tous survécu.",
+    desc: "Guy, le doyen. Crâne dégarni, moustache grise, veston brun, une cigarette derrière l'oreille.",
+    doing: "sirote un café noir en racontant 1987 à quelqu'un qui n'écoute pas.",
+    busy: "« Dans mon temps, la photocopieuse, c'était une machine à alcool. Ça sentait bon. » Guy tousse longuement." },
 ];
+const byId = (id) => CHARS.find((c) => c.id === id);
+const PATHS = {
+  glande: { name: "Les glandeurs", shared: "chat-JP, Guy-Homie, Crispy" },
+  cafe: { name: "Le comité café", shared: "Mélanie, Guy" },
+  sabrina: { name: "La bienveillante" },
+  marc: { name: "Le joueur" },
+  gen: { name: "Les lève-tôt", shared: "Geneviève, Sophie" },
+};
 const MME_D = { hair: 7, skin: 12, shirt: 15, vest: 6, tie: 15, pants: 6, shoes: 0, style: "bun", glasses: true, skirt: true };
 const WRONG_NAMES = ["Christian", "Guylaine", "Jean-Paul", "Crispin", "Gérald", "Ginette", "Jean-Guy"];
 let wrongI = 0;
@@ -269,8 +315,20 @@ const wrongName = () => WRONG_NAMES[wrongI++ % WRONG_NAMES.length];
 // ---------- état du jeu ----------
 const POINTS = { signin: 5, board: 1, water: 1, camera: 1, locker: 1, wake: 2, memo: 2, readmemo: 3, key: 5, mug: 3, filter: 3, grounds: 3,
   fillpot: 5, brew: 5, pour: 5, milk: 2, gift: 10, donut: 3, unlock: 5, paper: 5, unplug: 5, jam: 5,
-  plugin: 2, loadpaper: 5, code: 5, copy: 10, debate: 2, calendar: 3, rps: 10, deliver: 10 };
-const MAX = Object.values(POINTS).reduce((a, b) => a + b, 0);
+  plugin: 2, loadpaper: 5, code: 5, copy: 10, debate: 2, calendar: 3, rps: 10, deliver: 10,
+  drink: 5, phone: 2, photo: 2, accept: 10, listen: 10, think: 1, game: 5, die1: 3, die2: 3, recruitB: 5, recruitC: 10,
+  money: 10, fund: 10, serveC: 5 };
+const COMMON = ["signin", "board", "water", "camera", "locker", "wake", "memo", "readmemo", "donut"];
+const COFFEE = ["mug", "filter", "grounds", "fillpot", "brew", "pour", "milk"];
+const COPIER = ["unplug", "jam", "plugin", "loadpaper", "code", "copy", "deliver"];
+const PATH_KEYS = {
+  glande: [...COMMON, ...COFFEE, ...COPIER, "key", "unlock", "paper", "gift", "debate", "calendar", "rps"],
+  sabrina: [...COMMON, ...COFFEE, ...COPIER, "drink", "phone", "photo", "accept", "paper"],
+  gen: [...COMMON, ...COPIER, "key", "unlock", "paper", "listen", "think"],
+  marc: [...COMMON, ...COFFEE, "key", "unlock", "game", "die1", "die2", "recruitB", "recruitC", "deliver"],
+  cafe: [...COMMON, ...COFFEE, "money", "fund", "serveC", "deliver"],
+};
+const maxScore = () => PATH_KEYS[PATH()].reduce((a, k) => a + POINTS[k], 0);
 const BELL = 1200; // secondes de jeu entre 7h40 et 8h00
 
 let S = null;
@@ -278,31 +336,53 @@ function newState() {
   return {
     mode: "title", pc: 0, room: "hall", x: 22, y: 140, face: "down", dir: null, frame: 0, step: 0, target: null,
     score: 0, got: {}, sound: (S && S.sound === false) ? false : true,
-    inv: ["quiz", "pen"], mug: null, pot: "sludge", brewEnd: 0,
+    inv: [], mug: null, pot: "sludge", brewEnd: 0,
     signed: false, fridgeOpen: false, cabinetOpen: false, supplyUnlocked: false,
     copier: { plugged: true, jam: true, paper: false, code: false },
     happy: false, knowsCode: false, donutWarned: false, donut: true, awake: false, blocked: false,
-    debate: 0, // 0 rien, 1 débat lancé, 2 calendrier lu, 3 gagné, 4 perdu
+    debate: 0, // parcours glandeurs : 0 rien, 1 débat lancé, 2 calendrier lu, 3 gagné, 4 perdu
+    phone: 0, dice: 0, smoked: false,
     code: String(1000 + Math.floor(Math.random() * 9000)),
     t: 0, warned: {}, dead: false, won: false, last: "",
   };
 }
 S = newState();
 const P = () => CHARS[S.pc];
-const OTH = () => CHARS.filter((c, i) => i !== S.pc);
-const B = () => OTH()[0]; // à gauche de la table, accro au café, connaît le code
-const C = () => OTH()[1]; // à droite de la table, en « réunion » avec sa passion
+const PATH = () => P().path;
+// qui est à la table : B (à gauche, le personnage clé du parcours) et C (à droite, celui qui donne des conseils)
+function cast() {
+  const p = P();
+  switch (p.path) {
+    case "glande": { const o = CHARS.filter((c) => c.path === "glande" && c !== p); return [o[0], o[1]]; }
+    case "cafe": return [byId(p.id === "melanie" ? "vieux" : "melanie"), byId("gen")];
+    case "sabrina": return [byId("marc"), byId("gen")];
+    case "marc": return [byId("sabrina"), byId("gen")];
+    default: return [byId("melanie"), byId("vieux")];
+  }
+}
+const B = () => cast()[0];
+const C = () => cast()[1];
 const has = (it) => S.inv.includes(it);
 const give = (it) => { if (!has(it)) S.inv.push(it); };
 const lose = (it) => { S.inv = S.inv.filter((i) => i !== it); };
-function award(key) { if (S.got[key]) return; S.got[key] = 1; S.score += POINTS[key]; play(SFX.points); }
+function award(key) { if (S.got[key] || !PATH_KEYS[PATH()].includes(key)) return; S.got[key] = 1; S.score += POINTS[key]; play(SFX.points); }
 function clockStr() { const s = Math.min(BELL, Math.floor(S.t)); const m = 40 + Math.floor(s / 60); return m >= 60 ? "8 h 00" : "7 h " + String(m).padStart(2, "0"); }
+const atLocal = () => (P().local ? "au local " + P().local : "dans votre local");
+const yourLocal = () => (P().local ? "votre local, le " + P().local : "votre local");
+const usesCopier = () => ["glande", "sabrina", "gen"].includes(PATH());
+const needsKey = () => ["glande", "gen", "marc"].includes(PATH());
+function startInv() {
+  return { glande: ["quiz", "pen"], sabrina: ["quiz", "phone", "suce"], gen: ["quiz", "pen"], marc: ["d20"], cafe: ["liste"] }[PATH()];
+}
 
 // ---------- personnages ----------
 function headExtras(x, T, c, f) {
   if (c.style === "spiky") { pset(x - 2, T - 1, c.hair); pset(x, T - 2, c.hair); pset(x, T - 1, c.hair); pset(x + 2, T - 1, c.hair); pset(x + 1, T - 1, c.hair); }
   if (c.style === "loupe") { rect(x - 2, T + 1, 5, 1, 7); if (f === "down") pset(x + 1, T + 1, 11); else if (f !== "up") pset(x + (f === "right" ? 2 : -2), T + 1, 11); }
   if (c.style === "bun") { rect(x - 1, T - 2, 3, 2, c.hair); }
+  if (c.style === "long") { rect(x - 3, T + 1, 1, 8, c.hair); rect(x + 3, T + 1, 1, 8, c.hair); }
+  if (c.style === "pony") { if (f === "down") rect(x + 3, T + 1, 1, 4, c.hair); else if (f === "left") rect(x + 3, T + 1, 1, 5, c.hair); else if (f === "right") rect(x - 3, T + 1, 1, 5, c.hair); else rect(x, T + 2, 1, 6, c.hair); }
+  if (c.style === "bald") { rect(x - 1, T, 3, 1, c.skin); if (f !== "up") pset(x + 3, T + 2, 15); }
 }
 function drawPerson(x, y, f, fr, c) {
   const T = y - 27, wk = fr % 4;
@@ -375,22 +455,6 @@ function drawSeated(px, T, ch, d) {
   rect(px - 3, T + 7, 7, 14, c.vest); rect(px - 1, T + 7, 3, 1, c.shirt);
   if (ch.id === "jp") { rect(px, T + 8, 1, 6, c.tie); pset(px, T + 14, 15); }
   rect(px - 5, T + 6, 1, 18, 0); rect(px + 5, T + 6, 1, 12, 0);
-  const tb = 121; // dessus de la table
-  if (ch.id === "guy") {
-    // figurines : tuniques rouges contre tuniques bleues, et le pinceau
-    for (let i = 0; i < 4; i++) { const fx = px + d * (3 + i * 2); rect(fx, tb, 1, 2, i % 2 ? 1 : 4); pset(fx, tb - 1, 12); }
-    line(px + d * 2, tb - 4, px + d * 4, tb - 1, 6); pset(px + d * 4, tb - 1, 15);
-    pset(px + d * 2, tb - 4, c.skin);
-  } else if (ch.id === "crispy") {
-    // les pieds sur la table, le portable de l'autre côté
-    rect(Math.min(px + d * 3, px + d * 9), tb - 1, 7, 2, c.pants);
-    rect(px + d * 10, tb - 3, 2, 3, c.shoes);
-    rect(px - d * 4 - (d > 0 ? 6 : 0), tb - 4, 7, 5, 8); rect(px - d * 4 - (d > 0 ? 6 : 0), tb, 7, 1, 7); pset(px - d * 4 - (d > 0 ? 3 : -3), tb - 2, 11);
-  } else {
-    // la convention collective et le poing fermé
-    rect(px + d * 2 - (d < 0 ? 7 : 0), tb - 1, 8, 3, 15); rect(px + d * 3 - (d < 0 ? 5 : 0), tb, 5, 1, 4);
-    rect(px - d * 4 - 1, tb - 1, 2, 2, c.skin);
-  }
 }
 function drawEgoDown(x, y) {
   const c = P().c;
@@ -442,7 +506,7 @@ ROOMS.hall = {
   },
   dyn() {
     if (!S.got.memo) rect(141, 48, 4, 3, 15);
-    if (!S.got.key) pset(143, 50, 14);
+    if (!S.got.key && needsKey()) pset(143, 50, 14);
   },
   layers() {
     return [
@@ -460,17 +524,30 @@ ROOMS.hall = {
       if (!S.signed) { S.dir = null; S.blocked = true; say("« Euh... " + wrongName() + " ? Non. Vous, là. » Mme D vous pointe avec son cartable. « Le registre. On signe AVANT d'aller se vautrer dans la salle des profs. Je me fiche de ce que vous enseignez, il me faut une donnée. »"); return true; }
       goRoom("lounge", 17, 102, "down"); return true;
     }
-    if (nx < 1) { S.dir = null; S.x = 3; say("Par là, c'est le gymnase. Il ne se passe rien de bon au gymnase avant 8 h."); return true; }
+    if (nx < 1) {
+      S.dir = null; S.x = 3;
+      if (P().id === "vieux") {
+        S.t += 60;
+        if (!S.got.money && PATH() === "cafe") { give("money"); award("money"); say("Vous sortez fumer derrière le gymnase. Il fait froid. C'est parfait.\n\nKowalski est là, une cigarette à la main. « Salut, Guy. » Vous sortez votre liste. Il soupire, fouille sa poche et vous tend 20 $. « Pour le café. Depuis septembre. Je sais. »\n\nVous revenez en sentant la cigarette. Mme D plisse le nez."); }
+        else say("Vous sortez fumer une petite cigarette derrière le gymnase. Une minute de paix. Vous revenez. Mme D plisse le nez.");
+        return true;
+      }
+      say("Par là, c'est le gymnase. Il ne se passe rien de bon au gymnase avant 8 h."); return true;
+    }
     if (nx > 158) { S.dir = null; S.x = 156; say("Le secrétariat. Mme D y entre parfois en pensant que c'est son bureau. Ce n'est pas son bureau."); return true; }
     if (ny > 167) {
       S.dir = null;
-      if (has("copies")) { win(); return true; }
-      S.y = 165; say("Au bout du corridor, votre local, le " + P().local + ". Inutile d'y aller sans les photocopies : trente-deux élèves de secondaire 4 vous mangeraient tout rond.");
+      if (has("copies") && (PATH() === "glande" || PATH() === "sabrina")) { win(); return true; }
+      S.y = 165;
+      if (PATH() === "gen") say(has("copies") ? "Ces copies-là, ce n'est pas pour vos élèves : Mme D les attend. Elle est juste là, à chercher son bureau." : "Votre local attendra. Mme D veut ses copies avant 8 h.");
+      else if (PATH() === "cafe") say("Pas question d'aller en classe tant que le comité café n'a pas présenté son bilan à Mme D. On a des priorités.");
+      else if (PATH() === "marc") say("Votre local attendra. La partie de Catane doit être installée dans la salle des profs avant la cloche.");
+      else say("Au bout du corridor, " + yourLocal() + ". Inutile d'y aller sans les photocopies : trente-deux élèves de secondaire 4 vous mangeraient tout rond.");
       return true;
     }
     return false;
   },
-  look() { return "Le corridor de l'école secondaire Antoine-de-Saint-Exupéry sent la cire et le découragement. Des cases d'élèves bleues, un babillard, le registre des présences, les casiers des profs et la porte de la salle des profs. Mme D, la directrice, monte la garde. Elle cherche peut-être son bureau. Une équipe de documentaire filme tout. Votre local, le " + P().local + ", est au sud."; },
+  look() { return "Le corridor de l'école secondaire Antoine-de-Saint-Exupéry sent la cire et le découragement. Des cases d'élèves bleues, un babillard, le registre des présences, les casiers des profs et la porte de la salle des profs. Mme D, la directrice, monte la garde. Elle cherche peut-être son bureau. Une équipe de documentaire filme tout. " + yourLocal()[0].toUpperCase() + yourLocal().slice(1) + " est au sud."; },
 };
 
 const SEAT_B = 58, SEAT_C = 94;
@@ -524,6 +601,7 @@ ROOMS.lounge = {
     if (!S.got.mug) { rect(108, 69, 4, 4, 12); pset(112, 70, 12); }
     rect(114, 69, 4, 4, 14); pset(118, 70, 14);
     rect(120, 69, 4, 4, 9); pset(124, 70, 9);
+    if (PATH() === "cafe") { rect(99, 70, 5, 5, 11); rect(99, 69, 5, 1, 7); if (S.fund) { pset(100, 73, 14); pset(102, 72, 10); pset(101, 74, 14); } }
     if (S.cabinetOpen) {
       rect(61, 17, 14, 24, 0); rect(61, 29, 14, 1, 6);
       if (!S.got.filter) rect(63, 24, 6, 5, 15);
@@ -541,7 +619,8 @@ ROOMS.lounge = {
     if (S.supplyUnlocked) {
       rect(137, 25, 17, 70, 0);
       for (const sy of [40, 58, 76]) rect(137, sy, 17, 1, 7);
-      if (!S.got.paper) { rect(139, 35, 13, 5, 15); rect(139, 37, 13, 1, 9); }
+      if (PATH() === "marc") { if (!has("game")) { rect(139, 33, 13, 7, 14); rect(140, 35, 3, 2, 4); rect(144, 35, 3, 2, 2); rect(148, 35, 3, 2, 9); } }
+      else if (!S.got.paper) { rect(139, 35, 13, 5, 15); rect(139, 37, 13, 1, 9); }
       rect(140, 53, 6, 5, 14); rect(139, 71, 9, 5, 4);
     }
   },
@@ -597,10 +676,29 @@ function drawProps(px, ch, d) {
     rect(px + d * 10 - (d < 0 ? 1 : 0), tb - 3, 2, 3, c.shoes);
     const lx = d > 0 ? px - 10 : px + 4;
     rect(lx, tb - 4, 7, 5, 8); rect(lx, tb, 7, 1, 7); pset(lx + 3, tb - 2, 11);
-  } else {
+  } else if (ch.id === "jp") {
     const dx = d > 0 ? px + 2 : px - 9;
     rect(dx, tb - 1, 8, 3, 15); rect(dx + 1, tb, 5, 1, 4);
     rect(d > 0 ? px - 6 : px + 5, tb - 1, 2, 2, c.skin);
+  } else if (ch.id === "sabrina") {
+    const dx = d > 0 ? px + 3 : px - 6;
+    rect(dx, tb - 3, 3, 4, 0); rect(dx, tb - 2, 3, 2, 11); // cellulaire
+    rect(dx + 4 * d + (d < 0 ? 1 : 0), tb - 3, 2, 4, 15); pset(dx + 4 * d + (d < 0 ? 1 : 0), tb - 4, 12); // biberon
+  } else if (ch.id === "marc") {
+    const dx = d > 0 ? px + 2 : px - 10;
+    rect(dx, tb - 1, 9, 3, 14); rect(dx + 1, tb, 2, 1, 4); rect(dx + 4, tb, 2, 1, 2); rect(dx + 7, tb, 1, 1, 9);
+    if (S.dice < 2 || PATH() !== "marc") pset(d > 0 ? px - 4 : px + 4, tb, 15);
+  } else if (ch.id === "gen") {
+    const dx = d > 0 ? px + 2 : px - 9;
+    rect(dx, tb - 2, 8, 3, 15); rect(dx, tb - 2, 8, 1, 7); line(dx + 2, tb - 4, dx + 5, tb - 1, 4);
+  } else if (ch.id === "melanie") {
+    rect(px - 3, 116, 7, 2, c.skin); // bras croisés
+    const dx = d > 0 ? px + 3 : px - 5;
+    rect(dx, tb - 3, 3, 3, 5); pset(dx + (d > 0 ? 3 : -1), tb - 2, 5);
+  } else if (ch.id === "vieux") {
+    const dx = d > 0 ? px + 3 : px - 5;
+    rect(dx, tb - 3, 3, 3, 7); pset(dx + (d > 0 ? 3 : -1), tb - 2, 7);
+    rect(d > 0 ? px + 8 : px - 10, tb - 1, 3, 2, 15); pset(d > 0 ? px + 8 : px - 10, tb - 1, 4);
   }
 }
 
@@ -608,6 +706,7 @@ function buildBg() { pic.fill(0); ROOMS[S.room].bg(); bg = pic.slice(); }
 function goRoom(r, x, y, face) {
   S.room = r; S.x = x; S.y = y; S.face = face; S.dir = null; S.target = null;
   buildBg(); play(SFX.door);
+  if (r === "hall" && has("game") && !S.won) { lose("game"); S.supplyUnlocked = false; say("Mme D vous voit sortir avec la boîte de Catane. « Ça paraît MAL. » Elle vous la prend des mains et repart la barrer dans l'armoire grise. Au moins, elle a trouvé la salle des profs du premier coup."); }
   if (r === "lounge" && !S.got.seenLounge) { S.got.seenLounge = 1; say(ROOMS.lounge.look()); }
 }
 
@@ -628,7 +727,8 @@ syn("hello", "bonjour salut allo coucou hello yo");
 syn("ask", "demander demande demandez interroger interroge");
 syn("give", "donner donne donnez offrir offre tendre tends servir sers apporter apporte");
 syn("sign", "signer signe signez emarger parapher");
-syn("use", "utiliser utilise utilisez allumer allume appuyer appuie actionner actionne demarrer demarre lancer lance presser peser pese");
+syn("use", "utiliser utilise utilisez allumer allume appuyer appuie actionner actionne demarrer demarre presser peser pese");
+syn("roll", "lancer lance rouler roule");
 syn("fill", "remplir remplis remplissez");
 syn("make", "faire fais faites preparer prepare");
 syn("pour", "verser verse versez");
@@ -679,7 +779,7 @@ syn("mailbox", "courrier pigeonnier");
 syn("casier", "casier casiers");
 syn("box", "boite carton");
 syn("feuille", "feuille feuilles");
-syn("sheet", "registre presences liste pupitre");
+syn("sheet", "registre presences pupitre");
 syn("board", "babillard tableau panneau affichage annonces liege");
 syn("affiche", "affiche affiches poster");
 syn("fountain", "abreuvoir fontaine");
@@ -689,8 +789,14 @@ syn("door", "porte");
 syn("mmeD", "mme madame directrice dirlo patronne boss chef");
 syn("person", "homme femme collegue prof professeur quelqu lui elle il personne");
 syn("c_jp", "chat jp");
-syn("c_guy", "guy homie");
+syn("c_guy", "guyhomie homie guillaume");
 syn("c_crispy", "crispy");
+syn("c_sabrina", "sabrina");
+syn("c_marc", "marcandre marc");
+syn("c_gen", "genevieve gen");
+syn("c_melanie", "melanie mel");
+syn("c_vieux", "guy doyen");
+syn("kowalski", "kowalski");
 syn("fridge", "frigo frigidaire refrigerateur congelateur");
 syn("lunch", "lunch sandwich casse croute diner repas");
 syn("milk", "lait pinte brique");
@@ -726,7 +832,6 @@ syn("me", "moi");
 syn("room", "salle piece autour endroit lieu");
 syn("lounge", "profs");
 syn("hall", "corridor couloir");
-syn("kowalski", "kowalski");
 syn("fenouil", "fenouil");
 syn("pen", "stylo crayon");
 syn("all", "tout");
@@ -742,11 +847,29 @@ syn("figs", "figurine figurines soldat soldats pinceau wolfe montcalm");
 syn("laptop", "ordi ordinateur portable laptop solitaire");
 syn("union", "convention syndicat syndicale collective article");
 syn("prince", "prince petit");
+syn("accept", "accepter accepte oui ok deal dacc");
+syn("invite", "inviter invite recruter recrute convaincre convainc");
+syn("smoke", "fumer fume clope cigarette pause");
+syn("complain", "chialer chiale plaindre plains critiquer critique rouspeter rouspete");
+syn("think", "reflechir reflechis penser pense mediter medite planifier planifie agenda");
+syn("tell", "raconter raconte histoire anecdote");
+syn("answer", "repondre reponds decrocher decroche");
+syn("show", "montrer montre");
+syn("install", "installer installe");
+syn("money", "argent piasses dollars cash monnaie billet");
+syn("jar", "cagnotte caisse tirelire");
+syn("phone", "cellulaire cell telephone");
+syn("photo", "photo photos bebe");
+syn("game", "jeu catane colons");
+syn("dez", "dez d20");
+syn("liste", "liste");
+syn("suce", "suce");
 const DUAL = { copier: ["copyv", "copier"], copie: ["copyv", "copies"], photocopie: ["copyv", "copies"], tape: ["type", "type"], peinture: ["paint", "figs"] };
-const VERBS = new Set(["look","read","take","drop","open","close","talk","hello","ask","give","sign","use","fill","make","pour","drink","eat","unplug","plugv","fix","load","type","enter","unlock","lock","copyv","sit","stand","smell","wait","empty","wake","debate","play","inventory","score","help","save","restore","restart","quit","sound","kill","insult","kiss","knock","listen","go","swear","thank","yell","dance","grieve","paint","compute"]);
+const VERBS = new Set(["tell","accept","invite","smoke","complain","think","answer","show","install","roll","look","read","take","drop","open","close","talk","hello","ask","give","sign","use","fill","make","pour","drink","eat","unplug","plugv","fix","load","type","enter","unlock","lock","copyv","sit","stand","smell","wait","empty","wake","debate","play","inventory","score","help","save","restore","restart","quit","sound","kill","insult","kiss","knock","listen","go","swear","thank","yell","dance","grieve","paint","compute"]);
 
 function parse(raw) {
-  let s = " " + strip(raw.toLowerCase()).replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim() + " ";
+  raw = (" " + raw.toLowerCase() + " ").replace(/\s(dés?)(?=\s)/g, " dez").replace(/guy[ -]homie/g, "guyhomie").replace(/marc[ -]andr[eé]/g, "marcandre");
+  let s = " " + strip(raw).replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim() + " ";
   // roche-papier-ciseaux : « papier » tout seul ou « jouer papier »
   const rps = /^ (je )?(jouer |joue |jouez )?(la |le |les |du )?(roche|pierre|papier|ciseaux|ciseau) $/.exec(s);
   if (rps) return { v: "play", N: [], move: rps[4] === "pierre" ? "roche" : rps[4].startsWith("ciseau") ? "ciseaux" : rps[4] };
@@ -787,12 +910,12 @@ function nearest(names) {
 }
 function resolve(N) {
   const L = S.room === "lounge";
-  const ids = { c_jp: "jp", c_guy: "guy", c_crispy: "crispy" };
-  const owner = (id) => (id === P().id ? "me" : id === B().id ? "npcB" : "npcC");
+  const ids = { c_jp: "jp", c_guy: "guy", c_crispy: "crispy", c_sabrina: "sabrina", c_marc: "marc", c_gen: "gen", c_melanie: "melanie", c_vieux: "vieux" };
+  const owner = (id) => (id === P().id ? "me" : id === B().id ? "npcB" : id === C().id ? "npcC" : "absent");
   let out = N.map((n) => {
-    if (ids[n]) return owner(ids[n]);
-    if (n === "figs") return P().id === "guy" ? "figs" : L ? owner("guy") : "figs";
-    if (n === "laptop") return P().id === "crispy" ? "laptop" : L ? owner("crispy") : "laptop";
+    if (ids[n]) { const o = owner(ids[n]); return o === "absent" && ids[n] === "vieux" && owner("guy") !== "absent" ? owner("guy") : o; }
+    if (n === "figs") return P().id === "guy" ? "figs" : L && owner("guy") !== "absent" ? owner("guy") : "figs";
+    if (n === "laptop") return P().id === "crispy" ? "laptop" : L && owner("crispy") !== "absent" ? owner("crispy") : "laptop";
     if (n === "machine") return N.includes("copier") || N.includes("copyv") ? "copier" : N.includes("coffee") ? "maker" : L ? nearest(["copier", "maker"]) : "machine";
     if (n === "box") return N.includes("grounds") || N.includes("coffee") ? "grounds" : L ? "donut" : "mailbox";
     if (n === "person") return L ? "npcB" : "mmeD";
@@ -814,6 +937,301 @@ function resolve(N) {
   return out.filter((n, i, a) => a.indexOf(n) === i);
 }
 
+
+// ---------- les parcours ----------
+function memo() {
+  const head = "De : Mme D, directrice\n\n";
+  switch (PATH()) {
+    case "cafe": return head + "OBJET : Comité café (indicateur de rentabilité no 9)\n\nLa cagnotte du café est à ZÉRO. Le comité café (Guy et Mélanie) doit me présenter un bilan positif AVANT 8 h, avec un café goûté et approuvé par la direction.\n\nSinon, la cafetière sera retirée. Rentabilité oblige.";
+    case "sabrina": return head + "OBJET : Retour de congé\n\nBon retour, Sabrina. Votre clé de l'armoire à fournitures sera remise... plus tard. Je ne sais plus où je l'ai mise.\n\nLa photocopieuse est ENCORE bloquée. Ne pas y mettre la main tant qu'elle est branchée. Le code a changé. Je ne m'en souviens plus.";
+    case "marc": return head + "OBJET : Objet confisqué en salle des profs\n\nUn « jeu de société » (petits moutons en bois, cartes de blé) traînait sur la table. Ça paraissait mal. Il a été placé dans l'armoire à fournitures. Votre clé est jointe. Aucun jeu en salle des profs. Les jeux, c'est pour les élèves. Et encore.";
+    case "gen": return head + "OBJET : Réunion de ce midi\n\n" + P().name + ", j'ai besoin de 30 copies du Plan d'engagement vers la réussite, sur mon chemin, AVANT 8 h. Il faut que ça paraisse bien.\n\nLa photocopieuse est ENCORE bloquée. Interdit d'y mettre la main tant qu'elle est branchée. Le code a changé. Je ne m'en souviens plus. Votre clé de l'armoire est jointe.";
+  }
+  return head + "OBJET : Photocopieuse (indicateur de performance no 47)\n\nLa photocopieuse est ENCORE bloquée. Interdit d'y mettre la main tant qu'elle est branchée : un accident de travail ferait baisser nos indicateurs.\n\nVotre clé de l'armoire est jointe. Le code a changé. Je ne m'en souviens plus.\n\nRAPPEL : réunion ce midi sur le plan de réussite. Présence OBLIGATOIRE de tout le département d'histoire. Je compterai les têtes.";
+}
+function helpText() {
+  const base = "Flèches pour marcher (rappuyez pour arrêter). Il faut être près des choses. F3 répète la dernière commande.\n\nPartout : REGARDER, PRENDRE, LIRE, PARLER À, DEMANDER, DONNER, OUVRIR, REGARDER CAMÉRA.\n\n";
+  const extra = {
+    glande: "Votre parcours : 32 photocopies avant 8 h, et régler le tour de qui rate la réunion (PARLER DE LA RÉUNION, ROCHE, PAPIER, CISEAUX).",
+    cafe: "Votre parcours : un café frais, de l'argent dans la CAGNOTTE, et un bilan à Mme D avant 8 h." + (P().id === "vieux" ? " Essayez FUMER." : " Essayez CHIALER."),
+    sabrina: "Votre parcours : vos copies adaptées, avec l'aide des collègues. Essayez ACCEPTER, RÉPONDRE, MONTRER PHOTO.",
+    marc: "Votre parcours : installer une partie de Catane pour le dîner. Il faut le jeu, deux dés et deux joueurs. Essayez INVITER, INSTALLER, LANCER DÉ.",
+    gen: "Votre parcours : 30 copies du plan de réussite à remettre à Mme D." + (P().id === "sophie" ? " Essayez RACONTER et PLANIFIER." : " Essayez ÉCOUTER et RÉFLÉCHIR."),
+  }[PATH()];
+  return base + extra;
+}
+function pathIntro() {
+  const p = P(), b = B().name, c = C().name;
+  const open = "École secondaire\nAntoine-de-Saint-Exupéry.\nLundi, 7 h 40.\n\n";
+  switch (p.path) {
+    case "glande":
+      say(open + "Vous êtes " + p.name + ", prof d'histoire. Vous aviez toute la fin de semaine pour préparer votre examen. Vous l'avez écrit ce matin, dans l'autobus.");
+      say("Il faut 32 photocopies avant la cloche de 8 h. La photocopieuse est dans la salle des profs, avec " + b + " et " + c + ", vos collègues d'histoire.\n\nEt Mme D, la directrice, a convoqué une réunion ce midi. Tout le monde doit y être. Mais entre vous trois, c'est la tradition : à tour de rôle, un seul s'absente. Un absent, ça passe. Deux, ça paraît. C'est le tour de qui ? Personne ne s'entend.");
+      break;
+    case "cafe":
+      say(open + "Vous êtes " + p.name + ", co-responsable du comité café avec " + b + ". Le seul comité de l'école qui sert vraiment à quelque chose.");
+      say("Problème : la cagnotte du café est vide, la verseuse contient du goudron, et Mme D exige un « bilan positif » avant 8 h. Sinon, elle retire la cafetière.\n\nSans café, cette école tombe en 48 heures. Vous avez vu les études. Enfin, Guy les a vues. En 1987.");
+      break;
+    case "sabrina":
+      say(open + "Vous êtes Sabrina, de retour de congé de maternité. Votre bébé a dormi de 2 h 14 à 3 h 02. Vous aussi.");
+      say("Il vous faut 32 copies de votre examen adapté avant la cloche. La photocopieuse est bloquée, vous n'avez ni code ni papier, et Mme D a égaré votre clé.\n\nHeureusement, vous êtes gentille avec tout le monde. Et tout le monde le sait.");
+      break;
+    case "marc":
+      say(open + "Vous êtes Marc-André. Ce midi, c'est la partie de Catane du club des profs. Vous l'organisez depuis trois semaines. Vous avez fait un tableur.");
+      say("Problème : Mme D a confisqué le jeu, les dés ont disparu, et vous n'avez encore aucun joueur. Tout doit être installé dans la salle des profs avant la cloche de 8 h.\n\nLancez-vous. Littéralement : vous avez un d20.");
+      break;
+    case "gen":
+      if (p.id === "sophie") say(open + "Vous êtes Sophie. Arrivée à 6 h 30 pour corriger. Votre planification est faite jusqu'en juin, en couleurs, avec des onglets. Et vous avez déjà trois histoires d'élèves à raconter. Il est 7 h 40.");
+      else say(open + "Vous êtes Geneviève. Vous êtes ici depuis 6 h 15. Vous avez déjà corrigé 40 copies, planifié la semaine et arrosé la plante de la salle des profs. Personne ne l'avait arrosée depuis 2016.");
+      say("Mme D veut 30 copies de son « Plan d'engagement vers la réussite » avant 8 h, pour la réunion de ce midi. La photocopieuse est bloquée, et le code, c'est " + b + " qui le connaît.\n\nOn peut toujours compter sur vous. C'est un peu ça, le problème.");
+      break;
+  }
+  say("Flèches pour marcher. Tapez des ordres comme REGARDER, PRENDRE COURRIER ou PARLER À MME D, puis ENTRÉE. AIDE rappelle votre objectif.\n\nÉCHAP : menu.\nTAB : inventaire.\n\nAh, et une équipe de documentaire filme l'école.");
+}
+function mmeDSigned() {
+  switch (PATH()) {
+    case "cafe": return S.got.fund ? "« La cagnotte est remplie ? Bien. Maintenant, faites-moi goûter. Un café FRAIS. »" : "« Le comité café. Votre cagnotte est à zéro. Zéro, ça paraît mal. Bilan positif avant 8 h, ou la cafetière s'en va. »";
+    case "sabrina": return "« Sabrina ! Bon retour. J'espère que votre... enfant... n'affectera pas vos indicateurs. » Elle regarde votre cellulaire. « C'est lui ? » Elle détourne les yeux deux secondes trop tard.";
+    case "marc": return "« Marc-... Marc-Antoine ? J'ai confisqué un jeu en salle des profs. Des petits moutons en bois. Ça paraissait mal. Si je le revois dans le corridor, je le reconfisque. »";
+    case "gen": return has("copies") ? "« Ah, " + P().name + ". Mes copies ? Donnez-les-moi. »" : "« " + P().name + ", c'est bien ça ? Mes 30 copies avant 8 h. Vous êtes la seule ici qui livre. Ne changez pas. Ça ferait baisser la moyenne. » Vous hochez la tête, poliment. Très poliment. Trop poliment.";
+  }
+  return null;
+}
+function wakeHint() {
+  const b = B().name;
+  switch (PATH()) {
+    case "cafe": return P().id === "vieux"
+      ? "« La cagnotte ? Regarde ta liste. Kowalski doit 20 $ depuis septembre. Il fume derrière le gymnase tous les matins. Tu le croises sûrement... à ta pause cigarette. »"
+      : "« La cagnotte ? Mme D déteste les plaintes : elles font baisser ses indicateurs. Si quelqu'un allait CHIALER devant elle... elle paierait n'importe quoi pour que ça arrête. »";
+    case "sabrina": return "« Marc-André connaît le code. Il va vouloir quelque chose en échange. Probablement une partie de Catane. Pis si tu manques de papier, j'en ai. Demande-moi. »";
+    case "marc": return "« Ton jeu ? Mme D l'a barré dans l'armoire grise ; ta clé est dans ton casier. Les élèves cachent tout dans leurs cases. Et le divan avale tout ce qui tombe dedans. Moi, je joue si tu m'apportes un café. »";
+    case "gen": return (P().id === "sophie" ? "« " + b + " connaît le code. Elle chiale, mais au fond, elle adore les histoires d'élèves. RACONTE-lui-en une. Une bonne. »" : "« " + b + " connaît le code. Elle te le donnera si tu l'ÉCOUTES chialer jusqu'au bout. Personne le fait jamais. »") + " Guy tousse. « Pis débranche la machine avant d'y mettre la main. »";
+  }
+  return null;
+}
+function cameraPath() {
+  switch (PATH()) {
+    case "cafe": return S.got.fund ? "« La cagnotte est pleine. Si ça, c'est pas de la réussite éducative, je sais pas ce que c'est. »" : P().id === "vieux" ? "« Six directeurs. Six. Ils partent tous. La cafetière, elle, reste. »" : "« Tu veux savoir ce qui va pas dans cette école ? Assieds-toi. Ça va être long. »";
+    case "sabrina": return S.phone >= 2 ? "« Il va bien. Il a juste mangé un crayon de cire. Le bleu. C'est son préféré. »" : "« J'ai dormi 48 minutes. Je me sens... étonnamment bien ? Est-ce que c'est grave ? »";
+    case "marc": return S.dice >= 2 ? "« Deux dés. Le jeu. Des joueurs. C'est la meilleure journée de ma vie. »" : "« Les jeux de société, c'est de la pédagogie. J'ai une présentation PowerPoint là-dessus. 84 diapositives. »";
+    case "gen": if (P().id === "sophie") return S.got.listen ? "« J'ai fait rire Mélanie. MÉLANIE. Je vais l'écrire dans mon agenda. En doré. »" : "« La direction ? » Sophie sourit poliment. « J'ai un onglet pour elle dans mon agenda. Il s'appelle « Patience ». »";
+      return S.got.listen ? "« Mélanie avait juste besoin qu'on l'écoute. Ça a pris 11 minutes. C'était 11 minutes très... intenses. »" : "« La direction ? » Geneviève choisit ses mots. Longtemps. « Disons que je fais mon travail. Malgré elle. »";
+  }
+  return null;
+}
+
+// commandes propres aux parcours ; renvoie true si la commande est traitée
+function pathAct(v, N, num) {
+  const L = S.room === "lounge", path = PATH(), me = P().id;
+  const hasN = (...a) => a.some((x) => N.includes(x));
+  // personnages absents de cette scène
+  if (hasN("absent")) { say("Cette personne n'est pas ici ce matin. Elle a dû trouver une meilleure excuse que vous."); return true; }
+  if (v === "smoke") {
+    if (me !== "vieux") { say("Vous ne fumez pas. Guy, lui, fume pour tout le monde."); return true; }
+    if (L) { say("Pas en dedans, voyons. Sortez par le gymnase : à gauche dans le corridor."); return true; }
+    say("Pas devant Mme D. Le coin des fumeurs, c'est derrière le gymnase : à gauche dans le corridor."); return true;
+  }
+  if (v === "complain") {
+    if (me !== "melanie") { say("Chialer, c'est le domaine de Mélanie. Elle a une ceinture noire."); return true; }
+    if (!L && hasN("mmeD") || (!L && near0("mmeD") && !N.length)) {
+      if (!near("mmeD")) return true;
+      if (path === "cafe" && !S.got.money) {
+        give("money"); award("money");
+        say("Vous chialez. Le chauffage. Les courriels. La police d'écriture des courriels. Le budget café. Mme D cligne des yeux à chaque phrase.\n\n« ASSEZ. » Elle sort un billet de 20 $ du « budget de mobilisation du personnel ». « Prenez ça et ARRÊTEZ. Les plaintes font baisser mes indicateurs. »"); return true;
+      }
+      say("Mme D se bouche les oreilles et s'éloigne d'un pas. Dans la mauvaise direction. Encore."); return true;
+    }
+    say(["Vous chialez contre le chauffage. Il fait 26 degrés dans le corridor et 14 dans votre local.", "Vous chialez contre la cafétéria. Pâté chinois trois fois cette semaine. On est mardi. Non, lundi. Pire.", "Vous chialez contre les courriels de Mme D. Écrits en Comic Sans. En rouge."][S.step % 3]); return true;
+  }
+  if (v === "think") {
+    if (me !== "gen" && me !== "sophie") { say("Vous réfléchissez. Ça fait mal un peu. Vous arrêtez."); return true; }
+    award("think");
+    const c = S.copier;
+    const h = !S.signed ? "Signer le registre d'abord. Mme D compte tout." : !has("key") && !S.supplyUnlocked ? "La clé de l'armoire est dans mon casier." : !S.got.listen ? "Mélanie connaît le code. Elle veut juste être écoutée." : c.plugged && c.jam ? "On débranche avant de mettre la main dans une machine. Toujours." : c.jam ? "Retirer le bourrage, maintenant que c'est débranché." : !c.plugged ? "Rebrancher la photocopieuse." : !c.paper && !has("paper") ? "Du papier dans l'armoire grise." : !c.paper ? "Mettre le papier dans la photocopieuse." : !c.code ? "Entrer le code." : !has("copies") ? "Photocopier le plan." : "Donner les copies à Mme D, dans le corridor.";
+    say(me === "sophie" ? "Vous ouvrez votre agenda à l'onglet « AUJOURD'HUI ». En vert fluo :\n\n« " + h + " »" : "Vous fermez les yeux une seconde. Vous respirez. La réponse vient, simplement :\n\n« " + h + " »"); return true;
+  }
+  if (v === "answer" || (v === "use" && hasN("phone"))) {
+    if (me !== "sabrina") { say("Votre téléphone ne sonne pas. Personne ne vous appelle avant 8 h. Personne."); return true; }
+    if (S.phone === 1) { S.phone = 2; award("phone"); say("« Allô ? » C'est la garderie. « Tout va bien, madame ! Il a juste mangé un crayon de cire. Le bleu. Il a l'air très fier. »\n\nVous soupirez de soulagement. Puis vous souriez. Le caméraman aussi."); return true; }
+    say(S.phone === 0 ? "Vous regardez votre fond d'écran. Votre bébé. Vous souriez. Personne n'a appelé... pour l'instant." : "Vous regardez la photo du crayon bleu. Votre bébé a du goût."); return true;
+  }
+  if (v === "show" && hasN("photo", "phone")) {
+    if (me !== "sabrina") { say("Vous n'avez pas de photo à montrer. À part celle de votre carte d'employé, et personne ne veut voir ça."); return true; }
+    const who = hasN("mmeD") ? "mmeD" : hasN("npcC") ? "npcC" : hasN("npcB") ? "npcB" : L ? "npcB" : "mmeD";
+    if (!near(who)) return true;
+    award("photo");
+    if (who === "mmeD") say("Vous montrez une photo de votre bébé à Mme D. « Hm. Un bébé. Ça fait baisser la productivité. » Elle regarde la photo deux secondes de trop. Puis trois. Puis elle se racle la gorge et repart. Dans la mauvaise direction.");
+    else say((who === "npcB" ? B() : C()).name + " fond complètement. « Ohhh. Il a tes yeux. Pis le nez de... de qui, au juste ? » Le caméraman zoome sur la photo.");
+    return true;
+  }
+  if (v === "roll") {
+    if (!has("d20")) { say("Vous n'avez pas de dé. Marc-André, lui, en a toujours un."); return true; }
+    const r = 1 + Math.floor(Math.random() * 20);
+    say("Vous lancez votre d20. " + r + "." + (r === 20 ? " COUP CRITIQUE ! Vous allez corriger aujourd'hui. Peut-être." : r === 1 ? " Échec critique. Vous ne corrigerez pas cette semaine." : r >= 11 ? " Réussite. Vous vous sentez d'attaque." : " Échec. Vous relancez mentalement.")); return true;
+  }
+  if (v === "tell") {
+    const stories = ["« Hier, un élève m'a demandé si Jacques Cartier avait Instagram. J'ai dit non. Il a dit : « Ben comment on sait qu'il est allé au Canada, d'abord ? » »", "« Une élève a écrit que la Conquête, c'était en 1759 parce que « c'était la mode ». Je lui ai mis la moitié des points. Elle a pas tort. »", "« Un élève a remis son travail sur Louis Riel... écrit sur une boîte de pizza. Il a eu 82. La pizza était bonne. »"];
+    if (me !== "sophie") { say("Vous racontez une histoire d'élève. Elle est moins bonne que celles de Sophie. Elle les raconte toujours mieux."); return true; }
+    if (L && PATH() === "gen" && (hasN("npcB") || (!N.length && near0("npcB")))) {
+      if (!near("npcB")) return true;
+      if (S.got.listen) { say("Mélanie rit encore de la boîte de pizza. « Le code, c'est " + S.code + ". Arrête, j'ai mal aux côtes. »"); return true; }
+      S.knowsCode = true; award("listen");
+      say("Vous racontez à Mélanie l'histoire du travail sur Louis Riel écrit sur une boîte de pizza.\n\nMélanie se retient. Elle se retient fort. Puis elle éclate de rire, pour la première fois depuis 2019. « ARRÊTE. Il a eu combien ? 82 ?! »\n\nEn s'essuyant les yeux : « Tiens, le code de la photocopieuse, c'est " + S.code + ". Tu le mérites. »"); return true;
+    }
+    say(stories[S.step % stories.length]); return true;
+  }
+  // ----- Sabrina : le code contre une partie de Catane -----
+  if (v === "accept") {
+    if (path !== "sabrina") { say("Accepter quoi ? Personne ne vous a rien proposé. Pour l'instant."); return true; }
+    if (!L || !near("npcB")) { if (L) return true; say("Il n'y a rien à accepter ici."); return true; }
+    if (S.knowsCode) { say("« T'as déjà dit oui ! Je t'ai mis dans le tableur. »"); return true; }
+    if (!S.offered) { say("Marc-André ne vous a encore rien proposé. Demandez-lui le code."); return true; }
+    S.knowsCode = true; award("accept");
+    say("« OUI ! » Marc-André fait un petit geste de victoire. « Partie à 12 h 05, tu prends les moutons. Le code, c'est " + S.code + ". » Il ajoute votre nom à un tableur. Il y a déjà un onglet à votre nom."); return true;
+  }
+  // ----- Marc-André : recruter des joueurs, trouver le jeu et les dés, installer -----
+  if (v === "invite") {
+    if (path !== "marc") { say("Inviter quelqu'un ? Ce midi, c'est réunion. Personne n'a le temps. Sauf Marc-André, qui a toujours le temps pour un jeu."); return true; }
+    if (!L) { say(hasN("mmeD") ? "Inviter Mme D à jouer à Catane ? Elle demanderait un indicateur de performance pour les moutons." : "Il n'y a personne à inviter ici."); return true; }
+    const who = hasN("npcC") ? "npcC" : "npcB";
+    if (!near(who)) return true;
+    if (who === "npcB") {
+      if (S.got.recruitB) { say("« Oui, oui, je suis là ce midi ! Tant que je peux appeler la garderie à 12 h 50. »"); return true; }
+      award("recruitB"); say("Sabrina sourit. « Catane ? Avec plaisir ! J'ai pas joué depuis... depuis le bébé. Faut juste que j'appelle la garderie à 12 h 50. » Une joueuse !"); return true;
+    }
+    if (S.got.recruitC) { say("« J'ai dit oui. J'apporte mes copies à corriger entre les tours. »"); return true; }
+    say("Geneviève ne lève pas les yeux. « Je corrige. Apporte-moi un café, et on en reparle. »"); return true;
+  }
+  if (v === "install" || (v === "load" && hasN("game") && hasN("table"))) {
+    if (path !== "marc") { say("Installer quoi ? Vous n'avez rien à installer."); return true; }
+    if (!L) { say("La partie se joue dans la salle des profs. Pas dans le corridor, sous le nez de Mme D."); return true; }
+    if (!near("table")) return true;
+    const miss = [];
+    if (!has("game")) miss.push("le jeu");
+    if (S.dice < 2) miss.push((2 - S.dice) + " dé" + (S.dice === 0 ? "s" : ""));
+    if (!S.got.recruitB || !S.got.recruitC) miss.push("des joueurs");
+    if (miss.length) { say("Il vous manque encore : " + miss.join(", ") + "."); return true; }
+    win(); return true;
+  }
+  if (v === "take" && hasN("game")) {
+    if (path !== "marc") { say("Ce jeu n'est pas à vous. Et Marc-André vous surveille."); return true; }
+    if (has("game")) { say("Vous l'avez déjà. Vous le serrez contre vous."); return true; }
+    if (!L || !near("supply")) return L ? true : (say("Vous ne voyez pas ça ici."), true);
+    if (!S.supplyUnlocked) { say("Le jeu est barré dans l'armoire grise. Il vous faut la clé."); return true; }
+    give("game"); award("game"); say("Vous récupérez Les Colons de Catane. Il manque les deux dés. Évidemment. Mme D ne les a pas mis dans la boîte : elle les a « rangés ailleurs »."); return true;
+  }
+  // ----- Comité café : la cagnotte -----
+  if ((v === "load" || v === "give") && hasN("money", "jar")) {
+    if (path !== "cafe") { say("Vous n'avez pas d'argent à mettre là. Vous êtes prof."); return true; }
+    if (!has("money")) { say("Vous n'avez pas d'argent. " + (P().id === "vieux" ? "Votre liste dit que Kowalski en doit." : "Mais vous savez chialer.")); return true; }
+    if (!L || !near("sink")) return L ? true : (say("La cagnotte est sur le comptoir de la salle des profs."), true);
+    lose("money"); S.fund = true; award("fund");
+    say("Vous glissez le billet de 20 $ dans la cagnotte. Elle n'avait pas fait ce bruit-là depuis septembre. " + B().name + " applaudit lentement."); return true;
+  }
+  // ----- les dons de café selon le parcours -----
+  if (v === "give" && path !== "glande") {
+    const coffee = hasN("coffee", "mug");
+    if (hasN("mmeD") || (!L && N.length && !hasN("npcB", "npcC"))) {
+      if (L) { say("Mme D n'est pas là. Elle cherche probablement son bureau."); return true; }
+      if (!near("mmeD")) return true;
+      if (path === "cafe" && coffee) {
+        if (!has("mug") || S.mug === "empty") { say("Votre tasse est vide. Mme D veut goûter un café, pas une métaphore."); return true; }
+        if (!S.got.fund) { say("Mme D tend la main, puis s'arrête. « Et la cagnotte ? Elle est toujours à zéro. Un café sans rentabilité, c'est juste... un café. »"); return true; }
+        win(); return true;
+      }
+      if (path === "gen" && hasN("copies")) {
+        if (!has("copies")) { say("Vous n'avez pas encore les copies."); return true; }
+        win(); return true;
+      }
+      say("« Je n'accepte pas les cadeaux, " + wrongName() + ". Ça paraîtrait mal. »"); return true;
+    }
+    if (!L) { say("Personne ici n'en veut."); return true; }
+    const to = hasN("npcC") ? "npcC" : "npcB";
+    if (!near(to)) return true;
+    const ch = to === "npcB" ? B() : C();
+    if (!coffee) { say(ch.name + " regarde ce que vous tendez, puis vous. « Euh... merci ? Non. »"); return true; }
+    if (!has("mug") || S.mug === "empty") { say("Votre tasse est vide."); return true; }
+    if (path === "sabrina") { say("Vous hésitez. Puis vous gardez le café. Vous dormez trois heures par nuit : vous en avez plus besoin. " + ch.name + " comprend. Tout le monde comprend."); return true; }
+    if (path === "cafe") {
+      if (to === "npcB") { say(ch.name + " : « C'est notre café. On le boit pas, on le vend. » Puis boit une gorgée quand même."); return true; }
+      S.mug = "empty"; award("serveC");
+      say("Geneviève goûte, hoche la tête et dépose 2 $ en monnaie exacte à côté de la cagnotte. « Excellent. Merci à vous deux. » Votre tasse est vide : il en reste dans la verseuse."); return true;
+    }
+    if (path === "marc") {
+      if (to === "npcC") {
+        lose("mug"); S.mug = null; award("recruitC");
+        say("Geneviève prend le café, en boit une gorgée, ferme les yeux. « Bon. D'accord. Je joue. Mais je corrige entre les tours. » Une deuxième joueuse !"); return true;
+      }
+      say("« Merci, mais j'en ai déjà bu trois. Je vais finir par voir à travers les murs. »"); return true;
+    }
+    if (path === "gen") {
+      lose("mug"); S.mug = null;
+      say(ch.name + " prend le café. " + (to === "npcC" ? "Guy : « Ah, merci, ma belle. Dans mon temps, on le faisait au percolateur. » Il tousse, content." : "Mélanie : « Il est trop chaud. Non, laisse faire. Merci. Il est trop chaud pareil. »")); return true;
+    }
+  }
+  // ----- Geneviève : écouter Mélanie -----
+  if (v === "listen" && path === "gen" && (hasN("npcB") || (L && !N.length && near0("npcB")))) {
+    if (!near("npcB")) return true;
+    if (me === "sophie" && !S.got.listen) { say("Vous écoutez Mélanie deux minutes... puis une histoire d'élève vous brûle les lèvres. Vous devriez peut-être la RACONTER."); return true; }
+    if (S.got.listen) { say("Mélanie : « Merci encore de m'avoir écoutée. Le code, c'est " + S.code + ". Pis le chauffage, ça, c'est un autre dossier. »"); return true; }
+    S.knowsCode = true; award("listen");
+    say("Vous vous assoyez. Vous écoutez. Le chauffage. L'horaire. La cafétéria. Les courriels en Comic Sans. Le stationnement. Les courriels en Comic Sans encore.\n\nOnze minutes. Vous ne l'interrompez pas une seule fois.\n\nMélanie s'arrête, surprise. « ...Personne m'avait jamais écoutée jusqu'au bout. » Elle renifle. « Le code de la photocopieuse, c'est " + S.code + ". »"); return true;
+  }
+  return false;
+}
+// dialogues des collègues dans les nouveaux parcours
+function talkB() {
+  const b = B(), path = PATH();
+  if (!near("npcB")) return;
+  switch (path) {
+    case "cafe": return say(b.id === "melanie" ? "Mélanie : « Notre cagnotte est vide, la verseuse est un dépotoir, pis Mme D veut un « bilan ». Moi, je chiale, toi, tu trouves l'argent. C'est ça, l'équipe. »" : "Guy : « Ma belle Mélanie, la cagnotte va se remplir. En 1987, on a eu la même crise. On l'a réglée en vendant des muffins. » Il tousse.");
+    case "sabrina": return say(S.knowsCode ? "« À midi, tu prends les moutons ! Le code, c'est " + S.code + ". »" : "« Sabrina ! Ça va, le bébé ? Tu dors un peu ? Écoute, ce midi, on joue à Catane. Il me manque une joueuse... »");
+    case "marc": return say(S.got.recruitB ? "« J'ai hâte à midi ! Je vais tout perdre, mais j'ai hâte. »" : "Sabrina vous sourit. « Allô Marc-André. T'as l'air excité. C'est pour ta partie ? » Elle attend juste qu'on l'INVITE.");
+    case "gen": return say(S.got.listen ? "« Merci de m'avoir écoutée. Sérieux. » Elle sourit. C'est rare. Le caméraman manque l'échapper." : b.busy + " Personne ne l'écoute jamais. Vous pourriez l'ÉCOUTER.");
+  }
+}
+function talkC() {
+  if (!near("npcC")) return;
+  if (!S.awake) return say(C().name + " " + C().doing + " Pas de réaction. Essayez de DÉRANGER " + C().name.toUpperCase() + ".");
+  return say(C().busy);
+}
+function askPath(who, t) {
+  const path = PATH();
+  if (who === "npcB") {
+    if (path === "sabrina" && (t === "code" || t === "copier")) {
+      if (S.knowsCode) return say("« C'est " + S.code + ". Pis à midi, tu prends les moutons. »");
+      S.offered = true;
+      return say("Marc-André remonte ses lunettes. « Le code ? Je te le donne... si tu viens jouer à Catane ce midi. Deal ? »\n\n(Tapez ACCEPTER.)");
+    }
+    if (path === "gen" && (t === "code" || t === "copier")) return say(S.got.listen ? "« " + S.code + ". » Mélanie vous fait un clin d'oeil. Elle n'a jamais fait de clin d'oeil à personne." : "« Le code ? Ah, ben là, tout le monde veut mon code, mais personne veut m'écouter, hein ? » Elle croise les bras plus fort.");
+    if (path === "cafe" && (t === "jar" || t === "money")) return say(B().id === "melanie" ? "« L'argent ? Kowalski nous doit 20 $ depuis septembre. Toi, tu le vois en fumant, non ? »" : "« L'argent ? Va CHIALER devant Mme D. Elle paye toujours pour que ça arrête. Moi, en 2004, j'ai eu un frigo. »");
+    if (path === "marc" && (t === "game" || t === "meeting")) return say("« Catane ? J'adore ! INVITE-moi pour vrai, pis je suis là. »");
+    return say(B().busy);
+  }
+  if (!S.awake) return say(C().name + " " + C().doing + " Pas de réaction. Essayez de DÉRANGER " + C().name.toUpperCase() + ".");
+  if (path === "sabrina" && (t === "paper" || t === "supply")) {
+    if (has("paper") || S.copier.paper) return say("« Je t'en ai déjà donné. Si t'en veux encore, c'est que tu photocopies trop. »");
+    give("paper"); award("paper");
+    return say("Geneviève sort une ramette de papier de son sac. Elle en a toujours une. « Tiens. Prends soin de toi, Sabrina. Pis dors, si tu peux. »");
+  }
+  if (path === "marc" && (t === "game" || t === "invite")) return say("« Je joue si tu m'apportes un café. C'est mon prix. Il est raisonnable. »");
+  return say(wakeHint());
+}
+function pathWinText() {
+  const p = P(), b = B().name, c = C().name;
+  switch (p.path) {
+    case "cafe": return ["Mme D goûte. Longuement. Elle ferme les yeux.\n\n« Rentable ET buvable. Ça va très bien paraître dans le rapport. » La cafetière est sauvée.\n\nDans la salle des profs, on entend des applaudissements. " + b + (b === "Mélanie" ? " chiale qu'ils sont pas assez forts." : " tousse de joie."),
+      "« Six directeurs. La cafetière leur a tous survécu. Elle va survivre à celle-là aussi. »"];
+    case "sabrina": return ["Vous entrez " + atLocal() + " à " + clockStr() + " avec 32 copies adaptées, encore tièdes.\n\nLa cloche sonne. Vos élèves vous accueillent avec une carte « BON RETOUR MADAME » signée par tout le groupe. Même par Kevin.\n\nCe midi, vous jouez à Catane. Vous prenez les moutons.",
+      "« Je pensais que ce serait dur, revenir. C'est dur. Mais tout le monde a été tellement gentil. Même la photocopieuse, à la fin. »"];
+    case "marc": return ["Le plateau est installé. Les tuiles sont mélangées. Les deux dés sont alignés. Sabrina et Geneviève sont assises. La cloche sonne : la partie est prête pour midi.\n\nMme D passe la tête dans la porte. « Qu'est-ce que c'est que... » Elle regarde le plateau. Trois secondes. « Ça paraît... collaboratif. » Elle s'assoit. « Je prends le bois. »",
+      "« J'ai invité la directrice à jouer à Catane. Elle a gagné. Elle a utilisé un tableur. Je l'admire. Je la crains. »"];
+    case "gen": return ["Vous tendez les 30 copies à Mme D à " + clockStr() + ".\n\n« Merci... " + P().name + ". » Elle a trouvé votre nom du premier coup. Elle a l'air d'attendre des félicitations.\n\nVous souriez poliment. Le sourire que vous gardez pour la direction. Celui qui ne monte pas jusqu'aux yeux.\n\n« Bonne réunion, Madame. » Vous tournez les talons. Vos élèves, eux, vous attendent pour vrai.",
+      "« Trente copies d'un plan que personne va lire, pour une réunion que personne veut. » Une pause. « Mais c'est fait. Comme toujours. Pis là, je vais enseigner. La vraie job. »"];
+  }
+  return null;
+}
+
 // ---------- commandes ----------
 const HERE = {
   hall: ["mailbox","sheet","board","fountain","locker","door","mmeD","wall","floor","ceiling","room","class","memo","key","camera"],
@@ -831,9 +1249,12 @@ function near(spot) {
 function near0(spot) { const sp = ROOMS[S.room].spots[spot]; return sp && distTo(sp) <= sp[4]; }
 function invName(it) {
   return {
-    quiz: "Examen d'histoire (original)", pen: "Crayon rouge (jamais servi)", memo: "Note de Mme D", key: "Petite clé en laiton",
+    quiz: PATH() === "gen" ? "Plan de réussite (original)" : PATH() === "sabrina" ? "Examen adapté (original)" : "Examen d'histoire (original)",
+    pen: PATH() === "gen" ? "Crayon rouge (très usé)" : "Crayon rouge (jamais servi)",
+    phone: "Cellulaire (fond d'écran : bébé)", suce: "Suce de rechange", d20: "Dé à 20 faces (porte-bonheur)", liste: "Liste des cotisations du café",
+    money: "Billet de 20 $", game: "Les Colons de Catane", dez: "Dés (" + S.dice + "/2)", memo: "Note de Mme D", key: "Petite clé en laiton",
     mug: S.mug === "milk" ? "Tasse de café au lait" : S.mug === "coffee" ? "Tasse de café frais" : "Tasse vide",
-    filter: "Filtre à café", grounds: "Paquet de café moulu", milk: "Pinte de lait", paper: "Ramette de papier", copies: "32 copies de l'examen",
+    filter: "Filtre à café", grounds: "Paquet de café moulu", milk: "Pinte de lait", paper: "Ramette de papier", copies: PATH() === "gen" ? "30 copies du plan de réussite" : "32 copies de l'examen",
   }[it];
 }
 function copierDisplay() {
@@ -844,14 +1265,16 @@ function copierDisplay() {
   if (!c.code) return "ENTRER CODE D'ACCÈS";
   return "PRÊTE";
 }
-const MEMO = "OBJET : Photocopieuse (indicateur de performance no 47)\n\nLa photocopieuse est ENCORE bloquée. Interdit d'y mettre la main tant qu'elle est branchée : un accident de travail ferait baisser nos indicateurs.\n\nVotre clé de l'armoire est jointe. Le code a changé. Je ne m'en souviens plus.\n\nRAPPEL : réunion ce midi sur le plan de réussite. Présence OBLIGATOIRE de tout le département d'histoire. Je compterai les têtes.\n\nMme D, directrice";
+const MEMO_OLD = "OBJET : Photocopieuse (indicateur de performance no 47)\n\nLa photocopieuse est ENCORE bloquée. Interdit d'y mettre la main tant qu'elle est branchée : un accident de travail ferait baisser nos indicateurs.\n\nVotre clé de l'armoire est jointe. Le code a changé. Je ne m'en souviens plus.\n\nRAPPEL : réunion ce midi sur le plan de réussite. Présence OBLIGATOIRE de tout le département d'histoire. Je compterai les têtes.\n\nMme D, directrice";
 const CALENDAR = () => "CALENDRIER OFFICIEL DES RÉUNIONS RATÉES\n(NE PAS MONTRER À MME D)\n\nRéunions ratées cette année :\n" + C().name + " ....... ||||\n" + B().name + " ....... |||\n" + P().name + " ....... |||\n\nRègle no 1 : UN seul absent par réunion. Deux, ça paraît.\nRègle no 2 : le tour revient à celui qui en a raté le moins.\nRègle no 3 : égalité ? Roche-papier-ciseaux. " + C().name + " arbitre.";
 
 function camera() {
   award("camera");
   const nm = P().name, L = S.room === "lounge";
   let t;
-  if (S.won) t = "« Trente-deux copies. Je pense que c'est la chose la plus productive que j'ai faite depuis la rentrée. »";
+  const pc = PATH() === "glande" ? null : cameraPath();
+  if (pc) t = pc;
+  else if (S.won) t = "« Trente-deux copies. Je pense que c'est la chose la plus productive que j'ai faite depuis la rentrée. »";
   else if (S.debate === 3) t = "« Ce midi, je rate la réunion. Officiellement : « rencontre de parents ». Officieusement : mon lunch. C'est ça, la réussite éducative. »";
   else if (S.debate === 4) t = "« J'ai perdu à roche-papier-ciseaux. Contre " + B().name + ". C'est son tour de rater la réunion. Moi, je vais regarder des graphiques en tarte pendant mon dîner. » Long silence.";
   else if (has("copies")) t = "« J'ai les photocopies. Et personne est mort. Pas aujourd'hui, en tout cas. »";
@@ -872,14 +1295,19 @@ function doLook(N) {
   const inv = {
     quiz: P().quiz,
     pen: "Votre crayon rouge. Toujours neuf. Vous corrigez au feeling.",
-    memo: MEMO, key: "Une petite clé en laiton marquée ARMOIRE.",
+    memo: memo(), key: "Une petite clé en laiton marquée ARMOIRE.",
     filter: "Un filtre à café en papier. Conique. Immaculé.", grounds: "Un paquet de café moulu « CORSÉ ». C'est la chose la plus corsée de l'école.",
     milk: "La date d'expiration est effacée. Il est peut-être bon. Il est peut-être vivant.",
-    paper: "500 feuilles de papier blanc. Le luxe.", copies: "Trente-deux copies encore tièdes de votre examen. Ça sent la victoire et le toner.",
-    me: "Vous êtes " + P().desc.replace(P().name + ", ", "") + " " + P().pitch.split(". ").slice(1).join(". ") + " Votre local : " + P().local + ".",
+    paper: "500 feuilles de papier blanc. Le luxe.",
+    phone: "Votre cellulaire. Fond d'écran : votre bébé, qui dort. Lui, au moins.", suce: "Une suce de rechange. On ne sait jamais. Vraiment jamais.",
+    d20: "Votre dé à 20 faces porte-bonheur. Vous pouvez le LANCER.", liste: "COTISATIONS DU CAFÉ\n\nTout le monde est à jour.\nSauf : KOWALSKI, 20 $, depuis septembre.\n\n(Il fume derrière le gymnase tous les matins.)",
+    money: "Un billet de 20 $. Il sent un peu la cigarette. Ou le budget de la direction.", game: "Les Colons de Catane. Il manque les deux dés.", dez: "Vos dés pour Catane : " + S.dice + " sur 2.", copies: "Trente-deux copies encore tièdes de votre examen. Ça sent la victoire et le toner.",
+    me: "Vous êtes " + P().desc.replace(P().name + ", ", "").replace(P().name + ". ", "") + " " + P().pitch.split(". ").slice(1).join(". ") + (P().local ? " Votre local : " + P().local + "." : ""),
   };
   if (n === "mug" && has("mug")) return say(invName("mug") + ". Il y a écrit : MEILLEUR PROF D'HISTOIRE (OU PRESQUE).");
-  if (inv[n] && (has(n) || n === "me")) return say(inv[n]);
+  if (inv[n] && (has(n) || n === "me" || (n === "dez" && S.dice))) return say(inv[n]);
+  if (n === "absent") return say("Cette personne n'est pas ici ce matin.");
+  if (n === "jar") return say(PATH() === "cafe" ? (S.fund ? "La cagnotte du café. Pleine. Enfin, 20 $. C'est plein, pour une cagnotte de profs." : "La cagnotte du café, sur le comptoir. Vide. Il y a un bouton de chemise dedans. Probablement à Kowalski.") : "La cagnotte du café. C'est l'affaire de Guy et Mélanie.");
   if (n === "figs") return say(P().id === "guy" ? "Vos figurines du 78e régiment de Fraser, au 1/72. Il vous en reste 1 998 à peindre. À ce rythme, vous aurez fini pour le tricentenaire." : "Les figurines de Guy-Homie. Il y a plus de soldats peints à moitié que d'élèves dans l'école.");
   if (n === "laptop") return say(P().id === "crispy" ? "Votre portable. Onglets ouverts : solitaire, petites annonces de chalets, un forum sur les espadrilles. Aucun n'est en lien avec l'histoire." : "Le portable de Crispy. Écran : un jeu de solitaire. Partie en cours depuis la rentrée.");
   if (n === "union") return say("La convention collective. 412 pages. chat-JP en a souligné 411.");
@@ -890,14 +1318,14 @@ function doLook(N) {
   if (n === "wall") return say(L ? "Les murs sont du vert exact d'un hôpital dans un film triste." : "Des blocs de béton gris avec une bande bleue. Les couleurs de l'école, plus ou moins.");
   if (n === "door") return say(L ? "La porte qui donne sur le corridor. Et sur Mme D." : "La porte de la salle des profs. Plaque : PERSONNEL SEULEMENT. Les élèves pensent qu'il y a un spa derrière.");
   if (n === "bell") return say("La cloche sonne à 8 h 00 pile. Il est " + clockStr() + ".");
-  if (n === "class") return say("Votre local, le " + P().local + ", est au sud. Trente-deux élèves de secondaire 4 y seront à 8 h 00, que vous soyez là ou pas.");
+  if (n === "class") return say(yourLocal()[0].toUpperCase() + yourLocal().slice(1) + " est au sud. Trente-deux élèves de secondaire 4 y seront à 8 h 00, que vous soyez là ou pas.");
   if (n === "kowalski") return say("M. Kowalski, le prof d'éduc, n'est pas là. Estimez-vous chanceux.");
   if (n === "fenouil") return say("M. Fenouil a enseigné la chimie ici pendant trente ans. Puis il a essayé de réparer la photocopieuse. Il y a une petite plaque au-dessus de l'évier.");
   if (n === "mmeD" && L) return say("Mme D n'est pas là. Elle cherche probablement son bureau.");
-  if (n === "npcB" || n === "npcC") { if (!L) return say("Vous ne voyez pas ça ici."); const ch = n === "npcB" ? B() : C(); return say(ch.desc + " (Local " + ch.local + ".) En ce moment, " + ch.name + " " + ch.doing + " " + ch.habit + (n === "npcB" && S.happy ? " Une tasse de café fume sur la table." : "")); }
+  if (n === "npcB" || n === "npcC") { if (!L) return say("Vous ne voyez pas ça ici."); const ch = n === "npcB" ? B() : C(); return say(ch.desc + (ch.local ? " (Local " + ch.local + ".)" : "") + " En ce moment, " + ch.name + " " + ch.doing + " " + (ch.habit || "") + (n === "npcB" && S.happy ? " Une tasse de café fume sur la table." : "")); }
   if (!HERE[S.room].includes(n)) return say("Vous ne voyez pas ça ici.");
   switch (n) {
-    case "mailbox": return say((S.got.memo && S.got.key) ? "Votre casier, étiqueté " + P().name.toUpperCase() + ", est vide. À part un trombone et vos rêves." : "Des casiers en bois, un par prof. Le vôtre est étiqueté " + P().name.toUpperCase() + ". Il y a quelque chose dedans.");
+    case "mailbox": return say((S.got.memo && (S.got.key || !needsKey())) ? "Votre casier, étiqueté " + P().name.toUpperCase() + ", est vide. À part un trombone et vos rêves." : "Des casiers en bois, un par prof. Le vôtre est étiqueté " + P().name.toUpperCase() + ". Il y a quelque chose dedans.");
     case "memo": case "key": return say("C'est dans votre casier. Prenez-le, tout simplement.");
     case "sheet": return say("Le registre des présences. Déjà signés : KOWALSKI 6 h 45, MME D 5 h 30 (elle dort ici ?), " + B().name.toUpperCase() + " 7 h 38, " + C().name.toUpperCase() + " 7 h 39." + (S.signed ? " Et vous." : " Vous, pas encore."));
     case "board": award("board"); return say("Babillard : VENTE DE GÂTEAUX VENDREDI. PERDU : HAMSTER « GÉRARD ». Note de Mme D : « LE TAUX DE RÉUSSITE DOIT MONTER. PEU IMPORTE COMMENT. » Une affiche du syndicat : « ASSEMBLÉE GÉNÉRALE JEUDI - chat-JP ». Et un dessin du Petit Prince, signé par les élèves de sec. 1.");
@@ -905,7 +1333,7 @@ function doLook(N) {
     case "locker": return say("Des cases d'élèves bleues, cabossées. L'une d'elles bourdonne. Personne ne veut savoir.");
     case "mmeD": return say("Mme D, la directrice. Tailleur beige, chignon serré, lunettes au bout du nez, cartable plein de tableaux de bord. Elle ne connaît le nom d'aucun prof, mais récite le taux de diplomation à deux décimales près. Elle cherche son bureau depuis 2019.");
     case "fridge": return S.fridgeOpen ? say("Dans le frigo : " + (S.got.milkTaken ? "" : "une pinte de lait, ") + "un sous-marin étiqueté KOWALSKI - PAS TOUCHE, et un plat de plastique dont le contenu a développé une conscience.") : say("Un frigidaire blanc couvert d'aimants. Sur la porte, un papier jaune : le calendrier des réunions ratées. Un micro-ondes est posé dessus.");
-    case "calendar": if (!near("calendar")) return; award("calendar"); award("debate"); if (S.debate < 2) S.debate = 2; return say(CALENDAR());
+    case "calendar": if (!near("calendar")) return; if (PATH() !== "glande") return say("Le calendrier des réunions ratées de chat-JP, Guy-Homie et Crispy. Des colonnes de petits bâtons. C'est leur affaire. Vous, vous allez aux réunions. Au complet."); award("calendar"); award("debate"); if (S.debate < 2) S.debate = 2; return say(CALENDAR());
     case "lunch": return say(S.fridgeOpen ? "Un sous-marin jambon-fromage dans du papier ciré. Étiquette en majuscules rageuses : KOWALSKI - PAS TOUCHE. ÇA VEUT DIRE TOI, " + B().name.toUpperCase() + "." : "Vous ne voyez pas ça ici.");
     case "tupperware": return say(S.fridgeOpen ? "Ça bouge. Un peu. Refermez le frigo." : "Vous ne voyez pas ça ici.");
     case "milk": return say(S.fridgeOpen && !S.got.milkTaken ? "Une pinte de lait. " + inv.milk : "Vous ne voyez pas ça ici.");
@@ -916,7 +1344,7 @@ function doLook(N) {
     }
     case "filter": case "grounds": return say(S.cabinetOpen ? "C'est dans l'armoire au-dessus du comptoir." : "Vous ne voyez pas ça ici.");
     case "cabinet": return say(S.cabinetOpen ? "Dans l'armoire :" + (S.got.filter ? "" : " des filtres à café,") + (S.got.grounds ? "" : " un paquet de café moulu,") + " et un sachet de sucre de 1994." : "Des armoires en bois au-dessus du comptoir. Pas barrées.");
-    case "supply": return say(S.supplyUnlocked ? "L'armoire est ouverte. " + (S.got.paper ? "Brocheuses, toner, et des craies que personne n'a touchées depuis 1991." : "Il y a une ramette de papier neuve sur la tablette du haut.") : "Une grande armoire de métal gris. Barrée. Mme D garde le bon papier sous clé, comme les joyaux de la Couronne.");
+    case "supply": if (PATH() === "marc") return say(S.supplyUnlocked ? (has("game") ? "L'armoire est ouverte. Brocheuses, toner. Votre jeu n'y est plus : il est dans vos bras." : "L'armoire est ouverte. Sur la tablette du haut : Les Colons de Catane. Votre précieux.") : "Une grande armoire de métal gris. Barrée. Votre jeu est là-dedans, prisonnier de Mme D."); return say(S.supplyUnlocked ? "L'armoire est ouverte. " + (S.got.paper ? "Brocheuses, toner, et des craies que personne n'a touchées depuis 1991." : "Il y a une ramette de papier neuve sur la tablette du haut.") : "Une grande armoire de métal gris. Barrée. Mme D garde le bon papier sous clé, comme les joyaux de la Couronne.");
     case "paper": return say(S.supplyUnlocked && !S.got.paper ? "Une ramette de papier dans l'armoire." : S.copier.paper ? "Le bac de la photocopieuse est plein." : "Vous ne voyez pas de papier ici.");
     case "copier": case "jam": return say("Une photocopieuse beige de la taille d'une petite auto. Autocollant : NE PAS DONNER DE COUPS DE PIED. Son écran " + (copierDisplay() === "noir" ? "est noir. Elle est débranchée." : "affiche : " + copierDisplay() + ".") + (S.copier.jam ? " Une feuille froissée est coincée tout au fond, juste à côté d'une étiquette : DANGER - HAUTE TENSION." : ""));
     case "cord": return say(S.copier.plugged ? "Le fil de la photocopieuse court jusqu'à une prise dans le mur." : "Le fil de la photocopieuse traîne à terre, débranché.");
@@ -925,7 +1353,9 @@ function doLook(N) {
     case "water": return say("L'évier a l'eau courante. En général.");
     case "donut": return say(S.donut ? "La dernière chocolatine, dans une boîte rose. " + B().name + " la surveille. Et vous surveille." : "La boîte est vide. Il ne reste que des miettes et des souvenirs.");
     case "table": return say("Une table branlante. D'un côté, " + B().name + ". De l'autre, " + C().name + ". Au milieu, une boîte de viennoiseries et des années de désengagement.");
-    case "couch": return say("Un divan écossais brun. Personne ne s'y assoit : Mme D a dit que ça « paraissait mal » sur les photos du rapport annuel.");
+    case "couch":
+      if (PATH() === "marc" && !S.got.die2) { if (!near("couch")) return; S.got.die2 = 1; S.dice++; give("dez"); S.score += POINTS.die2; play(SFX.points); return say("Vous fouillez entre les coussins du divan : 3 crayons, 1 $ 35 en monnaie, une carte de bingo de 1996... et UN DÉ ! Mme D l'avait « rangé » là. Dés : " + S.dice + "/2."); }
+      return say("Un divan écossais brun. Personne ne s'y assoit : Mme D a dit que ça « paraissait mal » sur les photos du rapport annuel.");
     case "chair": return say("Des chaises de plastique. " + B().name + " et " + C().name + " en occupent une chacun. Plus une autre pour les pieds.");
     case "poster": return say("Une affiche du Petit Prince : « On ne voit bien qu'avec le coeur. L'essentiel est invisible pour les yeux. » Mme D a ajouté au feutre : « SAUF LES STATISTIQUES. »");
     case "window": return say("Il n'y a pas de fenêtre dans la salle des profs. Il n'y en a jamais.");
@@ -937,11 +1367,14 @@ function act(v, N, num, move) {
   const L = S.room === "lounge";
   const n0 = N[0], hasN = (...a) => a.some((x) => N.includes(x));
   const me = P().id;
+  if (pathAct(v, N, num)) return;
+  if ((v === "debate" || v === "play" || (["talk", "ask"].includes(v) && hasN("meeting"))) && PATH() !== "glande") return say("Le débat sur la réunion, c'est entre chat-JP, Guy-Homie et Crispy. Vous, vous allez à la réunion. Au complet. Comme une personne responsable. Ou presque.");
   switch (v) {
     case "look": return doLook(N);
     case "inventory": return showInv();
-    case "score": return say("Votre score est de " + S.score + " sur " + MAX + ".");
-    case "help": return say("Flèches pour marcher (rappuyez pour arrêter). Puis tapez ce que vous voulez faire :\n\nREGARDER   LIRE NOTE\nPRENDRE COURRIER\nPARLER À MME D\nDEMANDER LE CODE\nPARLER DE LA RÉUNION\nDONNER CAFÉ   PAPIER\nREGARDER CAMÉRA\n\nIl faut être près des choses. F3 répète la dernière commande.");
+    case "score": return say("Votre score est de " + S.score + " sur " + maxScore() + ".");
+    case "help": return say(helpText());
+    case "help_old": return say("Flèches pour marcher (rappuyez pour arrêter). Puis tapez ce que vous voulez faire :\n\nREGARDER   LIRE NOTE\nPRENDRE COURRIER\nPARLER À MME D\nDEMANDER LE CODE\nPARLER DE LA RÉUNION\nDONNER CAFÉ   PAPIER\nREGARDER CAMÉRA\n\nIl faut être près des choses. F3 répète la dernière commande.");
     case "save": return saveGame();
     case "restore": return restoreGame();
     case "restart": return confirmRestart();
@@ -984,7 +1417,7 @@ function act(v, N, num, move) {
     case "smell": return say(hasN("milk") ? "Ça sent... bon ? Sûrement assez bon pour un café. Sûrement pas pour le boire tel quel." : hasN("microwave") ? "Poisson. 2009. Inimitable." : L ? "Café brûlé, vieux poisson et désengagement." : "Cire à plancher et aiguisoir.");
     case "drop": return say("Vous êtes mieux de le garder.");
     case "read":
-      if (hasN("memo")) { if (has("memo")) { award("readmemo"); return say(MEMO); } break; }
+      if (hasN("memo")) { if (has("memo")) { award("readmemo"); return say(memo()); } break; }
       if (N.length && !hasN("sheet")) return doLook(N);
       break;
   }
@@ -1031,9 +1464,12 @@ function talk(n) {
   if (n === "mmeD" && !L) {
     if (!near("mmeD")) return;
     if (!S.signed) return say("Mme D lève les yeux de son cartable. « Ah. Bonjour... " + wrongName() + ". Vous n'avez pas signé. Signez. Je me fiche de ce que vous enseignez, il me faut une donnée. » Elle regarde autour d'elle. « C'est par où, mon bureau, déjà ? »");
+    if (mmeDSigned()) return say(mmeDSigned());
     if (!has("copies")) return say("« Vous avez signé à " + clockStr() + ". Je le note. Je note tout. Rappel : réunion ce midi. Présence obligatoire pour tout le département d'histoire. Je compterai les têtes. Enfin, j'essaierai. » Elle s'éloigne d'un pas, hésite, revient. « Ce n'était pas par là. »");
     return say("« Des photocopies ? Parfait. Je vais pouvoir cocher une case. J'aime cocher des cases. » C'est la chose la plus chaleureuse qu'elle ait dite depuis 2019.");
   }
+  if (L && PATH() !== "glande" && (n === "npcB" || n === "npcC")) return n === "npcB" ? talkB() : talkC();
+  if (n === "absent") return say("Cette personne n'est pas ici ce matin.");
   if (n === "npcB" && L) {
     if (!near("npcB")) return;
     if (!S.happy) return say(B().name + " ne lève pas les yeux. « Pas un mot avant mon café, " + pn + ". Quelqu'un a laissé la cafetière allumée depuis mardi. C'était peut-être moi. Peu importe. »");
@@ -1052,6 +1488,7 @@ function wake(n) {
   if (!near("npcC")) return;
   if (S.awake) return say(C().busy);
   S.awake = true; award("wake");
+  if (PATH() !== "glande") return say(C().name + " lève les yeux. " + wakeHint());
   return say(C().name + " lève les yeux, l'air d'avoir été tiré d'un rêve. « Hein ? Ah, toi. Bon, conseil gratuit : débranche la photocopieuse avant d'y toucher, pis apporte un café à " + B().name + ". Sans café, " + B().name + " donne rien. Pas même l'heure. »\n\nPuis, plus bas : « Et pour roche-papier-ciseaux... " + B().hint.slice(2) + "\n\nEt " + C().name + " replonge.");
 }
 function ask(N) {
@@ -1063,6 +1500,7 @@ function ask(N) {
   if (!near(who)) return;
   const t = N.find((n) => n !== who);
   const pn = P().name;
+  if (who !== "mmeD" && PATH() !== "glande") return askPath(who, t);
   if (who === "npcC") {
     if (!S.awake) return say(C().name + " " + C().doing + " Pas de réaction. Essayez de DÉRANGER " + C().name.toUpperCase() + ".");
     switch (t) {
@@ -1117,11 +1555,11 @@ function hallAct(v, N, num) {
   const hasN = (...a) => a.some((x) => N.includes(x));
   if ((v === "take" || v === "open") && hasN("mailbox", "memo", "key", "all")) {
     if (!near("mailbox")) return;
-    if (v === "open") return say(S.got.memo && S.got.key ? "Votre casier est vide." : "Votre casier n'a pas de porte. Dedans : " + [S.got.memo ? "" : "une note", S.got.key ? "" : "une petite clé en laiton"].filter(Boolean).join(" et ") + ".");
+    if (v === "open") return say(S.got.memo && (S.got.key || !needsKey()) ? "Votre casier est vide." : "Votre casier n'a pas de porte. Dedans : " + [S.got.memo ? "" : "une note", S.got.key || !needsKey() ? "" : "une petite clé en laiton"].filter(Boolean).join(" et ") + ".");
     const wantMemo = hasN("memo", "mailbox", "all"), wantKey = hasN("key", "mailbox", "all");
     const got = [];
     if (wantMemo && !S.got.memo) { give("memo"); award("memo"); got.push("la note"); }
-    if (wantKey && !S.got.key) { give("key"); award("key"); got.push("la clé en laiton"); }
+    if (wantKey && !S.got.key && needsKey()) { give("key"); award("key"); got.push("la clé en laiton"); }
     if (!got.length) return say("Il n'y a plus rien dans votre casier.");
     return say("Vous prenez " + got.join(" et ") + " dans votre casier.");
   }
@@ -1139,6 +1577,7 @@ function hallAct(v, N, num) {
   }
   if (v === "open" && hasN("locker")) {
     if (!near("locker")) return;
+    if (PATH() === "marc" && !S.got.die1) { award("locker"); S.got.die1 = 1; S.dice++; give("dez"); S.score += POINTS.die1; return say("Vous ouvrez une case au hasard. Dedans : un lunch de 2019 qui respire, quatorze cellulaires confisqués... et UN DÉ de Catane ! Mme D l'avait « rangé » là. Dés : " + S.dice + "/2."); }
     if (S.got.locker) return say("Vous rouvrez la case. Le lunch de 2019 vous fait un signe de la main. Vous refermez vite.");
     award("locker");
     return say("Vous ouvrez une case au hasard. Dedans : un lunch de 2019 qui respire, quatorze cellulaires confisqués, un manuel d'histoire jamais ouvert (le vôtre ?) et une figurine de Montcalm à moitié peinte.\n\nGuy-Homie la cherche depuis trois ans. Vous refermez doucement.");
@@ -1228,6 +1667,7 @@ function loungeAct(v, N, num) {
     S.mug = "coffee"; award("pour"); return say("Vous versez une tasse fumante de café frais. Toute la salle sent meilleur. Même " + C().name + " lève le nez.");
   }
   if (v === "drink" && hasN("coffee", "pot", "mug")) {
+    if (has("mug") && (S.mug === "coffee" || S.mug === "milk") && PATH() === "sabrina") { S.mug = "empty"; award("drink"); return say("Vous buvez votre café lentement, les deux mains autour de la tasse. Pour la première fois depuis quatre mois, vos deux yeux s'ouvrent en même temps. Vous retrouvez l'usage de vos phrases complètes."); }
     if (has("mug") && (S.mug === "coffee" || S.mug === "milk")) { S.mug = "empty"; return say("Aaah. Vous buvez toute la tasse. Vous voilà d'attaque pour affronter les secondaire 4.\n\n" + B().name + " vous regarde avec une haine pure."); }
     if (!near("maker")) return;
     if (S.pot === "sludge") return die("Contre toute logique, vous buvez directement dans la verseuse. Un café qui mijote depuis mardi a la consistance de l'asphalte.\n\nVotre coeur atteint des vitesses jusqu'ici réservées aux colibris.");
@@ -1251,19 +1691,20 @@ function loungeAct(v, N, num) {
   if ((v === "take" || v === "eat") && hasN("donut")) {
     if (!S.donut) return say("Il n'y en a plus. Vous l'avez mangée. C'était merveilleux.");
     if (!near("donut")) return;
-    if (S.happy) { S.donut = false; award("donut"); return say("Vous dévorez la chocolatine en quatre bouchées. Feuilletée, beurrée, encore tiède. Pendant un instant, la vie est belle. Le caméraman a la larme à l'oeil."); }
+    if (S.happy || PATH() !== "glande") { S.donut = false; award("donut"); return say("Vous dévorez la chocolatine en quatre bouchées. Feuilletée, beurrée, encore tiède. Pendant un instant, la vie est belle. Le caméraman a la larme à l'oeil."); }
     if (!S.donutWarned) { S.donutWarned = true; return say(B().name + " vous fixe. « Touche à cette chocolatine-là, " + P().name + ", pis c'est TOI qui vas à toutes les réunions jusqu'en juin. »"); }
     return die("Vous tendez la main vers la chocolatine.\n\n" + B().name + " bouge plus vite que l'oeil humain. Vous vous retrouvez inscrit, à vie, à tous les comités de l'école : le comité des indicateurs, le comité du comité, et le comité du party de Noël.\n\nVous n'en ressortirez jamais.");
   }
   if (v === "unlock" || (v === "use" && hasN("key")) || (v === "open" && hasN("supply"))) {
     if (!near("supply")) return;
     if (S.supplyUnlocked) return say("Elle est déjà ouverte.");
-    if (!has("key")) return say((v === "open" ? "Barrée. Mme D garde le bon papier sous clé, comme les joyaux de la Couronne." : "Vous n'avez pas de clé qui fait.") + " La clé est peut-être dans votre casier, dans le corridor.");
+    if (!has("key")) return say((v === "open" ? "Barrée. Mme D garde le bon papier sous clé, comme les joyaux de la Couronne." : "Vous n'avez pas de clé qui fait.") + (needsKey() ? " La clé est peut-être dans votre casier, dans le corridor." : PATH() === "sabrina" ? " Mme D a égaré votre clé. Quelqu'un ici a peut-être du papier." : ""));
     S.supplyUnlocked = true; award("unlock");
-    return say("La clé en laiton tourne avec un clic satisfaisant. L'armoire s'ouvre : brocheuses, toner, et sur la tablette du haut, une ramette de papier neuve. Elle brille.");
+    return say("La clé en laiton tourne avec un clic satisfaisant. L'armoire s'ouvre : brocheuses, toner, et sur la tablette du haut, " + (PATH() === "marc" ? "Les Colons de Catane. Votre précieux." : "une ramette de papier neuve. Elle brille."));
   }
   if (v === "take" && hasN("paper")) {
     if (S.got.paper) return say("Vous l'avez déjà prise.");
+    if (!usesCopier() || PATH() === "sabrina") return say(PATH() === "sabrina" ? "Vous n'avez pas accès à l'armoire. Quelqu'un ici a peut-être du papier." : "Vous n'avez pas besoin de papier aujourd'hui.");
     if (!near("supply")) return;
     if (!S.supplyUnlocked) return say("Le papier est barré dans l'armoire.");
     give("paper"); award("paper"); return say("Vous prenez la ramette de papier. Elle est plus lourde que votre motivation.");
@@ -1313,7 +1754,8 @@ function loungeAct(v, N, num) {
     if (!c.paper) return say("La photocopieuse gémit : AJOUTER PAPIER - BAC 1.");
     if (!c.code) return say("L'écran affiche : ENTRER CODE D'ACCÈS.");
     give("copies"); award("copy"); play(SFX.points);
-    return say("Vous posez l'examen sur la vitre, réglez sur 32 et appuyez sur COPIE. La machine souffle, cogne, envisage de bloquer, se ravise, et crache enfin 32 copies tièdes.\n\nMaintenant, en classe !");
+    const gen = PATH() === "gen";
+    return say("Vous posez " + (gen ? "le plan de Mme D" : "l'examen") + " sur la vitre, réglez sur " + (gen ? 30 : 32) + " et appuyez sur COPIE. La machine souffle, cogne, envisage de bloquer, se ravise, et crache enfin " + (gen ? 30 : 32) + " copies tièdes.\n\n" + (gen ? "Maintenant, Mme D. Dans le corridor. Quelque part." : "Maintenant, en classe !"));
   }
   if (v === "use" && hasN("couch")) return act("sit", N, num);
   if (v === "open" && hasN("door")) return say("Marchez simplement dedans.");
@@ -1330,14 +1772,20 @@ function die(msg) {
 }
 function win() {
   award("deliver"); S.won = true; S.dir = null; play(SFX.win);
+  const pw = pathWinText();
+  if (pw) {
+    say(pw[0], { enter: () => say("(" + P().name + ", face caméra)\n\n" + pw[1] + "\n\nLe caméraman zoome. Générique.", {
+      enter: () => say("FÉLICITATIONS !\n\nParcours : " + PATHS[PATH()].name + "\nScore final : " + S.score + " sur " + maxScore() + "." + (S.score < maxScore() ? "\n\nIl reste des points à trouver. Fouillez. Regardez la caméra. Dérangez les collègues." : "\n\nScore parfait !") + "\n\nEssayez un autre personnage : chaque parcours est différent.\n\nENTRÉE pour rejouer.", { enter: () => restart(true), esc: () => restart(true) }) }) });
+    return;
+  }
   const meeting = S.debate === 3
     ? "Ce midi, " + B().name + " et " + C().name + " iront à la réunion de Mme D. Vous, vous avez une « rencontre de parents ». Avec votre lunch. Mme D compte deux têtes sur trois et ne remarque rien."
     : S.debate === 4
       ? "Ce midi, vous irez à la réunion de Mme D avec " + C().name + ". " + B().name + " a gagné le droit de la rater. Ça arrive aux meilleurs."
       : "Ce midi, faute d'avoir réglé le tour, vous allez tous les trois à la réunion de Mme D. Elle compte trois têtes sur trois. « 100 % de présence ! Ça va TELLEMENT bien paraître. » Vous auriez dû régler ça en salle des profs.";
-  say("Vous entrez au local " + P().local + " à " + clockStr() + " avec 32 copies encore tièdes de votre examen.\n\nPile à l'heure, la cloche sonne. Trente-deux élèves de secondaire 4 soupirent à l'unisson.\n\n" + meeting, {
+  say("Vous entrez " + atLocal() + " à " + clockStr() + " avec 32 copies encore tièdes de votre examen.\n\nPile à l'heure, la cloche sonne. Trente-deux élèves de secondaire 4 soupirent à l'unisson.\n\n" + meeting, {
     enter: () => say("(" + P().name + ", face caméra)\n\n« Vous savez quoi ? Aujourd'hui, j'ai travaillé. Un peu. Pis j'ai même pas eu mal. »\n\nLe caméraman zoome. Générique.", {
-      enter: () => say("FÉLICITATIONS !\n\nScore final : " + S.score + " sur " + MAX + "." + (S.score < MAX ? "\n\nIl reste des points à trouver. Fouillez. Regardez la caméra. Gagnez le droit de rater la réunion." : "\n\nScore parfait. Même Mme D n'a rien trouvé à redire. Elle ne sait juste pas à qui le dire.") + "\n\nENTRÉE pour rejouer.", { enter: () => restart(true), esc: () => restart(true) }),
+      enter: () => say("FÉLICITATIONS !\n\nScore final : " + S.score + " sur " + maxScore() + "." + (S.score < maxScore() ? "\n\nIl reste des points à trouver. Fouillez. Regardez la caméra. Gagnez le droit de rater la réunion." : "\n\nScore parfait. Même Mme D n'a rien trouvé à redire. Elle ne sait juste pas à qui le dire.") + "\n\nENTRÉE pour rejouer.", { enter: () => restart(true), esc: () => restart(true) }),
     }),
   });
 }
@@ -1356,14 +1804,10 @@ function restoreGame(quiet) {
 function restart(choose) {
   Q.length = 0; const snd = S.sound, pc = S.pc; S = newState(); S.sound = snd; S.pc = pc;
   if (choose) { S.mode = "select"; return; }
-  S.mode = "play"; buildBg(); intro();
+  S.mode = "play"; S.inv = startInv(); buildBg(); intro();
 }
 function confirmRestart() { say("ENTRÉE pour recommencer la partie.\n\nÉCHAP pour continuer celle-ci.", { enter: () => restart(true) }); }
-function intro() {
-  say("École secondaire\nAntoine-de-Saint-Exupéry.\nLundi, 7 h 40.\n\nVous êtes " + P().name + ", prof d'histoire. Vous aviez toute la fin de semaine pour préparer votre examen. Vous l'avez écrit ce matin, dans l'autobus.");
-  say("Il faut 32 photocopies avant la cloche de 8 h. La photocopieuse est dans la salle des profs, avec " + B().name + " et " + C().name + ", vos collègues d'histoire.\n\nEt Mme D, la directrice, a convoqué une réunion ce midi. Tout le monde doit y être. Mais entre vous trois, c'est la tradition : à tour de rôle, un seul s'absente. Un absent, ça passe. Deux, ça paraît. C'est le tour de qui ? Personne ne s'entend.");
-  say("Flèches pour marcher. Tapez des ordres comme REGARDER, PRENDRE COURRIER ou PARLER À MME D, puis ENTRÉE.\n\nÉCHAP : menu.\nTAB : inventaire.\n\nAh, et une équipe de documentaire filme l'école.");
-}
+function intro() { pathIntro(); }
 
 // ---------- inventaire et menu ----------
 let overlay = null;
@@ -1377,7 +1821,7 @@ function drawInv() {
   center("Une touche pour revenir au jeu", 184, 0);
 }
 const MENUS = [
-  { t: "Info", items: [["À propos", () => say("PROF QUEST\nTrois profs d'histoire. Une photocopieuse. Une réunion. Et Mme D.\n\nUn hommage de fan aux aventures Sierra AGI de 1987.\n\nAucune photocopieuse n'a été maltraitée. Plusieurs profs, oui.")], ["Aide", () => act("help", [])]] },
+  { t: "Info", items: [["À propos", () => say("PROF QUEST\nNeuf profs. Cinq parcours. Une photocopieuse. Et Mme D.\n\nUn hommage de fan aux aventures Sierra AGI de 1987.\n\nAucune photocopieuse n'a été maltraitée. Plusieurs profs, oui.")], ["Aide", () => act("help", [])]] },
   { t: "Fichier", items: [["Sauver       <F5>", saveGame], ["Restaurer    <F7>", () => restoreGame()], ["Recommencer  <F9>", confirmRestart], ["Quitter", () => act("quit", [])]] },
   { t: "Action", items: [["Regarder", () => doLook([])], ["Inventaire  <Tab>", showInv], ["Score", () => act("score", [])], ["Heure", () => say("Votre montre indique " + clockStr() + ". La cloche sonne à 8 h.")], ["Face caméra", camera]] },
   { t: "Spécial", items: [["Son oui/non  <F2>", () => { S.sound = !S.sound; }]] },
@@ -1404,7 +1848,7 @@ function drawTitle() {
   text(c2, (SW - c2.length * 32) / 2 + 3, 46, 4, -1, 4, 3); text(c2, (SW - c2.length * 32) / 2, 44, 14, -1, 4, 3);
   center("École secondaire", 74, 11);
   center("Antoine-de-Saint-Exupéry", 83, 11);
-  center("3 glandeurs. 1 réunion. Qui la rate ?", 96, 12);
+  center("9 profs. 1 école. Mme D.", 96, 12);
   const M = (x, y, w, h, c) => srect(140 + x * 2, 106 + y, w * 2, h, c);
   M(4, 10, 14, 24, 12); M(5, 11, 12, 1, 4); M(18, 15, 4, 2, 12); M(20, 17, 2, 10, 12); M(18, 27, 4, 2, 12); M(4, 34, 14, 2, 4);
   M(6, 18, 10, 2, 15); M(6, 22, 8, 1, 15);
@@ -1414,23 +1858,22 @@ function drawTitle() {
   if ((tick >> 3) % 2) center("Appuyez sur ENTRÉE", 158, 15);
   center("Une production du syndicat local", 176, 7);
 }
-const SEL_X = [13, 40, 67];
+const SEL_X = CHARS.map((c, i) => Math.round(9 + i * (142 / (CHARS.length - 1))));
 function drawSelect() {
   scr.fill(0);
-  srect(0, 24, SW, 64, 3);
-  srect(0, 0, SW, 8, 15); center("Choisissez votre glandeur", 0, 0);
+  srect(0, 20, SW, 70, 3);
+  srect(0, 0, SW, 8, 15); center("Choisissez votre prof", 0, 0);
   pic.fill(255);
   CHARS.forEach((ch, i) => drawPerson(SEL_X[i], 60, "down", i === S.pc ? (tick >> 2) : 0, ch.c));
-  for (let py = 30; py < 62; py++) for (let px = 0; px < 80; px++) { const c = pic[py * PW + px]; if (c !== 255) srect(px * 4, 24 + (py - 30) * 2, 4, 2, c); }
-  CHARS.forEach((ch, i) => {
-    const cxp = SEL_X[i] * 4 + 2, sel = i === S.pc;
-    if (sel) { srect(cxp - 44, 20, 88, 1, 14); srect(cxp - 44, 100, 88, 1, 14); srect(cxp - 44, 20, 2, 81, 14); srect(cxp + 42, 20, 2, 81, 14); }
-    text(ch.name, cxp - ch.name.length * 4, 106, sel ? 14 : 7);
-    text(ch.local, cxp - ch.local.length * 4, 115, sel ? 11 : 8);
-  });
-  const lines = wrap(CHARS[S.pc].pitch, 38);
-  lines.forEach((l, i) => text(l, 8, 128 + i * 9, 15));
-  if ((tick >> 3) % 2) center("<  >  puis ENTRÉE", 186, 11);
+  for (let py = 29; py < 62; py++) for (let px = 0; px < PW; px++) { const c = pic[py * PW + px]; if (c !== 255) srect(px * 2, 22 + (py - 29) * 2, 2, 2, c); }
+  const ch = CHARS[S.pc], cxp = SEL_X[S.pc] * 2;
+  srect(cxp - 16, 18, 32, 1, 14); srect(cxp - 16, 90, 32, 1, 14); srect(cxp - 16, 18, 2, 73, 14); srect(cxp + 14, 18, 2, 73, 14);
+  center(ch.name, 95, 14);
+  const pth = PATHS[ch.path];
+  center("Parcours : " + pth.name + (pth.shared ? " (partagé)" : ""), 105, 11);
+  if (ch.local) center("Local " + ch.local, 114, 7);
+  wrap(ch.pitch, 38).forEach((l, i) => text(l, 8, 126 + i * 9, 15));
+  if ((tick >> 3) % 2) center("<  >  puis ENTRÉE", 188, 11);
 }
 // ---------- boucle principale ----------
 let tick = 0, cursorOn = true;
@@ -1440,14 +1883,15 @@ function update() {
   tick++;
   if (S.mode !== "play" || Q.length || overlay || menu || S.dead || S.won) return;
   S.t += 0.1;
+  if (PATH() === "sabrina" && S.phone === 0 && S.t >= 300) { S.phone = 1; play(SFX.beep); say("Votre cellulaire vibre. C'est la garderie !\n\n(Tapez RÉPONDRE.)"); }
   if (S.pot === "brewing" && S.t >= S.brewEnd) { S.pot = "coffee"; play(SFX.beep); say("La cafetière lâche un dernier gargouillis triomphant. Le café est prêt. " + (S.room === "lounge" ? B().name + " renifle l'air comme un chien de chasse." : "")); }
   const pa = (k, at, msg) => { if (S.t >= at && !S.warned[k]) { S.warned[k] = 1; play(SFX.pa); say(msg); } };
   pa("10", 600, "*DING DONG* « Bonjour, ici Mme D, votre... directrice. Rappel : réunion ce midi, local... euh... je vous redis ça. Présence obligatoire. Je compterai les têtes. Merci de votre performance. »");
   pa("5", 900, "*DING DONG* « Cinq minutes avant la cloche. Aussi : si quelqu'un trouve mon bureau, merci de me le signaler. »");
-  pa("1", 1140, "*DING DONG* « UNE minute. » Quelque part, trente-deux élèves de secondaire 4 sont déjà au local " + P().local + ". Sans surveillance. Ça sent le brûlé.");
+  pa("1", 1140, "*DING DONG* « UNE minute. » Quelque part, trente-deux élèves de secondaire 4 sont déjà " + atLocal().replace("dans votre", "dans leur") + ". Sans surveillance. Ça sent le brûlé.");
   if (S.t >= BELL && !Q.length) {
     play(SFX.bell);
-    return die("DRIIIIIIIIING !\n\nLa cloche de 8 h sonne. Trente-deux élèves de secondaire 4 attendent au local " + P().local + ", sans prof et sans examen.\n\nQuand vous arrivez, ils ont formé un gouvernement provisoire. Mme D trouve que ça paraît bien dans le rapport : « initiative étudiante ». Vous, vous êtes dans le rapport aussi.");
+    return die("DRIIIIIIIIING !\n\nLa cloche de 8 h sonne. Trente-deux élèves de secondaire 4 attendent " + atLocal() + ", sans prof et sans examen.\n\nQuand vous arrivez, ils ont formé un gouvernement provisoire. Mme D trouve que ça paraît bien dans le rapport : « initiative étudiante ». Vous, vous êtes dans le rapport aussi.");
   }
   let dx = 0, dy = 0;
   if (S.target) {
@@ -1481,7 +1925,7 @@ function render() {
   layers.sort((a, b) => a.base - b.base).forEach((l) => l.draw());
   for (let y = 0; y < PH; y++) { const so = (y + PIC_Y) * SW, po = y * PW; for (let x = 0; x < PW; x++) { const c = pic[po + x]; scr[so + x * 2] = c; scr[so + x * 2 + 1] = c; } }
   srect(0, 0, SW, 8, 15);
-  text(" Score:" + S.score + " sur " + MAX, 0, 0, 0);
+  text(" Score:" + S.score + " sur " + maxScore(), 0, 0, 0);
   text("Son:" + (S.sound ? "oui" : "non"), 32 * 8, 0, 0);
   if (!S.dead && !S.won) { const ln = ">" + (kbd.value || "").slice(-38); text(ln, 0, 176, 15); if (cursorOn && !Q.length && !menu) text("_", ln.length * 8, 176, 15); }
   if (menu) drawMenu();
@@ -1509,15 +1953,15 @@ function submit() {
   if (p.err) return say(p.err);
   act(p.v, p.N, p.num, p.move);
 }
-function startGame() { play(SFX.door); S.mode = "play"; buildBg(); intro(); }
+function startGame() { play(SFX.door); S.mode = "play"; S.inv = startInv(); buildBg(); intro(); }
 function key(k) {
   if (S.mode === "title") {
     if (k === "Enter" || k === " ") { audio(); play(SFX.theme); S.mode = "select"; }
     return true;
   }
   if (S.mode === "select") {
-    if (k === "ArrowLeft") { S.pc = (S.pc + 2) % 3; play(SFX.select); }
-    else if (k === "ArrowRight") { S.pc = (S.pc + 1) % 3; play(SFX.select); }
+    if (k === "ArrowLeft") { S.pc = (S.pc + CHARS.length - 1) % CHARS.length; play(SFX.select); }
+    else if (k === "ArrowRight") { S.pc = (S.pc + 1) % CHARS.length; play(SFX.select); }
     else if (k === "Enter" || k === " ") startGame();
     return true;
   }
@@ -1565,7 +2009,7 @@ cv.addEventListener("pointerdown", (e) => {
   e.preventDefault(); audio();
   const r = cv.getBoundingClientRect();
   const sx = Math.floor((e.clientX - r.left) / r.width * SW), sy = Math.floor((e.clientY - r.top) / r.height * SH);
-  if (S.mode === "select") { const i = Math.max(0, Math.min(2, Math.floor(sx / (SW / 3)))); if (i === S.pc) startGame(); else { S.pc = i; play(SFX.select); } return; }
+  if (S.mode === "select") { const i = Math.max(0, Math.min(CHARS.length - 1, Math.floor(sx / (SW / CHARS.length)))); if (i === S.pc) startGame(); else { S.pc = i; play(SFX.select); } return; }
   if (S.mode === "title" || overlay || Q.length) { key("Enter"); return; }
   if (menu) { menu = null; return; }
   if (S.dead || S.won) return;
