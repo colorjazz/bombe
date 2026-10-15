@@ -349,7 +349,7 @@ function newState() {
 S = newState();
 const P = () => CHARS[S.pc];
 const PATH = () => P().path;
-// qui est à la table : B (à gauche, le personnage clé du parcours) et C (à droite, celui qui donne des conseils)
+// les deux collègues clés du parcours : B (celui qui débloque la situation) et C (celui qui donne des conseils)
 function cast() {
   const p = P();
   switch (p.path) {
@@ -522,7 +522,7 @@ ROOMS.hall = {
   exit(nx, ny) {
     if (ny < 100 && nx >= 104 && nx <= 122) {
       if (!S.signed) { S.dir = null; S.blocked = true; say("« Euh... " + wrongName() + " ? Non. Vous, là. » Mme D vous pointe avec son cartable. « Le registre. On signe AVANT d'aller se vautrer dans la salle des profs. Je me fiche de ce que vous enseignez, il me faut une donnée. »"); return true; }
-      goRoom("lounge", 17, 102, "down"); return true;
+      goRoom("lounge", 4, 130, "right"); return true;
     }
     if (nx < 1) {
       S.dir = null; S.x = 3;
@@ -550,92 +550,158 @@ ROOMS.hall = {
   look() { return "Le corridor de l'école secondaire Antoine-de-Saint-Exupéry sent la cire et le découragement. Des cases d'élèves bleues, un babillard, le registre des présences, les casiers des profs et la porte de la salle des profs. Mme D, la directrice, monte la garde. Elle cherche peut-être son bureau. Une équipe de documentaire filme tout. " + yourLocal()[0].toUpperCase() + yourLocal().slice(1) + " est au sud."; },
 };
 
-const SEAT_B = 58, SEAT_C = 94;
+// ---------- salle des profs : cuisine au fond, tables au milieu, canapés devant (plan de l'école) ----------
 ROOMS.lounge = {
-  obstacles: [[41, 114, 109, 143], [114, 104, 156, 137], [1, 146, 45, 166]],
+  obstacles: [[18, 106, 102, 127], [54, 132, 84, 147], [2, 148, 46, 167], [94, 150, 136, 167], [142, 108, 159, 127]],
   spots: {
-    fridge: [32, 100, 54, 104, 8], microwave: [32, 100, 54, 104, 8], calendar: [32, 100, 54, 104, 10], maker: [58, 100, 80, 104, 6], pot: [58, 100, 80, 104, 6],
-    sink: [80, 100, 104, 104, 6], rack: [104, 100, 128, 104, 6], cabinet: [58, 100, 106, 104, 8], supply: [134, 100, 156, 104, 6],
-    copier: [114, 104, 156, 137, 6], cord: [114, 104, 158, 140, 8], table: [41, 114, 109, 143, 7], npcB: [41, 114, 109, 143, 9],
-    npcC: [41, 114, 109, 143, 9], donut: [41, 114, 109, 143, 7], couch: [1, 146, 45, 166, 6], door: [6, 100, 28, 104, 6],
+    fridge: [8, 100, 34, 106, 8], calendar: [8, 100, 34, 106, 10], maker: [116, 100, 146, 106, 6], pot: [116, 100, 146, 106, 6],
+    sink: [62, 100, 92, 106, 6], rack: [88, 100, 112, 106, 6], jar: [104, 100, 122, 106, 6], cabinet: [36, 100, 96, 106, 8],
+    microwave: [140, 106, 159, 128, 6], table: [18, 106, 102, 147, 7], couch: [2, 148, 46, 167, 6], couch2: [94, 150, 136, 167, 6],
+    door: [0, 116, 8, 148, 6], doorS: [146, 98, 159, 108, 8], doorB: [146, 127, 159, 167, 8],
   },
   bg() {
-    rect(0, 0, 160, 9, 8); rect(56, 3, 48, 3, 15); rect(0, 9, 160, 1, 0);
+    rect(0, 0, 160, 9, 8); rect(30, 3, 40, 3, 15); rect(96, 3, 40, 3, 15); rect(0, 9, 160, 1, 0);
     rect(0, 10, 160, 87, 2);
     rect(0, 95, 160, 4, 0);
     rect(0, 99, 160, 69, 6);
     for (let y = 99; y < 168; y++) for (let x = 0; x < 160; x++) if (((x * 7 + y * 13) ^ (x * y)) % 29 === 0) pset(x, y, 4);
-    rect(6, 38, 22, 58, 0); rect(8, 40, 18, 56, 6); rect(12, 44, 7, 12, 11); line(13, 54, 17, 46, 15); rect(23, 68, 2, 2, 14);
-    ellipse(17, 23, 5, 6, 15); pset(17, 18, 0); pset(17, 28, 0); pset(12, 23, 0); pset(22, 23, 0);
-    line(17, 23, 17, 19, 0); line(17, 23, 20, 23, 0);
-    rect(34, 30, 19, 66, 15); frame(34, 30, 19, 66, 8); rect(34, 48, 19, 1, 8);
-    rect(49, 36, 1, 8, 7); rect(49, 52, 1, 16, 7);
-    pset(38, 56, 12); pset(41, 60, 9); pset(39, 64, 10);
-    // le calendrier des réunions ratées, collé sur la porte du frigo
-    rect(36, 66, 9, 11, 14); rect(37, 68, 7, 1, 4); for (let i = 0; i < 3; i++) { rect(37, 70 + i * 2, 1 + i, 1, 0); }
-    rect(35, 20, 17, 10, 8); rect(37, 22, 10, 6, 0); rect(48, 22, 2, 1, 10); rect(48, 25, 2, 1, 7);
-    rect(60, 16, 46, 26, 6); frame(60, 16, 46, 26, 0); rect(75, 16, 1, 26, 0); rect(90, 16, 1, 26, 0);
-    pset(73, 30, 14); pset(77, 30, 14); pset(88, 30, 14); pset(92, 30, 14);
-    // affiche du Petit Prince, retouchée par la direction
-    rect(110, 16, 18, 24, 1); frame(110, 16, 18, 24, 15);
-    ellipse(119, 32, 5, 3, 6); rect(118, 24, 3, 6, 2); rect(118, 22, 3, 2, 14); pset(116, 20, 14); pset(123, 19, 15); pset(113, 22, 15);
-    rect(112, 37, 14, 1, 12);
-    rect(58, 79, 76, 17, 6); frame(58, 79, 76, 17, 0);
-    for (let i = 70; i < 134; i += 12) rect(i, 79, 1, 17, 0);
-    for (let i = 64; i < 134; i += 12) pset(i, 84, 14);
-    rect(56, 75, 80, 4, 7); rect(56, 75, 80, 1, 15);
-    rect(82, 75, 20, 2, 8); line(92, 67, 92, 74, 7); rect(92, 67, 4, 1, 7); pset(95, 68, 7);
-    rect(106, 73, 20, 2, 7); for (let i = 106; i < 126; i += 3) pset(i, 72, 7);
-    rect(62, 56, 13, 4, 0); rect(70, 56, 5, 19, 0); rect(62, 73, 13, 2, 0);
-    rect(136, 24, 19, 72, 8); frame(136, 24, 19, 72, 0); rect(145, 24, 1, 72, 0);
-    pset(143, 58, 14); pset(147, 58, 14); rect(145, 54, 1, 2, 7);
-    rect(137, 28, 7, 1, 7); rect(147, 28, 7, 1, 7);
-    rect(155, 86, 3, 4, 15); pset(156, 87, 0); pset(156, 88, 0);
+    // frigo (avec le calendrier des réunions ratées)
+    rect(12, 30, 19, 66, 15); frame(12, 30, 19, 66, 8); rect(12, 48, 19, 1, 8);
+    rect(27, 36, 1, 8, 7); rect(27, 52, 1, 16, 7);
+    pset(16, 56, 12); pset(19, 60, 9); pset(17, 64, 10);
+    rect(14, 66, 9, 11, 14); rect(15, 68, 7, 1, 4); for (let i = 0; i < 3; i++) rect(15, 70 + i * 2, 1 + i, 1, 0);
+    // horloge
+    ellipse(21, 20, 5, 6, 15); pset(21, 15, 0); pset(21, 25, 0); line(21, 20, 21, 16, 0); line(21, 20, 24, 20, 0);
+    // armoires du haut, affiche du Petit Prince
+    rect(36, 16, 58, 26, 6); frame(36, 16, 58, 26, 0); rect(55, 16, 1, 26, 0); rect(74, 16, 1, 26, 0);
+    pset(53, 30, 14); pset(57, 30, 14); pset(72, 30, 14); pset(76, 30, 14);
+    rect(98, 16, 18, 24, 1); frame(98, 16, 18, 24, 15);
+    ellipse(107, 32, 5, 3, 6); rect(106, 24, 3, 6, 2); rect(106, 22, 3, 2, 14); pset(104, 20, 14); pset(111, 19, 15); pset(101, 22, 15);
+    rect(100, 37, 14, 1, 12);
+    // comptoir de cuisine : évier, égouttoir, machine à café
+    rect(34, 79, 112, 17, 6); frame(34, 79, 112, 17, 0);
+    for (let i = 46; i < 146; i += 12) rect(i, 79, 1, 17, 0);
+    for (let i = 40; i < 146; i += 12) pset(i, 84, 14);
+    rect(32, 75, 116, 4, 7); rect(32, 75, 116, 1, 15);
+    rect(66, 75, 20, 2, 8); line(76, 67, 76, 74, 7); rect(76, 67, 4, 1, 7); pset(79, 68, 7);
+    rect(90, 73, 20, 2, 7); for (let i = 90; i < 110; i += 3) pset(i, 72, 7);
+    rect(124, 56, 13, 4, 0); rect(132, 56, 5, 19, 0); rect(124, 73, 13, 2, 0);
+    // porte de la salle syndicale (au fond à droite)
+    rect(148, 36, 12, 61, 0); rect(150, 38, 10, 59, 4); rect(151, 28, 9, 6, 15); rect(152, 30, 7, 1, 4); rect(151, 66, 2, 2, 14);
+    // cadres de porte : corridor (avant gauche) et salle des bureaux (avant droite)
+    rect(0, 112, 3, 56, 0); rect(3, 112, 1, 56, 8);
+    rect(157, 128, 3, 40, 0); rect(156, 128, 1, 40, 8);
   },
   dyn() {
     const potCol = { sludge: 0, empty: 8, water: 11, brewing: 6, coffee: 6 }[S.pot];
-    rect(63, 63, 7, 10, 8); rect(64, 66, 5, 7, potCol);
-    if (S.pot === "sludge") rect(64, 70, 5, 3, 6);
-    if (S.pot === "brewing" && (tick >> 2) % 2) { pset(66, 61, 15); pset(67, 59, 15); }
-    pset(72, 70, S.pot === "brewing" || S.pot === "coffee" ? 12 : 4);
-    if (!S.got.mug) { rect(108, 69, 4, 4, 12); pset(112, 70, 12); }
-    rect(114, 69, 4, 4, 14); pset(118, 70, 14);
-    rect(120, 69, 4, 4, 9); pset(124, 70, 9);
-    if (PATH() === "cafe") { rect(99, 70, 5, 5, 11); rect(99, 69, 5, 1, 7); if (S.fund) { pset(100, 73, 14); pset(102, 72, 10); pset(101, 74, 14); } }
+    rect(125, 63, 7, 10, 8); rect(126, 66, 5, 7, potCol);
+    if (S.pot === "sludge") rect(126, 70, 5, 3, 6);
+    if (S.pot === "brewing" && (tick >> 2) % 2) { pset(128, 61, 15); pset(129, 59, 15); }
+    pset(134, 70, S.pot === "brewing" || S.pot === "coffee" ? 12 : 4);
+    if (!S.got.mug) { rect(92, 69, 4, 4, 12); pset(96, 70, 12); }
+    rect(98, 69, 4, 4, 14); pset(102, 70, 14);
+    if (PATH() === "cafe") { rect(112, 70, 5, 5, 11); rect(112, 69, 5, 1, 7); if (S.fund) { pset(113, 73, 14); pset(115, 72, 10); pset(114, 74, 14); } }
     if (S.cabinetOpen) {
-      rect(61, 17, 14, 24, 0); rect(61, 29, 14, 1, 6);
-      if (!S.got.filter) rect(63, 24, 6, 5, 15);
-      if (!S.got.grounds) { rect(67, 34, 5, 6, 4); rect(67, 34, 5, 1, 7); }
-      rect(56, 17, 4, 24, 6);
+      rect(37, 17, 18, 24, 0); rect(37, 29, 18, 1, 6);
+      if (!S.got.filter) rect(39, 24, 6, 5, 15);
+      if (!S.got.grounds) { rect(46, 34, 5, 6, 4); rect(46, 34, 5, 1, 7); }
+      rect(32, 17, 4, 24, 6);
     }
     if (S.fridgeOpen) {
-      rect(35, 49, 17, 46, 7); rect(36, 50, 15, 44, 15);
-      rect(36, 62, 15, 1, 7); rect(36, 76, 15, 1, 7);
-      if (!S.got.milkTaken) { rect(38, 55, 4, 7, 15); frame(38, 55, 4, 7, 9); }
-      rect(43, 58, 7, 4, 14);
-      rect(38, 70, 8, 5, 2);
-      rect(27, 49, 7, 46, 15); frame(27, 49, 7, 46, 8); rect(28, 66, 5, 8, 14);
-    }
-    if (S.supplyUnlocked) {
-      rect(137, 25, 17, 70, 0);
-      for (const sy of [40, 58, 76]) rect(137, sy, 17, 1, 7);
-      if (PATH() === "marc") { if (!has("game")) { rect(139, 33, 13, 7, 14); rect(140, 35, 3, 2, 4); rect(144, 35, 3, 2, 2); rect(148, 35, 3, 2, 9); } }
-      else if (!S.got.paper) { rect(139, 35, 13, 5, 15); rect(139, 37, 13, 1, 9); }
-      rect(140, 53, 6, 5, 14); rect(139, 71, 9, 5, 4);
+      rect(13, 49, 17, 46, 7); rect(14, 50, 15, 44, 15);
+      rect(14, 62, 15, 1, 7); rect(14, 76, 15, 1, 7);
+      if (!S.got.milkTaken) { rect(16, 55, 4, 7, 15); frame(16, 55, 4, 7, 9); }
+      rect(21, 58, 7, 4, 14); rect(16, 70, 8, 5, 2);
+      rect(5, 49, 7, 46, 15); frame(5, 49, 7, 46, 8); rect(6, 66, 5, 8, 14);
     }
   },
   layers() {
     return [
-      { base: 143, draw() {
-        drawSeated(SEAT_B, 103, B(), 1);
-        drawSeated(SEAT_C, 103, C(), -1);
-        rect(46, 124, 58, 5, 6); rect(46, 124, 58, 1, 14); rect(46, 129, 58, 1, 0);
-        rect(48, 130, 2, 12, 0); rect(100, 130, 2, 12, 0); rect(60, 130, 1, 9, 8); rect(90, 130, 1, 9, 8);
-        // seconde passe des accessoires (ils reposent sur la table)
-        drawProps(SEAT_B, B(), 1); drawProps(SEAT_C, C(), -1);
-        rect(70, 120, 11, 3, 13); rect(70, 117, 11, 3, 15); frame(70, 117, 11, 3, 13);
-        if (S.donut) { rect(74, 120, 4, 2, 6); pset(75, 120, 14); }
-        if (S.happy) { rect(SEAT_B - 1, 120, 3, 3, 12); pset(SEAT_B + 2, 121, 12); if ((tick >> 3) % 2) pset(SEAT_B, 118, 15); else pset(SEAT_B + 1, 117, 15); }
+      { base: 127, draw() {
+        // la grande table et ses chaises
+        rect(22, 104, 2, 8, 0); rect(60, 104, 2, 8, 0); rect(96, 104, 2, 8, 0);
+        rect(20, 112, 82, 5, 6); rect(20, 112, 82, 1, 14); rect(20, 117, 82, 1, 0);
+        rect(22, 118, 2, 9, 0); rect(98, 118, 2, 9, 0); rect(40, 118, 1, 7, 8); rect(80, 118, 1, 7, 8);
+      } },
+      { base: 128, draw() {
+        // micro-ondes sur son chariot
+        rect(144, 110, 14, 2, 7); rect(145, 112, 1, 15, 8); rect(156, 112, 1, 15, 8); rect(144, 120, 14, 1, 7);
+        rect(144, 101, 14, 9, 8); rect(146, 103, 8, 5, 0); rect(155, 103, 2, 1, 10);
+      } },
+      { base: 147, draw() {
+        rect(56, 136, 28, 4, 6); rect(56, 136, 28, 1, 14); rect(58, 140, 2, 7, 0); rect(80, 140, 2, 7, 0);
+        rect(64, 133, 4, 3, 15); rect(70, 134, 3, 2, 12);
+      } },
+      { base: 167, draw() {
+        // les canapés (arrondis) près de la porte du corridor
+        rect(6, 150, 38, 10, 4); rect(6, 150, 38, 1, 12); pset(6, 150, 6); pset(43, 150, 6);
+        rect(6, 160, 38, 6, 5); rect(6, 160, 38, 1, 13); rect(3, 154, 4, 12, 4); rect(43, 154, 4, 12, 4);
+        rect(18, 162, 5, 2, 6);
+      } },
+      { base: 168, draw() {
+        // le canapé (droit) à l'avant droite
+        rect(96, 152, 38, 9, 4); rect(96, 152, 38, 1, 12);
+        rect(96, 161, 38, 5, 5); rect(96, 161, 38, 1, 13); rect(94, 155, 3, 11, 4); rect(133, 155, 3, 11, 4);
+      } },
+    ];
+  },
+  walk(x, y) { return y >= 100 && y <= 166 && x >= 1 && x <= 158 && !this.obstacles.some((r) => inR(x, y, r)); },
+  exit(nx, ny) {
+    if (nx < 1 && ny >= 112) { goRoom("hall", 113, 102, "down"); return true; }
+    if (nx > 158 && ny < 108) { goRoom("syndic", 4, 108, "right"); return true; }
+    if (nx > 158 && ny > 127) { goRoom("bureaux", 4, 146, "right"); return true; }
+    if (ny > 166) { S.dir = null; return true; }
+    return false;
+  },
+  look() { return "La salle des profs. Au fond, la cuisine : frigidaire, armoires, évier, machine à café, et un micro-ondes sur son chariot. Au milieu, les tables. Devant, les canapés. La porte du corridor est à gauche. À droite : la salle syndicale (au fond) et la salle des bureaux de profs (devant)."; },
+};
+
+// ---------- salle syndicale : le bordel de tables et de choses, l'écran ----------
+ROOMS.syndic = {
+  obstacles: [[48, 104, 108, 129], [114, 104, 156, 137], [8, 136, 30, 161]],
+  spots: {
+    supply: [14, 100, 42, 106, 6], copier: [114, 104, 156, 137, 6], cord: [114, 104, 158, 140, 8], screen: [100, 100, 156, 106, 16],
+    mess: [48, 104, 108, 129, 7], table: [48, 104, 108, 129, 7], door: [0, 100, 8, 132, 6],
+  },
+  bg() {
+    rect(0, 0, 160, 9, 8); rect(56, 3, 48, 3, 15); rect(0, 9, 160, 1, 0);
+    rect(0, 10, 160, 87, 7);
+    rect(0, 95, 160, 4, 0);
+    rect(0, 99, 160, 69, 8);
+    for (const yy of [104, 112, 122, 134, 148, 164]) rect(0, yy, 160, 1, 0);
+    // porte vers la salle des profs (à gauche, au fond)
+    rect(0, 36, 10, 61, 0); rect(0, 38, 8, 59, 6); rect(5, 66, 2, 2, 14);
+    // armoire grise des fournitures
+    rect(16, 24, 22, 72, 8); frame(16, 24, 22, 72, 0); rect(27, 24, 1, 72, 0);
+    pset(25, 58, 14); pset(29, 58, 14); rect(27, 54, 1, 2, 7);
+    rect(17, 28, 9, 1, 7); rect(29, 28, 8, 1, 7);
+    // affiches du syndicat
+    rect(46, 20, 20, 26, 12); frame(46, 20, 20, 26, 4); rect(53, 25, 6, 9, 15); rect(52, 34, 8, 3, 15); rect(48, 40, 16, 2, 15);
+    rect(70, 24, 24, 18, 15); frame(70, 24, 24, 18, 0); rect(72, 27, 20, 1, 4); rect(72, 30, 16, 1, 0); rect(72, 33, 18, 1, 0); rect(72, 36, 12, 1, 0);
+    // l'écran
+    rect(104, 14, 48, 44, 15); frame(104, 14, 48, 44, 8); rect(104, 14, 48, 2, 8); rect(127, 58, 2, 6, 8);
+    rect(108, 20, 40, 32, 1); rect(112, 24, 32, 3, 15); rect(112, 30, 22, 2, 14); rect(112, 36, 28, 2, 15); rect(112, 42, 18, 2, 15);
+    // prise murale
+    rect(155, 86, 3, 4, 15); pset(156, 87, 0); pset(156, 88, 0);
+  },
+  dyn() {
+    if (S.supplyUnlocked) {
+      rect(17, 25, 20, 70, 0);
+      for (const sy of [40, 58, 76]) rect(17, sy, 20, 1, 7);
+      if (PATH() === "marc") { if (!has("game")) { rect(19, 33, 15, 7, 14); rect(20, 35, 3, 2, 4); rect(25, 35, 3, 2, 2); rect(30, 35, 3, 2, 9); } }
+      else if (!S.got.paper) { rect(19, 35, 15, 5, 15); rect(19, 37, 15, 1, 9); }
+      rect(20, 53, 6, 5, 14); rect(19, 71, 10, 5, 4);
+    }
+  },
+  layers() {
+    return [
+      { base: 129, draw() {
+        // le bordel de tables et de choses
+        rect(50, 110, 56, 5, 6); rect(50, 110, 56, 1, 14); rect(52, 115, 2, 13, 0); rect(102, 115, 2, 13, 0); rect(77, 115, 2, 11, 8);
+        rect(54, 102, 10, 8, 6); rect(55, 103, 8, 1, 14); rect(66, 105, 12, 5, 15); rect(67, 104, 10, 1, 15);
+        rect(80, 98, 2, 12, 6); rect(76, 94, 12, 6, 15); rect(77, 96, 10, 1, 4);
+        rect(90, 104, 8, 6, 4); rect(99, 106, 5, 4, 14); line(56, 109, 62, 106, 9);
+        rect(58, 117, 6, 4, 6); rect(84, 118, 9, 3, 15);
       } },
       { base: 137, draw() {
         rect(118, 108, 35, 4, 8); rect(118, 108, 35, 1, 7);
@@ -648,26 +714,90 @@ ROOMS.lounge = {
         if (c.plugged) { line(151, 130, 157, 122, 0); line(157, 122, 157, 90, 0); }
         else { line(151, 130, 155, 136, 0); rect(155, 136, 2, 1, 0); }
       } },
-      { base: 166, draw() {
-        rect(4, 146, 38, 10, 4); rect(4, 146, 38, 1, 12);
-        rect(4, 156, 38, 7, 5); rect(4, 156, 38, 1, 13);
-        rect(1, 150, 4, 14, 4); rect(41, 150, 4, 14, 4);
-        rect(3, 164, 2, 3, 0); rect(41, 164, 2, 3, 0);
-        rect(17, 158, 5, 2, 6);
+      { base: 161, draw() {
+        // chaises empilées
+        for (let i = 0; i < 4; i++) { rect(10, 140 + i * 4, 18, 2, 9); }
+        rect(10, 140, 2, 20, 0); rect(26, 140, 2, 20, 0);
       } },
     ];
   },
   walk(x, y) { return y >= 100 && y <= 166 && x >= 1 && x <= 158 && !this.obstacles.some((r) => inR(x, y, r)); },
   exit(nx, ny) {
-    if (ny < 100 && nx >= 8 && nx <= 26) { goRoom("hall", 113, 102, "down"); return true; }
-    if (ny > 166) { S.dir = null; say("La seule sortie, c'est la porte du corridor. Mme D a fait condamner l'autre en 2003. Pour « optimiser les flux »."); return true; }
+    if (nx < 1) { goRoom("lounge", 152, 103, "left"); return true; }
+    if (ny > 166 || nx > 158) { S.dir = null; return true; }
     return false;
   },
-  look() { return "La salle des profs. Murs vert hôpital, tapis d'une couleur que la science n'a pas encore nommée. Frigidaire, micro-ondes, cafetière, évier, armoires, une grande armoire grise et la photocopieuse. À la table, " + B().name + " " + B().doing + " En face, " + C().name + " " + C().doing; },
+  look() { return "La salle syndicale. Un bordel de tables et de choses : boîtes, pancartes, mégaphone, une pile de chaises. Au mur, des affiches du syndicat et un grand écran. Dans le coin, la grande armoire grise des fournitures. Et, on ne sait pas trop pourquoi, la photocopieuse."; },
 };
-// les accessoires sont dessinés après le dessus de table pour rester visibles
-function drawProps(px, ch, d) {
-  const c = ch.c, tb = 121;
+
+// ---------- salle des bureaux de profs : trois rangées, chacun à sa place ----------
+const ROWS = { A: { top: 106, T: 88, box: [96, 113] }, B: { top: 134, T: 116, box: [124, 141] }, C: { top: 158, T: 140, box: [150, 165] } };
+const DESKS = [
+  { id: "sabrina", row: "A", x: 22, d: 1 }, { id: "guy", row: "A", x: 96, d: -1 }, { id: "marc", row: "A", x: 116, d: 1 }, { id: "gen", row: "A", x: 142, d: -1 },
+  { id: "vieux", row: "B", x: 24, d: 1 }, { id: "jp", row: "B", x: 96, d: -1 }, { id: "crispy", row: "B", x: 118, d: 1 }, { id: "sophie", row: "B", x: 142, d: -1 },
+  { id: "melanie", row: "C", x: 106, d: -1 },
+];
+ROOMS.bureaux = {
+  obstacles: [[12, 96, 152, 113], [12, 124, 152, 141], [82, 150, 132, 165]],
+  get spots() {
+    const sp = { door: [0, 100, 8, 166, 6], table: [12, 96, 152, 141, 8], donut: [44, 96, 70, 113, 8] };
+    for (const k of DESKS) { const r = ROWS[k.row]; sp["c_" + k.id] = [k.x - 5, r.box[0], k.x + 5, r.box[1], 8]; }
+    return sp;
+  },
+  bg() {
+    rect(0, 0, 160, 9, 8); rect(20, 3, 40, 3, 15); rect(100, 3, 40, 3, 15); rect(0, 9, 160, 1, 0);
+    rect(0, 10, 160, 87, 11);
+    rect(0, 95, 160, 4, 0);
+    rect(0, 99, 160, 69, 8);
+    for (let y = 99; y < 168; y++) for (let x = 0; x < 160; x++) if (((x * 5 + y * 11) ^ (x * y)) % 31 === 0) pset(x, y, 7);
+    // tableau blanc « À FAIRE », étagères, babillard
+    rect(14, 20, 40, 26, 15); frame(14, 20, 40, 26, 8); rect(17, 23, 14, 2, 4); for (let i = 0; i < 4; i++) rect(17, 28 + i * 4, 10 + (i * 7) % 20, 1, 1);
+    rect(60, 30, 36, 3, 6); rect(60, 50, 36, 3, 6);
+    for (let i = 0; i < 9; i++) rect(62 + i * 4, 22, 3, 8, [4, 1, 2, 14, 5, 4, 9, 6, 12][i]);
+    for (let i = 0; i < 7; i++) rect(62 + i * 5, 41, 4, 9, [9, 6, 12, 2, 1, 14, 4][i]);
+    rect(104, 20, 40, 28, 6); frame(104, 20, 40, 28, 0);
+    rect(107, 23, 8, 9, 15); rect(118, 24, 9, 7, 14); rect(130, 23, 10, 10, 15); rect(109, 36, 12, 8, 10); rect(125, 37, 14, 7, 12);
+    // cadre de porte vers la salle des profs (à gauche)
+    rect(0, 98, 3, 70, 0); rect(3, 98, 1, 70, 7);
+  },
+  dyn() {},
+  layers() {
+    const rowLayer = (key) => ({ base: ROWS[key].box[1], draw() {
+      const r = ROWS[key], tb = r.top - 1;
+      const xs = key === "C" ? [84, 130] : [14, 150];
+      // cloisons des bureaux derrière la rangée
+      if (key !== "C") for (let x = xs[0]; x <= xs[1]; x += 34) rect(x, r.T + 2, 1, 16, 7);
+      for (const k of DESKS.filter((k) => k.row === key)) {
+        const ch = byId(k.id);
+        if (ch === P()) { rect(k.x - 3, r.T + 10, 7, 1, 0); rect(k.x - 3, r.T + 10, 1, 8, 0); continue; } // votre chaise, vide
+        drawSeated(k.x, r.T, ch, k.d);
+      }
+      rect(xs[0], r.top, xs[1] - xs[0], 3, 6); rect(xs[0], r.top, xs[1] - xs[0], 1, 14); rect(xs[0], r.top + 3, xs[1] - xs[0], 4, 8);
+      for (const k of DESKS.filter((k) => k.row === key)) {
+        rect(k.x - 2, r.top + 4, 5, 2, 15); // plaque nominative
+        const ch = byId(k.id);
+        if (ch !== P()) drawProps(k.x, ch, k.d, tb);
+        if (S.happy && ch === B()) { rect(k.x + 4 * k.d, tb - 2, 3, 3, 12); if ((tick >> 3) % 2) pset(k.x + 4 * k.d + 1, tb - 4, 15); }
+      }
+      if (key === "A") { rect(48, tb - 2, 11, 3, 13); rect(48, tb - 5, 11, 3, 15); frame(48, tb - 5, 11, 3, 13); if (S.donut) { rect(52, tb - 2, 4, 2, 6); pset(53, tb - 2, 14); } }
+    } });
+    return [rowLayer("A"), rowLayer("B"), rowLayer("C")];
+  },
+  walk(x, y) { return y >= 100 && y <= 166 && x >= 1 && x <= 158 && !this.obstacles.some((r) => inR(x, y, r)); },
+  exit(nx, ny) {
+    if (nx < 1) { goRoom("lounge", 152, 140, "left"); return true; }
+    if (ny > 166 || nx > 158) { S.dir = null; return true; }
+    return false;
+  },
+  look() {
+    const who = (row) => DESKS.filter((k) => k.row === row).map((k) => byId(k.id) === P() ? "votre bureau (vide : vous êtes debout)" : byId(k.id).name).join(", ");
+    return "La salle des bureaux de profs. Rangée du fond : " + who("A") + ". Rangée du milieu : " + who("B") + ". Devant : " + who("C") + ". Sur un bureau du fond, une boîte rose de viennoiseries.";
+  },
+};
+
+// accessoires posés sur le bureau (tb = dessus du bureau)
+function drawProps(px, ch, d, tb) {
+  const c = ch.c;
   if (ch.id === "guy") {
     for (let i = 0; i < 4; i++) { const fx = px + d * (3 + i * 2); rect(fx, tb, 1, 2, i % 2 ? 1 : 4); pset(fx, tb - 1, 12); }
     line(px + d * 2, tb - 4, px + d * 4, tb - 1, 6); pset(px + d * 4, tb - 1, 15); pset(px + d * 2, tb - 4, c.skin);
@@ -682,17 +812,19 @@ function drawProps(px, ch, d) {
     rect(d > 0 ? px - 6 : px + 5, tb - 1, 2, 2, c.skin);
   } else if (ch.id === "sabrina") {
     const dx = d > 0 ? px + 3 : px - 6;
-    rect(dx, tb - 3, 3, 4, 0); rect(dx, tb - 2, 3, 2, 11); // cellulaire
-    rect(dx + 4 * d + (d < 0 ? 1 : 0), tb - 3, 2, 4, 15); pset(dx + 4 * d + (d < 0 ? 1 : 0), tb - 4, 12); // biberon
+    rect(dx, tb - 3, 3, 4, 0); rect(dx, tb - 2, 3, 2, 11);
+    rect(dx + 4 * d + (d < 0 ? 1 : 0), tb - 3, 2, 4, 15); pset(dx + 4 * d + (d < 0 ? 1 : 0), tb - 4, 12);
   } else if (ch.id === "marc") {
     const dx = d > 0 ? px + 2 : px - 10;
     rect(dx, tb - 1, 9, 3, 14); rect(dx + 1, tb, 2, 1, 4); rect(dx + 4, tb, 2, 1, 2); rect(dx + 7, tb, 1, 1, 9);
-    if (S.dice < 2 || PATH() !== "marc") pset(d > 0 ? px - 4 : px + 4, tb, 15);
   } else if (ch.id === "gen") {
     const dx = d > 0 ? px + 2 : px - 9;
     rect(dx, tb - 2, 8, 3, 15); rect(dx, tb - 2, 8, 1, 7); line(dx + 2, tb - 4, dx + 5, tb - 1, 4);
+  } else if (ch.id === "sophie") {
+    const dx = d > 0 ? px + 2 : px - 9;
+    rect(dx, tb - 2, 7, 3, 1); rect(dx + 7 * (d > 0 ? 1 : 0) - (d > 0 ? 0 : 1), tb - 2, 1, 1, 12); pset(dx + (d > 0 ? 7 : -1), tb - 1, 14); pset(dx + (d > 0 ? 7 : -1), tb, 10);
   } else if (ch.id === "melanie") {
-    rect(px - 3, 116, 7, 2, c.skin); // bras croisés
+    rect(px - 3, tb - 5, 7, 2, c.skin);
     const dx = d > 0 ? px + 3 : px - 5;
     rect(dx, tb - 3, 3, 3, 5); pset(dx + (d > 0 ? 3 : -1), tb - 2, 5);
   } else if (ch.id === "vieux") {
@@ -707,7 +839,7 @@ function goRoom(r, x, y, face) {
   S.room = r; S.x = x; S.y = y; S.face = face; S.dir = null; S.target = null;
   buildBg(); play(SFX.door);
   if (r === "hall" && has("game") && !S.won) { lose("game"); S.supplyUnlocked = false; say("Mme D vous voit sortir avec la boîte de Catane. « Ça paraît MAL. » Elle vous la prend des mains et repart la barrer dans l'armoire grise. Au moins, elle a trouvé la salle des profs du premier coup."); }
-  if (r === "lounge" && !S.got.seenLounge) { S.got.seenLounge = 1; say(ROOMS.lounge.look()); }
+  if (!S.got["seen_" + r] && r !== "hall") { S.got["seen_" + r] = 1; say(ROOMS[r].look()); }
 }
 
 // ---------- analyseur (parser) ----------
@@ -785,7 +917,7 @@ syn("affiche", "affiche affiches poster");
 syn("fountain", "abreuvoir fontaine");
 syn("water", "eau");
 syn("locker", "case cases vestiaire vestiaires");
-syn("door", "porte");
+syn("door", "porte portes");
 syn("mmeD", "mme madame directrice dirlo patronne boss chef");
 syn("person", "homme femme collegue prof professeur quelqu lui elle il personne");
 syn("c_jp", "chat jp");
@@ -796,6 +928,7 @@ syn("c_marc", "marcandre marc");
 syn("c_gen", "genevieve gen");
 syn("c_melanie", "melanie mel");
 syn("c_vieux", "guy doyen");
+syn("c_sophie", "sophie");
 syn("kowalski", "kowalski");
 syn("fridge", "frigo frigidaire refrigerateur congelateur");
 syn("lunch", "lunch sandwich casse croute diner repas");
@@ -810,7 +943,11 @@ syn("cabinet", "armoire armoires placard placards etagere etageres");
 syn("upperc", "haut dessus bois");
 syn("supply", "fournitures reserve grise gris metal metallique grande");
 syn("paper", "papier rame ramette");
-syn("copier", "photocopieuse photocopieur copieur imprimante toner vitre ecran");
+syn("copier", "photocopieuse photocopieur copieur imprimante toner vitre");
+syn("screen", "ecran projecteur projection");
+syn("mess", "bordel fouillis pancarte pancartes megaphone boites");
+syn("syndic", "syndicale syndical");
+syn("bureaux", "bureaux");
 syn("copies", "copies photocopies exemplaires");
 syn("jam", "bourrage");
 syn("cord", "cordon prise fil cable courant plogue plug");
@@ -878,7 +1015,7 @@ function parse(raw) {
        .replace(/ regarder autour /g, " regarder salle ").replace(/ quelle heure /g, " regarder horloge ")
        .replace(/ mot de passe /g, " code ").replace(/ micro ondes /g, " micro ")
        .replace(/ pains? au chocolat /g, " chocolatine ").replace(/ machine a cafe /g, " cafetiere ")
-       .replace(/ salle des profs /g, " profs ").replace(/ casiers? des profs /g, " pigeonnier ").replace(/ casiers? des eleves /g, " cases ")
+       .replace(/ salle des profs /g, " profs ").replace(/ salle (des )?bureaux( de profs| des profs)? /g, " bureaux ").replace(/ (salle )?(du )?syndicat /g, " syndicale ").replace(/ casiers? des profs /g, " pigeonnier ").replace(/ casiers? des eleves /g, " cases ")
        .replace(/ cases? des eleves /g, " cases ").replace(/ cafe moulu /g, " moulu ")
        .replace(/ face camera /g, " camera ").replace(/ petit prince /g, " prince ")
        .replace(/ roche papier ciseaux /g, " roche ").replace(/ c est (le )?tour de qui /g, " reunion ")
@@ -903,27 +1040,49 @@ function parse(raw) {
   if (v === "play") { const w = words.find((x) => /^(roche|pierre|papier|ciseaux?)$/.test(x)); if (w) move = w === "pierre" ? "roche" : w.startsWith("ciseau") ? "ciseaux" : w; }
   return { v, N: resolve(N), num, move };
 }
+// où se trouve une chose qu'on ne voit pas dans la pièce actuelle
+function whereIs(n) {
+  const k = spotKey(n);
+  if (k.startsWith("c_") && byId(k.slice(2))) return byId(k.slice(2)).name + " est à son bureau, dans la salle des bureaux de profs.";
+  if (["copier", "supply", "cord", "jam", "screen", "mess", "paper"].includes(n)) return "C'est dans la salle syndicale, au fond à droite de la salle des profs.";
+  if (["maker", "pot", "sink", "fridge", "cabinet", "rack", "jar", "calendar", "microwave", "coffee", "milk", "lunch", "mug", "couch", "poster"].includes(n)) return "C'est dans la salle des profs.";
+  if (n === "donut") return "La boîte de viennoiseries est dans la salle des bureaux de profs.";
+  if (["mailbox", "sheet", "board", "fountain", "locker", "mmeD"].includes(n)) return "C'est dans le corridor.";
+  return "Vous ne voyez pas ça ici.";
+}
+function spotKey(n) { return n === "npcB" ? "c_" + B().id : n === "npcC" ? "c_" + C().id : n; }
+function spotOf(n) { return ROOMS[S.room].spots[spotKey(n)]; }
 function nearest(names) {
-  const sp = ROOMS[S.room].spots; let best = names[0], bd = 1e9;
-  for (const n of names) if (sp[n]) { const d = distTo(sp[n]); if (d < bd) { bd = d; best = n; } }
+  let best = names[0], bd = 1e9;
+  for (const n of names) { const sp = spotOf(n); if (sp) { const d = distTo(sp); if (d < bd) { bd = d; best = n; } } }
   return best;
 }
+// collègue le plus proche dans la salle des bureaux
+function nearestPerson() {
+  if (S.room !== "bureaux") return null;
+  let best = null, bd = 1e9;
+  for (const k of DESKS) { if (byId(k.id) === P()) continue; const d = distTo(spotOf("c_" + k.id)); if (d < bd) { bd = d; best = k.id; } }
+  return best === B().id ? "npcB" : best === C().id ? "npcC" : "c_" + best;
+}
 function resolve(N) {
-  const L = S.room === "lounge";
-  const ids = { c_jp: "jp", c_guy: "guy", c_crispy: "crispy", c_sabrina: "sabrina", c_marc: "marc", c_gen: "gen", c_melanie: "melanie", c_vieux: "vieux" };
-  const owner = (id) => (id === P().id ? "me" : id === B().id ? "npcB" : id === C().id ? "npcC" : "absent");
+  const L = S.room !== "hall";
+  const ids = { c_sophie: "sophie", c_jp: "jp", c_guy: "guy", c_crispy: "crispy", c_sabrina: "sabrina", c_marc: "marc", c_gen: "gen", c_melanie: "melanie", c_vieux: "vieux" };
+  const owner = (id) => (id === P().id ? "me" : id === B().id ? "npcB" : id === C().id ? "npcC" : "c_" + id);
   let out = N.map((n) => {
-    if (ids[n]) { const o = owner(ids[n]); return o === "absent" && ids[n] === "vieux" && owner("guy") !== "absent" ? owner("guy") : o; }
-    if (n === "figs") return P().id === "guy" ? "figs" : L && owner("guy") !== "absent" ? owner("guy") : "figs";
-    if (n === "laptop") return P().id === "crispy" ? "laptop" : L && owner("crispy") !== "absent" ? owner("crispy") : "laptop";
+    if (ids[n]) return owner(ids[n]);
+    if (n === "figs") return P().id === "guy" ? "figs" : S.room === "bureaux" ? owner("guy") : "figs";
+    if (n === "laptop") return P().id === "crispy" ? "laptop" : S.room === "bureaux" ? owner("crispy") : "laptop";
     if (n === "machine") return N.includes("copier") || N.includes("copyv") ? "copier" : N.includes("coffee") ? "maker" : L ? nearest(["copier", "maker"]) : "machine";
     if (n === "box") return N.includes("grounds") || N.includes("coffee") ? "grounds" : L ? "donut" : "mailbox";
-    if (n === "person") return L ? "npcB" : "mmeD";
+    if (n === "person") return L ? (nearestPerson() || "npcB") : "mmeD";
+    if (n === "couch") return nearest(["couch", "couch2"]);
     if (n === "cabinet") return N.includes("supply") ? "supply" : N.includes("upperc") ? "cabinet" : L ? nearest(["cabinet", "supply"]) : "locker";
     if (n === "upperc") return L ? "cabinet" : "locker";
     if (n === "casier") return L ? "locker" : nearest(["mailbox", "locker"]);
     if (n === "water") return L ? "water" : "fountain";
-    if (n === "lounge") return L ? "room" : "door";
+    if (n === "lounge") return S.room === "lounge" ? "room" : "door";
+    if (n === "syndic") return S.room === "syndic" ? "room" : "door";
+    if (n === "bureaux") return S.room === "bureaux" ? "room" : "door";
     if (n === "hall") return L ? "door" : "room";
     if (n === "copyv") return "copier";
     if (n === "feuille") return L ? "paper" : "sheet";
@@ -966,7 +1125,7 @@ function pathIntro() {
   switch (p.path) {
     case "glande":
       say(open + "Vous êtes " + p.name + ", prof d'histoire. Vous aviez toute la fin de semaine pour préparer votre examen. Vous l'avez écrit ce matin, dans l'autobus.");
-      say("Il faut 32 photocopies avant la cloche de 8 h. La photocopieuse est dans la salle des profs, avec " + b + " et " + c + ", vos collègues d'histoire.\n\nEt Mme D, la directrice, a convoqué une réunion ce midi. Tout le monde doit y être. Mais entre vous trois, c'est la tradition : à tour de rôle, un seul s'absente. Un absent, ça passe. Deux, ça paraît. C'est le tour de qui ? Personne ne s'entend.");
+      say("Il faut 32 photocopies avant la cloche de 8 h. La photocopieuse est dans la salle syndicale (oui, oui). " + b + " et " + c + ", vos collègues d'histoire, sont à leurs bureaux.\n\nEt Mme D, la directrice, a convoqué une réunion ce midi. Tout le monde doit y être. Mais entre vous trois, c'est la tradition : à tour de rôle, un seul s'absente. Un absent, ça passe. Deux, ça paraît. C'est le tour de qui ? Personne ne s'entend.");
       break;
     case "cafe":
       say(open + "Vous êtes " + p.name + ", co-responsable du comité café avec " + b + ". Le seul comité de l'école qui sert vraiment à quelque chose.");
@@ -986,7 +1145,7 @@ function pathIntro() {
       say("Mme D veut 30 copies de son « Plan d'engagement vers la réussite » avant 8 h, pour la réunion de ce midi. La photocopieuse est bloquée, et le code, c'est " + b + " qui le connaît.\n\nOn peut toujours compter sur vous. C'est un peu ça, le problème.");
       break;
   }
-  say("Flèches pour marcher. Tapez des ordres comme REGARDER, PRENDRE COURRIER ou PARLER À MME D, puis ENTRÉE. AIDE rappelle votre objectif.\n\nÉCHAP : menu.\nTAB : inventaire.\n\nAh, et une équipe de documentaire filme l'école.");
+  say("Flèches pour marcher, ou touchez l'écran. Tapez des ordres comme REGARDER, PRENDRE COURRIER ou PARLER À MME D, puis ENTRÉE. AIDE rappelle votre objectif.\n\nLes lieux : le corridor, la salle des profs, la salle syndicale et la salle des bureaux.\n\nÉCHAP : menu.\nTAB : inventaire.\n\nAh, et une équipe de documentaire filme l'école.");
 }
 function mmeDSigned() {
   switch (PATH()) {
@@ -1022,10 +1181,11 @@ function cameraPath() {
 
 // commandes propres aux parcours ; renvoie true si la commande est traitée
 function pathAct(v, N, num) {
-  const L = S.room === "lounge", path = PATH(), me = P().id;
+  const L = S.room !== "hall", path = PATH(), me = P().id;
   const hasN = (...a) => a.some((x) => N.includes(x));
   // personnages absents de cette scène
-  if (hasN("absent")) { say("Cette personne n'est pas ici ce matin. Elle a dû trouver une meilleure excuse que vous."); return true; }
+  const other = N.find((n) => typeof n === "string" && n.startsWith("c_"));
+  if (other && v === "give") { if (!near(other)) return true; say(byId(other.slice(2)).name + " sourit. « C'est gentil, mais garde ça. Moi, je suis correct. »"); return true; }
   if (v === "smoke") {
     if (me !== "vieux") { say("Vous ne fumez pas. Guy, lui, fume pour tout le monde."); return true; }
     if (L) { say("Pas en dedans, voyons. Sortez par le gymnase : à gauche dans le corridor."); return true; }
@@ -1124,7 +1284,7 @@ function pathAct(v, N, num) {
   if ((v === "load" || v === "give") && hasN("money", "jar")) {
     if (path !== "cafe") { say("Vous n'avez pas d'argent à mettre là. Vous êtes prof."); return true; }
     if (!has("money")) { say("Vous n'avez pas d'argent. " + (P().id === "vieux" ? "Votre liste dit que Kowalski en doit." : "Mais vous savez chialer.")); return true; }
-    if (!L || !near("sink")) return L ? true : (say("La cagnotte est sur le comptoir de la salle des profs."), true);
+    if (!L || !near("jar")) return L ? true : (say("La cagnotte est sur le comptoir de la salle des profs."), true);
     lose("money"); S.fund = true; award("fund");
     say("Vous glissez le billet de 20 $ dans la cagnotte. Elle n'avait pas fait ce bruit-là depuis septembre. " + B().name + " applaudit lentement."); return true;
   }
@@ -1235,18 +1395,20 @@ function pathWinText() {
 // ---------- commandes ----------
 const HERE = {
   hall: ["mailbox","sheet","board","fountain","locker","door","mmeD","wall","floor","ceiling","room","class","memo","key","camera"],
-  lounge: ["fridge","calendar","lunch","milk","microwave","coffee","pot","maker","filter","grounds","cabinet","supply","paper","copier","jam","cord","mug","sink","rack","donut","table","couch","chair","clock","poster","npcB","npcC","door","tupperware","wall","floor","ceiling","room","window","water","camera","meeting"],
+  lounge: ["fridge","calendar","lunch","milk","microwave","coffee","pot","maker","filter","grounds","cabinet","mug","sink","rack","table","couch","couch2","chair","clock","poster","door","tupperware","wall","floor","ceiling","room","window","water","camera","meeting","jar"],
+  syndic: ["supply","paper","copier","jam","cord","screen","mess","table","door","wall","floor","ceiling","room","window","camera","union","chair"],
+  bureaux: ["npcB","npcC","donut","table","chair","door","wall","floor","ceiling","room","window","camera","meeting","clock"],
 };
 const CANT = ["Ce n'est pas possible.", "Vous ne pouvez pas faire ça.", "Il ne se passe rien.", "Ça n'a aucun sens.", "Même un glandeur a ses limites."];
 let cantI = 0;
 function cant() { say(CANT[cantI++ % CANT.length]); }
 function near(spot) {
-  const sp = ROOMS[S.room].spots[spot];
-  if (!sp) { say("Vous ne voyez pas ça ici."); return false; }
+  const sp = spotOf(spot);
+  if (!sp) { say(whereIs(spot)); return false; }
   if (distTo(sp) > sp[4]) { say("Vous n'êtes pas assez près."); return false; }
   return true;
 }
-function near0(spot) { const sp = ROOMS[S.room].spots[spot]; return sp && distTo(sp) <= sp[4]; }
+function near0(spot) { const sp = spotOf(spot); return sp && distTo(sp) <= sp[4]; }
 function invName(it) {
   return {
     quiz: PATH() === "gen" ? "Plan de réussite (original)" : PATH() === "sabrina" ? "Examen adapté (original)" : "Examen d'histoire (original)",
@@ -1270,7 +1432,7 @@ const CALENDAR = () => "CALENDRIER OFFICIEL DES RÉUNIONS RATÉES\n(NE PAS MONTR
 
 function camera() {
   award("camera");
-  const nm = P().name, L = S.room === "lounge";
+  const nm = P().name, L = S.room !== "hall";
   let t;
   const pc = PATH() === "glande" ? null : cameraPath();
   if (pc) t = pc;
@@ -1289,7 +1451,7 @@ function camera() {
 
 function doLook(N) {
   const n = N[0];
-  const L = S.room === "lounge";
+  const L = S.room !== "hall";
   if (!n || n === "room") return say(ROOMS[S.room].look());
   if (n === "camera") return camera();
   const inv = {
@@ -1316,14 +1478,17 @@ function doLook(N) {
   if (n === "ceiling") return say(L ? "Des tuiles tachées. L'une d'elles a la forme d'un graphique en tarte. Mme D l'a fait encadrer." : "Les néons grésillent. L'un d'eux clignote en morse. Il dit : C-O-N-G-É.");
   if (n === "floor") return say(L ? "Un tapis brun conçu pour cacher les taches de café. Il a échoué." : "Un plancher fraîchement ciré. M. Ortiz, le concierge, en est très fier.");
   if (n === "wall") return say(L ? "Les murs sont du vert exact d'un hôpital dans un film triste." : "Des blocs de béton gris avec une bande bleue. Les couleurs de l'école, plus ou moins.");
-  if (n === "door") return say(L ? "La porte qui donne sur le corridor. Et sur Mme D." : "La porte de la salle des profs. Plaque : PERSONNEL SEULEMENT. Les élèves pensent qu'il y a un spa derrière.");
+  if (typeof n === "string" && n.startsWith("c_")) { if (S.room !== "bureaux") return say("Vous ne voyez pas ça ici."); const ch = byId(n.slice(2)); return say(ch.desc + (ch.local ? " (Local " + ch.local + ".)" : "") + " En ce moment, " + ch.name + " " + ch.doing); }
+  if (n === "screen") return say("L'écran de la salle syndicale. Diapositive affichée : « ASSEMBLÉE GÉNÉRALE JEUDI - ORDRE DU JOUR : 1. Les réunions du midi. 2. Les réunions du midi (suite). 3. Varia (le café). » Signé chat-JP.");
+  if (n === "mess") return say("Le bordel de tables et de choses : des boîtes de tracts, trois pancartes « NON AUX RÉUNIONS DU MIDI », un mégaphone sans piles, une plante morte et un sac de chips entamé en 2022.");
+  if (n === "door") return say(S.room === "lounge" ? "Trois portes : le corridor à gauche, la salle syndicale au fond à droite, la salle des bureaux devant à droite." : S.room === "syndic" ? "La porte qui ramène à la salle des profs, côté cuisine." : S.room === "bureaux" ? "La porte qui ramène à la salle des profs." : L ? "La porte qui donne sur le corridor. Et sur Mme D." : "La porte de la salle des profs. Plaque : PERSONNEL SEULEMENT. Les élèves pensent qu'il y a un spa derrière.");
   if (n === "bell") return say("La cloche sonne à 8 h 00 pile. Il est " + clockStr() + ".");
   if (n === "class") return say(yourLocal()[0].toUpperCase() + yourLocal().slice(1) + " est au sud. Trente-deux élèves de secondaire 4 y seront à 8 h 00, que vous soyez là ou pas.");
   if (n === "kowalski") return say("M. Kowalski, le prof d'éduc, n'est pas là. Estimez-vous chanceux.");
   if (n === "fenouil") return say("M. Fenouil a enseigné la chimie ici pendant trente ans. Puis il a essayé de réparer la photocopieuse. Il y a une petite plaque au-dessus de l'évier.");
   if (n === "mmeD" && L) return say("Mme D n'est pas là. Elle cherche probablement son bureau.");
-  if (n === "npcB" || n === "npcC") { if (!L) return say("Vous ne voyez pas ça ici."); const ch = n === "npcB" ? B() : C(); return say(ch.desc + (ch.local ? " (Local " + ch.local + ".)" : "") + " En ce moment, " + ch.name + " " + ch.doing + " " + (ch.habit || "") + (n === "npcB" && S.happy ? " Une tasse de café fume sur la table." : "")); }
-  if (!HERE[S.room].includes(n)) return say("Vous ne voyez pas ça ici.");
+  if (n === "npcB" || n === "npcC") { if (S.room !== "bureaux") return say((n === "npcB" ? B() : C()).name + " est à son bureau, dans la salle des bureaux de profs."); const ch = n === "npcB" ? B() : C(); return say(ch.desc + (ch.local ? " (Local " + ch.local + ".)" : "") + " En ce moment, " + ch.name + " " + ch.doing + " " + (ch.habit || "") + (n === "npcB" && S.happy ? " Une tasse de café fume sur la table." : "")); }
+  if (!HERE[S.room].includes(n)) return say(whereIs(n));
   switch (n) {
     case "mailbox": return say((S.got.memo && (S.got.key || !needsKey())) ? "Votre casier, étiqueté " + P().name.toUpperCase() + ", est vide. À part un trombone et vos rêves." : "Des casiers en bois, un par prof. Le vôtre est étiqueté " + P().name.toUpperCase() + ". Il y a quelque chose dedans.");
     case "memo": case "key": return say("C'est dans votre casier. Prenez-le, tout simplement.");
@@ -1352,11 +1517,11 @@ function doLook(N) {
     case "sink": return say("Un évier en inox. Au-dessus, une petite plaque en laiton : EN MÉMOIRE DE GÉRARD FENOUIL. IL N'A RIEN DÉBRANCHÉ.");
     case "water": return say("L'évier a l'eau courante. En général.");
     case "donut": return say(S.donut ? "La dernière chocolatine, dans une boîte rose. " + B().name + " la surveille. Et vous surveille." : "La boîte est vide. Il ne reste que des miettes et des souvenirs.");
-    case "table": return say("Une table branlante. D'un côté, " + B().name + ". De l'autre, " + C().name + ". Au milieu, une boîte de viennoiseries et des années de désengagement.");
-    case "couch":
-      if (PATH() === "marc" && !S.got.die2) { if (!near("couch")) return; S.got.die2 = 1; S.dice++; give("dez"); S.score += POINTS.die2; play(SFX.points); return say("Vous fouillez entre les coussins du divan : 3 crayons, 1 $ 35 en monnaie, une carte de bingo de 1996... et UN DÉ ! Mme D l'avait « rangé » là. Dés : " + S.dice + "/2."); }
+    case "table": if (S.room === "bureaux") return say("Les bureaux des profs, en rangées, avec une plaque nominative chacun. Celui de Crispy a des traces d'espadrilles."); if (S.room === "syndic") return doLook(["mess"]); return say("Une table branlante. D'un côté, " + B().name + ". De l'autre, " + C().name + ". Au milieu, une boîte de viennoiseries et des années de désengagement.");
+    case "couch": case "couch2":
+      if (PATH() === "marc" && !S.got.die2) { if (!near(n)) return; S.got.die2 = 1; S.dice++; give("dez"); S.score += POINTS.die2; play(SFX.points); return say("Vous fouillez entre les coussins du divan : 3 crayons, 1 $ 35 en monnaie, une carte de bingo de 1996... et UN DÉ ! Mme D l'avait « rangé » là. Dés : " + S.dice + "/2."); }
       return say("Un divan écossais brun. Personne ne s'y assoit : Mme D a dit que ça « paraissait mal » sur les photos du rapport annuel.");
-    case "chair": return say("Des chaises de plastique. " + B().name + " et " + C().name + " en occupent une chacun. Plus une autre pour les pieds.");
+    case "chair": return say(S.room === "bureaux" ? "Des chaises de bureau qui grincent. La vôtre est vide : vous êtes debout. C'est inhabituel." : S.room === "syndic" ? "Une pile de chaises, prêtes pour la prochaine assemblée générale. Elles attendent depuis 2019." : "Des chaises de plastique autour des tables.");
     case "poster": return say("Une affiche du Petit Prince : « On ne voit bien qu'avec le coeur. L'essentiel est invisible pour les yeux. » Mme D a ajouté au feutre : « SAUF LES STATISTIQUES. »");
     case "window": return say("Il n'y a pas de fenêtre dans la salle des profs. Il n'y en a jamais.");
   }
@@ -1364,7 +1529,7 @@ function doLook(N) {
 }
 
 function act(v, N, num, move) {
-  const L = S.room === "lounge";
+  const L = S.room !== "hall";
   const n0 = N[0], hasN = (...a) => a.some((x) => N.includes(x));
   const me = P().id;
   if (pathAct(v, N, num)) return;
@@ -1421,13 +1586,14 @@ function act(v, N, num, move) {
       if (N.length && !hasN("sheet")) return doLook(N);
       break;
   }
-  if (!L) return hallAct(v, N, num);
+  if (S.room === "hall") return hallAct(v, N, num);
   return loungeAct(v, N, num);
 }
 
 // ---------- le grand débat : c'est le tour de qui de rater la réunion ? ----------
 function debate() {
-  if (S.room !== "lounge") return say("Le débat se fait en salle des profs. Pas devant Mme D. Jamais devant Mme D.");
+  if (S.room === "hall") return say("Le débat se fait entre collègues, dans la salle des bureaux. Pas devant Mme D. Jamais devant Mme D.");
+  if (!near0("npcB") && !near0("npcC")) return say("Le débat se fait avec " + B().name + " et " + C().name + ", à leurs bureaux. Rapprochez-vous.");
   if (!near("table")) return;
   const b = B().name, c = C().name, pn = P().name;
   if (S.debate === 3) return say("C'est réglé : c'est votre tour de rater la réunion. " + b + " vous le reproche toutes les trente secondes.");
@@ -1440,7 +1606,7 @@ function debate() {
 }
 function beats(a, b) { return (a === "roche" && b === "ciseaux") || (a === "ciseaux" && b === "papier") || (a === "papier" && b === "roche"); }
 function playRps(move) {
-  if (S.room !== "lounge") return say("Jouer à roche-papier-ciseaux tout seul dans le corridor ? Mme D le noterait.");
+  if (S.room === "hall") return say("Jouer à roche-papier-ciseaux tout seul dans le corridor ? Mme D le noterait.");
   if (S.debate < 2) return say(S.debate === 0 ? "Contre qui ? Et pour quoi ? Lancez d'abord le débat sur la réunion." : "Avant de jouer, il faut savoir qui est à égalité. Lisez le calendrier sur le frigo.");
   if (S.debate > 2) return say("C'est réglé. On ne revient pas là-dessus. Même la convention collective est claire.");
   if (!near("table")) return;
@@ -1457,9 +1623,11 @@ function playRps(move) {
 }
 
 function talk(n) {
-  const L = S.room === "lounge";
+  const L = S.room !== "hall";
   const pn = P().name;
-  if (!n) n = L ? "npcB" : "mmeD";
+  if (!n) n = L ? nearestPerson() : "mmeD";
+  if (!n) return say("Il n'y a personne à qui parler ici. Les collègues sont à leurs bureaux.");
+  if (n.startsWith("c_")) { if (S.room !== "bureaux") return say("Vous ne voyez pas ça ici."); if (!near(n)) return; return say(byId(n.slice(2)).busy); }
   if (n === "me") return say("Vous vous parlez à vous-même. Le caméraman prend des notes.");
   if (n === "mmeD" && !L) {
     if (!near("mmeD")) return;
@@ -1483,7 +1651,7 @@ function talk(n) {
   say("Il n'y a personne de ce nom ici.");
 }
 function wake(n) {
-  if (S.room !== "lounge") return say("Personne n'est à déranger ici. À part Mme D, et ce serait une mauvaise idée.");
+  if (S.room === "hall") return say("Personne n'est à déranger ici. À part Mme D, et ce serait une mauvaise idée.");
   if (n === "npcB") return say(B().name + " : « Pas avant mon café. »");
   if (!near("npcC")) return;
   if (S.awake) return say(C().busy);
@@ -1492,9 +1660,12 @@ function wake(n) {
   return say(C().name + " lève les yeux, l'air d'avoir été tiré d'un rêve. « Hein ? Ah, toi. Bon, conseil gratuit : débranche la photocopieuse avant d'y toucher, pis apporte un café à " + B().name + ". Sans café, " + B().name + " donne rien. Pas même l'heure. »\n\nPuis, plus bas : « Et pour roche-papier-ciseaux... " + B().hint.slice(2) + "\n\nEt " + C().name + " replonge.");
 }
 function ask(N) {
-  const L = S.room === "lounge";
+  const L = S.room !== "hall";
   let who = N.find((n) => n === "npcB" || n === "npcC" || n === "mmeD");
-  if (!who) who = L ? "npcB" : "mmeD";
+  const other = N.find((n) => typeof n === "string" && n.startsWith("c_"));
+  if (other) { if (S.room !== "bureaux") return say("Vous ne voyez pas ça ici."); if (!near(other)) return; return say(byId(other.slice(2)).busy); }
+  if (!who) who = L ? (nearestPerson() || "npcB") : "mmeD";
+  if (who.startsWith("c_")) { if (!near(who)) return; return say(byId(who.slice(2)).busy); }
   if (who === "mmeD" && L) return say("Mme D n'est pas là. Elle cherche probablement son bureau.");
   if (who !== "mmeD" && !L) return say("Il n'y a personne de ce nom ici.");
   if (!near(who)) return;
@@ -1880,6 +2051,42 @@ function drawSelect() {
 let tick = 0, cursorOn = true;
 const kbd = document.getElementById("kbd");
 
+// toucher pour marcher : chemin le plus court sur la grille de marche (contourne les meubles)
+function findPath(R, sx, sy, tx, ty) {
+  const W = PW, H = 68, Y0 = 100, idx = (x, y) => (y - Y0) * W + x;
+  const ok = new Uint8Array(W * H);
+  for (let y = Y0; y < Y0 + H; y++) for (let x = 0; x < W; x++) ok[idx(x, y)] = R.walk(x, y) ? 1 : 0;
+  // la case visée : la case accessible la plus proche du point touché
+  let best = -1, bd = 1e9;
+  for (let y = Y0; y < Y0 + H; y++) for (let x = 0; x < W; x++) if (ok[idx(x, y)]) { const d = (x - tx) * (x - tx) * 0.5 + (y - ty) * (y - ty); if (d < bd) { bd = d; best = idx(x, y); } }
+  if (best < 0 || !ok[idx(sx, sy)]) return [];
+  const prev = new Int32Array(W * H).fill(-1), start = idx(sx, sy);
+  prev[start] = start;
+  const q = [start];
+  for (let h = 0; h < q.length && prev[best] < 0; h++) {
+    const c = q[h], cx = c % W, cy = Y0 + Math.floor(c / W);
+    for (const [ddx, ddy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) {
+      const nx = cx + ddx, ny = cy + ddy;
+      if (nx < 0 || nx >= W || ny < Y0 || ny >= Y0 + H) continue;
+      const n = idx(nx, ny);
+      if (!ok[n] || prev[n] >= 0) continue;
+      if (ddx && ddy && (!ok[idx(cx + ddx, cy)] || !ok[idx(cx, cy + ddy)])) continue;
+      prev[n] = c; q.push(n);
+    }
+  }
+  if (prev[best] < 0) return [];
+  const out = [];
+  for (let c = best; c !== start; c = prev[c]) out.push([c % W, Y0 + Math.floor(c / W)]);
+  return out.reverse();
+}
+function walkTo(px, py) {
+  const R = ROOMS[S.room];
+  let after = null;
+  if (px <= 4) after = "left"; else if (px >= 155) after = "right"; else if (py >= 165) after = "down";
+  else if (py < 100 && S.room === "hall" && px >= 104 && px <= 122) after = "up";
+  S.dir = null;
+  S.target = { path: findPath(R, S.x, S.y, px, Math.max(100, Math.min(166, py))), after };
+}
 function update() {
   tick++;
   if (S.mode !== "play" || Q.length || overlay || menu || S.dead || S.won) return;
@@ -1895,10 +2102,17 @@ function update() {
     return die("DRIIIIIIIIING !\n\nLa cloche de 8 h sonne. Trente-deux élèves de secondaire 4 attendent " + atLocal() + ", sans prof et sans examen.\n\nQuand vous arrivez, ils ont formé un gouvernement provisoire. Mme D trouve que ça paraît bien dans le rapport : « initiative étudiante ». Vous, vous êtes dans le rapport aussi.");
   }
   let dx = 0, dy = 0;
-  if (S.target) {
-    const tx = S.target.x - S.x, ty = S.target.y - S.y;
-    if (Math.abs(tx) <= 1 && Math.abs(ty) <= 1) S.target = null;
-    else { dx = Math.sign(tx) * (Math.abs(tx) > 1 ? 1 : 0); dy = Math.sign(ty) * (Math.abs(ty) > 1 ? 1 : 0); S.face = Math.abs(tx) > Math.abs(ty) * 1.2 ? (tx > 0 ? "right" : "left") : (ty > 0 ? "down" : "up"); }
+  if (S.target && S.target.path) {
+    // suivre le chemin calculé ; à la fin, continuer vers la porte visée
+    const path = S.target.path;
+    while (path.length && path[0][0] === S.x && path[0][1] === S.y) path.shift();
+    if (path.length) {
+      const tx = path[0][0] - S.x, ty = path[0][1] - S.y;
+      dx = Math.sign(tx); dy = Math.sign(ty);
+      const look = path[Math.min(path.length - 1, 6)];
+      const fx = look[0] - S.x, fy = look[1] - S.y;
+      S.face = Math.abs(fx) > Math.abs(fy) * 1.2 ? (fx > 0 ? "right" : "left") : (fy > 0 ? "down" : "up");
+    } else { const after = S.target.after; S.target = null; if (after) { S.dir = after; S.face = after; } else S.frame = 0; }
   } else if (S.dir) {
     dx = S.dir.includes("left") ? -1 : S.dir.includes("right") ? 1 : 0;
     dy = S.dir.includes("up") ? -1 : S.dir.includes("down") ? 1 : 0;
@@ -1907,8 +2121,6 @@ function update() {
     const R = ROOMS[S.room]; const nx = S.x + dx, ny = S.y + dy;
     if (R.exit(nx, ny)) { S.target = null; return; }
     if (R.walk(nx, ny)) { S.x = nx; S.y = ny; S.step++; if (S.step % 2 === 0) S.frame++; }
-    else if (S.target && dx && dy && R.walk(nx, S.y)) { S.x = nx; S.step++; }
-    else if (S.target && dx && dy && R.walk(S.x, ny)) { S.y = ny; S.step++; }
     else { S.dir = null; S.target = null; S.frame = 0; }
   } else S.frame = 0;
 }
@@ -2016,7 +2228,7 @@ cv.addEventListener("pointerdown", (e) => {
   if (S.dead || S.won) return;
   if (sy >= 176) { keepKbd = true; kbd.focus(); return; }
   const px = Math.floor(sx / 2), py = sy - PIC_Y;
-  if (py >= 0 && py < PH) { S.dir = null; S.target = { x: px, y: Math.max(100, py) }; }
+  if (py >= 0 && py < PH) walkTo(px, py);
 });
 function padPress(b) {
   const k = b.dataset.k; audio();
