@@ -106,7 +106,7 @@
 <script>
 "use strict";
 // ============================================================
-//  PROF QUEST - trois glandeurs, une photocopieuse, Mme D.
+//  PROF QUEST - trois glandeurs, une photocopieuse, Mme Direction.
 //  Hommage aux aventures Sierra AGI de 1987 (Police Quest).
 //  320x200 EGA, image 160x168 en pixels doubles, police 8x8.
 // ============================================================
@@ -263,7 +263,7 @@ const CHARS = [
   { id: "sabrina", name: "Sabrina", path: "sabrina",
     c: { hair: 6, skin: 12, shirt: 15, vest: 13, tie: 15, pants: 1, shoes: 0, style: "long" },
     pitch: "Jeune prof et nouvelle maman, de retour de congé. Douce, responsable, bienveillante. Dort trois heures par nuit, en morceaux.",
-    desc: "Sabrina, jeune prof. Cardigan rose, cernes de nouvelle maman, et un sourire qui désarme tout le monde. Même Mme D, presque.",
+    desc: "Sabrina, jeune prof. Cardigan rose, cernes de nouvelle maman, et un sourire qui désarme tout le monde. Même Mme Direction, presque.",
     doing: "regarde des photos de son bébé sur son cellulaire, en souriant.",
     busy: "« Regarde ! Il a fait son premier gros rot ce matin. » Sabrina vous montre une photo. Elle est floue. Elle est parfaite.",
     quiz: "Examen d'histoire adapté : « La Nouvelle-France ». Gros caractères, pictogrammes, et un petit mot d'encouragement au bas de chaque page." },
@@ -279,7 +279,7 @@ const CHARS = [
     desc: "Geneviève. Chignon, lunettes, chemisier sarcelle. Elle travaille. Elle travaille toujours.",
     doing: "corrige une pile de copies, en silence, avec méthode.",
     busy: "Geneviève lève les yeux, réfléchit, et dit doucement : « Chaque chose en son temps. » Puis elle retourne à sa correction.",
-    quiz: "Le « Plan d'engagement vers la réussite » de Mme D. 14 pages, 9 graphiques en tarte, 0 élève consulté." },
+    quiz: "Le « Plan d'engagement vers la réussite » de Mme Direction. 14 pages, 9 graphiques en tarte, 0 élève consulté." },
   { id: "sophie", name: "Sophie", path: "gen",
     c: { hair: 0, skin: 12, shirt: 15, vest: 10, tie: 15, pants: 1, shoes: 15, style: "pony" },
     pitch: "Jeune prof. Arrive tôt pour corriger. Planifie sans relâche, en couleurs, jusqu'en juin. A toujours une histoire d'élève à raconter.",
@@ -290,7 +290,7 @@ const CHARS = [
     c: { hair: 4, skin: 12, shirt: 5, vest: 5, tie: 5, pants: 0, shoes: 0, style: "long" },
     pitch: "Chiale souvent. Critique tout. Cynique de calibre olympique. Co-responsable du comité café avec Guy, le seul comité qui sert à quelque chose.",
     desc: "Mélanie. Cheveux roux, chandail mauve, bras croisés en permanence. Elle a déjà trouvé trois choses à critiquer depuis votre arrivée.",
-    doing: "chiale contre l'horaire, la cafétéria, le chauffage et la police d'écriture des courriels de Mme D.",
+    doing: "chiale contre l'horaire, la cafétéria, le chauffage et la police d'écriture des courriels de Mme Direction.",
     busy: "« Pis là, tu sais-tu c'est quoi le pire ? Non, attends, y en a plusieurs. » Mélanie commence une liste. Elle est longue." },
   { id: "vieux", name: "Guy", path: "cafe",
     c: { hair: 7, skin: 12, shirt: 15, vest: 6, tie: 6, pants: 8, shoes: 0, style: "bald", stache: 7 },
@@ -521,33 +521,33 @@ ROOMS.hall = {
   walk(x, y) { return y >= 100 && y <= 167 && x >= 1 && x <= 158 && !this.obstacles.some((r) => inR(x, y, r)); },
   exit(nx, ny) {
     if (ny < 100 && nx >= 104 && nx <= 122) {
-      if (!S.signed) { S.dir = null; S.blocked = true; say("« Euh... " + wrongName() + " ? Non. Vous, là. » Mme D vous pointe avec son cartable. « Le registre. On signe AVANT d'aller se vautrer dans la salle des profs. Je me fiche de ce que vous enseignez, il me faut une donnée. »"); return true; }
+      if (!S.signed) { S.dir = null; S.blocked = true; say("« Euh... " + wrongName() + " ? Non. Vous, là. » Mme Direction vous pointe avec son cartable. « Le registre. On signe AVANT d'aller se vautrer dans la salle des profs. Je me fiche de ce que vous enseignez, il me faut une donnée. »"); return true; }
       goRoom("lounge", 4, 130, "right"); return true;
     }
     if (nx < 1) {
       S.dir = null; S.x = 3;
       if (P().id === "vieux") {
         S.t += 60;
-        if (!S.got.money && PATH() === "cafe") { give("money"); award("money"); say("Vous sortez fumer derrière le gymnase. Il fait froid. C'est parfait.\n\nKowalski est là, une cigarette à la main. « Salut, Guy. » Vous sortez votre liste. Il soupire, fouille sa poche et vous tend 20 $. « Pour le café. Depuis septembre. Je sais. »\n\nVous revenez en sentant la cigarette. Mme D plisse le nez."); }
-        else say("Vous sortez fumer une petite cigarette derrière le gymnase. Une minute de paix. Vous revenez. Mme D plisse le nez.");
+        if (!S.got.money && PATH() === "cafe") { give("money"); award("money"); say("Vous sortez fumer derrière le gymnase. Il fait froid. C'est parfait.\n\nKowalski est là, une cigarette à la main. « Salut, Guy. » Vous sortez votre liste. Il soupire, fouille sa poche et vous tend 20 $. « Pour le café. Depuis septembre. Je sais. »\n\nVous revenez en sentant la cigarette. Mme Direction plisse le nez."); }
+        else say("Vous sortez fumer une petite cigarette derrière le gymnase. Une minute de paix. Vous revenez. Mme Direction plisse le nez.");
         return true;
       }
       say("Par là, c'est le gymnase. Il ne se passe rien de bon au gymnase avant 8 h."); return true;
     }
-    if (nx > 158) { S.dir = null; S.x = 156; say("Le secrétariat. Mme D y entre parfois en pensant que c'est son bureau. Ce n'est pas son bureau."); return true; }
+    if (nx > 158) { S.dir = null; S.x = 156; say("Le secrétariat. Mme Direction y entre parfois en pensant que c'est son bureau. Ce n'est pas son bureau."); return true; }
     if (ny > 167) {
       S.dir = null;
       if (has("copies") && (PATH() === "glande" || PATH() === "sabrina")) { win(); return true; }
       S.y = 165;
-      if (PATH() === "gen") say(has("copies") ? "Ces copies-là, ce n'est pas pour vos élèves : Mme D les attend. Elle est juste là, à chercher son bureau." : "Votre local attendra. Mme D veut ses copies avant 8 h.");
-      else if (PATH() === "cafe") say("Pas question d'aller en classe tant que le comité café n'a pas présenté son bilan à Mme D. On a des priorités.");
+      if (PATH() === "gen") say(has("copies") ? "Ces copies-là, ce n'est pas pour vos élèves : Mme Direction les attend. Elle est juste là, à chercher son bureau." : "Votre local attendra. Mme Direction veut ses copies avant 8 h.");
+      else if (PATH() === "cafe") say("Pas question d'aller en classe tant que le comité café n'a pas présenté son bilan à Mme Direction. On a des priorités.");
       else if (PATH() === "marc") say("Votre local attendra. La partie de Catane doit être installée dans la salle des profs avant la cloche.");
       else say("Au bout du corridor, " + yourLocal() + ". Inutile d'y aller sans les photocopies : trente-deux élèves de secondaire 4 vous mangeraient tout rond.");
       return true;
     }
     return false;
   },
-  look() { return "Le corridor de l'école secondaire Antoine-de-Saint-Exupéry sent la cire et le découragement. Des cases d'élèves bleues, un babillard, le registre des présences, les casiers des profs et la porte de la salle des profs. Mme D, la directrice, monte la garde. Elle cherche peut-être son bureau. Une équipe de documentaire filme tout. " + yourLocal()[0].toUpperCase() + yourLocal().slice(1) + " est au sud."; },
+  look() { return "Le corridor de l'école secondaire Antoine-de-Saint-Exupéry sent la cire et le découragement. Des cases d'élèves bleues, un babillard, le registre des présences, les casiers des profs et la porte de la salle des profs. Mme Direction, la directrice, monte la garde. Elle cherche peut-être son bureau. Une équipe de documentaire filme tout. " + yourLocal()[0].toUpperCase() + yourLocal().slice(1) + " est au sud."; },
 };
 
 // ---------- salle des profs : cuisine au fond, tables au milieu, canapés devant (plan de l'école) ----------
@@ -838,7 +838,7 @@ function buildBg() { pic.fill(0); ROOMS[S.room].bg(); bg = pic.slice(); }
 function goRoom(r, x, y, face) {
   S.room = r; S.x = x; S.y = y; S.face = face; S.dir = null; S.target = null;
   buildBg(); play(SFX.door);
-  if (r === "hall" && has("game") && !S.won) { lose("game"); S.supplyUnlocked = false; say("Mme D vous voit sortir avec la boîte de Catane. « Ça paraît MAL. » Elle vous la prend des mains et repart la barrer dans l'armoire grise. Au moins, elle a trouvé la salle des profs du premier coup."); }
+  if (r === "hall" && has("game") && !S.won) { lose("game"); S.supplyUnlocked = false; say("Mme Direction vous voit sortir avec la boîte de Catane. « Ça paraît MAL. » Elle vous la prend des mains et repart la barrer dans l'armoire grise. Au moins, elle a trouvé la salle des profs du premier coup."); }
   if (!S.got["seen_" + r] && r !== "hall") { S.got["seen_" + r] = 1; say(ROOMS[r].look()); }
 }
 
@@ -918,7 +918,7 @@ syn("fountain", "abreuvoir fontaine");
 syn("water", "eau");
 syn("locker", "case cases vestiaire vestiaires");
 syn("door", "porte portes");
-syn("mmeD", "mme madame directrice dirlo patronne boss chef");
+syn("mmeD", "mme madame direction directrice dirlo patronne boss chef");
 syn("person", "homme femme collegue prof professeur quelqu lui elle il personne");
 syn("c_jp", "chat jp");
 syn("c_guy", "guyhomie homie guillaume");
@@ -1099,23 +1099,23 @@ function resolve(N) {
 
 // ---------- les parcours ----------
 function memo() {
-  const head = "De : Mme D, directrice\n\n";
+  const head = "De : Mme Direction\n\n";
   switch (PATH()) {
     case "cafe": return head + "OBJET : Comité café (indicateur de rentabilité no 9)\n\nLa cagnotte du café est à ZÉRO. Le comité café (Guy et Mélanie) doit me présenter un bilan positif AVANT 8 h, avec un café goûté et approuvé par la direction.\n\nSinon, la cafetière sera retirée. Rentabilité oblige.";
     case "sabrina": return head + "OBJET : Retour de congé\n\nBon retour, Sabrina. Votre clé de l'armoire à fournitures sera remise... plus tard. Je ne sais plus où je l'ai mise.\n\nLa photocopieuse est ENCORE bloquée. Ne pas y mettre la main tant qu'elle est branchée. Le code a changé. Je ne m'en souviens plus.";
     case "marc": return head + "OBJET : Objet confisqué en salle des profs\n\nUn « jeu de société » (petits moutons en bois, cartes de blé) traînait sur la table. Ça paraissait mal. Il a été placé dans l'armoire à fournitures. Votre clé est jointe. Aucun jeu en salle des profs. Les jeux, c'est pour les élèves. Et encore.";
     case "gen": return head + "OBJET : Réunion de ce midi\n\n" + P().name + ", j'ai besoin de 30 copies du Plan d'engagement vers la réussite, sur mon chemin, AVANT 8 h. Il faut que ça paraisse bien.\n\nLa photocopieuse est ENCORE bloquée. Interdit d'y mettre la main tant qu'elle est branchée. Le code a changé. Je ne m'en souviens plus. Votre clé de l'armoire est jointe.";
   }
-  return head + "OBJET : Photocopieuse (indicateur de performance no 47)\n\nLa photocopieuse est ENCORE bloquée. Interdit d'y mettre la main tant qu'elle est branchée : un accident de travail ferait baisser nos indicateurs.\n\nVotre clé de l'armoire est jointe. Le code a changé. Je ne m'en souviens plus.\n\nRAPPEL : réunion ce midi sur le plan de réussite. Présence OBLIGATOIRE de tout le département d'histoire. Je compterai les têtes.";
+  return head + "OBJET : Photocopieuse (indicateur no 47)\n\nENCORE bloquée. Interdit d'y mettre la main tant qu'elle est branchée : un accident ferait baisser nos indicateurs.\n\nVotre clé de l'armoire est jointe. Le code a changé. Je ne m'en souviens plus.\n\nRAPPEL : réunion ce midi. Présence OBLIGATOIRE de tout le département d'histoire. Je compterai les têtes.";
 }
 function helpText() {
   const base = "Flèches pour marcher (rappuyez pour arrêter). Il faut être près des choses. F3 répète la dernière commande.\n\nPartout : REGARDER, PRENDRE, LIRE, PARLER À, DEMANDER, DONNER, OUVRIR, REGARDER CAMÉRA.\n\n";
   const extra = {
     glande: "Votre parcours : 32 photocopies avant 8 h, et régler le tour de qui rate la réunion (PARLER DE LA RÉUNION, ROCHE, PAPIER, CISEAUX).",
-    cafe: "Votre parcours : un café frais, de l'argent dans la CAGNOTTE, et un bilan à Mme D avant 8 h." + (P().id === "vieux" ? " Essayez FUMER." : " Essayez CHIALER."),
+    cafe: "Votre parcours : un café frais, de l'argent dans la CAGNOTTE, et un bilan à Mme Direction avant 8 h." + (P().id === "vieux" ? " Essayez FUMER." : " Essayez CHIALER."),
     sabrina: "Votre parcours : vos copies adaptées, avec l'aide des collègues. Essayez ACCEPTER, RÉPONDRE, MONTRER PHOTO.",
     marc: "Votre parcours : installer une partie de Catane pour le dîner. Il faut le jeu, deux dés et deux joueurs. Essayez INVITER, INSTALLER, LANCER DÉ.",
-    gen: "Votre parcours : 30 copies du plan de réussite à remettre à Mme D." + (P().id === "sophie" ? " Essayez RACONTER et PLANIFIER." : " Essayez ÉCOUTER et RÉFLÉCHIR."),
+    gen: "Votre parcours : 30 copies du plan de réussite à remettre à Mme Direction." + (P().id === "sophie" ? " Essayez RACONTER et PLANIFIER." : " Essayez ÉCOUTER et RÉFLÉCHIR."),
   }[PATH()];
   return base + extra;
 }
@@ -1125,27 +1125,27 @@ function pathIntro() {
   switch (p.path) {
     case "glande":
       say(open + "Vous êtes " + p.name + ", prof d'histoire. Vous aviez toute la fin de semaine pour préparer votre examen. Vous l'avez écrit ce matin, dans l'autobus.");
-      say("Il faut 32 photocopies avant la cloche de 8 h. La photocopieuse est dans la salle syndicale (oui, oui). " + b + " et " + c + ", vos collègues d'histoire, sont à leurs bureaux.\n\nEt Mme D, la directrice, a convoqué une réunion ce midi. Tout le monde doit y être. Mais entre vous trois, c'est la tradition : à tour de rôle, un seul s'absente. Un absent, ça passe. Deux, ça paraît. C'est le tour de qui ? Personne ne s'entend.");
+      say("Il faut 32 photocopies avant la cloche de 8 h. La photocopieuse est dans la salle syndicale (oui, oui). " + b + " et " + c + ", vos collègues d'histoire, sont à leurs bureaux.\n\nEt Mme Direction, la directrice, a convoqué une réunion ce midi. Tout le monde doit y être. Mais entre vous trois, c'est la tradition : à tour de rôle, un seul s'absente. Un absent, ça passe. Deux, ça paraît. C'est le tour de qui ? Personne ne s'entend.");
       break;
     case "cafe":
       say(open + "Vous êtes " + p.name + ", co-responsable du comité café avec " + b + ". Le seul comité de l'école qui sert vraiment à quelque chose.");
-      say("Problème : la cagnotte du café est vide, la verseuse contient du goudron, et Mme D exige un « bilan positif » avant 8 h. Sinon, elle retire la cafetière.\n\nSans café, cette école tombe en 48 heures. Vous avez vu les études. Enfin, Guy les a vues. En 1987.");
+      say("Problème : la cagnotte du café est vide, la verseuse contient du goudron, et Mme Direction exige un « bilan positif » avant 8 h. Sinon, elle retire la cafetière.\n\nSans café, cette école tombe en 48 heures. Vous avez vu les études. Enfin, Guy les a vues. En 1987.");
       break;
     case "sabrina":
       say(open + "Vous êtes Sabrina, de retour de congé de maternité. Votre bébé a dormi de 2 h 14 à 3 h 02. Vous aussi.");
-      say("Il vous faut 32 copies de votre examen adapté avant la cloche. La photocopieuse est bloquée, vous n'avez ni code ni papier, et Mme D a égaré votre clé.\n\nHeureusement, vous êtes gentille avec tout le monde. Et tout le monde le sait.");
+      say("Il vous faut 32 copies de votre examen adapté avant la cloche. La photocopieuse est bloquée, vous n'avez ni code ni papier, et Mme Direction a égaré votre clé.\n\nHeureusement, vous êtes gentille avec tout le monde. Et tout le monde le sait.");
       break;
     case "marc":
       say(open + "Vous êtes Marc-André. Ce midi, c'est la partie de Catane du club des profs. Vous l'organisez depuis trois semaines. Vous avez fait un tableur.");
-      say("Problème : Mme D a confisqué le jeu, les dés ont disparu, et vous n'avez encore aucun joueur. Tout doit être installé dans la salle des profs avant la cloche de 8 h.\n\nLancez-vous. Littéralement : vous avez un d20.");
+      say("Problème : Mme Direction a confisqué le jeu, les dés ont disparu, et vous n'avez encore aucun joueur. Tout doit être installé dans la salle des profs avant la cloche de 8 h.\n\nLancez-vous. Littéralement : vous avez un d20.");
       break;
     case "gen":
       if (p.id === "sophie") say(open + "Vous êtes Sophie. Arrivée à 6 h 30 pour corriger. Votre planification est faite jusqu'en juin, en couleurs, avec des onglets. Et vous avez déjà trois histoires d'élèves à raconter. Il est 7 h 40.");
       else say(open + "Vous êtes Geneviève. Vous êtes ici depuis 6 h 15. Vous avez déjà corrigé 40 copies, planifié la semaine et arrosé la plante de la salle des profs. Personne ne l'avait arrosée depuis 2016.");
-      say("Mme D veut 30 copies de son « Plan d'engagement vers la réussite » avant 8 h, pour la réunion de ce midi. La photocopieuse est bloquée, et le code, c'est " + b + " qui le connaît.\n\nOn peut toujours compter sur vous. C'est un peu ça, le problème.");
+      say("Mme Direction veut 30 copies de son « Plan d'engagement vers la réussite » avant 8 h, pour la réunion de ce midi. La photocopieuse est bloquée, et le code, c'est " + b + " qui le connaît.\n\nOn peut toujours compter sur vous. C'est un peu ça, le problème.");
       break;
   }
-  say("Flèches pour marcher, ou touchez l'écran. Tapez des ordres comme REGARDER, PRENDRE COURRIER ou PARLER À MME D, puis ENTRÉE. AIDE rappelle votre objectif.\n\nLes lieux : le corridor, la salle des profs, la salle syndicale et la salle des bureaux.\n\nÉCHAP : menu.\nTAB : inventaire.\n\nAh, et une équipe de documentaire filme l'école.");
+  say("Flèches pour marcher, ou touchez l'écran. Tapez des ordres comme REGARDER, PRENDRE COURRIER ou PARLER À MME DIRECTION, puis ENTRÉE. AIDE rappelle votre objectif.\n\nLes lieux : le corridor, la salle des profs, la salle syndicale et la salle des bureaux.\n\nÉCHAP : menu.\nTAB : inventaire.\n\nAh, et une équipe de documentaire filme l'école.");
 }
 function mmeDSigned() {
   switch (PATH()) {
@@ -1161,9 +1161,9 @@ function wakeHint() {
   switch (PATH()) {
     case "cafe": return P().id === "vieux"
       ? "« La cagnotte ? Regarde ta liste. Kowalski doit 20 $ depuis septembre. Il fume derrière le gymnase tous les matins. Tu le croises sûrement... à ta pause cigarette. »"
-      : "« La cagnotte ? Mme D déteste les plaintes : elles font baisser ses indicateurs. Si quelqu'un allait CHIALER devant elle... elle paierait n'importe quoi pour que ça arrête. »";
+      : "« La cagnotte ? Mme Direction déteste les plaintes : elles font baisser ses indicateurs. Si quelqu'un allait CHIALER devant elle... elle paierait n'importe quoi pour que ça arrête. »";
     case "sabrina": return "« Marc-André connaît le code. Il va vouloir quelque chose en échange. Probablement une partie de Catane. Pis si tu manques de papier, j'en ai. Demande-moi. »";
-    case "marc": return "« Ton jeu ? Mme D l'a barré dans l'armoire grise ; ta clé est dans ton casier. Les élèves cachent tout dans leurs cases. Et le divan avale tout ce qui tombe dedans. Moi, je joue si tu m'apportes un café. »";
+    case "marc": return "« Ton jeu ? Mme Direction l'a barré dans l'armoire grise ; ta clé est dans ton casier. Les élèves cachent tout dans leurs cases. Et le divan avale tout ce qui tombe dedans. Moi, je joue si tu m'apportes un café. »";
     case "gen": return (P().id === "sophie" ? "« " + b + " connaît le code. Elle chiale, mais au fond, elle adore les histoires d'élèves. RACONTE-lui-en une. Une bonne. »" : "« " + b + " connaît le code. Elle te le donnera si tu l'ÉCOUTES chialer jusqu'au bout. Personne le fait jamais. »") + " Guy tousse. « Pis débranche la machine avant d'y mettre la main. »";
   }
   return null;
@@ -1189,7 +1189,7 @@ function pathAct(v, N, num) {
   if (v === "smoke") {
     if (me !== "vieux") { say("Vous ne fumez pas. Guy, lui, fume pour tout le monde."); return true; }
     if (L) { say("Pas en dedans, voyons. Sortez par le gymnase : à gauche dans le corridor."); return true; }
-    say("Pas devant Mme D. Le coin des fumeurs, c'est derrière le gymnase : à gauche dans le corridor."); return true;
+    say("Pas devant Mme Direction. Le coin des fumeurs, c'est derrière le gymnase : à gauche dans le corridor."); return true;
   }
   if (v === "complain") {
     if (me !== "melanie") { say("Chialer, c'est le domaine de Mélanie. Elle a une ceinture noire."); return true; }
@@ -1197,17 +1197,17 @@ function pathAct(v, N, num) {
       if (!near("mmeD")) return true;
       if (path === "cafe" && !S.got.money) {
         give("money"); award("money");
-        say("Vous chialez. Le chauffage. Les courriels. La police d'écriture des courriels. Le budget café. Mme D cligne des yeux à chaque phrase.\n\n« ASSEZ. » Elle sort un billet de 20 $ du « budget de mobilisation du personnel ». « Prenez ça et ARRÊTEZ. Les plaintes font baisser mes indicateurs. »"); return true;
+        say("Vous chialez. Le chauffage. Les courriels. La police d'écriture des courriels. Le budget café. Mme Direction cligne des yeux à chaque phrase.\n\n« ASSEZ. » Elle sort un billet de 20 $ du « budget de mobilisation du personnel ». « Prenez ça et ARRÊTEZ. Les plaintes font baisser mes indicateurs. »"); return true;
       }
-      say("Mme D se bouche les oreilles et s'éloigne d'un pas. Dans la mauvaise direction. Encore."); return true;
+      say("Mme Direction se bouche les oreilles et s'éloigne d'un pas. Dans la mauvaise direction. Encore."); return true;
     }
-    say(["Vous chialez contre le chauffage. Il fait 26 degrés dans le corridor et 14 dans votre local.", "Vous chialez contre la cafétéria. Pâté chinois trois fois cette semaine. On est mardi. Non, lundi. Pire.", "Vous chialez contre les courriels de Mme D. Écrits en Comic Sans. En rouge."][S.step % 3]); return true;
+    say(["Vous chialez contre le chauffage. Il fait 26 degrés dans le corridor et 14 dans votre local.", "Vous chialez contre la cafétéria. Pâté chinois trois fois cette semaine. On est mardi. Non, lundi. Pire.", "Vous chialez contre les courriels de Mme Direction. Écrits en Comic Sans. En rouge."][S.step % 3]); return true;
   }
   if (v === "think") {
     if (me !== "gen" && me !== "sophie") { say("Vous réfléchissez. Ça fait mal un peu. Vous arrêtez."); return true; }
     award("think");
     const c = S.copier;
-    const h = !S.signed ? "Signer le registre d'abord. Mme D compte tout." : !has("key") && !S.supplyUnlocked ? "La clé de l'armoire est dans mon casier." : !S.got.listen ? "Mélanie connaît le code. Elle veut juste être écoutée." : c.plugged && c.jam ? "On débranche avant de mettre la main dans une machine. Toujours." : c.jam ? "Retirer le bourrage, maintenant que c'est débranché." : !c.plugged ? "Rebrancher la photocopieuse." : !c.paper && !has("paper") ? "Du papier dans l'armoire grise." : !c.paper ? "Mettre le papier dans la photocopieuse." : !c.code ? "Entrer le code." : !has("copies") ? "Photocopier le plan." : "Donner les copies à Mme D, dans le corridor.";
+    const h = !S.signed ? "Signer le registre d'abord. Mme Direction compte tout." : !has("key") && !S.supplyUnlocked ? "La clé de l'armoire est dans mon casier." : !S.got.listen ? "Mélanie connaît le code. Elle veut juste être écoutée." : c.plugged && c.jam ? "On débranche avant de mettre la main dans une machine. Toujours." : c.jam ? "Retirer le bourrage, maintenant que c'est débranché." : !c.plugged ? "Rebrancher la photocopieuse." : !c.paper && !has("paper") ? "Du papier dans l'armoire grise." : !c.paper ? "Mettre le papier dans la photocopieuse." : !c.code ? "Entrer le code." : !has("copies") ? "Photocopier le plan." : "Donner les copies à Mme Direction, dans le corridor.";
     say(me === "sophie" ? "Vous ouvrez votre agenda à l'onglet « AUJOURD'HUI ». En vert fluo :\n\n« " + h + " »" : "Vous fermez les yeux une seconde. Vous respirez. La réponse vient, simplement :\n\n« " + h + " »"); return true;
   }
   if (v === "answer" || (v === "use" && hasN("phone"))) {
@@ -1220,7 +1220,7 @@ function pathAct(v, N, num) {
     const who = hasN("mmeD") ? "mmeD" : hasN("npcC") ? "npcC" : hasN("npcB") ? "npcB" : L ? "npcB" : "mmeD";
     if (!near(who)) return true;
     award("photo");
-    if (who === "mmeD") say("Vous montrez une photo de votre bébé à Mme D. « Hm. Un bébé. Ça fait baisser la productivité. » Elle regarde la photo deux secondes de trop. Puis trois. Puis elle se racle la gorge et repart. Dans la mauvaise direction.");
+    if (who === "mmeD") say("Vous montrez une photo de votre bébé à Mme Direction. « Hm. Un bébé. Ça fait baisser la productivité. » Elle regarde la photo deux secondes de trop. Puis trois. Puis elle se racle la gorge et repart. Dans la mauvaise direction.");
     else say((who === "npcB" ? B() : C()).name + " fond complètement. « Ohhh. Il a tes yeux. Pis le nez de... de qui, au juste ? » Le caméraman zoome sur la photo.");
     return true;
   }
@@ -1252,7 +1252,7 @@ function pathAct(v, N, num) {
   // ----- Marc-André : recruter des joueurs, trouver le jeu et les dés, installer -----
   if (v === "invite") {
     if (path !== "marc") { say("Inviter quelqu'un ? Ce midi, c'est réunion. Personne n'a le temps. Sauf Marc-André, qui a toujours le temps pour un jeu."); return true; }
-    if (!L) { say(hasN("mmeD") ? "Inviter Mme D à jouer à Catane ? Elle demanderait un indicateur de performance pour les moutons." : "Il n'y a personne à inviter ici."); return true; }
+    if (!L) { say(hasN("mmeD") ? "Inviter Mme Direction à jouer à Catane ? Elle demanderait un indicateur de performance pour les moutons." : "Il n'y a personne à inviter ici."); return true; }
     const who = hasN("npcC") ? "npcC" : "npcB";
     if (!near(who)) return true;
     if (who === "npcB") {
@@ -1264,7 +1264,7 @@ function pathAct(v, N, num) {
   }
   if (v === "install" || (v === "load" && hasN("game") && hasN("table"))) {
     if (path !== "marc") { say("Installer quoi ? Vous n'avez rien à installer."); return true; }
-    if (!L) { say("La partie se joue dans la salle des profs. Pas dans le corridor, sous le nez de Mme D."); return true; }
+    if (!L) { say("La partie se joue dans la salle des profs. Pas dans le corridor, sous le nez de Mme Direction."); return true; }
     if (!near("table")) return true;
     const miss = [];
     if (!has("game")) miss.push("le jeu");
@@ -1278,7 +1278,7 @@ function pathAct(v, N, num) {
     if (has("game")) { say("Vous l'avez déjà. Vous le serrez contre vous."); return true; }
     if (!L || !near("supply")) return L ? true : (say("Vous ne voyez pas ça ici."), true);
     if (!S.supplyUnlocked) { say("Le jeu est barré dans l'armoire grise. Il vous faut la clé."); return true; }
-    give("game"); award("game"); say("Vous récupérez Les Colons de Catane. Il manque les deux dés. Évidemment. Mme D ne les a pas mis dans la boîte : elle les a « rangés ailleurs »."); return true;
+    give("game"); award("game"); say("Vous récupérez Les Colons de Catane. Il manque les deux dés. Évidemment. Mme Direction ne les a pas mis dans la boîte : elle les a « rangés ailleurs »."); return true;
   }
   // ----- Comité café : la cagnotte -----
   if ((v === "load" || v === "give") && hasN("money", "jar")) {
@@ -1292,11 +1292,11 @@ function pathAct(v, N, num) {
   if (v === "give" && path !== "glande") {
     const coffee = hasN("coffee", "mug");
     if (hasN("mmeD") || (!L && N.length && !hasN("npcB", "npcC"))) {
-      if (L) { say("Mme D n'est pas là. Elle cherche probablement son bureau."); return true; }
+      if (L) { say("Mme Direction n'est pas là. Elle cherche probablement son bureau."); return true; }
       if (!near("mmeD")) return true;
       if (path === "cafe" && coffee) {
-        if (!has("mug") || S.mug === "empty") { say("Votre tasse est vide. Mme D veut goûter un café, pas une métaphore."); return true; }
-        if (!S.got.fund) { say("Mme D tend la main, puis s'arrête. « Et la cagnotte ? Elle est toujours à zéro. Un café sans rentabilité, c'est juste... un café. »"); return true; }
+        if (!has("mug") || S.mug === "empty") { say("Votre tasse est vide. Mme Direction veut goûter un café, pas une métaphore."); return true; }
+        if (!S.got.fund) { say("Mme Direction tend la main, puis s'arrête. « Et la cagnotte ? Elle est toujours à zéro. Un café sans rentabilité, c'est juste... un café. »"); return true; }
         win(); return true;
       }
       if (path === "gen" && hasN("copies")) {
@@ -1344,7 +1344,7 @@ function talkB() {
   const b = B(), path = PATH();
   if (!near("npcB")) return;
   switch (path) {
-    case "cafe": return say(b.id === "melanie" ? "Mélanie : « Notre cagnotte est vide, la verseuse est un dépotoir, pis Mme D veut un « bilan ». Moi, je chiale, toi, tu trouves l'argent. C'est ça, l'équipe. »" : "Guy : « Ma belle Mélanie, la cagnotte va se remplir. En 1987, on a eu la même crise. On l'a réglée en vendant des muffins. » Il tousse.");
+    case "cafe": return say(b.id === "melanie" ? "Mélanie : « Notre cagnotte est vide, la verseuse est un dépotoir, pis Mme Direction veut un « bilan ». Moi, je chiale, toi, tu trouves l'argent. C'est ça, l'équipe. »" : "Guy : « Ma belle Mélanie, la cagnotte va se remplir. En 1987, on a eu la même crise. On l'a réglée en vendant des muffins. » Il tousse.");
     case "sabrina": return say(S.knowsCode ? "« À midi, tu prends les moutons ! Le code, c'est " + S.code + ". »" : "« Sabrina ! Ça va, le bébé ? Tu dors un peu ? Écoute, ce midi, on joue à Catane. Il me manque une joueuse... »");
     case "marc": return say(S.got.recruitB ? "« J'ai hâte à midi ! Je vais tout perdre, mais j'ai hâte. »" : "Sabrina vous sourit. « Allô Marc-André. T'as l'air excité. C'est pour ta partie ? » Elle attend juste qu'on l'INVITE.");
     case "gen": return say(S.got.listen ? "« Merci de m'avoir écoutée. Sérieux. » Elle sourit. C'est rare. Le caméraman manque l'échapper." : b.busy + " Personne ne l'écoute jamais. Vous pourriez l'ÉCOUTER.");
@@ -1364,7 +1364,7 @@ function askPath(who, t) {
       return say("Marc-André remonte ses lunettes. « Le code ? Je te le donne... si tu viens jouer à Catane ce midi. Deal ? »\n\n(Tapez ACCEPTER.)");
     }
     if (path === "gen" && (t === "code" || t === "copier")) return say(S.got.listen ? "« " + S.code + ". » Mélanie vous fait un clin d'oeil. Elle n'a jamais fait de clin d'oeil à personne." : "« Le code ? Ah, ben là, tout le monde veut mon code, mais personne veut m'écouter, hein ? » Elle croise les bras plus fort.");
-    if (path === "cafe" && (t === "jar" || t === "money")) return say(B().id === "melanie" ? "« L'argent ? Kowalski nous doit 20 $ depuis septembre. Toi, tu le vois en fumant, non ? »" : "« L'argent ? Va CHIALER devant Mme D. Elle paye toujours pour que ça arrête. Moi, en 2004, j'ai eu un frigo. »");
+    if (path === "cafe" && (t === "jar" || t === "money")) return say(B().id === "melanie" ? "« L'argent ? Kowalski nous doit 20 $ depuis septembre. Toi, tu le vois en fumant, non ? »" : "« L'argent ? Va CHIALER devant Mme Direction. Elle paye toujours pour que ça arrête. Moi, en 2004, j'ai eu un frigo. »");
     if (path === "marc" && (t === "game" || t === "meeting")) return say("« Catane ? J'adore ! INVITE-moi pour vrai, pis je suis là. »");
     return say(B().busy);
   }
@@ -1380,13 +1380,13 @@ function askPath(who, t) {
 function pathWinText() {
   const p = P(), b = B().name, c = C().name;
   switch (p.path) {
-    case "cafe": return ["Mme D goûte. Longuement. Elle ferme les yeux.\n\n« Rentable ET buvable. Ça va très bien paraître dans le rapport. » La cafetière est sauvée.\n\nDans la salle des profs, on entend des applaudissements. " + b + (b === "Mélanie" ? " chiale qu'ils sont pas assez forts." : " tousse de joie."),
+    case "cafe": return ["Mme Direction goûte. Longuement. Elle ferme les yeux.\n\n« Rentable ET buvable. Ça va très bien paraître dans le rapport. » La cafetière est sauvée.\n\nDans la salle des profs, on entend des applaudissements. " + b + (b === "Mélanie" ? " chiale qu'ils sont pas assez forts." : " tousse de joie."),
       "« Six directeurs. La cafetière leur a tous survécu. Elle va survivre à celle-là aussi. »"];
     case "sabrina": return ["Vous entrez " + atLocal() + " à " + clockStr() + " avec 32 copies adaptées, encore tièdes.\n\nLa cloche sonne. Vos élèves vous accueillent avec une carte « BON RETOUR MADAME » signée par tout le groupe. Même par Kevin.\n\nCe midi, vous jouez à Catane. Vous prenez les moutons.",
       "« Je pensais que ce serait dur, revenir. C'est dur. Mais tout le monde a été tellement gentil. Même la photocopieuse, à la fin. »"];
-    case "marc": return ["Le plateau est installé. Les tuiles sont mélangées. Les deux dés sont alignés. Sabrina et Geneviève sont assises. La cloche sonne : la partie est prête pour midi.\n\nMme D passe la tête dans la porte. « Qu'est-ce que c'est que... » Elle regarde le plateau. Trois secondes. « Ça paraît... collaboratif. » Elle s'assoit. « Je prends le bois. »",
+    case "marc": return ["Le plateau est installé. Les tuiles sont mélangées. Les deux dés sont alignés. Sabrina et Geneviève sont assises. La cloche sonne : la partie est prête pour midi.\n\nMme Direction passe la tête dans la porte. « Qu'est-ce que c'est que... » Elle regarde le plateau. Trois secondes. « Ça paraît... collaboratif. » Elle s'assoit. « Je prends le bois. »",
       "« J'ai invité la directrice à jouer à Catane. Elle a gagné. Elle a utilisé un tableur. Je l'admire. Je la crains. »"];
-    case "gen": return ["Vous tendez les 30 copies à Mme D à " + clockStr() + ".\n\n« Merci... " + P().name + ". » Elle a trouvé votre nom du premier coup. Elle a l'air d'attendre des félicitations.\n\nVous souriez poliment. Le sourire que vous gardez pour la direction. Celui qui ne monte pas jusqu'aux yeux.\n\n« Bonne réunion, Madame. » Vous tournez les talons. Vos élèves, eux, vous attendent pour vrai.",
+    case "gen": return ["Vous tendez les 30 copies à Mme Direction à " + clockStr() + ".\n\n« Merci... " + P().name + ". » Elle a trouvé votre nom du premier coup. Elle a l'air d'attendre des félicitations.\n\nVous souriez poliment. Le sourire que vous gardez pour la direction. Celui qui ne monte pas jusqu'aux yeux.\n\n« Bonne réunion, Madame. » Vous tournez les talons. Vos élèves, eux, vous attendent pour vrai.",
       "« Trente copies d'un plan que personne va lire, pour une réunion que personne veut. » Une pause. « Mais c'est fait. Comme toujours. Pis là, je vais enseigner. La vraie job. »"];
   }
   return null;
@@ -1414,7 +1414,7 @@ function invName(it) {
     quiz: PATH() === "gen" ? "Plan de réussite (original)" : PATH() === "sabrina" ? "Examen adapté (original)" : "Examen d'histoire (original)",
     pen: PATH() === "gen" ? "Crayon rouge (très usé)" : "Crayon rouge (jamais servi)",
     phone: "Cellulaire (fond d'écran : bébé)", suce: "Suce de rechange", d20: "Dé à 20 faces (porte-bonheur)", liste: "Liste des cotisations du café",
-    money: "Billet de 20 $", game: "Les Colons de Catane", dez: "Dés (" + S.dice + "/2)", memo: "Note de Mme D", key: "Petite clé en laiton",
+    money: "Billet de 20 $", game: "Les Colons de Catane", dez: "Dés (" + S.dice + "/2)", memo: "Note de Mme Direction", key: "Petite clé en laiton",
     mug: S.mug === "milk" ? "Tasse de café au lait" : S.mug === "coffee" ? "Tasse de café frais" : "Tasse vide",
     filter: "Filtre à café", grounds: "Paquet de café moulu", milk: "Pinte de lait", paper: "Ramette de papier", copies: PATH() === "gen" ? "30 copies du plan de réussite" : "32 copies de l'examen",
   }[it];
@@ -1427,8 +1427,8 @@ function copierDisplay() {
   if (!c.code) return "ENTRER CODE D'ACCÈS";
   return "PRÊTE";
 }
-const MEMO_OLD = "OBJET : Photocopieuse (indicateur de performance no 47)\n\nLa photocopieuse est ENCORE bloquée. Interdit d'y mettre la main tant qu'elle est branchée : un accident de travail ferait baisser nos indicateurs.\n\nVotre clé de l'armoire est jointe. Le code a changé. Je ne m'en souviens plus.\n\nRAPPEL : réunion ce midi sur le plan de réussite. Présence OBLIGATOIRE de tout le département d'histoire. Je compterai les têtes.\n\nMme D, directrice";
-const CALENDAR = () => "CALENDRIER OFFICIEL DES RÉUNIONS RATÉES\n(NE PAS MONTRER À MME D)\n\nRéunions ratées cette année :\n" + C().name + " ....... ||||\n" + B().name + " ....... |||\n" + P().name + " ....... |||\n\nRègle no 1 : UN seul absent par réunion. Deux, ça paraît.\nRègle no 2 : le tour revient à celui qui en a raté le moins.\nRègle no 3 : égalité ? Roche-papier-ciseaux. " + C().name + " arbitre.";
+const MEMO_OLD = "OBJET : Photocopieuse (indicateur de performance no 47)\n\nLa photocopieuse est ENCORE bloquée. Interdit d'y mettre la main tant qu'elle est branchée : un accident de travail ferait baisser nos indicateurs.\n\nVotre clé de l'armoire est jointe. Le code a changé. Je ne m'en souviens plus.\n\nRAPPEL : réunion ce midi sur le plan de réussite. Présence OBLIGATOIRE de tout le département d'histoire. Je compterai les têtes.\n\nMme Direction, directrice";
+const CALENDAR = () => "CALENDRIER OFFICIEL DES RÉUNIONS RATÉES\n(NE PAS MONTRER À MME DIRECTION)\n\nRéunions ratées cette année :\n" + C().name + " ....... ||||\n" + B().name + " ....... |||\n" + P().name + " ....... |||\n\nRègle no 1 : UN seul absent par réunion. Deux, ça paraît.\nRègle no 2 : le tour revient à celui qui en a raté le moins.\nRègle no 3 : égalité ? Roche-papier-ciseaux. " + C().name + " arbitre.";
 
 function camera() {
   award("camera");
@@ -1443,8 +1443,8 @@ function camera() {
   else if (S.debate >= 1 && L) t = "« On y va tous. C'est juste qu'à chaque fois, y en a un qui a une « urgence ». Une seule. Deux, ça paraît. On a un calendrier, des règles, un arbitre. C'est très organisé, la glande. »";
   else if (S.happy) t = "« " + B().name + " m'a donné le code. On est chums, là. Jusqu'à la fin du café. »";
   else if (L) t = "« " + B().name + " sans café, c'est une bête sauvage. Pis " + C().name + "... " + C().name + " est dans sa bulle depuis 2017. »";
-  else if (S.blocked && !S.signed) t = "« Mme D se souvient pas de mon nom, mais elle sait exactement combien de fois j'ai pas signé le registre. »";
-  else if (!S.signed) t = "« Mme D ? Elle veut des résultats. Pas que les élèves réussissent. Juste... des résultats. Dans un tableau. »";
+  else if (S.blocked && !S.signed) t = "« Mme Direction se souvient pas de mon nom, mais elle sait exactement combien de fois j'ai pas signé le registre. »";
+  else if (!S.signed) t = "« Mme Direction ? Elle veut des résultats. Pas que les élèves réussissent. Juste... des résultats. Dans un tableau. »";
   else t = "« Le secret, quand on est prof, c'est d'avoir l'air occupé. Regardez. » " + nm + " fronce les sourcils devant un mur.";
   say("(" + nm + ", face caméra)\n\n" + t + "\n\nLe caméraman zoome lentement.");
 }
@@ -1473,30 +1473,30 @@ function doLook(N) {
   if (n === "figs") return say(P().id === "guy" ? "Vos figurines du 78e régiment de Fraser, au 1/72. Il vous en reste 1 998 à peindre. À ce rythme, vous aurez fini pour le tricentenaire." : "Les figurines de Guy-Homie. Il y a plus de soldats peints à moitié que d'élèves dans l'école.");
   if (n === "laptop") return say(P().id === "crispy" ? "Votre portable. Onglets ouverts : solitaire, petites annonces de chalets, un forum sur les espadrilles. Aucun n'est en lien avec l'histoire." : "Le portable de Crispy. Écran : un jeu de solitaire. Partie en cours depuis la rentrée.");
   if (n === "union") return say("La convention collective. 412 pages. chat-JP en a souligné 411.");
-  if (n === "meeting") return say("La réunion de Mme D, ce midi, sur le « plan d'engagement vers la réussite ». Tout le département d'histoire doit y être. À tour de rôle, un des trois s'éclipse : un absent, ça passe. Deux, ça paraît." + (S.debate === 3 ? " Cette fois, c'est votre tour de la rater." : S.debate === 4 ? " Cette fois, c'est " + B().name + " qui la rate. Vous, vous y allez." : " C'est le tour de qui ? Personne ne s'entend."));
+  if (n === "meeting") return say("La réunion de Mme Direction, ce midi, sur le « plan d'engagement vers la réussite ». Tout le département d'histoire doit y être. À tour de rôle, un des trois s'éclipse : un absent, ça passe. Deux, ça paraît." + (S.debate === 3 ? " Cette fois, c'est votre tour de la rater." : S.debate === 4 ? " Cette fois, c'est " + B().name + " qui la rate. Vous, vous y allez." : " C'est le tour de qui ? Personne ne s'entend."));
   if (n === "clock") return say((L ? "L'horloge au-dessus de la porte indique " : "Votre montre indique ") + clockStr() + ". La cloche sonne à 8 h 00.");
-  if (n === "ceiling") return say(L ? "Des tuiles tachées. L'une d'elles a la forme d'un graphique en tarte. Mme D l'a fait encadrer." : "Les néons grésillent. L'un d'eux clignote en morse. Il dit : C-O-N-G-É.");
+  if (n === "ceiling") return say(L ? "Des tuiles tachées. L'une d'elles a la forme d'un graphique en tarte. Mme Direction l'a fait encadrer." : "Les néons grésillent. L'un d'eux clignote en morse. Il dit : C-O-N-G-É.");
   if (n === "floor") return say(L ? "Un tapis brun conçu pour cacher les taches de café. Il a échoué." : "Un plancher fraîchement ciré. M. Ortiz, le concierge, en est très fier.");
   if (n === "wall") return say(L ? "Les murs sont du vert exact d'un hôpital dans un film triste." : "Des blocs de béton gris avec une bande bleue. Les couleurs de l'école, plus ou moins.");
   if (typeof n === "string" && n.startsWith("c_")) { if (S.room !== "bureaux") return say("Vous ne voyez pas ça ici."); const ch = byId(n.slice(2)); return say(ch.desc + (ch.local ? " (Local " + ch.local + ".)" : "") + " En ce moment, " + ch.name + " " + ch.doing); }
   if (n === "screen") return say("L'écran de la salle syndicale. Diapositive affichée : « ASSEMBLÉE GÉNÉRALE JEUDI - ORDRE DU JOUR : 1. Les réunions du midi. 2. Les réunions du midi (suite). 3. Varia (le café). » Signé chat-JP.");
   if (n === "mess") return say("Le bordel de tables et de choses : des boîtes de tracts, trois pancartes « NON AUX RÉUNIONS DU MIDI », un mégaphone sans piles, une plante morte et un sac de chips entamé en 2022.");
-  if (n === "door") return say(S.room === "lounge" ? "Trois portes : le corridor à gauche, la salle syndicale au fond à droite, la salle des bureaux devant à droite." : S.room === "syndic" ? "La porte qui ramène à la salle des profs, côté cuisine." : S.room === "bureaux" ? "La porte qui ramène à la salle des profs." : L ? "La porte qui donne sur le corridor. Et sur Mme D." : "La porte de la salle des profs. Plaque : PERSONNEL SEULEMENT. Les élèves pensent qu'il y a un spa derrière.");
+  if (n === "door") return say(S.room === "lounge" ? "Trois portes : le corridor à gauche, la salle syndicale au fond à droite, la salle des bureaux devant à droite." : S.room === "syndic" ? "La porte qui ramène à la salle des profs, côté cuisine." : S.room === "bureaux" ? "La porte qui ramène à la salle des profs." : L ? "La porte qui donne sur le corridor. Et sur Mme Direction." : "La porte de la salle des profs. Plaque : PERSONNEL SEULEMENT. Les élèves pensent qu'il y a un spa derrière.");
   if (n === "bell") return say("La cloche sonne à 8 h 00 pile. Il est " + clockStr() + ".");
   if (n === "class") return say(yourLocal()[0].toUpperCase() + yourLocal().slice(1) + " est au sud. Trente-deux élèves de secondaire 4 y seront à 8 h 00, que vous soyez là ou pas.");
   if (n === "kowalski") return say("M. Kowalski, le prof d'éduc, n'est pas là. Estimez-vous chanceux.");
   if (n === "fenouil") return say("M. Fenouil a enseigné la chimie ici pendant trente ans. Puis il a essayé de réparer la photocopieuse. Il y a une petite plaque au-dessus de l'évier.");
-  if (n === "mmeD" && L) return say("Mme D n'est pas là. Elle cherche probablement son bureau.");
+  if (n === "mmeD" && L) return say("Mme Direction n'est pas là. Elle cherche probablement son bureau.");
   if (n === "npcB" || n === "npcC") { if (S.room !== "bureaux") return say((n === "npcB" ? B() : C()).name + " est à son bureau, dans la salle des bureaux de profs."); const ch = n === "npcB" ? B() : C(); return say(ch.desc + (ch.local ? " (Local " + ch.local + ".)" : "") + " En ce moment, " + ch.name + " " + ch.doing + " " + (ch.habit || "") + (n === "npcB" && S.happy ? " Une tasse de café fume sur la table." : "")); }
   if (!HERE[S.room].includes(n)) return say(whereIs(n));
   switch (n) {
     case "mailbox": return say((S.got.memo && (S.got.key || !needsKey())) ? "Votre casier, étiqueté " + P().name.toUpperCase() + ", est vide. À part un trombone et vos rêves." : "Des casiers en bois, un par prof. Le vôtre est étiqueté " + P().name.toUpperCase() + ". Il y a quelque chose dedans.");
     case "memo": case "key": return say("C'est dans votre casier. Prenez-le, tout simplement.");
-    case "sheet": return say("Le registre des présences. Déjà signés : KOWALSKI 6 h 45, MME D 5 h 30 (elle dort ici ?), " + B().name.toUpperCase() + " 7 h 38, " + C().name.toUpperCase() + " 7 h 39." + (S.signed ? " Et vous." : " Vous, pas encore."));
-    case "board": award("board"); return say("Babillard : VENTE DE GÂTEAUX VENDREDI. PERDU : HAMSTER « GÉRARD ». Note de Mme D : « LE TAUX DE RÉUSSITE DOIT MONTER. PEU IMPORTE COMMENT. » Une affiche du syndicat : « ASSEMBLÉE GÉNÉRALE JEUDI - chat-JP ». Et un dessin du Petit Prince, signé par les élèves de sec. 1.");
+    case "sheet": return say("Le registre des présences. Déjà signés : KOWALSKI 6 h 45, MME DIRECTION 5 h 30 (elle dort ici ?), " + B().name.toUpperCase() + " 7 h 38, " + C().name.toUpperCase() + " 7 h 39." + (S.signed ? " Et vous." : " Vous, pas encore."));
+    case "board": award("board"); return say("Babillard : VENTE DE GÂTEAUX VENDREDI. PERDU : HAMSTER « GÉRARD ». Note de Mme Direction : « LE TAUX DE RÉUSSITE DOIT MONTER. PEU IMPORTE COMMENT. » Une affiche du syndicat : « ASSEMBLÉE GÉNÉRALE JEUDI - chat-JP ». Et un dessin du Petit Prince, signé par les élèves de sec. 1.");
     case "fountain": return say("Un abreuvoir fixé au mur, pile à la hauteur d'un élève de sixième année.");
     case "locker": return say("Des cases d'élèves bleues, cabossées. L'une d'elles bourdonne. Personne ne veut savoir.");
-    case "mmeD": return say("Mme D, la directrice. Tailleur beige, chignon serré, lunettes au bout du nez, cartable plein de tableaux de bord. Elle ne connaît le nom d'aucun prof, mais récite le taux de diplomation à deux décimales près. Elle cherche son bureau depuis 2019.");
+    case "mmeD": return say("Mme Direction, la directrice. Tailleur beige, chignon serré, lunettes au bout du nez, cartable plein de tableaux de bord. Elle ne connaît le nom d'aucun prof, mais récite le taux de diplomation à deux décimales près. Elle cherche son bureau depuis 2019.");
     case "fridge": return S.fridgeOpen ? say("Dans le frigo : " + (S.got.milkTaken ? "" : "une pinte de lait, ") + "un sous-marin étiqueté KOWALSKI - PAS TOUCHE, et un plat de plastique dont le contenu a développé une conscience.") : say("Un frigidaire blanc couvert d'aimants. Sur la porte, un papier jaune : le calendrier des réunions ratées. Un micro-ondes est posé dessus.");
     case "calendar": if (!near("calendar")) return; if (PATH() !== "glande") return say("Le calendrier des réunions ratées de chat-JP, Guy-Homie et Crispy. Des colonnes de petits bâtons. C'est leur affaire. Vous, vous allez aux réunions. Au complet."); award("calendar"); award("debate"); if (S.debate < 2) S.debate = 2; return say(CALENDAR());
     case "lunch": return say(S.fridgeOpen ? "Un sous-marin jambon-fromage dans du papier ciré. Étiquette en majuscules rageuses : KOWALSKI - PAS TOUCHE. ÇA VEUT DIRE TOI, " + B().name.toUpperCase() + "." : "Vous ne voyez pas ça ici.");
@@ -1509,7 +1509,7 @@ function doLook(N) {
     }
     case "filter": case "grounds": return say(S.cabinetOpen ? "C'est dans l'armoire au-dessus du comptoir." : "Vous ne voyez pas ça ici.");
     case "cabinet": return say(S.cabinetOpen ? "Dans l'armoire :" + (S.got.filter ? "" : " des filtres à café,") + (S.got.grounds ? "" : " un paquet de café moulu,") + " et un sachet de sucre de 1994." : "Des armoires en bois au-dessus du comptoir. Pas barrées.");
-    case "supply": if (PATH() === "marc") return say(S.supplyUnlocked ? (has("game") ? "L'armoire est ouverte. Brocheuses, toner. Votre jeu n'y est plus : il est dans vos bras." : "L'armoire est ouverte. Sur la tablette du haut : Les Colons de Catane. Votre précieux.") : "Une grande armoire de métal gris. Barrée. Votre jeu est là-dedans, prisonnier de Mme D."); return say(S.supplyUnlocked ? "L'armoire est ouverte. " + (S.got.paper ? "Brocheuses, toner, et des craies que personne n'a touchées depuis 1991." : "Il y a une ramette de papier neuve sur la tablette du haut.") : "Une grande armoire de métal gris. Barrée. Mme D garde le bon papier sous clé, comme les joyaux de la Couronne.");
+    case "supply": if (PATH() === "marc") return say(S.supplyUnlocked ? (has("game") ? "L'armoire est ouverte. Brocheuses, toner. Votre jeu n'y est plus : il est dans vos bras." : "L'armoire est ouverte. Sur la tablette du haut : Les Colons de Catane. Votre précieux.") : "Une grande armoire de métal gris. Barrée. Votre jeu est là-dedans, prisonnier de Mme Direction."); return say(S.supplyUnlocked ? "L'armoire est ouverte. " + (S.got.paper ? "Brocheuses, toner, et des craies que personne n'a touchées depuis 1991." : "Il y a une ramette de papier neuve sur la tablette du haut.") : "Une grande armoire de métal gris. Barrée. Mme Direction garde le bon papier sous clé, comme les joyaux de la Couronne.");
     case "paper": return say(S.supplyUnlocked && !S.got.paper ? "Une ramette de papier dans l'armoire." : S.copier.paper ? "Le bac de la photocopieuse est plein." : "Vous ne voyez pas de papier ici.");
     case "copier": case "jam": return say("Une photocopieuse beige de la taille d'une petite auto. Autocollant : NE PAS DONNER DE COUPS DE PIED. Son écran " + (copierDisplay() === "noir" ? "est noir. Elle est débranchée." : "affiche : " + copierDisplay() + ".") + (S.copier.jam ? " Une feuille froissée est coincée tout au fond, juste à côté d'une étiquette : DANGER - HAUTE TENSION." : ""));
     case "cord": return say(S.copier.plugged ? "Le fil de la photocopieuse court jusqu'à une prise dans le mur." : "Le fil de la photocopieuse traîne à terre, débranché.");
@@ -1519,10 +1519,10 @@ function doLook(N) {
     case "donut": return say(S.donut ? "La dernière chocolatine, dans une boîte rose. " + B().name + " la surveille. Et vous surveille." : "La boîte est vide. Il ne reste que des miettes et des souvenirs.");
     case "table": if (S.room === "bureaux") return say("Les bureaux des profs, en rangées, avec une plaque nominative chacun. Celui de Crispy a des traces d'espadrilles."); if (S.room === "syndic") return doLook(["mess"]); return say("Une table branlante. D'un côté, " + B().name + ". De l'autre, " + C().name + ". Au milieu, une boîte de viennoiseries et des années de désengagement.");
     case "couch": case "couch2":
-      if (PATH() === "marc" && !S.got.die2) { if (!near(n)) return; S.got.die2 = 1; S.dice++; give("dez"); S.score += POINTS.die2; play(SFX.points); return say("Vous fouillez entre les coussins du divan : 3 crayons, 1 $ 35 en monnaie, une carte de bingo de 1996... et UN DÉ ! Mme D l'avait « rangé » là. Dés : " + S.dice + "/2."); }
-      return say("Un divan écossais brun. Personne ne s'y assoit : Mme D a dit que ça « paraissait mal » sur les photos du rapport annuel.");
+      if (PATH() === "marc" && !S.got.die2) { if (!near(n)) return; S.got.die2 = 1; S.dice++; give("dez"); S.score += POINTS.die2; play(SFX.points); return say("Vous fouillez entre les coussins du divan : 3 crayons, 1 $ 35 en monnaie, une carte de bingo de 1996... et UN DÉ ! Mme Direction l'avait « rangé » là. Dés : " + S.dice + "/2."); }
+      return say("Un divan écossais brun. Personne ne s'y assoit : Mme Direction a dit que ça « paraissait mal » sur les photos du rapport annuel.");
     case "chair": return say(S.room === "bureaux" ? "Des chaises de bureau qui grincent. La vôtre est vide : vous êtes debout. C'est inhabituel." : S.room === "syndic" ? "Une pile de chaises, prêtes pour la prochaine assemblée générale. Elles attendent depuis 2019." : "Des chaises de plastique autour des tables.");
-    case "poster": return say("Une affiche du Petit Prince : « On ne voit bien qu'avec le coeur. L'essentiel est invisible pour les yeux. » Mme D a ajouté au feutre : « SAUF LES STATISTIQUES. »");
+    case "poster": return say("Une affiche du Petit Prince : « On ne voit bien qu'avec le coeur. L'essentiel est invisible pour les yeux. » Mme Direction a ajouté au feutre : « SAUF LES STATISTIQUES. »");
     case "window": return say("Il n'y a pas de fenêtre dans la salle des profs. Il n'y en a jamais.");
   }
   say("Rien de spécial.");
@@ -1539,7 +1539,7 @@ function act(v, N, num, move) {
     case "inventory": return showInv();
     case "score": return say("Votre score est de " + S.score + " sur " + maxScore() + ".");
     case "help": return say(helpText());
-    case "help_old": return say("Flèches pour marcher (rappuyez pour arrêter). Puis tapez ce que vous voulez faire :\n\nREGARDER   LIRE NOTE\nPRENDRE COURRIER\nPARLER À MME D\nDEMANDER LE CODE\nPARLER DE LA RÉUNION\nDONNER CAFÉ   PAPIER\nREGARDER CAMÉRA\n\nIl faut être près des choses. F3 répète la dernière commande.");
+    case "help_old": return say("Flèches pour marcher (rappuyez pour arrêter). Puis tapez ce que vous voulez faire :\n\nREGARDER   LIRE NOTE\nPRENDRE COURRIER\nPARLER À MME DIRECTION\nDEMANDER LE CODE\nPARLER DE LA RÉUNION\nDONNER CAFÉ   PAPIER\nREGARDER CAMÉRA\n\nIl faut être près des choses. F3 répète la dernière commande.");
     case "save": return saveGame();
     case "restore": return restoreGame();
     case "restart": return confirmRestart();
@@ -1548,10 +1548,10 @@ function act(v, N, num, move) {
     case "wait": return say("Vous attendez. C'est votre spécialité. Il est " + clockStr() + ".");
     case "swear": return say("Surveillez votre langage. Il y a peut-être des élèves. Et un micro-perche.");
     case "kill": return say("Ce genre de chose vous vaudrait une rencontre avec les ressources humaines du centre de services. Et une nouvelle carrière.");
-    case "insult": return hasN("mmeD") && !L ? (near("mmeD") && die("Vous dites à Mme D, en détail, ce que vous pensez de ses indicateurs.\n\nElle sort un formulaire. Puis un deuxième. Puis un tampon.\n\nVous êtes réaffecté au centre de services scolaire, au service des statistiques, jusqu'à la retraite. Le documentaire s'arrête là pour vous.")) : say("Gardez votre énergie. Vous en avez si peu.");
+    case "insult": return hasN("mmeD") && !L ? (near("mmeD") && die("Vous dites à Mme Direction, en détail, ce que vous pensez de ses indicateurs.\n\nElle sort un formulaire. Puis un deuxième. Puis un tampon.\n\nVous êtes réaffecté au centre de services scolaire, au service des statistiques, jusqu'à la retraite. Le documentaire s'arrête là pour vous.")) : say("Gardez votre énergie. Vous en avez si peu.");
     case "grieve":
       if (me === "jp") return say("Vous déposez un grief. Votre 213e. Objet : « l'existence même des réunions du midi ». Vous gardez votre sérieux trois secondes. Puis vous éclatez de rire. Le caméraman aussi.");
-      if (!L && near0("mmeD")) return die("Vous prononcez le mot « grève » à moins de trois mètres de Mme D.\n\nSes lunettes s'embuent. Elle lance une vérification surprise de votre planification. Elle est vide depuis octobre.\n\nVous passez le reste de l'année en surveillance de cafétéria. Seul. Pour toujours.");
+      if (!L && near0("mmeD")) return die("Vous prononcez le mot « grève » à moins de trois mètres de Mme Direction.\n\nSes lunettes s'embuent. Elle lance une vérification surprise de votre planification. Elle est vide depuis octobre.\n\nVous passez le reste de l'année en surveillance de cafétéria. Seul. Pour toujours.");
       return say("Les griefs, c'est chat-JP qui s'en occupe. Il en a déposé 212. Il en a gagné trois. Il dit que c'est le principe qui compte.");
     case "paint":
       if (me === "guy") return say("Vous sortez une figurine du général Montcalm de votre poche et peinturez un bouton de son uniforme. Trois minutes. Vous êtes épuisé. C'est le plus beau bouton de la Nouvelle-France.");
@@ -1559,11 +1559,11 @@ function act(v, N, num, move) {
     case "compute":
       if (me === "crispy") return say("Vous mettez les pieds sur le bureau le plus proche et ouvrez votre portable. Onze onglets. Aucun n'est en lien avec l'histoire. Vous le refermez avec un profond sentiment d'accomplissement.");
       return say("L'ordi, c'est le truc de Crispy. Personne d'autre ne sait le mot de passe. Personne d'autre ne veut savoir ce qu'il y a dessus.");
-    case "kiss": return say(hasN("mmeD") ? "Mme D vous fixe jusqu'à ce que vous cessiez d'exister. Vous reculez lentement." : "Restons professionnels. Il y a une caméra.");
+    case "kiss": return say(hasN("mmeD") ? "Mme Direction vous fixe jusqu'à ce que vous cessiez d'exister. Vous reculez lentement." : "Restons professionnels. Il y a une caméra.");
     case "dance": return say("Vous esquissez un pas de danse. Le caméraman l'a filmé. Ça va être dans le générique.");
     case "yell": return say("Votre voix résonne. Quelque part, un concierge soupire.");
     case "thank": return say("Bienvenue.");
-    case "listen": return say(L ? "Le frigo ronronne. La cafetière cliquette. " + C().name + " soupire dans sa bulle." : "Des cases claquent au loin. Le crayon de Mme D gratte son cartable. Elle note quelque chose. Sur vous.");
+    case "listen": return say(L ? "Le frigo ronronne. La cafetière cliquette. " + C().name + " soupire dans sa bulle." : "Des cases claquent au loin. Le crayon de Mme Direction gratte son cartable. Elle note quelque chose. Sur vous.");
     case "knock": return say("Vous cognez. Personne ne répond. La porte n'est pas barrée : marchez simplement dedans.");
     case "go": case "enter":
       if (v === "enter" && (hasN("code") || num)) return act("type", N, num);
@@ -1578,7 +1578,7 @@ function act(v, N, num, move) {
     case "play": return playRps(move);
     case "wake": return wake(n0);
     case "stand": return say("Vous êtes debout. C'est déjà ça.");
-    case "sit": return say(L ? "Le divan vous tend les bras. Mais la cloche sonne à 8 h. Les vrais glandeurs savent quand il ne faut pas glander." : "Il n'y a nulle part où s'asseoir ici. Mme D a fait enlever les bancs : ça « paraissait mal ».");
+    case "sit": return say(L ? "Le divan vous tend les bras. Mais la cloche sonne à 8 h. Les vrais glandeurs savent quand il ne faut pas glander." : "Il n'y a nulle part où s'asseoir ici. Mme Direction a fait enlever les bancs : ça « paraissait mal ».");
     case "smell": return say(hasN("milk") ? "Ça sent... bon ? Sûrement assez bon pour un café. Sûrement pas pour le boire tel quel." : hasN("microwave") ? "Poisson. 2009. Inimitable." : L ? "Café brûlé, vieux poisson et désengagement." : "Cire à plancher et aiguisoir.");
     case "drop": return say("Vous êtes mieux de le garder.");
     case "read":
@@ -1592,7 +1592,7 @@ function act(v, N, num, move) {
 
 // ---------- le grand débat : c'est le tour de qui de rater la réunion ? ----------
 function debate() {
-  if (S.room === "hall") return say("Le débat se fait entre collègues, dans la salle des bureaux. Pas devant Mme D. Jamais devant Mme D.");
+  if (S.room === "hall") return say("Le débat se fait entre collègues, dans la salle des bureaux. Pas devant Mme Direction. Jamais devant Mme Direction.");
   if (!near0("npcB") && !near0("npcC")) return say("Le débat se fait avec " + B().name + " et " + C().name + ", à leurs bureaux. Rapprochez-vous.");
   if (!near("table")) return;
   const b = B().name, c = C().name, pn = P().name;
@@ -1600,13 +1600,13 @@ function debate() {
   if (S.debate === 4) return say("C'est réglé : " + b + " rate la réunion, vous y allez avec " + c + ". " + c + " vous tapote l'épaule. « On va s'asseoir en arrière. »");
   if (S.debate === 0) {
     S.debate = 1; award("debate");
-    return say("« Bon. La réunion de Mme D ce midi. C'est le tour de qui de la rater ? »\n\n" + b + " : « Moi ! J'en ai pas raté une depuis octobre. »\n" + c + " : « Voyons donc, c'est mon tour. J'ai fait celle sur les indicateurs au complet. Trois heures. J'ai vu des choses. »\n" + pn + " : « Moi aussi j'y ai droit... »\n\nTout le monde se tourne vers le calendrier collé sur le frigidaire.");
+    return say("« Bon. La réunion de Mme Direction ce midi. C'est le tour de qui de la rater ? »\n\n" + b + " : « Moi ! J'en ai pas raté une depuis octobre. »\n" + c + " : « Voyons donc, c'est mon tour. J'ai fait celle sur les indicateurs au complet. Trois heures. J'ai vu des choses. »\n" + pn + " : « Moi aussi j'y ai droit... »\n\nTout le monde se tourne vers le calendrier collé sur le frigidaire.");
   }
   return say(b + " : « Le calendrier fait foi. Va le lire. »\n" + c + " : « Pis si c'est égal, c'est roche-papier-ciseaux. Comme d'habitude. C'est moi l'arbitre. »");
 }
 function beats(a, b) { return (a === "roche" && b === "ciseaux") || (a === "ciseaux" && b === "papier") || (a === "papier" && b === "roche"); }
 function playRps(move) {
-  if (S.room === "hall") return say("Jouer à roche-papier-ciseaux tout seul dans le corridor ? Mme D le noterait.");
+  if (S.room === "hall") return say("Jouer à roche-papier-ciseaux tout seul dans le corridor ? Mme Direction le noterait.");
   if (S.debate < 2) return say(S.debate === 0 ? "Contre qui ? Et pour quoi ? Lancez d'abord le débat sur la réunion." : "Avant de jouer, il faut savoir qui est à égalité. Lisez le calendrier sur le frigo.");
   if (S.debate > 2) return say("C'est réglé. On ne revient pas là-dessus. Même la convention collective est claire.");
   if (!near("table")) return;
@@ -1619,7 +1619,7 @@ function playRps(move) {
     return say(pre + b.name + " fixe sa main, trahi par son propre réflexe. « Bon. J'y vais. Encore. Mais j'apporte " + (b.id === "guy" ? "mes figurines." : b.id === "crispy" ? "mon ordi." : "la convention collective. Pis je pose des questions.") + " »\n\nC'est votre tour de rater la réunion. Votre excuse officielle : « rencontre de parents ». Le caméraman fait un gros plan sur votre main victorieuse.");
   }
   S.debate = 4;
-  return say(pre + b.name + " lève les bras. " + c + " tranche : « C'est " + b.name + " qui la rate. " + P().name + ", tu viens avec moi. »\n\nVous passerez votre dîner à regarder des graphiques en tarte. Quelque part, Mme D sourit sans savoir pourquoi.");
+  return say(pre + b.name + " lève les bras. " + c + " tranche : « C'est " + b.name + " qui la rate. " + P().name + ", tu viens avec moi. »\n\nVous passerez votre dîner à regarder des graphiques en tarte. Quelque part, Mme Direction sourit sans savoir pourquoi.");
 }
 
 function talk(n) {
@@ -1631,7 +1631,7 @@ function talk(n) {
   if (n === "me") return say("Vous vous parlez à vous-même. Le caméraman prend des notes.");
   if (n === "mmeD" && !L) {
     if (!near("mmeD")) return;
-    if (!S.signed) return say("Mme D lève les yeux de son cartable. « Ah. Bonjour... " + wrongName() + ". Vous n'avez pas signé. Signez. Je me fiche de ce que vous enseignez, il me faut une donnée. » Elle regarde autour d'elle. « C'est par où, mon bureau, déjà ? »");
+    if (!S.signed) return say("Mme Direction lève les yeux de son cartable. « Ah. Bonjour... " + wrongName() + ". Vous n'avez pas signé. Signez. Je me fiche de ce que vous enseignez, il me faut une donnée. » Elle regarde autour d'elle. « C'est par où, mon bureau, déjà ? »");
     if (mmeDSigned()) return say(mmeDSigned());
     if (!has("copies")) return say("« Vous avez signé à " + clockStr() + ". Je le note. Je note tout. Rappel : réunion ce midi. Présence obligatoire pour tout le département d'histoire. Je compterai les têtes. Enfin, j'essaierai. » Elle s'éloigne d'un pas, hésite, revient. « Ce n'était pas par là. »");
     return say("« Des photocopies ? Parfait. Je vais pouvoir cocher une case. J'aime cocher des cases. » C'est la chose la plus chaleureuse qu'elle ait dite depuis 2019.");
@@ -1651,7 +1651,7 @@ function talk(n) {
   say("Il n'y a personne de ce nom ici.");
 }
 function wake(n) {
-  if (S.room === "hall") return say("Personne n'est à déranger ici. À part Mme D, et ce serait une mauvaise idée.");
+  if (S.room === "hall") return say("Personne n'est à déranger ici. À part Mme Direction, et ce serait une mauvaise idée.");
   if (n === "npcB") return say(B().name + " : « Pas avant mon café. »");
   if (!near("npcC")) return;
   if (S.awake) return say(C().busy);
@@ -1666,7 +1666,7 @@ function ask(N) {
   if (other) { if (S.room !== "bureaux") return say("Vous ne voyez pas ça ici."); if (!near(other)) return; return say(byId(other.slice(2)).busy); }
   if (!who) who = L ? (nearestPerson() || "npcB") : "mmeD";
   if (who.startsWith("c_")) { if (!near(who)) return; return say(byId(who.slice(2)).busy); }
-  if (who === "mmeD" && L) return say("Mme D n'est pas là. Elle cherche probablement son bureau.");
+  if (who === "mmeD" && L) return say("Mme Direction n'est pas là. Elle cherche probablement son bureau.");
   if (who !== "mmeD" && !L) return say("Il n'y a personne de ce nom ici.");
   if (!near(who)) return;
   const t = N.find((n) => n !== who);
@@ -1676,7 +1676,7 @@ function ask(N) {
     if (!S.awake) return say(C().name + " " + C().doing + " Pas de réaction. Essayez de DÉRANGER " + C().name.toUpperCase() + ".");
     switch (t) {
       case "npcB": case "play": return say(B().hint);
-      case "mmeD": return say("« Mme D ? Elle a fait enlever la machine à café de l'ancienne salle des profs. Pour « la productivité ». On a fait une minute de silence. Pis une deuxième pour le café. »");
+      case "mmeD": return say("« Mme Direction ? Elle a fait enlever la machine à café de l'ancienne salle des profs. Pour « la productivité ». On a fait une minute de silence. Pis une deuxième pour le café. »");
       case "code": case "copier": return say("« Le code ? Demande à " + B().name + ". Mais pas avant son café. J'ai essayé une fois. J'ai encore la marque. »");
       case "donut": return say("« La chocolatine ? Penses-y même pas. Pas tant que " + B().name + " a pas eu son café. »");
       case "meeting": case "calendar": return say("« La réunion ? On y va tous, mais y en a toujours un qui « a une urgence ». Un seul, sinon ça paraît. Le calendrier est sur le frigo. Si c'est égal, roche-papier-ciseaux. Pis c'est moi l'arbitre. J'adore arbitrer. C'est assis. »");
@@ -1695,8 +1695,8 @@ function ask(N) {
       case "fenouil": return say("« Gérard Fenouil. Trente ans de chimie. Pis cette photocopieuse-là. » " + B().name + " s'essuie discrètement les yeux.");
       case "coffee": case "pot": case "maker": case "filter": case "grounds": return say("« Filtres pis café moulu dans l'armoire au-dessus du comptoir. L'eau, c'est l'évier. C'est pas sorcier, " + pn + ". »");
       case "milk": return say("« Je le prends avec du lait. Mais bois SURTOUT pas ce lait-là tel quel. »");
-      case "mmeD": return say("« Mme D ? Elle veut pas que les élèves réussissent. Elle veut que ça AIT L'AIR qu'ils réussissent. C'est pas pareil. Elle a fait une formation là-dessus. »");
-      case "paper": case "supply": return say("« Le papier est dans l'armoire grise. Mme D la barre, pis elle met une clé dans chaque casier. Personne comprend. Elle non plus. »");
+      case "mmeD": return say("« Mme Direction ? Elle veut pas que les élèves réussissent. Elle veut que ça AIT L'AIR qu'ils réussissent. C'est pas pareil. Elle a fait une formation là-dessus. »");
+      case "paper": case "supply": return say("« Le papier est dans l'armoire grise. Mme Direction la barre, pis elle met une clé dans chaque casier. Personne comprend. Elle non plus. »");
       case "meeting": case "calendar": return debate();
       case "npcC": return say("« " + C().name + " ? " + C().name + " " + C().doing + " Depuis 2017. »");
       case "camera": return say(B().name + " regarde la caméra. Longuement. Puis retourne à ses affaires. Le silence en dit long.");
@@ -1713,7 +1713,7 @@ function ask(N) {
     case "npcC": return say("« " + C().name + ". J'ai un dossier. Il fait quatre centimètres d'épaisseur. Il ne contient que des graphiques. »");
     case "paper": case "supply": case "key": return say("« Votre clé est dans votre casier, avec ma note. Lisez ma note. Je les écris pour qu'elles soient lues. Elles ne le sont jamais. Ça fait baisser mes indicateurs de lecture. »");
     case "lunch": case "kowalski": return say("« M. Kowalski a le meilleur taux de présence de l'école. Ne touchez pas à son lunch. »");
-    case "fenouil": return say("Mme D retire ses lunettes. Une demi-seconde. « Nous ne parlons pas de l'incident de la photocopieuse. Il n'apparaît dans aucun rapport. »");
+    case "fenouil": return say("Mme Direction retire ses lunettes. Une demi-seconde. « Nous ne parlons pas de l'incident de la photocopieuse. Il n'apparaît dans aucun rapport. »");
     case "jam": return say("« On débranche d'abord. J'ai fait une note. Plastifiée. »");
     case "camera": return say("« Ces gens tournent un documentaire sur « la vie d'une école ». J'ai demandé qu'on floute les profs. Pour améliorer l'image de l'établissement. »");
     case "union": return say("« Le syndicat. » Elle prononce le mot comme on nomme une maladie. « Dites à votre délégué que son grief numéro 212 est classé. Quelque part. Je ne sais plus où. »");
@@ -1740,7 +1740,7 @@ function hallAct(v, N, num) {
     if (!near("sheet")) return;
     if (S.signed) return say("Vous avez déjà signé. Une fois, c'est la procédure. Deux fois, c'est de la paperasse.");
     S.signed = true; award("signin");
-    return say("Vous signez : " + P().name.toUpperCase() + ", " + clockStr() + ". Mme D regarde la signature, puis vous, puis la signature. « Parfait, " + wrongName() + ". Ça va bien paraître. » Elle ne sait toujours pas qui vous êtes.");
+    return say("Vous signez : " + P().name.toUpperCase() + ", " + clockStr() + ". Mme Direction regarde la signature, puis vous, puis la signature. « Parfait, " + wrongName() + ". Ça va bien paraître. » Elle ne sait toujours pas qui vous êtes.");
   }
   if ((v === "drink" || v === "use") && hasN("fountain", "water")) {
     if (!near("fountain")) return;
@@ -1748,16 +1748,16 @@ function hallAct(v, N, num) {
   }
   if (v === "open" && hasN("locker")) {
     if (!near("locker")) return;
-    if (PATH() === "marc" && !S.got.die1) { award("locker"); S.got.die1 = 1; S.dice++; give("dez"); S.score += POINTS.die1; return say("Vous ouvrez une case au hasard. Dedans : un lunch de 2019 qui respire, quatorze cellulaires confisqués... et UN DÉ de Catane ! Mme D l'avait « rangé » là. Dés : " + S.dice + "/2."); }
+    if (PATH() === "marc" && !S.got.die1) { award("locker"); S.got.die1 = 1; S.dice++; give("dez"); S.score += POINTS.die1; return say("Vous ouvrez une case au hasard. Dedans : un lunch de 2019 qui respire, quatorze cellulaires confisqués... et UN DÉ de Catane ! Mme Direction l'avait « rangé » là. Dés : " + S.dice + "/2."); }
     if (S.got.locker) return say("Vous rouvrez la case. Le lunch de 2019 vous fait un signe de la main. Vous refermez vite.");
     award("locker");
     return say("Vous ouvrez une case au hasard. Dedans : un lunch de 2019 qui respire, quatorze cellulaires confisqués, un manuel d'histoire jamais ouvert (le vôtre ?) et une figurine de Montcalm à moitié peinte.\n\nGuy-Homie la cherche depuis trois ans. Vous refermez doucement.");
   }
   if (v === "open" && hasN("door")) return say("Marchez simplement dedans.");
   if (v === "give") return say(hasN("mmeD") ? "« Je n'accepte pas les cadeaux, " + wrongName() + ". Ça paraîtrait mal. »" : "Personne ici n'en veut.");
-  if (v === "take" && hasN("sheet")) return say("Voler le registre ? Mme D vous retrouverait. Elle retrouve toujours tout. Sauf son bureau.");
+  if (v === "take" && hasN("sheet")) return say("Voler le registre ? Mme Direction vous retrouverait. Elle retrouve toujours tout. Sauf son bureau.");
   if (v === "take" && hasN("board")) return say("Il est vissé au mur.");
-  if (v === "take" && hasN("mmeD")) return say("Mme D ne se « prend » pas. Et vous ne savez pas où l'emmener : elle non plus.");
+  if (v === "take" && hasN("mmeD")) return say("Mme Direction ne se « prend » pas. Et vous ne savez pas où l'emmener : elle non plus.");
   if (HERE.lounge.includes(N[0]) && !HERE.hall.includes(N[0])) return say("Vous ne voyez pas ça ici.");
   cant();
 }
@@ -1831,7 +1831,7 @@ function loungeAct(v, N, num) {
   if (v === "pour" || (v === "fill" && hasN("mug")) || (v === "take" && hasN("coffee"))) {
     if (!near("maker")) return;
     if (!has("mug")) return say("Il vous faut une tasse.");
-    if (S.pot === "sludge") return say("Vous ne serviriez pas ça à votre pire ennemi. Enfin... à Mme D, peut-être.");
+    if (S.pot === "sludge") return say("Vous ne serviriez pas ça à votre pire ennemi. Enfin... à Mme Direction, peut-être.");
     if (S.pot === "brewing") return say("Patience. Ça coule encore.");
     if (S.pot !== "coffee") return say("Il n'y a pas de café dans la verseuse.");
     if (S.mug !== "empty") return say("Votre tasse est déjà pleine.");
@@ -1869,7 +1869,7 @@ function loungeAct(v, N, num) {
   if (v === "unlock" || (v === "use" && hasN("key")) || (v === "open" && hasN("supply"))) {
     if (!near("supply")) return;
     if (S.supplyUnlocked) return say("Elle est déjà ouverte.");
-    if (!has("key")) return say((v === "open" ? "Barrée. Mme D garde le bon papier sous clé, comme les joyaux de la Couronne." : "Vous n'avez pas de clé qui fait.") + (needsKey() ? " La clé est peut-être dans votre casier, dans le corridor." : PATH() === "sabrina" ? " Mme D a égaré votre clé. Quelqu'un ici a peut-être du papier." : ""));
+    if (!has("key")) return say((v === "open" ? "Barrée. Mme Direction garde le bon papier sous clé, comme les joyaux de la Couronne." : "Vous n'avez pas de clé qui fait.") + (needsKey() ? " La clé est peut-être dans votre casier, dans le corridor." : PATH() === "sabrina" ? " Mme Direction a égaré votre clé. Quelqu'un ici a peut-être du papier." : ""));
     S.supplyUnlocked = true; award("unlock");
     return say("La clé en laiton tourne avec un clic satisfaisant. L'armoire s'ouvre : brocheuses, toner, et sur la tablette du haut, " + (PATH() === "marc" ? "Les Colons de Catane. Votre précieux." : "une ramette de papier neuve. Elle brille."));
   }
@@ -1884,7 +1884,7 @@ function loungeAct(v, N, num) {
     if (hasN("maker", "coffee")) return say("Débrancher la cafetière ? Dans CETTE salle ? " + B().name + " vous enterrerait sous le stationnement.");
     if (!near("cord")) return;
     if (!c.plugged) return say("Elle est déjà débranchée.");
-    c.plugged = false; award("unplug"); return say("Vous suivez le fil jusqu'au mur et tirez la plogue. L'écran s'éteint avec un petit gémissement. Quelque part, un indicateur de sécurité au travail monte d'un point. Mme D ne saura jamais que c'est grâce à vous.");
+    c.plugged = false; award("unplug"); return say("Vous suivez le fil jusqu'au mur et tirez la plogue. L'écran s'éteint avec un petit gémissement. Quelque part, un indicateur de sécurité au travail monte d'un point. Mme Direction ne saura jamais que c'est grâce à vous.");
   }
   if (v === "plugv") {
     if (!near("cord")) return;
@@ -1897,9 +1897,9 @@ function loungeAct(v, N, num) {
     if (!hasN("copier", "jam", "paper") && v !== "fix") return cant();
     if (!near("copier")) return;
     if (!c.jam) return say(v === "open" ? "Vous ouvrez le panneau avant. Rien que de la poussière de toner et des mauvais souvenirs. Vous refermez." : "Pas de bourrage. Pour une fois.");
-    if (c.plugged) return die("Vous ouvrez le panneau avant et plongez la main vers la feuille coincée. Vos doigts effleurent le module de fusion. La machine est encore branchée.\n\nLes lumières baissent. " + B().name + " ne lève même pas les yeux. " + C().name + " non plus.\n\nUne deuxième plaque est vissée à côté de celle de M. Fenouil. Mme D note : « accident évitable, impact négatif sur l'indicateur no 12 ».");
+    if (c.plugged) return die("Vous ouvrez le panneau avant et plongez la main vers la feuille coincée. Vos doigts effleurent le module de fusion. La machine est encore branchée.\n\nLes lumières baissent. " + B().name + " ne lève même pas les yeux. " + C().name + " non plus.\n\nUne deuxième plaque est vissée à côté de celle de M. Fenouil. Mme Direction note : « accident évitable, impact négatif sur l'indicateur no 12 ».");
     c.jam = false; award("jam");
-    return say("Courant coupé, vous plongez la main et retirez délicatement la feuille froissée. C'est un brouillon du rapport annuel de Mme D. Titre : « UNE ÉCOLE QUI RÉUSSIT (SUR PAPIER) ». Vous décidez de ne pas le lire.");
+    return say("Courant coupé, vous plongez la main et retirez délicatement la feuille froissée. C'est un brouillon du rapport annuel de Mme Direction. Titre : « UNE ÉCOLE QUI RÉUSSIT (SUR PAPIER) ». Vous décidez de ne pas le lire.");
   }
   if (v === "load" && hasN("paper", "copier")) {
     if (!has("paper")) return say(c.paper ? "La photocopieuse a déjà du papier." : "Vous n'avez pas de papier.");
@@ -1926,7 +1926,7 @@ function loungeAct(v, N, num) {
     if (!c.code) return say("L'écran affiche : ENTRER CODE D'ACCÈS.");
     give("copies"); award("copy"); play(SFX.points);
     const gen = PATH() === "gen";
-    return say("Vous posez " + (gen ? "le plan de Mme D" : "l'examen") + " sur la vitre, réglez sur " + (gen ? 30 : 32) + " et appuyez sur COPIE. La machine souffle, cogne, envisage de bloquer, se ravise, et crache enfin " + (gen ? 30 : 32) + " copies tièdes.\n\n" + (gen ? "Maintenant, Mme D. Dans le corridor. Quelque part." : "Maintenant, en classe !"));
+    return say("Vous posez " + (gen ? "le plan de Mme Direction" : "l'examen") + " sur la vitre, réglez sur " + (gen ? 30 : 32) + " et appuyez sur COPIE. La machine souffle, cogne, envisage de bloquer, se ravise, et crache enfin " + (gen ? 30 : 32) + " copies tièdes.\n\n" + (gen ? "Maintenant, Mme Direction. Dans le corridor. Quelque part." : "Maintenant, en classe !"));
   }
   if (v === "use" && hasN("couch")) return act("sit", N, num);
   if (v === "open" && hasN("door")) return say("Marchez simplement dedans.");
@@ -1950,13 +1950,13 @@ function win() {
     return;
   }
   const meeting = S.debate === 3
-    ? "Ce midi, " + B().name + " et " + C().name + " iront à la réunion de Mme D. Vous, vous avez une « rencontre de parents ». Avec votre lunch. Mme D compte deux têtes sur trois et ne remarque rien."
+    ? "Ce midi, " + B().name + " et " + C().name + " iront à la réunion de Mme Direction. Vous, vous avez une « rencontre de parents ». Avec votre lunch. Mme Direction compte deux têtes sur trois et ne remarque rien."
     : S.debate === 4
-      ? "Ce midi, vous irez à la réunion de Mme D avec " + C().name + ". " + B().name + " a gagné le droit de la rater. Ça arrive aux meilleurs."
-      : "Ce midi, faute d'avoir réglé le tour, vous allez tous les trois à la réunion de Mme D. Elle compte trois têtes sur trois. « 100 % de présence ! Ça va TELLEMENT bien paraître. » Vous auriez dû régler ça en salle des profs.";
+      ? "Ce midi, vous irez à la réunion de Mme Direction avec " + C().name + ". " + B().name + " a gagné le droit de la rater. Ça arrive aux meilleurs."
+      : "Ce midi, faute d'avoir réglé le tour, vous allez tous les trois à la réunion de Mme Direction. Elle compte trois têtes sur trois. « 100 % de présence ! Ça va TELLEMENT bien paraître. » Vous auriez dû régler ça en salle des profs.";
   say("Vous entrez " + atLocal() + " à " + clockStr() + " avec 32 copies encore tièdes de votre examen.\n\nPile à l'heure, la cloche sonne. Trente-deux élèves de secondaire 4 soupirent à l'unisson.\n\n" + meeting, {
     enter: () => say("(" + P().name + ", face caméra)\n\n« Vous savez quoi ? Aujourd'hui, j'ai travaillé. Un peu. Pis j'ai même pas eu mal. »\n\nLe caméraman zoome. Générique.", {
-      enter: () => say("FIN DU CHAPITRE 1\n\nFÉLICITATIONS !\n\nScore final : " + S.score + " sur " + maxScore() + "." + (S.score < maxScore() ? "\n\nIl reste des points à trouver. Fouillez. Regardez la caméra. Gagnez le droit de rater la réunion." : "\n\nScore parfait. Même Mme D n'a rien trouvé à redire. Elle ne sait juste pas à qui le dire.") + "\n\nENTRÉE pour rejouer.", { enter: () => restart(true), esc: () => restart(true) }),
+      enter: () => say("FIN DU CHAPITRE 1\n\nFÉLICITATIONS !\n\nScore final : " + S.score + " sur " + maxScore() + "." + (S.score < maxScore() ? "\n\nIl reste des points à trouver. Fouillez. Regardez la caméra. Gagnez le droit de rater la réunion." : "\n\nScore parfait. Même Mme Direction n'a rien trouvé à redire. Elle ne sait juste pas à qui le dire.") + "\n\nENTRÉE pour rejouer.", { enter: () => restart(true), esc: () => restart(true) }),
     }),
   });
 }
@@ -1992,7 +1992,7 @@ function drawInv() {
   center("Une touche pour revenir au jeu", 184, 0);
 }
 const MENUS = [
-  { t: "Info", items: [["À propos", () => say("PROF QUEST\nChapitre 1 : Lundi matin\n\nNeuf profs. Cinq parcours. Une photocopieuse. Et Mme D.\n\nUn hommage de fan aux aventures Sierra AGI de 1987.\n\nAucune photocopieuse n'a été maltraitée. Plusieurs profs, oui.")], ["Aide", () => act("help", [])]] },
+  { t: "Info", items: [["À propos", () => say("PROF QUEST\nChapitre 1 : Lundi matin\n\nNeuf profs. Cinq parcours. Une photocopieuse. Et Mme Direction.\n\nUn hommage de fan aux aventures Sierra AGI de 1987.\n\nAucune photocopieuse n'a été maltraitée. Plusieurs profs, oui.")], ["Aide", () => act("help", [])]] },
   { t: "Fichier", items: [["Sauver       <F5>", saveGame], ["Restaurer    <F7>", () => restoreGame()], ["Recommencer  <F9>", confirmRestart], ["Quitter", () => act("quit", [])]] },
   { t: "Action", items: [["Regarder", () => doLook([])], ["Inventaire  <Tab>", showInv], ["Score", () => act("score", [])], ["Heure", () => say("Votre montre indique " + clockStr() + ". La cloche sonne à 8 h.")], ["Face caméra", camera]] },
   { t: "Spécial", items: [["Son oui/non  <F2>", () => { S.sound = !S.sound; }]] },
@@ -2020,7 +2020,7 @@ function drawTitle() {
   center("- CHAPITRE 1 : Lundi matin -", 71, 15);
   center("École secondaire", 82, 11);
   center("Antoine-de-Saint-Exupéry", 91, 11);
-  center("9 profs. 1 école. Mme D.", 102, 12);
+  center("9 profs. 1 école. Mme Direction.", 102, 12);
   const M = (x, y, w, h, c) => srect(140 + x * 2, 110 + y, w * 2, h, c);
   M(4, 10, 14, 24, 12); M(5, 11, 12, 1, 4); M(18, 15, 4, 2, 12); M(20, 17, 2, 10, 12); M(18, 27, 4, 2, 12); M(4, 34, 14, 2, 4);
   M(6, 18, 10, 2, 15); M(6, 22, 8, 1, 15);
@@ -2094,12 +2094,12 @@ function update() {
   if (PATH() === "sabrina" && S.phone === 0 && S.t >= 300) { S.phone = 1; play(SFX.beep); say("Votre cellulaire vibre. C'est la garderie !\n\n(Tapez RÉPONDRE.)"); }
   if (S.pot === "brewing" && S.t >= S.brewEnd) { S.pot = "coffee"; play(SFX.beep); say("La cafetière lâche un dernier gargouillis triomphant. Le café est prêt. " + (S.room === "lounge" ? B().name + " renifle l'air comme un chien de chasse." : "")); }
   const pa = (k, at, msg) => { if (S.t >= at && !S.warned[k]) { S.warned[k] = 1; play(SFX.pa); say(msg); } };
-  pa("10", 600, "*DING DONG* « Bonjour, ici Mme D, votre... directrice. Rappel : réunion ce midi, local... euh... je vous redis ça. Présence obligatoire. Je compterai les têtes. Merci de votre performance. »");
+  pa("10", 600, "*DING DONG* « Bonjour, ici Mme Direction, votre... directrice. Rappel : réunion ce midi, local... euh... je vous redis ça. Présence obligatoire. Je compterai les têtes. Merci de votre performance. »");
   pa("5", 900, "*DING DONG* « Cinq minutes avant la cloche. Aussi : si quelqu'un trouve mon bureau, merci de me le signaler. »");
   pa("1", 1140, "*DING DONG* « UNE minute. » Quelque part, trente-deux élèves de secondaire 4 sont déjà " + atLocal().replace("dans votre", "dans leur") + ". Sans surveillance. Ça sent le brûlé.");
   if (S.t >= BELL && !Q.length) {
     play(SFX.bell);
-    return die("DRIIIIIIIIING !\n\nLa cloche de 8 h sonne. Trente-deux élèves de secondaire 4 attendent " + atLocal() + ", sans prof et sans examen.\n\nQuand vous arrivez, ils ont formé un gouvernement provisoire. Mme D trouve que ça paraît bien dans le rapport : « initiative étudiante ». Vous, vous êtes dans le rapport aussi.");
+    return die("DRIIIIIIIIING !\n\nLa cloche de 8 h sonne. Trente-deux élèves de secondaire 4 attendent " + atLocal() + ", sans prof et sans examen.\n\nQuand vous arrivez, ils ont formé un gouvernement provisoire. Mme Direction trouve que ça paraît bien dans le rapport : « initiative étudiante ». Vous, vous êtes dans le rapport aussi.");
   }
   let dx = 0, dy = 0;
   if (S.target && S.target.path) {
