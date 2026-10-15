@@ -5,8 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SOS Congé</title>
 <meta name="description" content="Probabilité de fermeture des écoles calculée par IA à partir de plusieurs modèles météo (GEM, ECMWF, GFS, ICON).">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css"
+      onerror="this.onerror=null;this.href='https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css'">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 <style>
   :root {
     color-scheme: light;
@@ -179,7 +180,7 @@
     <div id="map" role="img" aria-label="Carte du Québec colorée selon la probabilité de fermeture des écoles"></div>
     <div class="ramp-row"><span>0 %</span><span class="ramp"></span><span>100 %</span>
       <span class="note" id="mapStatus"></span></div>
-    <p class="note">Couleurs interpolées à partir des prévisions de ~45 villes. Cliquez sur une ville pour voir le détail.</p>
+    <p class="note">Couleurs interpolées à partir des prévisions de 60 villes. Cliquez sur une ville pour voir le détail.</p>
     <details>
       <summary>Tableau par région</summary>
       <div class="scroll"><table id="regionTable"></table></div>
@@ -328,7 +329,13 @@ function featureVector(f, rural) {
 // ==========================================================
 async function fetchJSON(url) {
   const r = await fetch(url);
-  if (!r.ok) throw new Error("HTTP " + r.status);
+  if (!r.ok) {
+    let reason = "";
+    try { reason = (await r.json()).reason || ""; } catch {}
+    const err = new Error(r.status === 429 ? "limite de requêtes Open-Meteo atteinte, réessayez plus tard" : `HTTP ${r.status}${reason ? " : " + reason : ""}`);
+    err.status = r.status;
+    throw err;
+  }
   return r.json();
 }
 
@@ -657,6 +664,18 @@ const rampHex = p => "#" + rampRGB(p).map(c => c.toString(16).padStart(2, "0")).
 const MAP_BOUNDS = [[44.8, -80.2], [51.2, -60.8]];
 let map = null, overlay = null, markerLayer = null, mapPreds = [];
 
+// Leaflet comes from cdnjs; fall back to jsDelivr if that script failed.
+function ensureLeaflet() {
+  if (window.L) return Promise.resolve(true);
+  return new Promise(resolve => {
+    const sc = document.createElement("script");
+    sc.src = "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js";
+    sc.onload = () => resolve(!!window.L);
+    sc.onerror = () => resolve(false);
+    document.head.appendChild(sc);
+  });
+}
+
 function initMap() {
   if (map || !window.L) return;
   map = L.map("map", { zoomSnap: 0.25, scrollWheelZoom: false }).fitBounds(MAP_BOUNDS);
@@ -706,6 +725,7 @@ function probabilityImage(preds) {
 }
 
 function renderMap() {
+  initMap();
   if (!state.mapData || !state.day) return;
   $("mapTitle").textContent = `Carte des probabilités de fermeture · ${fmtDay(state.day)}`;
   mapPreds = POINTS.map((pt, i) => {
@@ -713,9 +733,11 @@ function renderMap() {
     catch { return null; }
   }).filter(Boolean);
   renderRegionTable();
-  if (!window.L) { $("mapStatus").textContent = "Carte indisponible (Leaflet non chargé)."; return; }
-  initMap();
+  if (!window.L) { setMapStatus("Fond de carte indisponible (Leaflet non chargé). Le tableau par région reste à jour.", true); return; }
   if (overlay) overlay.remove();
+  overlay = null;
+  markerLayer.clearLayers();
+  if (!mapPreds.length) return;
   overlay = L.imageOverlay(probabilityImage(mapPreds), MAP_BOUNDS, { opacity: 1, interactive: false }).addTo(map);
   markerLayer.clearLayers();
   // Permanent labels only for the selected city and the most at-risk regions.
@@ -750,14 +772,47 @@ $("regionTable").addEventListener("click", e => {
   if (tr) selectPlace(pointPlace(tr.dataset.r, 0));
 });
 
+function setMapStatus(msg, isError = false) {
+  const el = $("mapStatus");
+  el.textContent = msg;
+  el.classList.toggle("error", isError);
+}
+
+// The 45-point request is heavy for Open-Meteo's free quota, so it is
+// split in chunks (a failed chunk only blanks its own cities) and the
+// result is kept for an hour to avoid refetching on every reload.
+const MAP_CACHE = "fe.mapCache";
+const MAP_CACHE_TTL = 3600e3;
+const CHUNK = 15;
+
 async function loadMapData() {
-  $("mapStatus").textContent = "Chargement des prévisions pour les 17 régions…";
-  try {
-    const data = await loadForecast(POINTS);
-    state.mapData = Array.isArray(data) ? data : [data];
-    $("mapStatus").textContent = "";
-  } catch (e) {
-    $("mapStatus").textContent = `Carte indisponible (${e.message}).`;
+  const cached = store.get(MAP_CACHE, null);
+  const fresh = cached && cached.n === POINTS.length && Date.now() - cached.at < MAP_CACHE_TTL;
+  if (fresh) { state.mapData = cached.data; return; }
+
+  setMapStatus("Chargement des prévisions pour les 17 régions…");
+  const chunks = [];
+  for (let i = 0; i < POINTS.length; i += CHUNK) chunks.push(POINTS.slice(i, i + CHUNK));
+  const results = await Promise.allSettled(chunks.map(c => loadForecast(c)));
+  const data = results.flatMap((r, k) => r.status === "fulfilled"
+    ? (Array.isArray(r.value) ? r.value : [r.value])
+    : chunks[k].map(() => null));
+  const failed = results.filter(r => r.status === "rejected");
+
+  if (failed.length === results.length) {
+    if (cached && cached.n === POINTS.length) {
+      state.mapData = cached.data;
+      setMapStatus(`Prévisions de ${new Date(cached.at).toLocaleTimeString("fr-CA", { hour: "2-digit", minute: "2-digit" })} affichées (${failed[0].reason.message}).`, true);
+    } else {
+      setMapStatus(`Prévisions de la carte indisponibles (${failed[0].reason.message}).`, true);
+    }
+    return;
+  }
+  state.mapData = data;
+  if (failed.length) setMapStatus(`Certaines villes manquent (${failed[0].reason.message}).`, true);
+  else {
+    setMapStatus("");
+    try { localStorage.setItem(MAP_CACHE, JSON.stringify({ at: Date.now(), n: POINTS.length, data })); } catch {}
   }
 }
 
@@ -808,7 +863,7 @@ async function selectPlace(place) {
   $("placeLabel").textContent = "Chargement des modèles météo pour " + placeText(place) + "…";
   try {
     const pi = POINTS.findIndex(p => p.regionId === place.regionId && p.ci === place.ci);
-    state.forecast = (pi >= 0 && state.mapData) ? state.mapData[pi] : await loadForecast(place);
+    state.forecast = (pi >= 0 && state.mapData?.[pi]) || await loadForecast(place);
     $("placeLabel").textContent = `${placeText(place)} (${place.lat.toFixed(2)}, ${place.lon.toFixed(2)})`;
     renderDays();
     renderPrediction();
@@ -878,7 +933,7 @@ $("citySel").addEventListener("change", e => selectPlace(pointPlace(state.place.
 renderOdds(null);
 syncSelectors();
 syncRuralSlider();
-loadMapData().then(() => selectPlace(state.place));
+Promise.all([ensureLeaflet(), loadMapData()]).then(() => { initMap(); selectPlace(state.place); });
 </script>
 </body>
 </html>
