@@ -1,19 +1,19 @@
 // Correcteur Express — tout tourne dans le navigateur, la clé API de l'enseignant
-// est envoyée uniquement à OpenAI.
+// est envoyée uniquement à OpenAI. Rien n'est conservé : ni sur un serveur, ni dans
+// le navigateur. Les données vivent en mémoire le temps de la session.
 
 const API_URL = 'https://api.openai.com/v1/chat/completions';
 const MAX_FILE_BYTES = 20 * 1024 * 1024;
 const CONCURRENCY = 3;
 const MAX_RETRIES = 3;
-const STORAGE = { key: 'ce.apiKey', model: 'ce.model', results: 'ce.results' };
 
 const $ = (id) => document.getElementById(id);
 const el = {
-  apiKey: $('api-key'), model: $('model'), remember: $('remember-key'), keyStatus: $('key-status'),
+  apiKey: $('api-key'), model: $('model'), keyStatus: $('key-status'),
   form: $('form'), total: $('total'), checkLanguage: $('check-language'), rubric: $('rubric'),
   rubricFile: $('rubric-file'), rubricFileName: $('rubric-file-name'), rubricFileClear: $('rubric-file-clear'),
   dropzone: $('dropzone'), copies: $('copies'), queue: $('queue'), submit: $('submit'), progress: $('progress'),
-  table: $('results'), empty: $('empty'), stats: $('stats'), exportBtn: $('export'), clearBtn: $('clear'),
+  table: $('results'), empty: $('empty'), stats: $('stats'), exportBtn: $('export'), endBtn: $('end'),
 };
 
 const state = {
@@ -21,30 +21,17 @@ const state = {
   rubricFile: null, // File
   results: [],      // { id, file, name, group, grade, total, comment, uncertain }
   running: false,
+  exported: true,   // false dès qu'il y a des résultats non téléchargés
 };
 
-// ---------- Stockage local (try/catch : navigation privée, stockage bloqué…) ----------
+// ---------- Aucune persistance ----------
 
-const store = {
-  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
-  set(k, v) { try { localStorage.setItem(k, v); } catch { /* ignoré */ } },
-  del(k) { try { localStorage.removeItem(k); } catch { /* ignoré */ } },
-};
+// Nettoie les données qu'une ancienne version de l'appli aurait pu laisser dans le navigateur.
+try { ['ce.apiKey', 'ce.model', 'ce.results'].forEach((k) => localStorage.removeItem(k)); } catch { /* ignoré */ }
 
-function saveResults() { store.set(STORAGE.results, JSON.stringify(state.results)); }
+function markDirty() { state.exported = false; }
 
-function loadSettings() {
-  const key = store.get(STORAGE.key);
-  if (key) { el.apiKey.value = key; el.remember.checked = true; }
-  el.model.value = store.get(STORAGE.model) || el.model.value;
-  el.apiKey.closest('details').open = !key;
-  try { state.results = JSON.parse(store.get(STORAGE.results)) || []; } catch { state.results = []; }
-}
-
-function persistKey() {
-  if (el.remember.checked && el.apiKey.value.trim()) store.set(STORAGE.key, el.apiKey.value.trim());
-  else store.del(STORAGE.key);
-  store.set(STORAGE.model, el.model.value.trim());
+function updateKeyStatus() {
   el.keyStatus.textContent = el.apiKey.value.trim() ? 'Clé API OpenAI ✓' : 'Clé API OpenAI (requise)';
   updateButtons();
 }
@@ -223,7 +210,7 @@ async function runCorrection(e) {
       try {
         state.results.unshift(await gradeCopy(item, ctx));
         state.queue = state.queue.filter((q) => q !== item);
-        saveResults(); renderResults();
+        markDirty(); renderResults();
       } catch (err) {
         item.status = 'error';
         item.error = err instanceof SyntaxError ? 'réponse de l\'IA invalide' : err.message;
@@ -255,7 +242,7 @@ function updateButtons() {
   el.submit.textContent = state.running ? 'Correction en cours…'
     : !el.apiKey.value.trim() ? 'Renseignez votre clé API pour corriger'
     : `Corriger ${pending} copie(s)`;
-  el.exportBtn.disabled = el.clearBtn.disabled = !state.results.length || state.running;
+  el.exportBtn.disabled = el.endBtn.disabled = !state.results.length || state.running;
 }
 
 function renderQueue() {
@@ -276,7 +263,7 @@ function renderQueue() {
 
 function editable(value, onSave, className = '') {
   const td = node('td', { className, contentEditable: 'plaintext-only', textContent: value ?? '' });
-  td.addEventListener('blur', () => { onSave(td.textContent.trim()); saveResults(); renderStats(); });
+  td.addEventListener('blur', () => { onSave(td.textContent.trim()); markDirty(); renderStats(); });
   td.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); td.blur(); } });
   return td;
 }
@@ -310,7 +297,7 @@ function renderResults() {
       editable(r.comment, (v) => { r.comment = v; }, 'comment'),
       node('td', {}, node('button', {
         type: 'button', className: 'icon', textContent: '×', title: 'Supprimer',
-        onclick: () => { state.results = state.results.filter((x) => x !== r); saveResults(); renderResults(); },
+        onclick: () => { state.results = state.results.filter((x) => x !== r); markDirty(); renderResults(); },
       })),
     );
     gradeCell.dataset.total = r.total;
@@ -341,13 +328,13 @@ function exportCSV() {
   const a = node('a', { href: url, download: `corrections_${new Date().toISOString().slice(0, 10)}.csv` });
   document.body.append(a); a.click(); a.remove();
   URL.revokeObjectURL(url);
+  state.exported = true;
 }
 
 // ---------- Événements ----------
 
-el.apiKey.addEventListener('input', persistKey);
-el.model.addEventListener('change', persistKey);
-el.remember.addEventListener('change', persistKey);
+el.apiKey.addEventListener('input', updateKeyStatus);
+el.model.addEventListener('change', updateKeyStatus);
 el.form.addEventListener('submit', runCorrection);
 el.copies.addEventListener('change', () => { addCopies(el.copies.files); el.copies.value = ''; });
 
@@ -369,12 +356,22 @@ el.rubricFileClear.addEventListener('click', () => {
 });
 
 el.exportBtn.addEventListener('click', exportCSV);
-el.clearBtn.addEventListener('click', () => {
-  if (!confirm('Supprimer tous les résultats ? Pensez à exporter avant.')) return;
-  state.results = []; saveResults(); renderResults();
+// Fin de session : téléchargement de la grille, puis effacement de tout.
+el.endBtn.addEventListener('click', () => {
+  if (!confirm('Télécharger la grille puis tout effacer (résultats, copies, corrigé, clé API) ?')) return;
+  exportCSV();
+  state.results = []; state.queue = []; state.rubricFile = null; state.exported = true;
+  el.apiKey.value = ''; el.rubric.value = ''; el.rubricFileName.textContent = ''; el.rubricFileClear.hidden = true;
+  el.progress.textContent = 'Session terminée : la grille est téléchargée et tout a été effacé.';
+  updateKeyStatus(); renderQueue(); renderResults();
 });
 
-loadSettings();
-persistKey();
+// Rien n'est sauvegardé : on prévient avant de fermer l'onglet si la grille n'a pas été téléchargée.
+window.addEventListener('beforeunload', (e) => {
+  if (state.results.length && !state.exported) e.preventDefault();
+});
+
+el.apiKey.closest('details').open = true;
+updateKeyStatus();
 renderQueue();
 renderResults();

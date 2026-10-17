@@ -21,8 +21,7 @@
       <label>Modèle
         <input id="model" type="text" value="gpt-4o">
       </label>
-      <label class="check"><input id="remember-key" type="checkbox"> Mémoriser sur cet appareil</label>
-      <p class="muted small">La clé reste dans votre navigateur et n'est envoyée qu'à api.openai.com.</p>
+      <p class="muted small">La clé n'est envoyée qu'à api.openai.com et n'est jamais enregistrée.</p>
     </details>
   </header>
 
@@ -65,8 +64,8 @@
       <div class="head">
         <h2><span class="step green">2</span> Résultats</h2>
         <div class="actions">
-          <button id="export" class="btn green" type="button" disabled>Exporter CSV</button>
-          <button id="clear" class="btn ghost" type="button" disabled>Vider</button>
+          <button id="export" class="btn green" type="button" disabled>Télécharger la grille</button>
+          <button id="end" class="btn ghost" type="button" disabled>Terminer la session</button>
         </div>
       </div>
       <p id="stats" class="muted small"></p>
@@ -77,7 +76,7 @@
           <tbody></tbody>
         </table>
       </div>
-      <p class="muted small">Les cellules sont modifiables. Les notes sont des propositions : relisez-les avant de les reporter.</p>
+      <p class="muted small">Les cellules sont modifiables. Les notes sont des propositions : relisez-les avant de les reporter.<br>🔒 Rien n'est conservé : téléchargez la grille avant de fermer la page, tout est effacé ensuite.</p>
     </section>
   </main>
 </body>
