@@ -217,7 +217,7 @@ function renderPages() {
   $('bundles').replaceChildren(...list.map((b, bi) => {
     const st = state.status[b[0].id];
     const tooLong = b.length > MAX_PAGES_PER_COPY;
-    const label = st?.state === 'running' ? '⏳ correction…' : st?.state === 'error' ? `⚠ ${st.msg}` : tooLong ? `⚠ ${MAX_PAGES_PER_COPY} pages max` : '';
+    const label = st?.state === 'running' ? '⏳ correction…' : st?.state === 'error' ? `⚠ ${st.msg}` : tooLong ? `⚠ ${MAX_PAGES_PER_COPY} pages max : plusieurs élèves ? Utilisez « Nombre fixe de pages par élève » ou ✂` : '';
     return h('div', { class: 'bundle' },
       h('div', { class: 'bundle-head' },
         h('span', {}, `Copie ${bi + 1} · ${b.length} page${b.length > 1 ? 's' : ''}`),
@@ -494,6 +494,20 @@ dropzone($('drop'), $('files'), async (files) => {
   const added = await filesToPages(files);
   state.pages.push(...added);
   applyMode();
+  // Un fichier trop long contient presque toujours plusieurs élèves : on propose de le découper.
+  const longest = Math.max(0, ...bundles().map((b) => b.length));
+  if ($('mode').value === 'file' && longest > MAX_PAGES_PER_COPY) {
+    const answer = prompt(`Ce fichier contient ${longest} pages : il regroupe sans doute plusieurs élèves.\n\nCombien de pages compte chaque copie ?`, $('per').value);
+    const per = Math.round(Number(answer));
+    if (per >= 1 && per <= MAX_PAGES_PER_COPY) {
+      $('mode').value = 'fixed';
+      $('per').value = per;
+      applyMode();
+      banner('info', `Pages regroupées par ${per} : ${bundles().length} copies. Vérifiez les regroupements avant de corriger.`);
+    } else {
+      banner('err', `Une copie ne peut pas dépasser ${MAX_PAGES_PER_COPY} pages. Choisissez « Nombre fixe de pages par élève » ou séparez les copies avec ✂.`);
+    }
+  }
   renderPages();
 });
 dropzone($('rubric-drop'), $('rubric-files'), async (files) => {
