@@ -177,6 +177,10 @@ async function checkout(request, env, url) {
       : `Brûle la pile — ${p.name}, ${p.pages.toLocaleString('fr-CA')} pages`,
     'metadata[key]': key,
     'metadata[pages]': String(p.pages),
+    // La description du paiement figure sur le reçu que Stripe envoie par courriel : le client y retrouve sa clé.
+    'payment_intent_data[description]': isEnglish(request)
+      ? `Your access key: ${key} (${p.pages.toLocaleString('en-CA')} pages added). Keep this email.`
+      : `Votre clé d'accès : ${key} (${p.pages.toLocaleString('fr-CA')} pages ajoutées). Conservez ce courriel.`,
     allow_promotion_codes: 'true',
     locale: isEnglish(request) ? 'en' : 'fr-CA',
   });

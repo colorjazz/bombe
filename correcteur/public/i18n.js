@@ -188,7 +188,7 @@ const EN = {
   'Merci — Brûle la pile': 'Thank you — Burn the Pile',
   'Merci pour votre achat !': 'Thank you for your purchase!',
   'Confirmation du paiement…': 'Confirming payment…',
-  "Notez cette clé d'accès : elle contient votre solde et sert à recharger votre compte ou à l'utiliser sur un autre appareil.": 'Write down this access key: it holds your balance and lets you top up or use it on another device.',
+  "Notez cette clé d'accès : elle contient votre solde et sert à recharger votre compte ou à l'utiliser sur un autre appareil. Elle figure aussi sur le reçu envoyé à votre courriel.": 'Write down this access key: it holds your balance and lets you top up or use it on another device. It is also on the receipt sent to your email.',
   'Corriger mes copies': 'Grade my papers',
   'Erreur': 'Error',
   'Écrivez-nous en indiquant votre courriel de paiement.': 'Contact us with your payment email.',
