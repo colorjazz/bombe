@@ -7,7 +7,7 @@ const MAX_PAGES_PER_COPY = 10;
 const MAX_RUBRIC_PAGES = 6;
 const CONCURRENCY = 3;
 const KEY_STORAGE = 'ce.accessKey';
-const PDFJS = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174';
+const PDFJS = '/vendor/pdfjs'; // pdf.js 3.11.174, hébergé sur le site
 
 import { t, tr, lang, startI18n } from './i18n.js';
 
@@ -28,6 +28,7 @@ const state = {
 // ---------- Petits utilitaires ----------
 
 const uid = () => crypto.randomUUID();
+const pctText = (n) => (lang === 'en' ? `${n}%` : `${n} %`); // typographie : « 85 % » en français, « 85% » en anglais
 const fmt = (n) => (n == null ? '—' : Number(n).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { maximumFractionDigits: 2 }));
 
 function h(tag, props = {}, ...children) {
@@ -133,16 +134,16 @@ function fitCanvas(w, h, maxSide = MAX_SIDE) {
 
 // Bibliothèques chargées seulement au besoin (versions figées).
 const LIBS = {
-  heic: 'https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js',
-  mammoth: 'https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js',
-  html2canvas: 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js',
+  heic: '/vendor/heic2any-0.0.4.min.js',
+  mammoth: '/vendor/mammoth-1.8.0.browser.min.js',
+  html2canvas: '/vendor/html2canvas-1.4.1.min.js',
 };
 const loaded = {};
 function loadLib(name) {
   loaded[name] ||= new Promise((resolve, reject) => {
     const s = h('script', { src: LIBS[name] });
     s.onload = resolve;
-    s.onerror = () => { loaded[name] = null; reject(new Error('module de lecture indisponible (connexion ?)')); };
+    s.onerror = () => { loaded[name] = null; reject(new Error(tr('module de lecture indisponible (rechargez la page)'))); };
     document.head.append(s);
   });
   return loaded[name];
@@ -225,7 +226,7 @@ function loadPdfJs() {
   pdfjsPromise ||= new Promise((resolve, reject) => {
     const s = h('script', { src: `${PDFJS}/pdf.min.js` });
     s.onload = () => { window.pdfjsLib.GlobalWorkerOptions.workerSrc = `${PDFJS}/pdf.worker.min.js`; resolve(window.pdfjsLib); };
-    s.onerror = () => { pdfjsPromise = null; reject(new Error('Lecteur PDF indisponible (connexion ?)')); };
+    s.onerror = () => { pdfjsPromise = null; reject(new Error(tr('lecteur PDF indisponible (rechargez la page)'))); };
     document.head.append(s);
   });
   return pdfjsPromise;
@@ -396,7 +397,8 @@ function renderSummary() {
   const tooLong = list.some((b) => b.length > MAX_PAGES_PER_COPY);
   const mode = $('mode').value;
   const grouped = mode && !(mode === 'fixed' && !(Number($('per').value) >= 1));
-  $('summary').innerHTML = n ? `<b>${list.length}</b> copie(s) · <b>${n}</b> page(s)` : 'Aucune copie importée';
+  $('summary').replaceChildren(...(n ? [h('b', { textContent: String(list.length) }), ` ${tr(list.length > 1 ? 'copies' : 'copie')} · `,
+    h('b', { textContent: String(n) }), ` ${tr(n > 1 ? 'pages' : 'page')}`] : [tr('Aucune copie importée')]));
   const cost = n * (state.kind === 'content' && $('deep').value === '1' ? 2 : 1);
   $('cost').textContent = n ? `${cost} page(s) seront décomptées` : '';
   const enough = state.pagesLeft == null || state.pagesLeft >= cost;
@@ -404,7 +406,7 @@ function renderSummary() {
   const gridSum = state.grid ? state.grid.reduce((a, c) => a + (Number(c.max) || 0), 0) : null;
   const gridOk = state.kind === 'lang' || gridSum == null || Math.abs(gridSum - Number($('total').value)) < 1e-9;
   run.disabled = state.running || state.detecting || !n || !grouped || tooLong || !enough || !gridOk || !(Number($('total').value) > 0);
-  run.textContent = state.running ? 'Correction en cours…'
+  run.textContent = state.running ? (state.kind === 'lang' ? 'Analyse en cours…' : 'Correction en cours…')
     : state.detecting ? 'Analyse des copies en cours…'
     : n && !mode ? 'Choisissez comment regrouper les pages'
     : n && !grouped ? 'Indiquez le nombre de pages par élève'
@@ -424,9 +426,22 @@ function renderRubric() {
 
 // ---------- Grille détaillée ----------
 
-const parseLevels = (text) => text.split('\n').map((line) => line.match(/^\s*(\d+(?:[.,]\d+)?)\s*(?:pts?|points?)?\s*[:–-]\s*(.+)$/i))
-  .filter(Boolean).map((m) => ({ points: Number(m[1].replace(',', '.')), description: m[2].trim() }));
-const levelsText = (levels) => levels.map((l) => `${fmt(l.points)} : ${l.description}`).join('\n');
+// Chaque ligne « points : description » est un niveau ; les autres lignes forment une remarque transmise à l'IA (rien n'est perdu).
+const LEVEL_LINE = /^\s*[•*-]?\s*(\d+(?:[.,]\d+)?)\s*(?:pts?|points?)?\s*[:–-]\s*(.+)$/i;
+function parseCriterion(text) {
+  const levels = [], notes = [];
+  for (const line of text.split('\n')) {
+    const m = line.match(LEVEL_LINE);
+    if (m) levels.push({ points: toNumber(m[1]), description: m[2].trim() });
+    else if (line.trim()) notes.push(line.trim());
+  }
+  return { levels, note: notes.join(' ') };
+}
+const levelsText = (levels, note) => [...levels.map((l) => `${fmt(l.points)} : ${l.description}`), ...(note ? [note] : [])].join('\n');
+const toNumber = (v) => Number(String(v).trim().replace(/\s/g, '').replace(',', '.'));
+// Les grilles générées contiennent parfois des lettres cyrilliques ou grecques identiques en apparence.
+const HOMOGLYPHS = { 'а': 'a', 'е': 'e', 'о': 'o', 'р': 'p', 'с': 'c', 'х': 'x', 'у': 'y', 'і': 'i', 'ј': 'j', 'ѕ': 's', 'А': 'A', 'Е': 'E', 'О': 'O', 'Р': 'P', 'С': 'C', 'Х': 'X', 'Т': 'T', 'Н': 'H', 'К': 'K', 'М': 'M', 'В': 'B', 'ο': 'o', 'α': 'a' };
+const cleanText = (t) => String(t).replace(/[аеорсхуіјѕАЕОРСХТНКМВοα]/g, (c) => HOMOGLYPHS[c]);
 
 function updateGridTotal() {
   if (!state.grid) return;
@@ -445,10 +460,11 @@ function renderGrid() {
   $('grid-criteria').replaceChildren(...state.grid.map((c) => h('div', { class: 'crit' },
     h('div', { class: 'crit-top' },
       h('input', { type: 'text', value: c.name, 'aria-label': 'Critère', oninput: (e) => { c.name = e.target.value; } }),
-      h('input', { type: 'number', min: 0, step: 0.5, value: c.max, 'aria-label': 'Points maximum', title: 'Points maximum',
-        oninput: (e) => { c.max = Number(e.target.value); updateGridTotal(); } })),
-    h('textarea', { rows: Math.max(3, c.levels.length), value: levelsText(c.levels),
-      oninput: (e) => { c.levels = parseLevels(e.target.value); } }))));
+      h('input', { type: 'text', inputmode: 'decimal', class: 'num', value: fmt(c.max), 'aria-label': 'Points maximum', title: 'Points maximum',
+        oninput: (e) => { c.max = toNumber(e.target.value); updateGridTotal(); } })),
+    h('textarea', { rows: Math.max(3, c.levels.length + (c.note ? 1 : 0)), value: levelsText(c.levels, c.note),
+      oninput: (e) => { Object.assign(c, parseCriterion(e.target.value)); } }),
+    h('div', { class: 'muted small', textContent: c.note ? `Remarque transmise à l'IA : ${c.note}` : '' }))));
   updateGridTotal();
 }
 
@@ -462,7 +478,7 @@ async function makeGrid() {
       rubric: $('rubric').value.trim(), rubricPages: state.rubricPages.map((p) => p.url),
       total: Number($('total').value), wholePoints: $('whole').value === '1',
     } });
-    state.grid = grid;
+    state.grid = grid.map((c) => ({ ...c, name: cleanText(c.name), levels: c.levels.map((l) => ({ ...l, description: cleanText(l.description) })) }));
     banner('info', 'Grille préparée : relisez-la et ajustez au besoin. Elle sera appliquée à toutes les copies.');
   } catch (err) {
     banner('err', err.message);
@@ -493,6 +509,7 @@ async function runAll() {
     rubricPages: state.rubricPages.map((p) => p.url),
     grid: state.grid || undefined,
   };
+  const hasKey = !!(settings.rubric || settings.rubricPages.length || settings.grid);
 
   let next = 0, done = 0, failed = 0, stop = '';
   // Temps restant : moyenne des copies déjà corrigées (ou estimation de départ), réparti sur les corrections en parallèle.
@@ -537,7 +554,8 @@ async function runAll() {
         setBalance(r.pagesLeft);
         state.results.unshift({
           id, exam: settings.exam, group: r.group || settings.group, name: r.name, reliability: r.reliability, grade: r.grade, total: r.total,
-          unit: settings.wholePoints ? 1 : 0.5, questions: r.questions, comment: r.comment, flags: r.flags, pageCount: b.length,
+          unit: settings.wholePoints ? 1 : 0.5, questions: r.questions, comment: r.comment, pageCount: b.length, illegible: !!r.illegible,
+          flags: hasKey || r.illegible ? r.flags : [...r.flags, 'Corrigée sans corrigé : vérifiez que la note n’est pas trop généreuse.'],
         });
         if (r.flags.length || r.questions.some((q) => q.second != null)) state.open.add(id);
         }
@@ -565,6 +583,8 @@ async function runAll() {
   renderPages();
   if (stop) banner('err', stop);
   else if (failed) banner('err', `${done} copie(s) corrigée(s), ${failed} en erreur : elles restent dans la liste, relancez pour réessayer.`);
+  else if (state.kind === 'lang') banner('ok', `${done} copie(s) analysée(s). Vérifiez en priorité les copies marquées ⚠.`);
+  else if (!hasKey) banner('info', `${done} copie(s) corrigée(s) sans corrigé : les notes ont tendance à être généreuses. Vérifiez-les, ou ajoutez votre corrigé pour des notes plus justes.`);
   else banner('ok', `${done} copie(s) corrigée(s). Vérifiez en priorité les copies marquées ⚠.`);
 }
 
@@ -574,30 +594,32 @@ function showRelHelp() { $('rel-help').hidden = false; }
 const infoButton = () => h('button', { type: 'button', class: 'info', textContent: 'ⓘ', 'aria-label': 'Que veut dire la fiabilité ?', onclick: showRelHelp });
 
 function recompute(r) {
+  r.illegible = false; // l'enseignant a noté la copie lui-même
   r.grade = Math.min(r.total, r.questions.reduce((a, q) => a + q.points, 0));
   state.exported = false;
 }
 
 function renderStats() {
-  const graded = state.results.filter((r) => r.grade != null && r.total > 0);
+  const graded = state.results.filter((r) => (r.kind === 'lang') === (state.kind === 'lang') && r.grade != null && r.total > 0);
   $('stats').hidden = !graded.length;
   if (!graded.length) return;
   const pct = graded.map((r) => (r.grade / r.total) * 100);
   const avg = pct.reduce((a, b) => a + b, 0) / pct.length;
   const flagged = graded.filter((r) => r.flags.length).length;
   const withRel = graded.filter((r) => r.reliability != null);
-  const rel = withRel.length ? `${fmt(withRel.reduce((a, r) => a + r.reliability, 0) / withRel.length)} %` : '—';
+  const rel = withRel.length ? pctText(fmt(withRel.reduce((a, r) => a + r.reliability, 0) / withRel.length)) : '—';
   const stat = (v, l) => h('div', { class: 'stat' }, h('div', { class: 'v', textContent: v }), h('div', { class: 'l', textContent: l }));
   $('stats').replaceChildren(stat(String(graded.length), 'copies'),
-    stat(`${fmt(avg)} %`, `moyenne (min ${fmt(Math.min(...pct))} – max ${fmt(Math.max(...pct))})`),
+    stat(pctText(fmt(avg)), `moyenne (min ${fmt(Math.min(...pct))} – max ${fmt(Math.max(...pct))})`),
     h('div', { class: 'stat' }, h('div', { class: 'v', textContent: rel }),
       h('div', { class: 'l' }, 'fiabilité moyenne ', infoButton())), stat(String(flagged), 'à vérifier ⚠'));
 }
 
 function renderResults() {
   const q = $('search').value.trim().toLowerCase();
-  const shown = state.results.filter((r) => !q || `${r.name} ${r.group} ${r.exam}`.toLowerCase().includes(q));
-  $('empty').hidden = !!state.results.length;
+  const mine = state.results.filter((r) => (r.kind === 'lang') === (state.kind === 'lang'));
+  const shown = mine.filter((r) => !q || `${r.name} ${r.group} ${r.exam}`.toLowerCase().includes(q));
+  $('empty').hidden = !!mine.length;
   $('cards').replaceChildren(...shown.map((r) => (r.kind === 'lang' ? langCard(r) : card(r))));
   renderStats();
   renderSummary();
@@ -606,7 +628,7 @@ function renderResults() {
 function card(r) {
   const open = state.open.has(r.id);
   const gradeEl = h('span', { class: 'grade' });
-  const updateGrade = () => { gradeEl.replaceChildren(fmt(r.grade), h('small', {}, ` / ${fmt(r.total)}`)); };
+  const updateGrade = () => { gradeEl.replaceChildren(...(r.grade == null ? [tr('Illisible')] : [fmt(r.grade), h('small', {}, ` / ${fmt(r.total)}`)])); };
   updateGrade();
 
   const body = h('div', { class: 'card-body' },
@@ -620,11 +642,11 @@ function card(r) {
           ? h('div', { class: 'second', textContent: qq.first != null
             ? `⚖ Corrections : ${fmt(qq.first)} et ${fmt(qq.second)} → moyenne retenue`
             : `⚖ 2e correction : ${fmt(qq.second)} / ${fmt(qq.max)}` }) : null;
-        const input = h('input', { type: 'number', min: 0, max: qq.max, step: r.unit, value: qq.points,
+        const input = h('input', { type: 'text', inputmode: 'decimal', class: 'num', value: fmt(qq.points), 'aria-label': 'Points',
           onchange: () => {
-            const v = Math.round((Number(input.value) || 0) / r.unit) * r.unit;
+            const v = Math.round((toNumber(input.value) || 0) / r.unit) * r.unit;
             qq.points = Math.min(qq.max, Math.max(0, v));
-            input.value = qq.points;
+            input.value = fmt(qq.points);
             qq.second = null; // l'enseignant a tranché
             second?.remove();
             tr.className = rowClass();
@@ -654,7 +676,7 @@ function card(r) {
       r.reliability == null ? h('span') : h('button', {
         type: 'button', class: `rel ${r.reliability >= 90 ? 'hi' : r.reliability >= 80 ? 'mid' : 'lo'}`,
         title: 'Fiabilité de la correction : cliquez pour en savoir plus', onclick: showRelHelp,
-        textContent: `${r.reliability} % ⓘ` }),
+        textContent: `${pctText(r.reliability)} ⓘ` }),
       gradeEl,
       h('button', { class: 'icon-btn chev', type: 'button', textContent: '▾', 'aria-label': 'Détails', onclick: () => {
         if (state.open.has(r.id)) state.open.delete(r.id); else state.open.add(r.id);
@@ -877,7 +899,10 @@ function setKind(kind) {
   $('content-settings').hidden = kind !== 'content';
   $('lang-settings').hidden = kind !== 'lang';
   $('step1-title').textContent = kind === 'lang' ? 'Correction de la langue' : 'Évaluation et copies';
+  $('empty-text').textContent = kind === 'lang' ? 'Les copies analysées apparaîtront ici, avec les fautes surlignées.'
+    : 'Les copies corrigées apparaîtront ici, avec le détail des points par question.';
   renderSummary();
+  renderResults();
 }
 
 // ---------- Export ----------
@@ -902,23 +927,31 @@ function downloadCSV(rows, suffix) {
 
 function exportCSV() {
   const num = (n) => (lang === 'en' ? String(n) : String(n).replace('.', ','));
-  const lang = state.results.filter((r) => r.kind === 'lang');
-  if (lang.length) {
+  const langRes = state.results.filter((r) => r.kind === 'lang');
+  if (langRes.length) {
     const keys = Object.keys(CATS);
     const rows = [['Évaluation', 'Groupe', 'Élève', 'Fautes', ...keys.map((k) => CATS[k].label), 'Note', 'Sur', 'Détail des fautes']];
-    for (const r of [...lang].reverse()) {
+    for (const r of [...langRes].reverse()) {
       const errs = r.pages.flatMap((p) => p.errors);
       rows.push([r.exam, r.group, r.name, errs.length, ...keys.map((k) => errs.filter((e) => e.category === k).length),
         r.grade == null ? '' : num(r.grade), r.grade == null ? '' : num(r.total),
         errs.map((e) => `${e.text} → ${e.correction} (${e.explanation})`).join(' | ')]);
     }
-    downloadCSV(rows, '_langue');
+    downloadCSV(rows, lang === 'en' ? '_writing' : '_langue');
   }
   const content = state.results.filter((r) => r.kind !== 'lang');
   if (!content.length) { state.exported = true; return; }
-  const rows = [['Évaluation', 'Groupe', 'Élève', 'Note', 'Sur', 'Pourcentage', 'Fiabilité (%)', 'Détail par question', 'Commentaire', 'À vérifier']];
-  for (const r of [...content].reverse()) {
-    rows.push([r.exam, r.group, r.name, num(r.grade), num(r.total), num(Math.round((r.grade / r.total) * 1000) / 10), r.reliability ?? '',
+  // Une colonne par question quand toutes les copies ont le même découpage (prêt pour le logiciel de notes).
+  const byName = (x, y) => `${x.group} ${x.name}`.localeCompare(`${y.group} ${y.name}`, 'fr', { sensitivity: 'base', numeric: true });
+  const sorted = [...content].sort(byName);
+  const shape = sorted.find((r) => !r.illegible)?.questions || [];
+  const perQuestion = shape.length > 0 && sorted.every((r) => r.illegible || r.questions.length === shape.length);
+  const qHeads = perQuestion ? shape.map((q, i) => `Q${i + 1} (/${num(q.max)})`) : [];
+  const rows = [['Évaluation', 'Groupe', 'Élève', 'Note', 'Sur', 'Pourcentage', ...qHeads, 'Fiabilité (%)', 'Détail par question', 'Commentaire', 'À vérifier']];
+  for (const r of sorted) {
+    const ok = r.grade != null;
+    rows.push([r.exam, r.group, r.name, ok ? num(r.grade) : tr('Illisible'), num(r.total), ok ? num(Math.round((r.grade / r.total) * 1000) / 10) : '',
+      ...(perQuestion ? shape.map((_, i) => (ok && r.questions[i] ? num(r.questions[i].points) : '')) : []), r.reliability ?? '',
       r.questions.map((q) => `${q.question} : ${num(q.points)}/${num(q.max)}${q.points < q.max && q.justification ? ` (${q.justification})` : ''}`).join(' | '),
       r.comment, r.flags.join(' ')]);
   }
@@ -927,14 +960,14 @@ function exportCSV() {
 }
 
 function endSession() {
-  if (!confirm(tr('Télécharger la grille puis tout effacer (copies, corrigé, résultats) ?'))) return;
+  if (!confirm(tr('Télécharger les notes puis tout effacer (copies, corrigé, résultats) ?'))) return;
   exportCSV();
   Object.assign(state, { results: [], pages: [], rubricPages: [], status: {}, open: new Set(), exported: true });
   $('mode').value = ''; $('per').value = '';
   ['exam', 'group', 'rubric', 'search'].forEach((id) => { $(id).value = ''; });
   state.grid = null;
   renderRubric(); renderGrid(); renderPages(); renderResults();
-  banner('ok', 'Session terminée : la grille est téléchargée et tout a été effacé.');
+  banner('ok', 'Session terminée : les notes sont téléchargées et tout a été effacé.');
 }
 
 // ---------- Événements ----------
@@ -974,6 +1007,12 @@ $('make-grid').addEventListener('click', makeGrid);
 $('kind-content').addEventListener('click', () => setKind('content'));
 $('kind-lang').addEventListener('click', () => setKind('lang'));
 $('viewer-print').addEventListener('click', printViewer);
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  for (const id of ['viewer', 'rel-help', 'buy']) {
+    if (!$(id).hidden) { $(id).hidden = true; if (id === 'viewer') viewing = null; return; }
+  }
+});
 document.querySelectorAll('[data-close-viewer]').forEach((b) => b.addEventListener('click', () => { $('viewer').hidden = true; viewing = null; }));
 $('grid-remove').addEventListener('click', () => { state.grid = null; renderGrid(); });
 $('deep').addEventListener('change', renderSummary);

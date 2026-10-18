@@ -64,3 +64,8 @@ textarea { resize: vertical; }
   .top-actions { gap: .35rem; }
   .top-actions .btn { padding: .45rem .6rem; font-size: .78rem; }
 }
+/* Petits téléphones : la barre passe sur deux lignes plutôt que de déborder. */
+@media (max-width: 480px) {
+  .topbar .wrap { height: auto; min-height: 56px; padding-top: .45rem; padding-bottom: .45rem; flex-wrap: wrap; row-gap: .4rem; }
+  .top-actions { flex-wrap: wrap; justify-content: flex-end; min-width: 0; }
+}

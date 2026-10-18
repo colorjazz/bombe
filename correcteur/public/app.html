@@ -92,9 +92,9 @@
           </div>
         </div>
         <div class="row3">
-          <label class="field">Note sur (facultatif)<input id="lang-total" type="number" min="0" step="1" placeholder="Ex. : 10"></label>
-          <label class="field">Points retirés par faute<input id="lang-per" type="number" min="0" step="0.25" placeholder="Ex. : 0,5"></label>
-          <label class="field">Retrait maximum<input id="lang-max" type="number" min="0" step="0.5" placeholder="Ex. : 10"></label>
+          <label class="field">Note sur (facultatif)<input id="lang-total" type="text" inputmode="decimal" class="num" placeholder="Ex. : 10"></label>
+          <label class="field">Points retirés par faute<input id="lang-per" type="text" inputmode="decimal" class="num" placeholder="Ex. : 0,5"></label>
+          <label class="field">Retrait maximum<input id="lang-max" type="text" inputmode="decimal" class="num" placeholder="Ex. : 10"></label>
         </div>
       </div>
 
@@ -109,8 +109,8 @@
       </div>
       <label class="field">Mode de correction
         <select id="deep">
+          <option value="0" selected>Rapide : une seule correction, 2× plus vite (1 page = 1 page décomptée)</option>
           <option value="1">Approfondie : double correction et fiabilité (1 page = 2 pages décomptées)</option>
-          <option value="0">Rapide : une seule correction, 2× plus vite (1 page = 1 page décomptée)</option>
         </select>
       </label>
       <label class="toggle"><input id="language" type="checkbox"> Évaluer aussi l'orthographe et la grammaire</label>
@@ -175,18 +175,18 @@
         <h2><span class="step g">2</span> Résultats</h2>
         <div class="results-tools">
           <input id="search" type="search" placeholder="Rechercher un élève…" style="width:12rem">
-          <button id="export" class="btn green" type="button" disabled>Télécharger la grille</button>
+          <button id="export" class="btn green" type="button" disabled>Télécharger les notes (CSV)</button>
           <button id="end" class="btn ghost" type="button" disabled>Terminer la session</button>
         </div>
       </div>
       <div id="stats" class="stats" hidden></div>
       <div id="empty" class="empty">
         <div class="empty-ico"><svg class="ic ic-lg" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M8 13h8M8 17h5"/></svg></div>
-        Les copies corrigées apparaîtront ici, avec le détail des points par question.
+        <span id="empty-text">Les copies corrigées apparaîtront ici, avec le détail des points par question.</span>
       </div>
       <div id="cards" class="cards"></div>
       <p class="muted small">Les notes sont des propositions : vérifiez-les, surtout les copies marquées ⚠. Tout est modifiable.<br>
-      <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> Aucune copie ni note n'est conservée : téléchargez la grille avant de fermer la page.</p>
+      <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> Aucune copie ni note n'est conservée : téléchargez les notes avant de fermer la page.</p>
     </section>
   </main>
 
@@ -222,7 +222,7 @@
   <div id="rel-help" class="modal" hidden>
     <div class="panel">
       <div style="display:flex;justify-content:space-between;align-items:center"><h2 style="margin:0">Que veut dire la fiabilité ?</h2><button class="icon-btn" type="button" data-close-rel aria-label="Fermer">×</button></div>
-      <p class="muted" style="margin:0">Chaque copie est corrigée <b>deux fois, indépendamment</b>. La fiabilité mesure à quel point ces deux corrections sont d'accord, question par question.</p>
+      <p class="muted" style="margin:0">Chaque copie est corrigée <b>deux fois, indépendamment</b>, par deux modèles d'IA différents. La fiabilité mesure à quel point ces deux corrections sont d'accord, question par question. Elle ne garantit pas l'exactitude : deux corrections peuvent s'accorder et se tromper toutes les deux.</p>
       <div class="stack" style="gap:.5rem">
         <div><span class="rel hi">90 % et +</span> <span class="small">Les deux corrections concordent : la note est solide.</span></div>
         <div><span class="rel mid">80 – 89 %</span> <span class="small">Léger désaccord sur une question : jetez-y un œil.</span></div>

@@ -29,3 +29,7 @@ enabled = true
 
 [observability.logs]
 invocation_logs = true
+
+# Nettoyage horaire des empreintes d'IP (24 h) et des vieilles clés d'essai
+[triggers]
+crons = ["17 * * * *"]
