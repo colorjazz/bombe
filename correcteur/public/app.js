@@ -768,6 +768,7 @@ function langCard(r) {
 let viewing = null;
 function openViewer(r) {
   viewing = r;
+  $('viewer-pages').classList.remove('zoom');
   $('viewer').hidden = false;
   renderViewer();
 }
@@ -779,7 +780,8 @@ function renderViewer(focus) {
   let n = 0;
   const numbered = r.pages.map((p) => p.errors.map((e) => ({ e, p, n: ++n })));
   $('viewer-pages').replaceChildren(...r.pages.map((p, pi) => h('div', { class: 'page-wrap' },
-    h('img', { src: p.url, alt: `Page ${pi + 1}` }),
+    h('img', { src: p.url, alt: `Page ${pi + 1}`, title: 'Cliquez pour agrandir ou réduire',
+      onclick: () => $('viewer-pages').classList.toggle('zoom') }),
     numbered[pi].filter(({ e }) => e.box).map(({ e, n: k }) => {
       const [y0, x0, y1, x1] = e.box;
       const el = h('div', { class: `hl ${CATS[e.category].cls} ${focus === e ? 'focus' : ''}`, title: `${e.text} → ${e.correction}\n${e.explanation}`,
