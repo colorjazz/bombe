@@ -196,9 +196,11 @@ async function filesToPages(files) {
 
 function applyMode() {
   const mode = $('mode').value;
-  const per = Math.max(1, Math.min(MAX_PAGES_PER_COPY, Number($('per').value) || 1));
+  const per = Math.round(Number($('per').value));
   state.pages.forEach((p, i) => {
-    p.startsNew = mode === 'file' ? p.firstOfFile : mode === 'auto' ? (p.autoStart ?? p.firstOfFile) : i % per === 0;
+    // Tant que le regroupement n'est pas choisi (ou le nombre de pages pas saisi), on affiche un fichier par copie.
+    p.startsNew = mode === 'auto' ? (p.autoStart ?? p.firstOfFile)
+      : mode === 'fixed' && per >= 1 ? i % per === 0 : p.firstOfFile;
   });
   if (state.pages[0]) state.pages[0].startsNew = true;
 }
@@ -226,10 +228,11 @@ async function detectCopies() {
   const todo = state.pages.filter((p) => p.autoStart === undefined);
   if (!todo.length) { applyMode(); renderPages(); return; }
   state.detecting = true;
-  renderSummary();
+  banner();
   try {
     for (let i = 0; i < todo.length; i += SPLIT_BATCH) {
-      banner('info', `Détection des copies : pages ${i + 1} à ${Math.min(i + SPLIT_BATCH, todo.length)} sur ${todo.length}…`);
+      state.detectProgress = `pages ${i + 1} à ${Math.min(i + SPLIT_BATCH, todo.length)} sur ${todo.length}`;
+      renderPages();
       const batch = todo.slice(i, i + SPLIT_BATCH);
       const before = state.pages[state.pages.indexOf(batch[0]) - 1];
       const { pages } = await api('/api/split', { method: 'POST', body: {
@@ -260,10 +263,20 @@ function bundles() {
 function renderPages() {
   const list = bundles();
   $('pages-zone').hidden = !state.pages.length;
-  $('per').hidden = $('mode').value !== 'fixed';
+  const mode = $('mode').value;
+  $('per').hidden = mode !== 'fixed';
+  $('mode-hint').hidden = !!mode;
+  if (state.detecting) {
+    $('bundles').replaceChildren(h('div', { class: 'analyzing' },
+      h('div', { class: 'spinner' }), h('b', { textContent: 'Un instant, nous analysons vos copies…' }),
+      h('span', { class: 'muted small', textContent: `L'IA repère où commence chaque copie (${state.detectProgress || ''}). Cette étape est gratuite.` })));
+    renderSummary();
+    return;
+  }
+  const ready = mode && !(mode === 'fixed' && !(Number($('per').value) >= 1));
   $('bundles').replaceChildren(...list.map((b, bi) => {
     const st = state.status[b[0].id];
-    const tooLong = b.length > MAX_PAGES_PER_COPY;
+    const tooLong = ready && b.length > MAX_PAGES_PER_COPY;
     const label = st?.state === 'running' ? '⏳ correction…' : st?.state === 'error' ? `⚠ ${st.msg}` : tooLong ? `⚠ ${MAX_PAGES_PER_COPY} pages max : plusieurs élèves ? Utilisez « Nombre fixe de pages par élève » ou ✂` : '';
     return h('div', { class: 'bundle' },
       h('div', { class: 'bundle-head' },
@@ -295,13 +308,18 @@ function renderSummary() {
   const list = bundles();
   const n = state.pages.length;
   const tooLong = list.some((b) => b.length > MAX_PAGES_PER_COPY);
+  const mode = $('mode').value;
+  const grouped = mode && !(mode === 'fixed' && !(Number($('per').value) >= 1));
   $('summary').innerHTML = n ? `<b>${list.length}</b> copie(s) · <b>${n}</b> page(s)` : 'Aucune copie importée';
   const cost = n * ($('deep').value === '1' ? 2 : 1);
   $('cost').textContent = n ? `${cost} page(s) seront décomptées` : '';
   const enough = state.pagesLeft == null || state.pagesLeft >= cost;
   const run = $('run');
-  run.disabled = state.running || state.detecting || !n || tooLong || !enough || !(Number($('total').value) > 0);
+  run.disabled = state.running || state.detecting || !n || !grouped || tooLong || !enough || !(Number($('total').value) > 0);
   run.textContent = state.running ? 'Correction en cours…'
+    : state.detecting ? 'Analyse des copies en cours…'
+    : n && !mode ? 'Choisissez comment regrouper les pages'
+    : n && !grouped ? 'Indiquez le nombre de pages par élève'
     : !enough ? 'Solde insuffisant : rechargez votre compte'
     : n ? `Corriger ${list.length} copie(s)` : 'Corriger';
   $('export').disabled = $('end').disabled = state.running || !state.results.length;
@@ -523,6 +541,7 @@ function endSession() {
   if (!confirm('Télécharger la grille puis tout effacer (copies, corrigé, résultats) ?')) return;
   exportCSV();
   Object.assign(state, { results: [], pages: [], rubricPages: [], status: {}, open: new Set(), exported: true });
+  $('mode').value = ''; $('per').value = '';
   ['exam', 'group', 'rubric', 'search'].forEach((id) => { $(id).value = ''; });
   renderRubric(); renderPages(); renderResults();
   banner('ok', 'Session terminée : la grille est téléchargée et tout a été effacé.');
@@ -541,9 +560,6 @@ dropzone($('drop'), $('files'), async (files) => {
   const added = await filesToPages(files);
   state.pages.push(...added);
   applyMode();
-  // Un fichier trop long contient presque toujours plusieurs élèves : on lance la détection automatique.
-  const longest = Math.max(0, ...bundles().map((b) => b.length));
-  if ($('mode').value === 'file' && longest > MAX_PAGES_PER_COPY) $('mode').value = 'auto';
   if ($('mode').value === 'auto') { renderPages(); await detectCopies(); return; }
   renderPages();
 });
@@ -561,7 +577,7 @@ $('mode').addEventListener('change', () => {
   applyMode(); renderPages();
   if ($('mode').value === 'auto') detectCopies();
 });
-$('per').addEventListener('change', () => { applyMode(); renderPages(); });
+$('per').addEventListener('input', () => { applyMode(); renderPages(); });
 $('clear-pages').addEventListener('click', () => { state.pages = []; state.status = {}; renderPages(); });
 $('total').addEventListener('input', renderSummary);
 $('deep').addEventListener('change', renderSummary);

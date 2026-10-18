@@ -93,13 +93,15 @@
         <div class="mode">
           <span>Regrouper :</span>
           <select id="mode">
+            <option value="" selected>— Choisir —</option>
             <option value="file">1 fichier = 1 élève</option>
             <option value="fixed">Nombre fixe de pages par élève</option>
             <option value="auto">Détection automatique (IA, gratuite)</option>
           </select>
-          <input id="per" type="number" min="1" max="10" value="2" hidden aria-label="Pages par élève">
+          <input id="per" type="number" min="1" max="10" value="" placeholder="Pages par élève" hidden aria-label="Pages par élève" style="width:9rem">
           <button id="clear-pages" class="btn ghost small" type="button">Tout retirer</button>
         </div>
+        <p id="mode-hint" class="banner info small" style="margin:0">Indiquez comment les pages sont regroupées : un fichier par élève, un nombre fixe de pages par élève, ou laissez l'IA détecter où commence chaque copie.</p>
         <p class="muted small" style="margin:0">Vérifiez les regroupements : cliquez sur ✂ pour séparer deux pages, sur « fusionner » pour rattacher une copie à la précédente.</p>
         <div id="bundles" class="bundles"></div>
       </div>
