@@ -224,7 +224,7 @@ async function creditSession(env, session) {
 // Stripe prévient le site après chaque paiement : les pages sont créditées même si le client
 // ferme l'onglet avant la page de remerciement. Signature vérifiée avec STRIPE_WEBHOOK_SECRET.
 async function stripeWebhook(request, env) {
-  if (!env.STRIPE_WEBHOOK_SECRET) throw new HttpError(404, 'Introuvable');
+  if (!env.STRIPE_WEBHOOK_SECRET) throw new HttpError(503, 'STRIPE_WEBHOOK_SECRET manquant dans Cloudflare (Settings → Variables and Secrets)');
   const body = await request.text();
   const header = request.headers.get('Stripe-Signature') || '';
   const parts = Object.fromEntries(header.split(',').map((kv) => kv.split('=')).filter((kv) => kv.length === 2));
