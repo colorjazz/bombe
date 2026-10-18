@@ -46,7 +46,11 @@
   <!-- Application -->
   <main id="app" class="wrap layout" hidden>
     <section class="panel stack">
-      <h2><span class="step">1</span> Évaluation et copies</h2>
+      <div class="kind" role="tablist">
+        <button id="kind-content" class="active" type="button" role="tab">✅ Correction de copies</button>
+        <button id="kind-lang" type="button" role="tab">📝 Correction de la langue</button>
+      </div>
+      <h2><span class="step">1</span> <span id="step1-title">Évaluation et copies</span></h2>
 
       <div class="row2">
         <label class="field">Nom de l'évaluation
@@ -56,6 +60,34 @@
           <input id="group" type="text" placeholder="Ex. : 541">
         </label>
       </div>
+      <div id="lang-settings" class="stack" hidden>
+        <p class="muted small" style="margin:0">L'IA relève les fautes de français sur chaque page et les surligne directement sur la copie, avec la correction et la règle. 1 page de copie = 1 page décomptée.</p>
+        <label class="field">Niveau des élèves
+          <select id="lang-level">
+            <option value="primaire">Primaire</option>
+            <option value="secondaire1" selected>Secondaire 1-2</option>
+            <option value="secondaire3">Secondaire 3-5</option>
+            <option value="cegep">Cégep / adultes</option>
+          </select>
+        </label>
+        <div class="field">Fautes à relever
+          <div class="cats" id="lang-cats">
+            <label class="cat c-orth"><input type="checkbox" value="orthographe" checked> Orthographe d'usage</label>
+            <label class="cat c-acc"><input type="checkbox" value="accord" checked> Accords</label>
+            <label class="cat c-conj"><input type="checkbox" value="conjugaison" checked> Conjugaison</label>
+            <label class="cat c-ponc"><input type="checkbox" value="ponctuation" checked> Ponctuation</label>
+            <label class="cat c-synt"><input type="checkbox" value="syntaxe" checked> Syntaxe</label>
+            <label class="cat c-voc"><input type="checkbox" value="vocabulaire" checked> Vocabulaire</label>
+          </div>
+        </div>
+        <div class="row3">
+          <label class="field">Note sur (facultatif)<input id="lang-total" type="number" min="0" step="1" placeholder="Ex. : 10"></label>
+          <label class="field">Points retirés par faute<input id="lang-per" type="number" min="0" step="0.25" placeholder="Ex. : 0,5"></label>
+          <label class="field">Retrait maximum<input id="lang-max" type="number" min="0" step="0.5" placeholder="Ex. : 10"></label>
+        </div>
+      </div>
+
+      <div id="content-settings" class="stack">
       <div class="row2">
         <label class="field">Barème total (points)
           <input id="total" type="number" min="1" max="1000" step="1" value="20">
@@ -90,6 +122,7 @@
           <button id="grid-remove" class="btn ghost small" type="button">Retirer la grille</button></div>
         <p class="muted small" style="margin:0">Relisez et ajustez au besoin. Un niveau par ligne, sous la forme « points : description ».</p>
         <div id="grid-criteria" class="stack"></div>
+      </div>
       </div>
 
       <p class="section-label">Copies des élèves</p>
@@ -157,6 +190,20 @@
         <div class="pack"><div><b>Année</b><div class="muted small">1 800 pages · ~4,4 ¢ la page</div></div><button class="btn" data-pack="annee">79 $</button></div>
       </div>
       <p id="buy-msg" class="small" style="margin:0;color:var(--red)"></p>
+    </div>
+  </div>
+
+  <!-- Copie annotée (correction de la langue) -->
+  <div id="viewer" class="modal" hidden>
+    <div class="panel viewer-panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem">
+        <h2 id="viewer-title" style="margin:0"></h2>
+        <div style="display:flex;gap:.5rem"><button id="viewer-print" class="btn" type="button">🖨 Imprimer / PDF</button><button class="icon-btn" type="button" data-close-viewer aria-label="Fermer">×</button></div>
+      </div>
+      <div class="viewer-body">
+        <div id="viewer-pages" class="viewer-pages"></div>
+        <div id="viewer-list" class="viewer-list"></div>
+      </div>
     </div>
   </div>
 

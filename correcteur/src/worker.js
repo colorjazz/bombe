@@ -44,6 +44,7 @@ const ROUTES = {
   'POST /api/grade': grade,
   'POST /api/split': split,
   'POST /api/rubric': rubric,
+  'POST /api/language': language,
 };
 
 // ---------- Utilitaires ----------
@@ -310,6 +311,106 @@ async function aiChat(env, system, content, responseFormat) {
     const detail = await res.text().catch(() => '');
     throw new Error(`IA ${res.status} : ${detail.slice(0, 300)}`);
   }
+}
+
+// ---------- Correction de la langue ----------
+
+const LANG_CATEGORIES = {
+  orthographe: "orthographe d'usage (mot mal écrit, accent, majuscule)",
+  accord: 'accords (genre, nombre, participe passé, adjectif, déterminant)',
+  conjugaison: 'conjugaison (terminaison, temps, mode, auxiliaire)',
+  ponctuation: 'ponctuation (virgule, point, apostrophe, trait d’union)',
+  syntaxe: 'syntaxe (construction de phrase, préposition, négation, pronom)',
+  vocabulaire: 'vocabulaire (mot impropre, anglicisme, registre familier)',
+};
+const LEVELS = {
+  primaire: 'élève du primaire : relève les fautes importantes, explications très simples',
+  secondaire1: 'élève de secondaire 1-2 : explications simples avec la règle',
+  secondaire3: 'élève de secondaire 3-5 : explications précises avec la règle',
+  cegep: 'étudiant de cégep ou adulte : exigence élevée, explications précises',
+};
+const LANG_SCHEMA = {
+  type: 'json_schema',
+  json_schema: {
+    name: 'fautes',
+    schema: {
+      type: 'object',
+      required: ['nom', 'groupe', 'fautes'],
+      properties: {
+        nom: { type: 'string' },
+        groupe: { type: 'string' },
+        fautes: {
+          type: 'array',
+          items: {
+            type: 'object',
+            required: ['texte', 'correction', 'categorie', 'explication', 'box'],
+            properties: {
+              texte: { type: 'string' },
+              correction: { type: 'string' },
+              categorie: { type: 'string', enum: Object.keys(LANG_CATEGORIES) },
+              explication: { type: 'string' },
+              box: { type: 'array', items: { type: 'integer' } },
+            },
+          },
+        },
+      },
+    },
+  },
+};
+
+// Rectangle [ymin, xmin, ymax, xmax] sur 1000, ou null s'il est inutilisable.
+function cleanBox(box) {
+  if (!Array.isArray(box) || box.length !== 4) return null;
+  const [y0, x0, y1, x1] = box.map((v) => Math.max(0, Math.min(1000, Math.round(Number(v)))));
+  return y1 > y0 && x1 > x0 && y1 - y0 < 400 ? [y0, x0, y1, x1] : null;
+}
+
+async function language(request, env) {
+  const key = bearer(request);
+  const body = await readJson(request);
+  checkImages(body.pages, MAX_PAGES_PER_COPY, 'Copie');
+  if (!body.pages.length) throw new HttpError(400, 'Copie vide');
+  const cats = (Array.isArray(body.categories) ? body.categories : Object.keys(LANG_CATEGORIES)).filter((c) => LANG_CATEGORIES[c]);
+  if (!cats.length) throw new HttpError(400, 'Choisissez au moins un type de faute');
+  const level = LEVELS[body.level] || LEVELS.secondaire1;
+
+  const n = body.pages.length; // 1 page de copie = 1 page décomptée
+  const reserved = await env.DB.prepare('UPDATE access_keys SET pages = pages - ? WHERE key = ? AND pages >= ?').bind(n, key, n).run();
+  if (!reserved.meta.changes) {
+    await getKey(env, key);
+    throw new HttpError(402, 'Solde de pages insuffisant. Rechargez votre compte pour continuer.');
+  }
+
+  const system = [
+    "Tu es un correcteur de français expérimenté. Tu reçois la photo ou la numérisation d'une page de copie d'élève (manuscrite ou dactylographiée).",
+    `Profil : ${level}.`,
+    `Relève UNIQUEMENT ces types de fautes : ${cats.map((c) => LANG_CATEGORIES[c]).join(' ; ')}.`,
+    "Relève seulement de vraies fautes, pas des choix de style. Si un mot est illisible, ne l'invente pas et ne le compte pas comme une faute.",
+    "Pour chaque faute : « texte » = le mot ou groupe de mots fautif tel qu'écrit ; « correction » = la forme correcte ; « explication » = la règle en une phrase courte.",
+    "« box » = le rectangle qui entoure exactement le mot fautif sur l'image, au format [ymin, xmin, ymax, xmax], en entiers de 0 à 1000 (0,0 = coin supérieur gauche). Le rectangle doit couvrir le mot entier sur sa ligne, pas toute la ligne.",
+    "Relève chaque faute séparément, même si elle se répète. Recopie aussi le nom et le groupe de l'élève s'ils sont écrits sur la page (sinon chaînes vides).",
+  ].join('\n');
+
+  const results = await Promise.allSettled(body.pages.map((url) => aiChat(env, system,
+    [{ type: 'text', text: 'Page de la copie :' }, { type: 'image_url', image_url: { url, detail: 'high' } }], LANG_SCHEMA)));
+  const failed = results.filter((x) => x.status === 'rejected').length;
+  if (failed) {
+    await env.DB.prepare('UPDATE access_keys SET pages = pages + ? WHERE key = ?').bind(failed, key).run();
+    console.error('Langue : pages en échec :', results.filter((x) => x.status === 'rejected').map((x) => x.reason?.message).join(' / '));
+  }
+  if (failed === n) throw new HttpError(502, "L'analyse de la langue a échoué. Aucune page n'a été décomptée, réessayez.");
+
+  const ok = results.map((x) => (x.status === 'fulfilled' ? x.value : null));
+  const pages = ok.map((raw) => (raw ? {
+    errors: (raw.fautes || []).filter((f) => LANG_CATEGORIES[f.categorie] && cats.includes(f.categorie)).map((f) => ({
+      text: String(f.texte || '').slice(0, 200), correction: String(f.correction || '').slice(0, 200),
+      category: f.categorie, explanation: String(f.explication || '').slice(0, 400), box: cleanBox(f.box),
+    })),
+  } : { errors: [], failed: true }));
+  const name = (ok.find((x) => x?.nom?.trim()) || {}).nom?.trim() || '';
+  const group = (ok.find((x) => x?.groupe?.trim()) || {}).groupe?.trim() || '';
+  const left = await env.DB.prepare('SELECT pages FROM access_keys WHERE key = ?').bind(key).first();
+  return json({ name, group, pages, failedPages: failed, pagesLeft: left?.pages ?? 0 });
 }
 
 // ---------- Grille détaillée ----------

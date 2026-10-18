@@ -19,6 +19,7 @@ const state = {
   results: [],
   open: new Set(),
   running: false,
+  kind: 'content', // 'content' : correction de copies · 'lang' : correction de la langue
   exported: true,
 };
 
@@ -311,12 +312,12 @@ function renderSummary() {
   const mode = $('mode').value;
   const grouped = mode && !(mode === 'fixed' && !(Number($('per').value) >= 1));
   $('summary').innerHTML = n ? `<b>${list.length}</b> copie(s) · <b>${n}</b> page(s)` : 'Aucune copie importée';
-  const cost = n * ($('deep').value === '1' ? 2 : 1);
+  const cost = n * (state.kind === 'content' && $('deep').value === '1' ? 2 : 1);
   $('cost').textContent = n ? `${cost} page(s) seront décomptées` : '';
   const enough = state.pagesLeft == null || state.pagesLeft >= cost;
   const run = $('run');
   const gridSum = state.grid ? state.grid.reduce((a, c) => a + (Number(c.max) || 0), 0) : null;
-  const gridOk = gridSum == null || Math.abs(gridSum - Number($('total').value)) < 1e-9;
+  const gridOk = state.kind === 'lang' || gridSum == null || Math.abs(gridSum - Number($('total').value)) < 1e-9;
   run.disabled = state.running || state.detecting || !n || !grouped || tooLong || !enough || !gridOk || !(Number($('total').value) > 0);
   run.textContent = state.running ? 'Correction en cours…'
     : state.detecting ? 'Analyse des copies en cours…'
@@ -324,7 +325,7 @@ function renderSummary() {
     : n && !grouped ? 'Indiquez le nombre de pages par élève'
     : !enough ? 'Solde insuffisant : rechargez votre compte'
     : n && !gridOk ? `La grille totalise ${fmt(gridSum)} points au lieu de ${fmt(Number($('total').value))}`
-    : n ? `Corriger ${list.length} copie(s)` : 'Corriger';
+    : n ? `${state.kind === 'lang' ? 'Analyser la langue de' : 'Corriger'} ${list.length} copie(s)` : 'Corriger';
   $('export').disabled = $('end').disabled = state.running || !state.results.length;
 }
 
@@ -412,7 +413,7 @@ async function runAll() {
   // Temps restant : moyenne des copies déjà corrigées (ou estimation de départ), réparti sur les corrections en parallèle.
   const durations = [];
   const started = new Map(); // id → début de correction
-  const guess = (b) => ((settings.deep ? 30 : 15) + 4 * b.length) * 1000;
+  const guess = (b) => (state.kind === 'lang' ? 8 + 6 * b.length : (settings.deep ? 30 : 15) + 4 * b.length) * 1000;
   const updateProgress = () => {
     const finished = done + failed;
     const avg = (b) => (durations.length ? durations.reduce((x, y) => x + y, 0) / durations.length : guess(b));
@@ -437,6 +438,15 @@ async function runAll() {
       state.status[id] = { state: 'running' };
       renderPages();
       try {
+        if (state.kind === 'lang') {
+          const r = await api('/api/language', { method: 'POST', body: { pages: b.map((p) => p.url), ...langSettings() } });
+          setBalance(r.pagesLeft);
+          const res = { kind: 'lang', id, exam: settings.exam, group: r.group || settings.group, name: r.name, pageCount: b.length,
+            pages: b.map((p, i) => ({ url: p.url, errors: r.pages[i].errors, failed: !!r.pages[i].failed })),
+            scoring: langScoring(), flags: r.failedPages ? [`${r.failedPages} page(s) n'ont pas pu être analysées (non décomptées).`] : [] };
+          langGrade(res);
+          state.results.unshift(res);
+        } else {
         const r = await api('/api/grade', { method: 'POST', body: { ...settings, pages: b.map((p) => p.url) } });
         setBalance(r.pagesLeft);
         state.results.unshift({
@@ -444,6 +454,7 @@ async function runAll() {
           unit: settings.wholePoints ? 1 : 0.5, questions: r.questions, comment: r.comment, flags: r.flags, pageCount: b.length,
         });
         if (r.flags.length || r.questions.some((q) => q.second != null)) state.open.add(id);
+        }
         state.exported = false;
         state.pages = state.pages.filter((p) => !b.includes(p));
         if (state.pages[0]) state.pages[0].startsNew = true;
@@ -482,7 +493,7 @@ function recompute(r) {
 }
 
 function renderStats() {
-  const graded = state.results;
+  const graded = state.results.filter((r) => r.grade != null && r.total > 0);
   $('stats').hidden = !graded.length;
   if (!graded.length) return;
   const pct = graded.map((r) => (r.grade / r.total) * 100);
@@ -501,7 +512,7 @@ function renderResults() {
   const q = $('search').value.trim().toLowerCase();
   const shown = state.results.filter((r) => !q || `${r.name} ${r.group} ${r.exam}`.toLowerCase().includes(q));
   $('empty').hidden = !!state.results.length;
-  $('cards').replaceChildren(...shown.map(card));
+  $('cards').replaceChildren(...shown.map((r) => (r.kind === 'lang' ? langCard(r) : card(r))));
   renderStats();
   renderSummary();
 }
@@ -568,6 +579,160 @@ function card(r) {
   return el;
 }
 
+// ---------- Correction de la langue ----------
+
+const CATS = {
+  orthographe: { label: 'Orthographe', cls: 'c-orth', color: '#f43f5e' },
+  accord: { label: 'Accords', cls: 'c-acc', color: '#f59e0b' },
+  conjugaison: { label: 'Conjugaison', cls: 'c-conj', color: '#a855f7' },
+  ponctuation: { label: 'Ponctuation', cls: 'c-ponc', color: '#38bdf8' },
+  syntaxe: { label: 'Syntaxe', cls: 'c-synt', color: '#10b981' },
+  vocabulaire: { label: 'Vocabulaire', cls: 'c-voc', color: '#94a3b8' },
+};
+
+const langSettings = () => ({
+  level: $('lang-level').value,
+  categories: [...document.querySelectorAll('#lang-cats input:checked')].map((i) => i.value),
+});
+
+function langScoring() {
+  const num = (id) => Number(String($(id).value).replace(',', '.'));
+  const total = num('lang-total'), per = num('lang-per'), max = num('lang-max');
+  return total > 0 && per > 0 ? { total, per, max: max > 0 ? max : total } : null;
+}
+
+// Note de langue : total − (points par faute × nombre de fautes), plafonné au retrait maximum.
+function langGrade(r) {
+  const count = r.pages.reduce((a, p) => a + p.errors.length, 0);
+  if (!r.scoring) { r.grade = null; r.total = null; return count; }
+  r.total = r.scoring.total;
+  r.grade = Math.max(0, r.scoring.total - Math.min(r.scoring.max, r.scoring.per * count));
+  return count;
+}
+
+function categoryChips(errors) {
+  return h('div', { class: 'chips' }, Object.entries(CATS).map(([k, c]) => {
+    const n = errors.filter((e) => e.category === k).length;
+    return n ? h('span', { class: `cat ${c.cls}`, textContent: `${c.label} ${n}` }) : null;
+  }));
+}
+
+function langCard(r) {
+  const errors = r.pages.flatMap((p) => p.errors);
+  const gradeEl = h('span', { class: 'grade' });
+  gradeEl.replaceChildren(r.grade == null ? `${errors.length} faute${errors.length > 1 ? 's' : ''}`
+    : h('span', {}, fmt(r.grade), h('small', {}, ` / ${fmt(r.total)} · ${errors.length} faute(s)`)));
+  return h('article', { class: `card open ${r.flags.length ? 'flag' : ''}` },
+    h('div', { class: 'card-head' },
+      h('input', { class: 'name', type: 'text', value: r.name, placeholder: '⚠ Nom à compléter', 'aria-label': "Nom de l'élève",
+        oninput: (e) => { r.name = e.target.value; state.exported = false; } }),
+      h('input', { class: 'group', type: 'text', value: r.group, placeholder: 'Groupe', 'aria-label': 'Groupe',
+        oninput: (e) => { r.group = e.target.value; state.exported = false; } }),
+      h('span'), gradeEl, h('span')),
+    h('div', { class: 'card-body' },
+      r.flags.length ? h('div', { class: 'flags' }, r.flags.map((f) => h('div', { textContent: `⚠ ${f}` }))) : null,
+      errors.length ? categoryChips(errors) : h('p', { class: 'muted small', style: 'margin:0', textContent: 'Aucune faute relevée.' }),
+      h('div', { class: 'card-foot' },
+        h('span', { textContent: [r.exam, `${r.pageCount} page(s)`].filter(Boolean).join(' · ') }),
+        h('div', { style: 'display:flex;gap:.4rem' },
+          h('button', { class: 'btn primary small', type: 'button', textContent: '👁 Voir la copie annotée', onclick: () => openViewer(r) }),
+          h('button', { class: 'btn ghost small', type: 'button', textContent: 'Supprimer', onclick: () => {
+            if (!confirm(`Supprimer l'analyse de ${r.name || 'cet élève'} ?`)) return;
+            state.results = state.results.filter((x) => x !== r); renderResults();
+          } })))));
+}
+
+// Visionneuse : la copie avec les fautes surlignées, et la liste des fautes (supprimables si l'IA s'est trompée).
+let viewing = null;
+function openViewer(r) {
+  viewing = r;
+  $('viewer').hidden = false;
+  renderViewer();
+}
+
+function renderViewer(focus) {
+  const r = viewing;
+  const count = langGrade(r);
+  $('viewer-title').textContent = `${r.name || 'Élève'} · ${count} faute(s)${r.grade != null ? ` · ${fmt(r.grade)} / ${fmt(r.total)}` : ''}`;
+  let n = 0;
+  const numbered = r.pages.map((p) => p.errors.map((e) => ({ e, p, n: ++n })));
+  $('viewer-pages').replaceChildren(...r.pages.map((p, pi) => h('div', { class: 'page-wrap' },
+    h('img', { src: p.url, alt: `Page ${pi + 1}` }),
+    numbered[pi].filter(({ e }) => e.box).map(({ e, n: k }) => {
+      const [y0, x0, y1, x1] = e.box;
+      const el = h('div', { class: `hl ${CATS[e.category].cls} ${focus === e ? 'focus' : ''}`, title: `${e.text} → ${e.correction}\n${e.explanation}`,
+        onclick: () => renderViewer(e) }, h('span', { textContent: String(k) }));
+      el.style.cssText = `top:${y0 / 10}%;left:${x0 / 10}%;height:${(y1 - y0) / 10}%;width:${(x1 - x0) / 10}%`;
+      return el;
+    }))));
+  const items = numbered.flat();
+  $('viewer-list').replaceChildren(
+    items.length ? categoryChips(items.map((i) => i.e)) : h('p', { class: 'muted', textContent: 'Aucune faute relevée.' }),
+    ...items.map(({ e, p, n: k }) => {
+      const el = h('div', { class: `err ${CATS[e.category].cls} ${focus === e ? 'focus' : ''}`, onclick: () => renderViewer(e) },
+        h('div', { class: 'err-head' }, h('b', { textContent: `${k}. ${CATS[e.category].label}${e.box ? '' : ' (non localisée)'}` }),
+          h('button', { class: 'icon-btn', type: 'button', textContent: '×', title: "Ce n'est pas une faute : retirer", onclick: (ev) => {
+            ev.stopPropagation();
+            p.errors = p.errors.filter((x) => x !== e);
+            state.exported = false;
+            renderViewer(); renderResults();
+          } })),
+        h('div', { class: 'fix' }, h('s', { textContent: e.text }), ' → ', h('b', { textContent: e.correction })),
+        h('div', { class: 'muted small', textContent: e.explanation }));
+      if (focus === e) setTimeout(() => el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 0);
+      return el;
+    }));
+}
+
+// Impression : chaque page avec ses surlignages dessinés, puis la liste des corrections. « Enregistrer en PDF » depuis l'impression.
+async function printViewer() {
+  const r = viewing;
+  const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  let n = 0;
+  const pages = [];
+  const list = [];
+  for (const p of r.pages) {
+    const img = await new Promise((res) => { const i = new Image(); i.onload = () => res(i); i.src = p.url; });
+    const c = document.createElement('canvas');
+    c.width = img.width; c.height = img.height;
+    const ctx = c.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+    for (const e of p.errors) {
+      const k = ++n;
+      list.push(`<li><b style="color:${CATS[e.category].color}">${k}. ${esc(CATS[e.category].label)}</b> — <s>${esc(e.text)}</s> → <b>${esc(e.correction)}</b><br><small>${esc(e.explanation)}</small></li>`);
+      if (!e.box) continue;
+      const [y0, x0, y1, x1] = e.box.map((v) => v / 1000);
+      ctx.strokeStyle = ctx.fillStyle = CATS[e.category].color;
+      ctx.lineWidth = Math.max(2, c.width / 500);
+      ctx.globalAlpha = 0.22; ctx.fillRect(x0 * c.width, y0 * c.height, (x1 - x0) * c.width, (y1 - y0) * c.height);
+      ctx.globalAlpha = 1; ctx.strokeRect(x0 * c.width, y0 * c.height, (x1 - x0) * c.width, (y1 - y0) * c.height);
+      ctx.font = `bold ${Math.round(c.width / 55)}px sans-serif`;
+      ctx.fillText(String(k), x0 * c.width, y0 * c.height - 4);
+    }
+    pages.push(`<img src="${c.toDataURL('image/jpeg', 0.85)}">`);
+  }
+  const w = window.open('', '_blank');
+  if (!w) { alert('Autorisez les fenêtres surgissantes pour imprimer.'); return; }
+  w.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>${esc(r.name || 'Copie')} — correction de la langue</title>
+    <style>body{font:13px/1.45 system-ui,sans-serif;margin:24px;color:#111}img{width:100%;page-break-after:always;margin-bottom:16px}
+    h1{font-size:18px}li{margin:.35rem 0}</style></head><body>
+    <h1>${esc(r.name || 'Élève')}${r.group ? ` · ${esc(r.group)}` : ''} — ${n} faute(s)${r.grade != null ? ` · ${fmt(r.grade)} / ${fmt(r.total)}` : ''}</h1>
+    ${pages.join('')}<h1>Corrections</h1><ol style="list-style:none;padding:0">${list.join('')}</ol>
+    <script>window.onload=()=>window.print()<\/script></body></html>`);
+  w.document.close();
+}
+
+function setKind(kind) {
+  if (state.running) return;
+  state.kind = kind;
+  $('kind-content').classList.toggle('active', kind === 'content');
+  $('kind-lang').classList.toggle('active', kind === 'lang');
+  $('content-settings').hidden = kind !== 'content';
+  $('lang-settings').hidden = kind !== 'lang';
+  $('step1-title').textContent = kind === 'lang' ? 'Correction de la langue' : 'Évaluation et copies';
+  renderSummary();
+}
+
 // ---------- Export ----------
 
 function csvCell(v) {
@@ -576,20 +741,38 @@ function csvCell(v) {
   return `"${s.replace(/"/g, '""')}"`;
 }
 
+function downloadCSV(rows, suffix) {
+  const csv = '\uFEFF' + rows.map((row) => row.map(csvCell).join(';')).join('\r\n');
+  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  const name = [$('exam').value, $('group').value].filter(Boolean).join('_').replace(/[^\p{L}\p{N}_-]+/gu, '-') || 'corrections';
+  const a = h('a', { href: url, download: `${name}${suffix}_${new Date().toISOString().slice(0, 10)}.csv` });
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 function exportCSV() {
   const num = (n) => String(n).replace('.', ',');
+  const lang = state.results.filter((r) => r.kind === 'lang');
+  if (lang.length) {
+    const keys = Object.keys(CATS);
+    const rows = [['Évaluation', 'Groupe', 'Élève', 'Fautes', ...keys.map((k) => CATS[k].label), 'Note', 'Sur', 'Détail des fautes']];
+    for (const r of [...lang].reverse()) {
+      const errs = r.pages.flatMap((p) => p.errors);
+      rows.push([r.exam, r.group, r.name, errs.length, ...keys.map((k) => errs.filter((e) => e.category === k).length),
+        r.grade == null ? '' : num(r.grade), r.grade == null ? '' : num(r.total),
+        errs.map((e) => `${e.text} → ${e.correction} (${e.explanation})`).join(' | ')]);
+    }
+    downloadCSV(rows, '_langue');
+  }
+  const content = state.results.filter((r) => r.kind !== 'lang');
+  if (!content.length) { state.exported = true; return; }
   const rows = [['Évaluation', 'Groupe', 'Élève', 'Note', 'Sur', 'Pourcentage', 'Fiabilité (%)', 'Détail par question', 'Commentaire', 'À vérifier']];
-  for (const r of [...state.results].reverse()) {
+  for (const r of [...content].reverse()) {
     rows.push([r.exam, r.group, r.name, num(r.grade), num(r.total), num(Math.round((r.grade / r.total) * 1000) / 10), r.reliability ?? '',
       r.questions.map((q) => `${q.question} : ${num(q.points)}/${num(q.max)}${q.points < q.max && q.justification ? ` (${q.justification})` : ''}`).join(' | '),
       r.comment, r.flags.join(' ')]);
   }
-  const csv = '﻿' + rows.map((row) => row.map(csvCell).join(';')).join('\r\n');
-  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
-  const name = [$('exam').value, $('group').value].filter(Boolean).join('_').replace(/[^\p{L}\p{N}_-]+/gu, '-') || 'corrections';
-  const a = h('a', { href: url, download: `${name}_${new Date().toISOString().slice(0, 10)}.csv` });
-  document.body.append(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  downloadCSV(rows, '');
   state.exported = true;
 }
 
@@ -638,6 +821,10 @@ $('per').addEventListener('input', () => { applyMode(); renderPages(); });
 $('clear-pages').addEventListener('click', () => { state.pages = []; state.status = {}; renderPages(); });
 $('total').addEventListener('input', () => { renderSummary(); updateGridTotal(); });
 $('make-grid').addEventListener('click', makeGrid);
+$('kind-content').addEventListener('click', () => setKind('content'));
+$('kind-lang').addEventListener('click', () => setKind('lang'));
+$('viewer-print').addEventListener('click', printViewer);
+document.querySelectorAll('[data-close-viewer]').forEach((b) => b.addEventListener('click', () => { $('viewer').hidden = true; viewing = null; }));
 $('grid-remove').addEventListener('click', () => { state.grid = null; renderGrid(); });
 $('deep').addEventListener('change', renderSummary);
 $('run').addEventListener('click', runAll);
