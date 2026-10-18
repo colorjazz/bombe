@@ -194,10 +194,15 @@ async function claim(request, env, url) {
   if (!/^cs_[A-Za-z0-9_]+$/.test(sessionId)) throw new HttpError(400, 'Paiement introuvable');
 
   const session = await stripe(env, 'GET', `checkout/sessions/${sessionId}`);
-  if (session.payment_status !== 'paid') throw new HttpError(402, "Le paiement n'est pas encore confirmé.");
+  if (!isSettled(session)) throw new HttpError(402, "Le paiement n'est pas encore confirmé.");
   const { key, pages } = await creditSession(env, session);
   const row = await getKey(env, key);
   return json({ key, pages: row.pages, added: pages });
+}
+
+// Payée, ou gratuite grâce à un code promo à 100 % (Stripe indique alors « no_payment_required »).
+function isSettled(session) {
+  return session?.status === 'complete' && ['paid', 'no_payment_required'].includes(session.payment_status);
 }
 
 // Crédite une seule fois les pages d'une session Checkout payée (page de remerciement ou webhook).
@@ -235,7 +240,7 @@ async function stripeWebhook(request, env) {
   const event = JSON.parse(body);
   const session = event.data?.object;
   if (['checkout.session.completed', 'checkout.session.async_payment_succeeded'].includes(event.type)
-    && session?.payment_status === 'paid' && session.metadata?.key) {
+    && isSettled(session) && session.metadata?.key) {
     await creditSession(env, session);
   }
   return json({ received: true });
