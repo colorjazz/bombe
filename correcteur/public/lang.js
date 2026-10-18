@@ -1,4 +1,4 @@
-// Langue du site (FR | EN) : choix mémorisé, sinon langue du navigateur.
+// Langue du site (FR | EN) : choix mémorisé, sinon domaine visité, sinon langue du navigateur.
 // Chargé en premier sur chaque page. Les pages statiques existent en deux fichiers
 // (<html data-lang="fr" data-alt="index-en.html">) ; l'appli traduit sur place (i18n.js).
 (function () {
@@ -7,7 +7,10 @@
   try { saved = localStorage.getItem(KEY); } catch (e) { /* navigation privée */ }
   var langs = navigator.languages || [navigator.language || ''];
   var browser = langs.some(function (l) { return /^fr/i.test(l); }) ? 'fr' : 'en';
-  var lang = saved === 'fr' || saved === 'en' ? saved : browser;
+  // Le domaine fixe la langue par défaut : brulelapile.ca → français, burnthepile.com → anglais.
+  var host = location.hostname;
+  var byDomain = /brulelapile/i.test(host) ? 'fr' : /burnthepile/i.test(host) ? 'en' : null;
+  var lang = saved === 'fr' || saved === 'en' ? saved : byDomain || browser;
   window.CE_LANG = lang;
 
   var html = document.documentElement;

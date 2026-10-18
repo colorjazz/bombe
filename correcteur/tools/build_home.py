@@ -48,7 +48,7 @@ T = {
   price_sub="Une classe de 30 élèves avec des copies de 3 pages : environ 5 $ en mode rapide, 10 $ en mode approfondi (double correction). La correction de la langue compte 1 page par page. Le corrigé n'est jamais facturé. Les pages n'expirent pas.",
   prices=[('Découverte', '14 $', '200 pages', ['~7 ¢ la page', '~2 classes en mode rapide'], ''), ('Session', '29 $', '500 pages', ['~5,8 ¢ la page', '~5 classes en mode rapide, 2 à 3 en approfondi'], 'Le plus populaire'), ('Année', '79 $', '1 800 pages', ['~4,4 ¢ la page', "Toute l'année scolaire"], '')],
   start='Commencer',
-  price_note='Prix en dollars canadiens. Commencez par 30 pages gratuites. École ou centre de services ? <a href="mailto:CONTACT@VOTRE-DOMAINE.CA">Écrivez-nous</a> pour un tarif de groupe.',
+  price_note='Prix en dollars canadiens. Commencez par 30 pages gratuites. École ou centre de services ? <a href="mailto:bonjour@brulelapile.ca">Écrivez-nous</a> pour un tarif de groupe.',
   faq_h='Questions fréquentes',
   faq=[("L'IA remplace-t-elle mon jugement ?", "Non. Elle vous propose une note et une justification ; vous restez le correcteur. Tout est modifiable avant l'export, et les copies douteuses sont signalées."),
        ("Ça fonctionne avec l'écriture à la main ?", "Oui, avec des numérisations ou des photos nettes. Si un passage est illisible, la correction le dit et la copie est marquée à vérifier, au lieu de deviner."),
@@ -58,7 +58,7 @@ T = {
        ('Que deviennent les copies de mes élèves ?', 'Elles sont envoyées de façon chiffrée à notre fournisseur d’IA pour la correction, puis oubliées. Nous ne conservons ni copie, ni note, ni nom d’élève. Voir notre <a href="confidentialite.html">politique de confidentialité</a>.'),
        ('Dois-je créer un compte ?', 'Non. Vous recevez une clé d’accès qui contient votre solde de pages. Notez-la pour l’utiliser sur un autre appareil ou recharger votre compte.')],
   end_h='Votre prochaine pile de copies, en quelques minutes', end_sub='30 pages gratuites, sans carte de crédit.', end_cta='Essayer maintenant',
-  privacy_href='confidentialite.html', privacy='Confidentialité', terms_href='conditions.html', terms='Conditions', contact='Nous joindre'),
+  privacy_href='confidentialite.html', mail='bonjour@brulelapile.ca', site='https://brulelapile.ca', privacy='Confidentialité', terms_href='conditions.html', terms='Conditions', contact='Nous joindre'),
  'en': dict(
   file='index-en.html', alt='index.html', html_lang='en-CA', brand='Burn the Pile',
   title='Burn the Pile — Grade student work 10× faster',
@@ -95,7 +95,7 @@ T = {
   price_sub='A class of 30 students with 3-page papers: about $5 in quick mode, $10 in in-depth mode (double grading). Language checks use 1 page per page. The answer key is never charged. Pages never expire.',
   prices=[('Starter', '$14', '200 pages', ['~7¢ per page', '~2 classes in quick mode'], ''), ('Term', '$29', '500 pages', ['~5.8¢ per page', '~5 classes in quick mode, 2–3 in-depth'], 'Most popular'), ('Year', '$79', '1,800 pages', ['~4.4¢ per page', 'The whole school year'], '')],
   start='Get started',
-  price_note='Prices in Canadian dollars. Start with 30 free pages. A school or district? <a href="mailto:CONTACT@VOTRE-DOMAINE.CA">Contact us</a> for group pricing.',
+  price_note='Prices in Canadian dollars. Start with 30 free pages. A school or district? <a href="mailto:hello@burnthepile.com">Contact us</a> for group pricing.',
   faq_h='Frequently asked questions',
   faq=[('Does the AI replace my judgment?', 'No. It suggests a grade and a justification; you remain the grader. Everything can be edited before export, and doubtful papers are flagged.'),
        ('Does it work with handwriting?', 'Yes, with clear scans or photos. If a passage is illegible, the grading says so and the paper is flagged for review instead of guessing.'),
@@ -105,7 +105,7 @@ T = {
        ('What happens to my students’ work?', 'It is sent encrypted to our AI provider for grading, then forgotten. We store no student work, grades or student names. See our <a href="privacy.html">privacy policy</a>.'),
        ('Do I need an account?', 'No. You get an access key that holds your page balance. Write it down to use it on another device or to top up.')],
   end_h='Your next pile of papers, in a few minutes', end_sub='30 free pages, no credit card.', end_cta='Try it now',
-  privacy_href='privacy.html', privacy='Privacy', terms_href='terms.html', terms='Terms', contact='Contact us'),
+  privacy_href='privacy.html', mail='hello@burnthepile.com', site='https://burnthepile.com', privacy='Privacy', terms_href='terms.html', terms='Terms', contact='Contact us'),
 }
 
 def page(L, d):
@@ -134,7 +134,8 @@ def page(L, d):
   <meta property="og:title" content="{d['og_title']}">
   <meta property="og:description" content="{d['og_desc']}">
   <meta property="og:type" content="website">
-  <meta property="og:image" content="https://correcteur-express.christopher-plante.workers.dev/logo.png">
+  <meta property="og:image" content="{d['site']}/logo.png">
+  <meta property="og:url" content="{d['site']}/">
 </head>
 <body>
   <header class="topbar"><div class="wrap"><a class="brand" href="{d['file']}"><img class="logo" src="logo-96.png" alt="" width="40" height="40"><strong>{d['brand']}</strong></a><div class="top-actions">{sw}<a class="btn ghost" href="#{d['anchor_prices']}">{d['nav_prices']}</a><a class="btn primary" href="app.html">{d['nav_try']}</a></div></div></header>
@@ -210,7 +211,7 @@ def page(L, d):
       <a class="btn primary big" href="app.html">{d['end_cta']}</a>
     </section>
   </main>
-  <footer><div class="wrap"><span>© 2026 {d['brand']}</span><span><a href="{d['privacy_href']}">{d['privacy']}</a> · <a href="{d['terms_href']}">{d['terms']}</a> · <a href="mailto:CONTACT@VOTRE-DOMAINE.CA">{d['contact']}</a></span></div></footer>
+  <footer><div class="wrap"><span>© 2026 {d['brand']}</span><span><a href="{d['privacy_href']}">{d['privacy']}</a> · <a href="{d['terms_href']}">{d['terms']}</a> · <a href="mailto:{d['mail']}">{d['contact']}</a></span></div></footer>
 </body>
 </html>
 '''
