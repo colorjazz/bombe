@@ -1,0 +1,118 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&display=block" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0}
+body{width:1080px;height:1920px;overflow:hidden;font-family:Inter,sans-serif;color:#e5e9f2;background:#0b1120;position:relative}
+#bg{position:absolute;inset:0;background:radial-gradient(900px 700px at 85% 10%,rgba(240,112,40,.30),transparent 60%),radial-gradient(900px 800px at 0% 100%,rgba(99,102,241,.25),transparent 60%)}
+.abs{position:absolute}
+.t{font-family:"Inter Display",Inter;font-weight:900;letter-spacing:-3px;line-height:1}
+em{font-style:normal;background:linear-gradient(90deg,#ffb347,#f07a28 45%,#e0502a);-webkit-background-clip:text;color:transparent}
+.sheet{position:absolute;width:560px;height:150px;left:260px;background:#fbfaf6;border-radius:10px;box-shadow:0 10px 30px -10px rgba(0,0,0,.7);
+ background-image:repeating-linear-gradient(#fbfaf6 0 34px,#dbe4f0 34px 36px)}
+.paper{width:820px;left:130px;top:760px;background:#fbfaf6;color:#1f2937;border-radius:26px;padding:44px 50px;box-shadow:0 40px 80px -30px rgba(0,0,0,.85);font:600 50px/1.75 Caveat,cursive;overflow:hidden}
+.paper .q{font:600 26px/1.3 Inter;color:#64748b;margin-bottom:10px}
+.mk{position:relative;border:3px solid transparent;border-radius:6px;padding:0 4px;transition:none}
+.mk sup{position:absolute;top:-20px;left:-3px;font:800 18px/1 Inter;color:#fff;padding:3px 7px;border-radius:5px;opacity:0}
+.scan{position:absolute;left:0;right:0;height:6px;background:linear-gradient(90deg,transparent,#f07a28,transparent);box-shadow:0 0 30px 8px rgba(240,122,40,.6)}
+.card{overflow:hidden;width:560px;right:90px;top:1220px;background:#111a2e;border:1px solid #334166;border-radius:30px;padding:36px 40px;box-shadow:0 40px 80px -30px rgba(0,0,0,.9)}
+.grade b{font-family:"Inter Display";font-weight:900;font-size:110px;color:#fff;letter-spacing:-3px}
+.grade span{font-size:42px;color:#93a0b8;font-weight:700}
+.pill{display:inline-block;margin-top:8px;background:rgba(16,185,129,.15);color:#6ee7b7;border:1px solid rgba(16,185,129,.4);font-weight:700;font-size:26px;padding:8px 16px;border-radius:999px}
+.fix{margin-top:18px;font-size:28px;line-height:1.4;color:#c4cbdb;border-left:5px solid var(--c);padding-left:16px}
+.fix s{color:#fda4af}.fix b{color:#6ee7b7}
+.flame{position:absolute;left:-20px;right:-20px;height:160px;pointer-events:none;background:linear-gradient(to top,rgba(224,80,42,0),#e0502a 35%,#f07a28 52%,#ffb347 62%,rgba(255,179,71,0) 82%);filter:blur(6px)}
+.spark{position:absolute;width:14px;height:14px;border-radius:50%;background:radial-gradient(circle,#fff3c4,#ffb347 40%,#f07a28 70%,transparent 72%)}
+.perk{font-size:36px;font-weight:700;background:rgba(255,255,255,.07);border:1px solid #334166;padding:18px 30px;border-radius:999px;white-space:nowrap}
+.cta{left:90px;right:90px;top:1400px;display:flex;align-items:center;justify-content:center;gap:24px;background:linear-gradient(90deg,#f07a28,#e0502a);border-radius:36px;padding:40px;font-weight:900;font-size:58px;color:#fff;letter-spacing:-1px}
+</style></head><body>
+<div id="bg"></div>
+<!-- scène 1 -->
+<div id="s1" class="abs" style="inset:0">
+ <div id="clock" class="abs" style="left:0;right:0;top:300px;text-align:center;font-size:40px;font-weight:700;color:#93a0b8">Dimanche · 21 h 07</div>
+ <div id="pile"></div>
+ <div id="h1" class="abs t" style="left:90px;right:90px;top:1160px;font-size:140px">120 copies.</div>
+ <div id="h2" class="abs t" style="left:90px;right:90px;top:1310px;font-size:128px;white-space:nowrap"><em>Dimanche soir.</em></div>
+</div>
+<!-- scène 2-3 -->
+<div id="s2" class="abs" style="inset:0">
+ <div id="cap" class="abs" style="left:90px;right:90px;top:330px;font-size:64px;font-weight:800;line-height:1.15;letter-spacing:-1px"></div>
+ <div id="paper" class="abs paper"><div class="q">Q3 · Conséquence de la crise de 1929</div>
+  Elle plonge le monde dans une crise économique : les gens <span class="mk" data-c="#f59e0b"><sup>1</sup>se retrouve</span> sans emploi <span class="mk" data-c="#8b5cf6"><sup>2</sup>pis</span> les nazis <span class="mk" data-c="#f59e0b"><sup>3</sup>gagne</span> des votes.
+  <div id="scan" class="scan"></div><div class="flame" id="fl1"></div></div>
+ <div id="card" class="abs card"><div class="grade"><b>17</b><span> / 20</span></div><span class="pill">Fiabilité 94 %</span>
+  <div class="fix" style="--c:#f59e0b"><s>se retrouve</s> → <b>se retrouvent</b></div>
+  <div class="fix" style="--c:#8b5cf6"><s>pis</s> → <b>et</b> · registre familier</div>
+  <div class="fix" style="--c:#f59e0b"><s>gagne</s> → <b>gagnent</b></div><div class="flame" id="fl2"></div></div>
+</div>
+<!-- scène 4 : la pile brûle -->
+<div id="sparks"></div>
+<!-- scène 5 -->
+<div id="s5" class="abs" style="inset:0">
+ <div class="abs" style="left:0;right:0;top:330px;display:flex;justify-content:center"><img id="logo" src="../public/logo.png" style="width:300px;height:300px"></div>
+ <div id="b1" class="abs t" style="left:0;right:0;top:680px;text-align:center;font-size:132px"><em>Brûle la pile.</em></div>
+ <div id="b2" class="abs" style="left:90px;right:90px;top:860px;text-align:center;font-size:44px;font-weight:600;color:#c4cbdb;line-height:1.3">Correction selon votre grille,<br>fautes de français surlignées.</div>
+ <div id="perks" class="abs" style="left:60px;right:60px;top:1080px;display:flex;flex-wrap:wrap;gap:18px;justify-content:center">
+  <div class="perk">30 pages gratuites</div><div class="perk">Dès 14 $, sans abonnement</div><div class="perk">Rien n'est conservé</div></div>
+ <div id="cta" class="abs cta">brulelapile.ca →</div>
+</div>
+<script>
+const $=(id)=>document.getElementById(id);
+const clamp=(x)=>Math.max(0,Math.min(1,x));
+const ease=(x)=>{x=clamp(x);return 1-Math.pow(1-x,3)};
+const easeIn=(x)=>{x=clamp(x);return x*x*x};
+const span=(t,a,b)=>clamp((t-a)/(b-a));
+const back=(x)=>{x=clamp(x);const c=1.7;return 1+(c+1)*Math.pow(x-1,3)+c*Math.pow(x-1,2)};
+// pile de copies
+const N=24, pile=$('pile'), sheets=[];
+for(let i=0;i<N;i++){const d=document.createElement('div');d.className='sheet';pile.appendChild(d);sheets.push({el:d,rot:(Math.sin(i*12.9)*4),dx:Math.sin(i*7.3)*22});}
+// étincelles
+const SP=90, spk=[], sp=$('sparks');
+for(let i=0;i<SP;i++){const d=document.createElement('div');d.className='spark';sp.appendChild(d);
+ const r=(k)=>{const x=Math.sin(i*97.1+k*13.7)*43758.5453;return x-Math.floor(x)};
+ const y0=760+r(2)*860; spk.push({el:d,x0:140+r(1)*800,y0,vx:(r(3)-.5)*260,vy:-(500+r(4)*700),s:.7+r(5)*1.8,delay:(1620-y0)/860});}
+const marks=[...document.querySelectorAll('.mk')];
+const fixes=[...document.querySelectorAll('.fix')];
+const CAPS=[[3.0,'Photographiez ou téléversez<br>vos copies.'],[6.4,"L'IA corrige <em>selon votre grille</em><br>et surligne les fautes."]];
+function render(t){
+ // scène 1 : 0 → 3.4 s
+ const s1out=ease(span(t,3.0,3.5));
+ $('s1').style.opacity=1-s1out;
+ $('clock').style.opacity=ease(span(t,0.1,0.6));
+ sheets.forEach((s,i)=>{const a=0.15+i*0.07, p=ease(span(t,a,a+0.35));
+  const y=930-i*20, yy=y-(1-p)*900; s.el.style.transform=`translate(${s.dx}px,${yy}px) rotate(${s.rot}deg)`; s.el.style.top='0px'; s.el.style.opacity=p;});
+ $('h1').style.opacity=ease(span(t,1.2,1.6)); $('h1').style.transform=`translateY(${(1-ease(span(t,1.2,1.6)))*60}px)`;
+ $('h2').style.opacity=ease(span(t,1.8,2.2)); $('h2').style.transform=`translateY(${(1-ease(span(t,1.8,2.2)))*60}px)`;
+ // scènes 2-3 : 3.2 → 10.6 s
+ const s2in=ease(span(t,3.2,3.7)), s2out=ease(span(t,10.7,11.1));
+ $('s2').style.opacity=t<3.2?0:(1-s2out);
+ let cap=''; let capA=0;
+ for(const [at,txt] of CAPS){ if(t>=at){cap=txt; capA=ease(span(t,at,at+0.4));} }
+ const capOut = t>=6.0 && t<6.4 ? 1-ease(span(t,6.0,6.3)) : 1;
+ $('cap').innerHTML=cap; $('cap').style.opacity=capA*capOut; $('cap').style.transform=`translateY(${(1-capA)*40}px)`;
+ $('paper').style.transform=`translateY(${(1-s2in)*500}px) rotate(${-2+(1-s2in)*6}deg)`;
+ const scanP=span(t,4.0,5.8); $('scan').style.top=(scanP*100)+'%'; $('scan').style.opacity=(scanP>0&&scanP<1)?1:0;
+ marks.forEach((m,i)=>{const a=6.6+i*0.45, p=back(span(t,a,a+0.35)), c=m.dataset.c;
+  m.style.borderColor=p>0?c:'transparent'; m.style.background=p>0?c+'38':'transparent'; m.style.transform=`scale(${0.9+0.1*Math.min(1,p)})`; m.style.display='inline-block';
+  const sup=m.querySelector('sup'); sup.style.background=c; sup.style.opacity=clamp(p);});
+ const cardP=back(span(t,8.0,8.5)); $('card').style.opacity=clamp(cardP); $('card').style.transform=`translateX(${(1-cardP)*400}px) rotate(${1.5}deg)`;
+ fixes.forEach((f,i)=>{const p=ease(span(t,8.5+i*0.35,8.85+i*0.35)); f.style.opacity=p; f.style.transform=`translateX(${(1-p)*30}px)`;});
+ // la copie et la carte se consument de bas en haut : 9.8 → 11.0 s
+ const burn=(el,fl,a,b)=>{const p=span(t,a,b), q=p*112;
+  const m=p<=0?'none':`linear-gradient(to top, transparent ${q-12}%, #000 ${q}%)`;
+  el.style.webkitMaskImage=m; el.style.maskImage=m;
+  const f=$(fl); f.style.opacity=(p>0&&p<1)?1:0; f.style.bottom=`calc(${q}% - 110px)`;};
+ burn($('paper'),'fl1',10.1,11.0); burn($('card'),'fl2',9.8,10.6);
+ spk.forEach((s)=>{const st=9.8+s.delay*1.1, p=span(t,st,st+1.3);
+  if(p<=0||p>=1){s.el.style.opacity=0;return}
+  const x=s.x0+s.vx*p+Math.sin(p*9+s.x0)*20, y=s.y0+s.vy*p; s.el.style.opacity=1-p; s.el.style.transform=`translate(${x}px,${y}px) scale(${s.s*(1-p*.6)})`;});
+ // scène 5 : 11.0 → 15 s
+ const s5=ease(span(t,11.0,11.5));
+ $('s5').style.opacity=s5;
+ const lg=back(span(t,11.0,11.6)); $('logo').style.transform=`scale(${0.5+0.5*lg})`;
+ $('b1').style.opacity=ease(span(t,11.4,11.8)); $('b1').style.transform=`translateY(${(1-ease(span(t,11.4,11.8)))*50}px)`;
+ $('b2').style.opacity=ease(span(t,11.8,12.2));
+ [...$('perks').children].forEach((p,i)=>{const q=ease(span(t,12.2+i*0.2,12.6+i*0.2)); p.style.opacity=q; p.style.transform=`translateY(${(1-q)*30}px)`;});
+ const c=back(span(t,13.0,13.4)); $('cta').style.opacity=clamp(c); $('cta').style.transform=`scale(${0.8+0.2*c+0.02*Math.sin(t*6)*(t>13.4?1:0)})`;
+}
+window.render=render; render(0);
+</script></body></html>
