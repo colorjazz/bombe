@@ -5,9 +5,9 @@
 // Rien n'est écrit sur disque ni dans les journaux, à part les clés d'accès et leur solde.
 
 export const PACKS = {
-  decouverte: { name: 'Pack Découverte', pages: 200, amount: 1400 },
-  session: { name: 'Pack Session', pages: 500, amount: 2900 },
-  annee: { name: 'Pack Année', pages: 1800, amount: 7900 },
+  decouverte: { name: 'Pack Découverte', nameEn: 'Starter pack', pages: 200, amount: 1400 },
+  session: { name: 'Pack Session', nameEn: 'Term pack', pages: 500, amount: 2900 },
+  annee: { name: 'Pack Année', nameEn: 'Year pack', pages: 1800, amount: 7900 },
 };
 
 const MAX_PAGES_PER_COPY = 10;
@@ -172,7 +172,9 @@ async function checkout(request, env, url) {
     'line_items[0][quantity]': '1',
     'line_items[0][price_data][currency]': 'cad',
     'line_items[0][price_data][unit_amount]': String(p.amount),
-    'line_items[0][price_data][product_data][name]': `${p.name} — ${p.pages} pages`,
+    'line_items[0][price_data][product_data][name]': isEnglish(request)
+      ? `Burn the Pile — ${p.nameEn}, ${p.pages.toLocaleString('en-CA')} pages`
+      : `Brûle la pile — ${p.name}, ${p.pages.toLocaleString('fr-CA')} pages`,
     'metadata[key]': key,
     'metadata[pages]': String(p.pages),
     allow_promotion_codes: 'true',
