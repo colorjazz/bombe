@@ -21,8 +21,8 @@ Fait le 18 oct. : surlignages de la visionneuse alignés en mode zoom ; achat te
 6. ~~Email Routing~~ : `hello@burnthepile.com` et `bonjour@brulelapile.ca` → Gmail, testés.
 7. Base D1 (console), une seule fois, avant la première vraie vente :
    `DELETE FROM access_keys WHERE key IN (SELECT key FROM payments WHERE session_id LIKE 'cs_test_%'); DELETE FROM payments WHERE session_id LIKE 'cs_test_%';`
-8. Gemini : facturation activée, ancienne clé (vue en photo) supprimée.
-9. Cloudflare Workers Paid (~7 $ CA/mois).
+8. Gemini : facturation OK (Payant 1, prépaiement) ; activer la recharge automatique (sous 10 $ → +25 $) ; supprimer l'ancienne clé (vue en photo).
+9. ~~Cloudflare Workers Paid~~ : souscrit.
 10. Double authentification : Cloudflare, Stripe, Google, Hover.
 11. Signer l'EFVP ; relecture des pages légales par un avocat.
 
