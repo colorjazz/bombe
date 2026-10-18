@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="fr-CA">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Correcteur Express — Application</title>
+  <meta name="robots" content="noindex">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="app.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap">
+      <a class="brand" href="/"><span class="logo">✓</span><strong>Correcteur Express</strong></a>
+      <div class="top-actions">
+        <span id="balance" class="pill" hidden></span>
+        <button id="buy-open" class="btn ghost" type="button" hidden>Recharger</button>
+        <button id="logout" class="btn ghost" type="button" hidden title="Retirer la clé de cet appareil">Changer de clé</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Accès : essai gratuit, clé existante ou achat -->
+  <main id="gate" class="wrap gate" hidden>
+    <div class="panel">
+      <h2>Commencer gratuitement</h2>
+      <p class="muted small" style="margin:0">30 pages offertes, sans carte de crédit. Votre clé d'accès s'affiche à l'écran : notez-la.</p>
+      <button id="trial" class="btn primary big block" type="button">Obtenir mes 30 pages gratuites</button>
+      <div class="or">ou</div>
+      <form id="key-form" class="stack">
+        <label class="field">J'ai déjà une clé d'accès
+          <input id="key-input" type="text" placeholder="CE-XXXXX-XXXXX-XXXXX" autocomplete="off" spellcheck="false">
+        </label>
+        <button class="btn block" type="submit">Utiliser cette clé</button>
+      </form>
+      <div class="or">ou</div>
+      <button class="btn ghost block" type="button" data-open-buy>Acheter un pack</button>
+      <p id="gate-msg" class="small" style="margin:0;color:var(--red)"></p>
+    </div>
+  </main>
+
+  <!-- Application -->
+  <main id="app" class="wrap layout" hidden>
+    <section class="panel stack">
+      <h2><span class="step">1</span> Évaluation et copies</h2>
+
+      <div class="row2">
+        <label class="field">Nom de l'évaluation
+          <input id="exam" type="text" placeholder="Ex. : Examen — Révolution tranquille">
+        </label>
+        <label class="field">Groupe
+          <input id="group" type="text" placeholder="Ex. : 541">
+        </label>
+      </div>
+      <div class="row2">
+        <label class="field">Barème total (points)
+          <input id="total" type="number" min="1" max="1000" step="1" value="20">
+        </label>
+        <label class="field">Points
+          <select id="whole"><option value="0">Demi-points permis</option><option value="1">Points entiers seulement</option></select>
+        </label>
+      </div>
+      <label class="toggle"><input id="language" type="checkbox"> Évaluer aussi l'orthographe et la grammaire</label>
+
+      <p class="section-label">Corrigé ou grille de correction</p>
+      <label class="field">Consignes, réponses attendues, points par question
+        <textarea id="rubric" rows="4" placeholder="Ex. : Q1 (2 pts) : 1960, début de la Révolution tranquille. Q2 (3 pts) : nommer deux réformes… Accepter les synonymes."></textarea>
+      </label>
+      <label id="rubric-drop" class="drop compact">
+        <input id="rubric-files" type="file" accept="image/*,application/pdf" multiple hidden>
+        <span>📋</span><span>Ajouter le corrigé (PDF ou photos) — <b>non facturé</b></span>
+      </label>
+      <div id="rubric-thumbs" class="thumbs"></div>
+
+      <p class="section-label">Copies des élèves</p>
+      <label id="drop" class="drop">
+        <input id="files" type="file" accept="image/*,application/pdf" multiple hidden>
+        <span class="ico">📁</span>
+        <b>Glissez les copies ici ou cliquez pour parcourir</b>
+        <span class="muted small">PDF numérisés ou photos · plusieurs fichiers à la fois</span>
+      </label>
+      <div id="pages-zone" class="stack" hidden>
+        <div class="mode">
+          <span>Regrouper :</span>
+          <select id="mode">
+            <option value="file">1 fichier = 1 élève</option>
+            <option value="fixed">Nombre fixe de pages par élève</option>
+          </select>
+          <input id="per" type="number" min="1" max="10" value="2" hidden aria-label="Pages par élève">
+          <button id="clear-pages" class="btn ghost small" type="button">Tout retirer</button>
+        </div>
+        <p class="muted small" style="margin:0">Vérifiez les regroupements : cliquez sur ✂ pour séparer deux pages, sur « fusionner » pour rattacher une copie à la précédente.</p>
+        <div id="bundles" class="bundles"></div>
+      </div>
+
+      <div class="summary"><span id="summary"></span><span id="cost"></span></div>
+      <button id="run" class="btn primary big block" type="button" disabled>Corriger</button>
+      <div id="banner"></div>
+    </section>
+
+    <section class="panel">
+      <div class="results-head">
+        <h2><span class="step g">2</span> Résultats</h2>
+        <div class="results-tools">
+          <input id="search" type="search" placeholder="Rechercher un élève…" style="width:12rem">
+          <button id="export" class="btn green" type="button" disabled>Télécharger la grille</button>
+          <button id="end" class="btn ghost" type="button" disabled>Terminer la session</button>
+        </div>
+      </div>
+      <div id="stats" class="stats" hidden></div>
+      <div id="empty" class="empty">
+        <div style="font-size:1.8rem">📝</div>
+        Les copies corrigées apparaîtront ici, avec le détail des points par question.
+      </div>
+      <div id="cards" class="cards"></div>
+      <p class="muted small">Les notes sont des propositions : vérifiez-les, surtout les copies marquées ⚠. Tout est modifiable.<br>
+      🔒 Aucune copie ni note n'est conservée : téléchargez la grille avant de fermer la page.</p>
+    </section>
+  </main>
+
+  <!-- Achat -->
+  <div id="buy" class="modal" hidden>
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:center"><h2 style="margin:0">Choisir un pack</h2><button class="icon-btn" type="button" data-close-buy aria-label="Fermer">×</button></div>
+      <p class="muted small" style="margin:0">Paiement unique par Stripe. Les pages n'expirent pas. Une page = une page de copie corrigée (le corrigé est gratuit).</p>
+      <div class="packs">
+        <div class="pack"><div><b>Découverte</b><div class="muted small">200 pages · ~7 ¢ la page</div></div><button class="btn" data-pack="decouverte">14 $</button></div>
+        <div class="pack"><div><b>Session</b> <span class="pill">Populaire</span><div class="muted small">500 pages · ~5,8 ¢ la page</div></div><button class="btn primary" data-pack="session">29 $</button></div>
+        <div class="pack"><div><b>Année</b><div class="muted small">1 800 pages · ~4,4 ¢ la page</div></div><button class="btn" data-pack="annee">79 $</button></div>
+      </div>
+      <p id="buy-msg" class="small" style="margin:0;color:var(--red)"></p>
+    </div>
+  </div>
+
+  <!-- Clé d'essai -->
+  <div id="newkey" class="modal" hidden>
+    <div class="panel">
+      <h2 style="margin:0">Votre clé d'accès</h2>
+      <div id="newkey-value" class="keybox"></div>
+      <p class="muted small" style="margin:0">Notez-la ou copiez-la : elle vous permet d'utiliser vos pages sur un autre appareil et de recharger votre compte.</p>
+      <div style="display:flex;gap:.5rem"><button id="newkey-copy" class="btn" type="button">Copier</button><button class="btn primary" type="button" data-close-newkey style="flex:1">C'est noté, commencer</button></div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,19 @@
+name = "correcteur-express"
+main = "src/worker.js"
+compatibility_date = "2025-09-01"
+
+[assets]
+directory = "public"
+binding = "ASSETS"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "correcteur-express"
+database_id = "REMPLACER_PAR_L_ID_DE_VOTRE_BASE"
+
+[vars]
+OPENAI_MODEL = "gpt-4o"
+OPENAI_BASE_URL = "https://api.openai.com/v1"
+TRIAL_PAGES = "30"
+# Secrets à définir avec `npx wrangler secret put` :
+#   OPENAI_API_KEY, STRIPE_SECRET_KEY, IP_SALT

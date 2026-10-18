@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="fr-CA">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="site.css">
+  <title>Merci — Correcteur Express</title>
+  <meta name="robots" content="noindex">
+</head>
+<body>
+  <header class="topbar"><div class="wrap"><a class="brand" href="/"><span class="logo">✓</span><strong>Correcteur Express</strong></a><div class="top-actions"><a class="btn ghost" href="/#tarifs">Tarifs</a><a class="btn primary" href="/app.html">Essayer gratuitement</a></div></div></header>
+  <main class="wrap" style="max-width:560px;padding-top:3rem">
+    <div class="panel" style="display:grid;gap:1rem">
+      <h1 style="font-size:1.5rem">Merci pour votre achat !</h1>
+      <p id="msg" class="muted" style="margin:0">Confirmation du paiement…</p>
+      <div id="key" style="font-family:ui-monospace,Menlo,monospace;font-size:1.1rem;text-align:center;padding:.9rem;border-radius:12px;background:#0d1527;border:1px dashed var(--primary);user-select:all" hidden></div>
+      <p id="note" class="muted small" style="margin:0" hidden>Notez cette clé d'accès : elle contient votre solde et sert à recharger votre compte ou à l'utiliser sur un autre appareil.</p>
+      <a id="go" class="btn primary big" href="/app.html" hidden>Corriger mes copies</a>
+    </div>
+  </main>
+  <script>
+    (async () => {
+      const id = new URLSearchParams(location.search).get('session_id');
+      const msg = document.getElementById('msg');
+      for (let attempt = 0; attempt < 5; attempt++) {
+        const res = await fetch('/api/claim?session_id=' + encodeURIComponent(id || ''));
+        const data = await res.json().catch(() => ({}));
+        if (res.ok) {
+          msg.textContent = data.added + ' pages ont été ajoutées. Solde : ' + data.pages + ' pages.';
+          const key = document.getElementById('key');
+          key.textContent = data.key; key.hidden = false;
+          document.getElementById('note').hidden = false;
+          const go = document.getElementById('go');
+          go.href = '/app.html?key=' + encodeURIComponent(data.key); go.hidden = false;
+          return;
+        }
+        if (res.status !== 402) { msg.textContent = (data.error || 'Erreur') + '. Écrivez-nous en indiquant votre courriel de paiement.'; return; }
+        await new Promise((r) => setTimeout(r, 2000));
+      }
+      msg.textContent = "Le paiement n'est pas encore confirmé. Rechargez cette page dans une minute.";
+    })();
+  </script>
+</body>
+</html>

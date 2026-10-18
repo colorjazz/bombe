@@ -1,0 +1,14 @@
+{
+  "name": "correcteur-express",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:init": "wrangler d1 execute correcteur-express --remote --file=schema.sql",
+    "db:init:local": "wrangler d1 execute correcteur-express --local --file=schema.sql"
+  },
+  "devDependencies": {
+    "wrangler": "^4.151.1"
+  }
+}
