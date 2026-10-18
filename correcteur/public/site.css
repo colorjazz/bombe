@@ -34,3 +34,24 @@ footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; g
 .legal h2 { font-size: 1.15rem; margin: 1.8rem 0 .5rem; }
 .legal p, .legal li { color: var(--muted); }
 .todo { background: rgba(245,158,11,.1); border: 1px solid rgba(245,158,11,.4); color: #fcd34d; border-radius: 10px; padding: .1rem .4rem; }
+
+/* Logo en grand dans l'accueil */
+.hero-logo { width: 132px; height: 132px; display: block; margin-bottom: 1rem; filter: drop-shadow(0 18px 40px rgba(249, 115, 22, .45)); }
+@media (max-width: 900px) { .hero-logo { width: 104px; height: 104px; } }
+.feature .n svg { width: 28px; height: 28px; fill: none; stroke: var(--primary-2); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Démonstration de la correction de la langue */
+.lang-demo { display: grid; grid-template-columns: 1.1fr 1fr; gap: 1.25rem; align-items: start; }
+@media (max-width: 900px) { .lang-demo { grid-template-columns: 1fr; } }
+.paper { background: #fbfaf6; color: #1f2937; border-radius: 14px; padding: 1.4rem 1.5rem; box-shadow: 0 30px 70px -35px rgba(0,0,0,.8); font: 1.15rem/2.1 "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive;
+  background-image: repeating-linear-gradient(transparent 0 calc(2.1em - 1px), rgba(59,130,246,.18) calc(2.1em - 1px) 2.1em); }
+.paper .nm { font-size: .9rem; color: #475569; }
+.mark { position: relative; border: 2px solid var(--dot); background: color-mix(in srgb, var(--dot) 22%, transparent); border-radius: 4px; padding: 0 .1rem; }
+.mark sup { position: absolute; top: -.85rem; left: -2px; font: 700 .62rem/1 Inter, sans-serif; color: #fff; background: var(--dot); padding: .1rem .25rem; border-radius: 4px; }
+.fixes { display: grid; gap: .55rem; }
+.fix { border: 1px solid var(--line); border-left: 4px solid var(--dot); border-radius: 10px; padding: .55rem .75rem; background: var(--panel); font-size: .88rem; }
+.fix s { color: #fda4af; } .fix b { color: #6ee7b7; } .fix small { display: block; color: var(--muted); }
+:root { --c-orth: #f43f5e; --c-acc: #f59e0b; --c-conj: #a855f7; --c-ponc: #38bdf8; }
+.c-orth { --dot: var(--c-orth); } .c-acc { --dot: var(--c-acc); } .c-conj { --dot: var(--c-conj); } .c-ponc { --dot: var(--c-ponc); }
+.points { margin: 1rem 0 0; padding: 0; list-style: none; display: grid; gap: .5rem; color: var(--muted); }
+.points li::before { content: "→ "; color: var(--primary-2); }

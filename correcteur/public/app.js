@@ -1,4 +1,4 @@
-// Correcteur Express — application de l'enseignant.
+// Brûle la pile — application de l'enseignant.
 // Les copies restent en mémoire dans cet onglet ; seule la clé d'accès est retenue sur l'appareil.
 
 const MAX_SIDE = 2000;          // pixels, côté le plus long d'une page envoyée (précision du surlignage)
@@ -8,6 +8,8 @@ const MAX_RUBRIC_PAGES = 6;
 const CONCURRENCY = 3;
 const KEY_STORAGE = 'ce.accessKey';
 const PDFJS = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174';
+
+import { t, tr, lang, startI18n } from './i18n.js';
 
 const $ = (id) => document.getElementById(id);
 const state = {
@@ -26,7 +28,7 @@ const state = {
 // ---------- Petits utilitaires ----------
 
 const uid = () => crypto.randomUUID();
-const fmt = (n) => (n == null ? '—' : Number(n).toLocaleString('fr-CA', { maximumFractionDigits: 2 }));
+const fmt = (n) => (n == null ? '—' : Number(n).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { maximumFractionDigits: 2 }));
 
 function h(tag, props = {}, ...children) {
   const el = document.createElement(tag);
@@ -54,7 +56,7 @@ function banner(type, text) {
 async function api(path, { method = 'GET', body, auth = true } = {}) {
   const res = await fetch(path, {
     method,
-    headers: { ...(body ? { 'Content-Type': 'application/json' } : {}), ...(auth && state.key ? { Authorization: `Bearer ${state.key}` } : {}) },
+    headers: { 'X-Lang': lang, ...(body ? { 'Content-Type': 'application/json' } : {}), ...(auth && state.key ? { Authorization: `Bearer ${state.key}` } : {}) },
     body: body ? JSON.stringify(body) : undefined,
   });
   const data = await res.json().catch(() => ({}));
@@ -109,7 +111,7 @@ async function buy(pack) {
   $('buy-msg').textContent = '';
   try {
     const { url } = await api('/api/checkout', { method: 'POST', auth: false, body: { pack, key: state.key || undefined } });
-    if (state.results.length && !state.exported && !confirm('Vos résultats non téléchargés seront perdus en quittant la page. Continuer vers le paiement ?')) return;
+    if (state.results.length && !state.exported && !confirm(tr('Vos résultats non téléchargés seront perdus en quittant la page. Continuer vers le paiement ?'))) return;
     state.exported = true;
     location.href = url;
   } catch (err) {
@@ -451,7 +453,7 @@ function renderGrid() {
 }
 
 async function makeGrid() {
-  if (state.grid && !confirm('Remplacer la grille actuelle par une nouvelle ?')) return;
+  if (state.grid && !confirm(tr('Remplacer la grille actuelle par une nouvelle ?'))) return;
   const btn = $('make-grid');
   btn.disabled = true;
   btn.textContent = 'Un instant, l’IA prépare la grille…';
@@ -638,7 +640,7 @@ function card(r) {
     h('div', { class: 'card-foot' },
       h('span', { textContent: [r.exam, `${r.pageCount} page(s)`].filter(Boolean).join(' · ') }),
       h('button', { class: 'btn ghost small', type: 'button', textContent: 'Supprimer', onclick: () => {
-        if (!confirm(`Supprimer la correction de ${r.name || 'cet élève'} ?`)) return;
+        if (!confirm(tr(`Supprimer la correction de ${r.name || 'cet élève'} ?`))) return;
         state.results = state.results.filter((x) => x !== r); renderResults();
       } })));
   body.hidden = !open;
@@ -777,7 +779,7 @@ function langCard(r) {
         h('div', { style: 'display:flex;gap:.4rem' },
           h('button', { class: 'btn primary small', type: 'button', textContent: 'Voir la copie annotée', onclick: () => openViewer(r) }),
           h('button', { class: 'btn ghost small', type: 'button', textContent: 'Supprimer', onclick: () => {
-            if (!confirm(`Supprimer l'analyse de ${r.name || 'cet élève'} ?`)) return;
+            if (!confirm(tr(`Supprimer l'analyse de ${r.name || 'cet élève'} ?`))) return;
             state.results = state.results.filter((x) => x !== r); renderResults();
           } })))));
 }
@@ -841,7 +843,7 @@ async function printViewer() {
     ctx.drawImage(img, 0, 0);
     for (const e of p.errors) {
       const k = ++n;
-      list.push(`<li><b style="color:${CATS[e.category].color}">${k}. ${esc(CATS[e.category].label)}</b> — <s>${esc(e.text)}</s> → <b>${esc(e.correction)}</b><br><small>${esc(e.explanation)}</small></li>`);
+      list.push(`<li><b style="color:${CATS[e.category].color}">${k}. ${esc(tr(CATS[e.category].label))}</b> — <s>${esc(e.text)}</s> → <b>${esc(e.correction)}</b><br><small>${esc(e.explanation)}</small></li>`);
       if (!e.box) continue;
       const [y0, x0, y1, x1] = e.box.map((v) => v / 1000);
       ctx.strokeStyle = ctx.fillStyle = CATS[e.category].color;
@@ -854,12 +856,12 @@ async function printViewer() {
     pages.push(`<img src="${c.toDataURL('image/jpeg', 0.85)}">`);
   }
   const w = window.open('', '_blank');
-  if (!w) { alert('Autorisez les fenêtres surgissantes pour imprimer.'); return; }
-  w.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>${esc(r.name || 'Copie')} — correction de la langue</title>
+  if (!w) { alert(tr('Autorisez les fenêtres surgissantes pour imprimer.')); return; }
+  w.document.write(`<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><title>${esc(r.name || tr('Copie'))} — ${tr('correction de la langue')}</title>
     <style>body{font:13px/1.45 system-ui,sans-serif;margin:24px;color:#111}img{width:100%;page-break-after:always;margin-bottom:16px}
     h1{font-size:18px}li{margin:.35rem 0}</style></head><body>
-    <h1>${esc(r.name || 'Élève')}${r.group ? ` · ${esc(r.group)}` : ''} — ${n} faute(s)${r.grade != null ? ` · ${fmt(r.grade)} / ${fmt(r.total)}` : ''}</h1>
-    ${pages.join('')}<h1>Corrections</h1><ol style="list-style:none;padding:0">${list.join('')}</ol>
+    <h1>${esc(r.name || tr('Élève'))}${r.group ? ` · ${esc(r.group)}` : ''} — ${tr(`${n} faute(s)`)}${r.grade != null ? ` · ${fmt(r.grade)} / ${fmt(r.total)}` : ''}</h1>
+    ${pages.join('')}<h1>${tr('Corrections')}</h1><ol style="list-style:none;padding:0">${list.join('')}</ol>
     <script>window.onload=()=>window.print()<\/script></body></html>`);
   w.document.close();
 }
@@ -887,7 +889,10 @@ function csvCell(v) {
 }
 
 function downloadCSV(rows, suffix) {
-  const csv = '\uFEFF' + rows.map((row) => row.map(csvCell).join(';')).join('\r\n');
+  // Excel : « ; » en français, « , » en anglais ; en-têtes traduits.
+  const sep = lang === 'en' ? ',' : ';';
+  rows[0] = rows[0].map(tr);
+  const csv = '\uFEFF' + rows.map((row) => row.map(csvCell).join(sep)).join('\r\n');
   const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
   const name = [$('exam').value, $('group').value].filter(Boolean).join('_').replace(/[^\p{L}\p{N}_-]+/gu, '-') || 'corrections';
   const a = h('a', { href: url, download: `${name}${suffix}_${new Date().toISOString().slice(0, 10)}.csv` });
@@ -896,7 +901,7 @@ function downloadCSV(rows, suffix) {
 }
 
 function exportCSV() {
-  const num = (n) => String(n).replace('.', ',');
+  const num = (n) => (lang === 'en' ? String(n) : String(n).replace('.', ','));
   const lang = state.results.filter((r) => r.kind === 'lang');
   if (lang.length) {
     const keys = Object.keys(CATS);
@@ -922,7 +927,7 @@ function exportCSV() {
 }
 
 function endSession() {
-  if (!confirm('Télécharger la grille puis tout effacer (copies, corrigé, résultats) ?')) return;
+  if (!confirm(tr('Télécharger la grille puis tout effacer (copies, corrigé, résultats) ?'))) return;
   exportCSV();
   Object.assign(state, { results: [], pages: [], rubricPages: [], status: {}, open: new Set(), exported: true });
   $('mode').value = ''; $('per').value = '';
@@ -983,7 +988,7 @@ $('key-form').addEventListener('submit', async (e) => {
   try { await useKey($('key-input').value); } catch (err) { showGate(err.message); }
 });
 $('logout').addEventListener('click', () => {
-  if (state.results.length && !state.exported && !confirm('Des résultats ne sont pas téléchargés. Continuer ?')) return;
+  if (state.results.length && !state.exported && !confirm(tr('Des résultats ne sont pas téléchargés. Continuer ?'))) return;
   store.del(); location.reload();
 });
 $('buy-open').addEventListener('click', () => { $('buy').hidden = false; });
@@ -1000,6 +1005,7 @@ window.addEventListener('beforeunload', (e) => {
 
 // ---------- Démarrage ----------
 
+startI18n();
 const saved = new URLSearchParams(location.search).get('key') || store.get();
 if (new URLSearchParams(location.search).has('key')) history.replaceState(null, '', location.pathname);
 if (saved) useKey(saved).catch((err) => { if (err.status === 401) store.del(); showGate(err.message); });

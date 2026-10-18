@@ -2,10 +2,11 @@
 <html lang="fr-CA">
 <head>
   <meta charset="UTF-8">
+  <script src="lang.js"></script>
   <link rel="icon" href="favicon.png" type="image/png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Correcteur Express — Application</title>
+  <title>Brûle la pile — Application</title>
   <meta name="robots" content="noindex">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -17,8 +18,9 @@
 <body>
   <header class="topbar">
     <div class="wrap">
-      <a class="brand" href="index.html"><img class="logo" src="logo-96.png" alt="" width="40" height="40"><strong>Correcteur Express</strong></a>
+      <a class="brand" href="index.html"><img class="logo" src="logo-96.png" alt="" width="40" height="40"><strong>Brûle la pile</strong></a>
       <div class="top-actions">
+        <div class="lang-switch" role="group" aria-label="Langue / Language"><button type="button" data-set-lang="fr">FR</button><button type="button" data-set-lang="en">EN</button></div>
         <span id="balance" class="pill" hidden></span>
         <button id="buy-open" class="btn ghost" type="button" hidden>Recharger</button>
         <button id="logout" class="btn ghost" type="button" hidden title="Retirer la clé de cet appareil">Changer de clé</button>
@@ -52,11 +54,11 @@
         <span class="kind-pill" aria-hidden="true"></span>
         <button id="kind-content" class="active" type="button" role="tab" aria-selected="true">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>
-          <span><span class="kind-long">Correction de c</span><span class="kind-short">C</span>opies</span>
+          <span class="kind-long">Correction de copies</span><span class="kind-short">Copies</span>
         </button>
         <button id="kind-lang" type="button" role="tab" aria-selected="false">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7V5h16v2"/><path d="M9 19h6"/><path d="M12 5v14"/></svg>
-          <span><span class="kind-long">Correction de la l</span><span class="kind-short">L</span>angue</span>
+          <span class="kind-long">Correction de la langue</span><span class="kind-short">Langue</span>
         </button>
       </div>
       <h2><span class="step">1</span> <span id="step1-title">Évaluation et copies</span></h2>

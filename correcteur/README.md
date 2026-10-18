@@ -1,9 +1,11 @@
-# Correcteur Express
+# Brûle la pile / Burn the Pile
 
-Correction de copies par IA pour enseignants, payée à la page.
+Correction de copies par IA pour enseignants, payée à la page. Site bilingue (FR / EN).
 
 - `public/` : site (accueil `index.html`, appli `app.html`, remerciement `merci.html`, pages légales).
 - `src/worker.js` : serveur Cloudflare Worker (clé de l'IA Gemini, solde de pages, paiements Stripe, double correction).
+- Bilinguisme : `public/lang.js` (détection et choix FR | EN), `public/i18n.js` (traduction de l'appli),
+  pages d'accueil générées par `tools/build_home.py`, pages légales en deux fichiers (`confidentialite`/`privacy`, `conditions`/`terms`).
 - `schema.sql` : base D1. Seules données conservées : clés d'accès, solde, courriel de paiement, empreinte IP des essais (24 h).
 
 ## Mise en ligne

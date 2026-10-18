@@ -1,89 +1,91 @@
 <!DOCTYPE html>
-<html lang="fr-CA">
+<html lang="fr-CA" data-lang="fr" data-alt="index-en.html">
 <head>
   <meta charset="UTF-8">
+  <script src="lang.js"></script>
   <link rel="icon" href="favicon.png" type="image/png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="alternate" hreflang="fr" href="index.html">
+  <link rel="alternate" hreflang="en" href="index-en.html">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="site.css">
-  <title>Correcteur Express — Corrigez vos copies 10 fois plus vite</title>
-  <meta name="description" content="Importez vos copies numérisées : l'IA propose une note détaillée question par question et un commentaire pour chaque élève. Vous validez. 30 pages gratuites.">
-  <meta property="og:title" content="Corrigez une classe entière pendant votre pause café">
-  <meta property="og:description" content="L'IA propose la note et la rétroaction, question par question. Vous gardez le dernier mot. 30 pages gratuites.">
+  <title>Brûle la pile — Corrigez vos copies 10 fois plus vite</title>
+  <meta name="description" content="Importez vos copies numérisées : l'IA propose une note détaillée question par question, corrige la langue et rédige un commentaire pour chaque élève. Vous validez. 30 pages gratuites.">
+  <meta property="og:title" content="Brûle la pile : corrigez une classe entière pendant votre pause café">
+  <meta property="og:description" content="L'IA propose la note et la rétroaction, et surligne les fautes de français. Vous gardez le dernier mot. 30 pages gratuites.">
   <meta property="og:type" content="website">
   <meta property="og:image" content="https://correcteur-express.christopher-plante.workers.dev/logo.png">
 </head>
 <body>
-  <header class="topbar"><div class="wrap"><a class="brand" href="index.html"><img class="logo" src="logo-96.png" alt="" width="40" height="40"><strong>Correcteur Express</strong></a><div class="top-actions"><a class="btn ghost" href="index.html#tarifs">Tarifs</a><a class="btn primary" href="app.html">Essayer gratuitement</a></div></div></header>
+  <header class="topbar"><div class="wrap"><a class="brand" href="index.html"><img class="logo" src="logo-96.png" alt="" width="40" height="40"><strong>Brûle la pile</strong></a><div class="top-actions"><div class="lang-switch" role="group" aria-label="Langue / Language"><a href="index.html" data-set-lang="fr">FR</a><a href="index-en.html" data-set-lang="en">EN</a></div><a class="btn ghost" href="#tarifs">Tarifs</a><a class="btn primary" href="app.html">Essayer gratuitement</a></div></div></header>
   <main class="wrap">
     <section class="hero">
       <div>
+        <img class="hero-logo" src="logo.png" alt="Brûle la pile" width="132" height="132">
         <span class="eyebrow">Pour les enseignants du primaire, du secondaire et du collégial</span>
         <h1>Corrigez une classe entière <em>pendant votre pause café</em>.</h1>
-        <p class="lead">Numérisez les copies, ajoutez votre corrigé : Correcteur Express propose une note détaillée question par question et une rétroaction pour chaque élève. Vous vérifiez, ajustez et exportez.</p>
+        <p class="lead">Numérisez les copies, ajoutez votre corrigé : <b>Brûle la pile</b> propose une note détaillée question par question, surligne les fautes de français et rédige une rétroaction pour chaque élève. Vous vérifiez, ajustez et exportez.</p>
         <div class="cta">
           <a class="btn primary big" href="app.html">Essayer avec 30 pages gratuites</a>
-          <a class="btn ghost big" href="#comment">Voir comment ça marche</a>
+          <a class="btn ghost big" href="#how">Voir comment ça marche</a>
         </div>
         <p class="muted small">Sans carte de crédit · Aucune copie conservée · Payé à la page, sans abonnement</p>
       </div>
       <div class="mock" aria-hidden="true">
-        <div class="mock-row"><span>Léa Tremblay · 541</span><b class="g">22 / 25</b></div>
-        <div class="mock-detail">
-          <div>Q1 Révolution russe — 2/2 · Réponse attendue : 1917 ✓</div>
-          <div class="lost">Q3 Conférence de Bandung — 0/2 · Écrit : 1942, attendu : 1955</div>
-          <div>Q6 Assassinat de l'archiduc — 2/2 · ✓</div>
-        </div>
-        <div class="mock-row"><span>Félix Gagnon · 541</span><b class="g">18 / 25</b></div>
-        <div class="mock-flag">⚠ Deux corrections indépendantes divergent (17 et 19) : à vérifier</div>
-        <div class="mock-row"><span>Camille Roy · 541</span><b class="g">24 / 25</b></div>
+        <div class="mock-row"><span>Yasmine Benali · 541</span><b class="g">22 / 25</b></div>
+        <div class="mock-detail"><div>Q1 Révolution russe — 2/2 · Réponse attendue : 1917 ✓</div><div class="lost">Q3 Conférence de Bandung — 0/2 · Écrit : 1942, attendu : 1955</div><div>Q6 Assassinat de l'archiduc — 2/2 · ✓</div></div>
+        <div class="mock-row"><span>Kevin Nguyen · 541</span><b class="g">18 / 25</b></div>
+        <div class="mock-flag">⚖ Q2 : les deux corrections divergent (2 et 4) — fiabilité 78 %</div>
+        <div class="mock-row"><span>Léa Tremblay · 541</span><b class="g">24 / 25</b></div>
       </div>
     </section>
 
-    <section class="block" id="comment">
+    <section class="block" id="how">
       <h2>Trois étapes, quelques minutes</h2>
       <p class="sub">Pas de formation, pas d'installation. Ça fonctionne dans votre navigateur, sur ordinateur comme sur tablette.</p>
       <div class="grid3">
-        <div class="panel feature"><div class="n">📋</div><h3>1. Votre corrigé</h3><p>Collez vos consignes ou importez votre corrigé (PDF, photo). Points par question, réponses acceptées, critères : l'IA suit votre grille.</p></div>
-        <div class="panel feature"><div class="n">📁</div><h3>2. Les copies</h3><p>Glissez le PDF de la numérisation de toute la classe ou des photos. Les pages sont regroupées par élève, et vous pouvez ajuster.</p></div>
-        <div class="panel feature"><div class="n">✅</div><h3>3. Vous validez</h3><p>Note et justification pour chaque question, commentaire pour l'élève. Ajustez un point en un clic et téléchargez la grille pour Excel ou votre logiciel de notes.</p></div>
+        <div class="panel feature"><div class="n"><svg viewBox="0 0 24 24"><rect x="8" y="3" width="8" height="4" rx="1"/><path d="M16 5h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2"/></svg></div><h3>1. Votre corrigé</h3><p>Collez vos consignes ou importez votre corrigé (PDF, photo). Points par question, réponses acceptées, critères : l'IA suit votre grille, ou vous en prépare une détaillée.</p></div><div class="panel feature"><div class="n"><svg viewBox="0 0 24 24"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg></div><h3>2. Les copies</h3><p>Glissez le PDF de la numérisation de toute la classe, des photos ou des documents Word. L'IA repère où commence chaque copie, et vous pouvez ajuster.</p></div><div class="panel feature"><div class="n"><svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg></div><h3>3. Vous validez</h3><p>Note et justification pour chaque question, commentaire pour l'élève. Ajustez un point en un clic et téléchargez la grille pour Excel ou votre logiciel de notes.</p></div>
+      </div>
+    </section>
+
+    <section class="block" id="language">
+      <h2>Corrigez aussi la langue, directement sur la copie</h2>
+      <p class="sub">Un onglet dédié relève les fautes sur chaque page, les surligne par catégorie et explique la règle. Idéal pour les textes à rendre aux élèves.</p>
+      <div class="lang-demo">
+        <div>
+          <div class="paper" aria-label="Exemple / Example"><div class="nm">Nom : Moussa Diallo · 542</div>Les villes <span class="mark c-acc"><sup>1</sup>ont été bombardé</span> pendant la guerre et la population <span class="mark c-orth"><sup>2</sup>seloigne</span> des zones de combat. Elle se <span class="mark c-conj"><sup>3</sup>défends</span> comme elle peut<span class="mark c-ponc"><sup>4</sup> mais</span> l'aide arrive lentement.</div>
+          <ul class="points"><li>Six catégories au choix : orthographe, accords, conjugaison, ponctuation, syntaxe, vocabulaire</li><li>Note de langue facultative (ex. −0,5 par faute)</li><li>Copie annotée à imprimer ou à enregistrer en PDF pour l’élève</li><li>Fonctionne sur l’écriture à la main comme sur les textes tapés</li></ul>
+        </div>
+        <div class="fixes">
+          <div class="fix c-acc"><b style="color:var(--dot)">1. Accords</b><div><s>ont été bombardé</s> → <b>ont été bombardées</b></div><small>Avec « être », le participe passé s’accorde avec le sujet (les villes).</small></div><div class="fix c-orth"><b style="color:var(--dot)">2. Orthographe</b><div><s>seloigne</s> → <b>s’éloigne</b></div><small>Pronom « se » + verbe « éloigner » : apostrophe.</small></div><div class="fix c-conj"><b style="color:var(--dot)">3. Conjugaison</b><div><s>défends</s> → <b>défend</b></div><small>« elle » : 3e personne du singulier, terminaison -d.</small></div><div class="fix c-ponc"><b style="color:var(--dot)">4. Ponctuation</b><div><s>peut mais</s> → <b>peut, mais</b></div><small>Virgule devant « mais » qui relie deux propositions.</small></div>
+        </div>
       </div>
     </section>
 
     <section class="block">
       <h2>Conçu pour que vous puissiez lui faire confiance</h2>
-      <p class="sub">Une IA qui se trompe en silence ne vous fait pas gagner de temps. Correcteur Express vous montre où regarder.</p>
+      <p class="sub">Une IA qui se trompe en silence ne vous fait pas gagner de temps. Brûle la pile vous montre où regarder.</p>
       <div class="grid3">
-        <div class="panel feature"><div class="n">🔍</div><h3>Chaque point est justifié</h3><p>« Écrit : 1942, attendu : 1955. » Vous voyez pourquoi chaque point a été retiré, et vous le changez si vous n'êtes pas d'accord.</p></div>
-        <div class="panel feature"><div class="n">⚖️</div><h3>Correction approfondie</h3><p>En mode approfondi, chaque copie est corrigée deux fois, indépendamment, avec un pourcentage de fiabilité. Les questions où les corrections divergent sont surlignées.</p></div>
-        <div class="panel feature"><div class="n">🔒</div><h3>Rien n'est conservé</h3><p>Les copies sont traitées puis oubliées : aucune copie ni note n'est stockée sur nos serveurs. Vous téléchargez votre grille, c'est tout.</p></div>
+        <div class="panel feature"><div class="n"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></div><h3>Chaque point est justifié</h3><p>« Écrit : 1942, attendu : 1955. » Vous voyez pourquoi chaque point a été retiré, et vous le changez si vous n’êtes pas d’accord.</p></div><div class="panel feature"><div class="n"><svg viewBox="0 0 24 24"><path d="M12 3v18M5 21h14M7 7h10"/><path d="M7 7l-3 6a3 3 0 0 0 6 0zM17 7l-3 6a3 3 0 0 0 6 0z"/></svg></div><h3>Correction approfondie</h3><p>Chaque copie peut être corrigée deux fois, indépendamment, avec un pourcentage de fiabilité. Les questions où les corrections divergent sont surlignées.</p></div><div class="panel feature"><div class="n"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div><h3>Rien n’est conservé</h3><p>Les copies sont traitées puis oubliées : aucune copie ni note n’est stockée sur nos serveurs. Vous téléchargez votre grille, c’est tout.</p></div>
       </div>
     </section>
 
     <section class="block" id="tarifs">
       <h2>Payez à la page, sans abonnement</h2>
-      <p class="sub">Une classe de 30 élèves avec des copies de 3 pages : environ 5 $ en mode rapide, 10 $ en mode approfondi (double correction). Le corrigé n'est jamais facturé. Les pages n'expirent pas.</p>
+      <p class="sub">Une classe de 30 élèves avec des copies de 3 pages : environ 5 $ en mode rapide, 10 $ en mode approfondi (double correction). La correction de la langue compte 1 page par page. Le corrigé n'est jamais facturé. Les pages n'expirent pas.</p>
       <div class="grid3">
-        <div class="panel price"><b>Découverte</b><div class="amount">14 $ <small>200 pages</small></div><ul><li>~7 ¢ la page</li><li>~2 classes en mode rapide</li></ul><a class="btn block" href="app.html">Commencer</a></div>
-        <div class="panel price best"><b>Session <span class="pill">Le plus populaire</span></b><div class="amount">29 $ <small>500 pages</small></div><ul><li>~5,8 ¢ la page</li><li>~5 classes en mode rapide, 2 à 3 en approfondi</li></ul><a class="btn primary block" href="app.html">Commencer</a></div>
-        <div class="panel price"><b>Année</b><div class="amount">79 $ <small>1 800 pages</small></div><ul><li>~4,4 ¢ la page</li><li>Toute l'année scolaire</li></ul><a class="btn block" href="app.html">Commencer</a></div>
+        <div class="panel price"><b>Découverte</b><div class="amount">14 $ <small>200 pages</small></div><ul><li>~7 ¢ la page</li><li>~2 classes en mode rapide</li></ul><a class="btn block" href="app.html">Commencer</a></div><div class="panel price best"><b>Session <span class="pill">Le plus populaire</span></b><div class="amount">29 $ <small>500 pages</small></div><ul><li>~5,8 ¢ la page</li><li>~5 classes en mode rapide, 2 à 3 en approfondi</li></ul><a class="btn primary block" href="app.html">Commencer</a></div><div class="panel price"><b>Année</b><div class="amount">79 $ <small>1 800 pages</small></div><ul><li>~4,4 ¢ la page</li><li>Toute l'année scolaire</li></ul><a class="btn block" href="app.html">Commencer</a></div>
       </div>
       <p class="muted small" style="margin-top:1rem">Prix en dollars canadiens. Commencez par 30 pages gratuites. École ou centre de services ? <a href="mailto:CONTACT@VOTRE-DOMAINE.CA">Écrivez-nous</a> pour un tarif de groupe.</p>
     </section>
 
     <section class="block faq">
       <h2>Questions fréquentes</h2>
-      <details><summary>L'IA remplace-t-elle mon jugement ?</summary><p>Non. Elle vous propose une note et une justification ; vous restez le correcteur. Tout est modifiable avant l'export, et les copies douteuses sont signalées.</p></details>
-      <details><summary>Ça fonctionne avec l'écriture à la main ?</summary><p>Oui, avec des numérisations ou des photos nettes. Si un passage est illisible, la correction le dit et la copie est marquée à vérifier, au lieu de deviner.</p></details>
-      <details><summary>Quels formats de copies ?</summary><p>PDF numérisés (une ou plusieurs copies par fichier), photos prises au téléphone (y compris les photos d'iPhone), documents Word (.docx) et fichiers texte. Les copies d'une même numérisation sont séparées automatiquement par élève.</p></details>
-      <details><summary>Quelles matières ?</summary><p>Toutes celles où un corrigé ou une grille permet de juger les réponses : histoire, sciences, mathématiques (réponses et démarches), français, langues, questions à développement court. Plus votre corrigé est précis, plus la correction l'est.</p></details>
-      <details><summary>Qu'est-ce qu'une « page » ?</summary><p>Une page de copie d'élève (une face numérisée ou une photo). En mode rapide, une page de copie compte pour 1 page ; en mode approfondi (double correction et fiabilité), pour 2 pages. Le corrigé que vous importez n'est pas compté. Une correction qui échoue n'est pas décomptée.</p></details>
-      <details><summary>Que deviennent les copies de mes élèves ?</summary><p>Elles sont envoyées de façon chiffrée à notre fournisseur d'IA pour la correction, puis oubliées. Nous ne conservons ni copie, ni note, ni nom d'élève. Voir notre <a href="confidentialite.html">politique de confidentialité</a>.</p></details>
-      <details><summary>Dois-je créer un compte ?</summary><p>Non. Vous recevez une clé d'accès qui contient votre solde de pages. Notez-la pour l'utiliser sur un autre appareil ou recharger votre compte.</p></details>
+      <details><summary>L'IA remplace-t-elle mon jugement ?</summary><p>Non. Elle vous propose une note et une justification ; vous restez le correcteur. Tout est modifiable avant l'export, et les copies douteuses sont signalées.</p></details><details><summary>Ça fonctionne avec l'écriture à la main ?</summary><p>Oui, avec des numérisations ou des photos nettes. Si un passage est illisible, la correction le dit et la copie est marquée à vérifier, au lieu de deviner.</p></details><details><summary>Quels formats de copies ?</summary><p>PDF numérisés (une ou plusieurs copies par fichier), photos prises au téléphone (y compris les photos d'iPhone), documents Word (.docx) et fichiers texte. Les copies d'une même numérisation sont séparées automatiquement par élève.</p></details><details><summary>Quelles matières ?</summary><p>Toutes celles où un corrigé ou une grille permet de juger les réponses : histoire, sciences, mathématiques (réponses et démarches), français, langues, questions à développement court. Plus votre corrigé est précis, plus la correction l’est.</p></details><details><summary>Qu’est-ce qu’une « page » ?</summary><p>Une page de copie d’élève (une face numérisée ou une photo). En mode rapide et en correction de la langue, une page de copie compte pour 1 page ; en mode approfondi (double correction et fiabilité), pour 2 pages. Le corrigé n’est pas compté. Une correction qui échoue n’est pas décomptée.</p></details><details><summary>Que deviennent les copies de mes élèves ?</summary><p>Elles sont envoyées de façon chiffrée à notre fournisseur d’IA pour la correction, puis oubliées. Nous ne conservons ni copie, ni note, ni nom d’élève. Voir notre <a href="confidentialite.html">politique de confidentialité</a>.</p></details><details><summary>Dois-je créer un compte ?</summary><p>Non. Vous recevez une clé d’accès qui contient votre solde de pages. Notez-la pour l’utiliser sur un autre appareil ou recharger votre compte.</p></details>
     </section>
 
     <section class="block" style="text-align:center">
@@ -92,6 +94,6 @@
       <a class="btn primary big" href="app.html">Essayer maintenant</a>
     </section>
   </main>
-  <footer><div class="wrap"><span>© 2026 Correcteur Express</span><span><a href="confidentialite.html">Confidentialité</a> · <a href="conditions.html">Conditions</a> · <a href="mailto:CONTACT@VOTRE-DOMAINE.CA">Nous joindre</a></span></div></footer>
+  <footer><div class="wrap"><span>© 2026 Brûle la pile</span><span><a href="confidentialite.html">Confidentialité</a> · <a href="conditions.html">Conditions</a> · <a href="mailto:CONTACT@VOTRE-DOMAINE.CA">Nous joindre</a></span></div></footer>
 </body>
 </html>

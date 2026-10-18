@@ -70,6 +70,10 @@ class HttpError extends Error {
   constructor(status, message) { super(message); this.status = status; }
 }
 
+// Langue de l'interface de l'enseignant (en-tête envoyé par l'appli) : l'IA rédige ses textes dans cette langue.
+const isEnglish = (request) => (request.headers.get('X-Lang') || '').toLowerCase().startsWith('en');
+const ENGLISH_OUTPUT = "LANGUE DE RÉDACTION : rédige toutes les justifications, les commentaires, les explications et les raisons d'incertitude EN ANGLAIS (English).";
+
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
@@ -172,7 +176,7 @@ async function checkout(request, env, url) {
     'metadata[key]': key,
     'metadata[pages]': String(p.pages),
     allow_promotion_codes: 'true',
-    locale: 'fr-CA',
+    locale: isEnglish(request) ? 'en' : 'fr-CA',
   });
   return json({ url: session.url });
 }
@@ -232,6 +236,7 @@ function buildPrompt(o) {
     "GROUPE : lis le groupe ou la classe écrit sur la copie (ex. « 541 », « Gr. 02 », « 4e B »), tel qu'écrit. S'il n'y en a pas, renvoie une chaîne vide.",
     "INCERTITUDE : mets « incertain » à true si une partie importante est illisible, si la copie semble incomplète ou hors sujet, ou si tu hésites sérieusement sur la note.",
     "COMMENTAIRE : 2 à 4 phrases adressées à l'élève (tutoiement), concrètes et constructives : une réussite, l'erreur principale, une piste de progrès.",
+    o.english ? `\n${ENGLISH_OUTPUT}` : '',
     o.rubric ? `\nCONSIGNES DE L'ENSEIGNANT (prioritaires) :\n"""\n${o.rubric}\n"""` : '',
     o.grid ? `\nGRILLE DÉTAILLÉE VALIDÉE PAR L'ENSEIGNANT (à appliquer strictement) :
 Pour chaque critère, lis les descriptions de niveaux, choisis celle qui correspond le mieux à la copie et attribue exactement les points de ce niveau. Dans la justification, indique le niveau retenu et ce qui, dans la copie, le justifie.
@@ -324,6 +329,20 @@ const LANG_CATEGORIES = {
   ponctuation: 'ponctuation (virgule, point, apostrophe, trait d’union)',
   syntaxe: 'syntaxe (construction de phrase, préposition, négation, pronom)',
   vocabulaire: 'vocabulaire (mot impropre, anglicisme, registre familier)',
+};
+const LANG_CATEGORIES_EN = {
+  orthographe: 'spelling (misspelled word, capitalization)',
+  accord: 'agreement (subject-verb, singular/plural, pronoun-antecedent)',
+  conjugaison: 'verb forms and tenses',
+  ponctuation: 'punctuation (comma, period, apostrophe, hyphen)',
+  syntaxe: 'sentence structure (fragments, run-ons, word order, prepositions)',
+  vocabulaire: 'word choice (wrong word, homophones, informal register)',
+};
+const LEVELS_EN = {
+  primaire: 'elementary school student: flag important errors, very simple explanations',
+  secondaire1: 'middle school student: simple explanations with the rule',
+  secondaire3: 'high school student: precise explanations with the rule',
+  cegep: 'college student or adult: high standard, precise explanations',
 };
 const LEVELS = {
   primaire: 'élève du primaire : relève les fautes importantes, explications très simples',
@@ -447,7 +466,15 @@ async function language(request, env) {
   }
 
   // Consigne calquée sur la version Gemini de l'enseignant, dont le surlignage est précis.
-  const system = `Tu es un expert en langue française. Voici l'image d'un document manuscrit (ou dactylographié), une copie de ${level}.
+  const system = isEnglish(request) ? `You are an English language expert. Here is the image of a handwritten (or typed) document, written by a ${LEVELS_EN[body.level] || LEVELS_EN.secondaire1}.
+Your task:
+1. Read the text carefully.
+2. Identify ONLY these errors: ${cats.map((c) => LANG_CATEGORIES_EN[c]).join('; ')}. No style preferences; if a word is illegible, ignore it.
+3. For EACH error found, give its coordinates (bounding box) on the image, surrounding the COMPLETE WORD or COMPLETE EXPRESSION containing the error.
+   The 'box' coordinates must be an array of 4 numbers [ymin, xmin, ymax, xmax] normalized between 0 and 1000.
+   (ymin = top, xmin = left, ymax = bottom, xmax = right).
+For each error, also give its category and a short explanation of the rule, in English.
+Return ONLY a JSON array. If no error is found, return an empty array [].` : `Tu es un expert en langue française. Voici l'image d'un document manuscrit (ou dactylographié), une copie de ${level}.
 Ta mission :
 1. Lis le texte attentivement.
 2. Identifie UNIQUEMENT ces fautes : ${cats.map((c) => LANG_CATEGORIES[c]).join(' ; ')}. Pas de choix de style ; si un mot est illisible, ignore-le.
@@ -560,7 +587,8 @@ async function rubric(request, env) {
     "Reprends les critères et les points de l'enseignant s'il en donne ; n'en invente pas d'autres. S'il n'en donne pas, propose 3 à 6 critères pertinents.",
     `Pour chaque critère, rédige 4 ou 5 niveaux, du maximum à 0, avec des points multiples de ${fr(unit)}.`,
     "Chaque description de niveau doit être concrète et observable dans une copie (ce qui est présent, combien, avec quelle qualité), pour que deux correcteurs différents choisissent le même niveau.",
-    "Appuie-toi sur les exigences précises des consignes (éléments obligatoires, nombre de causes, sections attendues, etc.). Rédige en français.",
+    "Appuie-toi sur les exigences précises des consignes (éléments obligatoires, nombre de causes, sections attendues, etc.).",
+    isEnglish(request) ? 'Rédige la grille (noms des critères et descriptions) en anglais.' : 'Rédige en français.',
   ].join('\n');
   const image = (url) => ({ type: 'image_url', image_url: { url, detail: 'high' } });
   const content = [{ type: 'text', text: text ? `CONSIGNES DE L'ENSEIGNANT :\n${text}` : 'Consignes : voir le corrigé joint.' },
@@ -713,7 +741,7 @@ async function grade(request, env) {
   const unit = body.wholePoints ? 1 : 0.5;
   const grid = readGrid(body.grid);
   const prompt = buildPrompt({ exam: String(body.exam || '').slice(0, 200), total, wholePoints: !!body.wholePoints,
-    checkLanguage: !!body.checkLanguage, rubric: String(body.rubric || '').slice(0, 8000), grid });
+    checkLanguage: !!body.checkLanguage, rubric: String(body.rubric || '').slice(0, 8000), grid, english: isEnglish(request) });
 
   // Double correction : la 1re fixe le découpage en questions, la 2e corrige indépendamment
   // les mêmes questions (intitulés et points maximum, sans les notes de la 1re).
