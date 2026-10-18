@@ -42,6 +42,7 @@ const ROUTES = {
   'POST /api/trial': trial,
   'POST /api/checkout': checkout,
   'GET /api/claim': claim,
+  'POST /api/stripe-webhook': stripeWebhook,
   'POST /api/grade': grade,
   'POST /api/split': split,
   'POST /api/rubric': rubric,
@@ -194,20 +195,50 @@ async function claim(request, env, url) {
 
   const session = await stripe(env, 'GET', `checkout/sessions/${sessionId}`);
   if (session.payment_status !== 'paid') throw new HttpError(402, "Le paiement n'est pas encore confirmé.");
+  const { key, pages } = await creditSession(env, session);
+  const row = await getKey(env, key);
+  return json({ key, pages: row.pages, added: pages });
+}
+
+// Crédite une seule fois les pages d'une session Checkout payée (page de remerciement ou webhook).
+async function creditSession(env, session) {
   const key = session.metadata?.key;
   const pages = Number(session.metadata?.pages);
   if (!key || !pages) throw new HttpError(400, 'Paiement invalide');
-
   const now = Date.now();
   const inserted = await env.DB.prepare('INSERT OR IGNORE INTO payments (session_id, key, pages, created_at) VALUES (?, ?, ?, ?)')
-    .bind(sessionId, key, pages, now).run();
+    .bind(session.id, key, pages, now).run();
   if (inserted.meta.changes) {
     await env.DB.prepare(`INSERT INTO access_keys (key, pages, email, is_trial, created_at) VALUES (?, ?, ?, 0, ?)
       ON CONFLICT(key) DO UPDATE SET pages = pages + excluded.pages, is_trial = 0, email = COALESCE(excluded.email, email)`)
       .bind(key, pages, session.customer_details?.email || null, now).run();
   }
-  const row = await getKey(env, key);
-  return json({ key, pages: row.pages, added: pages });
+  return { key, pages };
+}
+
+// Stripe prévient le site après chaque paiement : les pages sont créditées même si le client
+// ferme l'onglet avant la page de remerciement. Signature vérifiée avec STRIPE_WEBHOOK_SECRET.
+async function stripeWebhook(request, env) {
+  if (!env.STRIPE_WEBHOOK_SECRET) throw new HttpError(404, 'Introuvable');
+  const body = await request.text();
+  const header = request.headers.get('Stripe-Signature') || '';
+  const parts = Object.fromEntries(header.split(',').map((kv) => kv.split('=')).filter((kv) => kv.length === 2));
+  const t = Number(parts.t);
+  const signatures = header.split(',').filter((kv) => kv.startsWith('v1=')).map((kv) => kv.slice(3));
+  if (!t || !signatures.length || Math.abs(Date.now() / 1000 - t) > 300) throw new HttpError(400, 'Signature invalide');
+  const cryptoKey = await crypto.subtle.importKey('raw', new TextEncoder().encode(env.STRIPE_WEBHOOK_SECRET),
+    { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const mac = await crypto.subtle.sign('HMAC', cryptoKey, new TextEncoder().encode(`${t}.${body}`));
+  const expected = Array.from(new Uint8Array(mac), (b) => b.toString(16).padStart(2, '0')).join('');
+  if (!signatures.includes(expected)) throw new HttpError(400, 'Signature invalide');
+
+  const event = JSON.parse(body);
+  const session = event.data?.object;
+  if (['checkout.session.completed', 'checkout.session.async_payment_succeeded'].includes(event.type)
+    && session?.payment_status === 'paid' && session.metadata?.key) {
+    await creditSession(env, session);
+  }
+  return json({ received: true });
 }
 
 // ---------- Correction ----------

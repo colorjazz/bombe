@@ -29,6 +29,10 @@ puis met le site en ligne. Il peut être relancé sans risque, par exemple aprè
    Build command : vide · Deploy command : `npx wrangler deploy` · Path : `/correcteur` · API token : Create new token.
 3. Settings → Build → Production branch : la branche qui contient ce dossier.
 4. Settings → Variables and Secrets : `AI_API_KEY` (clé Gemini), `STRIPE_SECRET_KEY`, `IP_SALT` (type Secret).
+5. Stripe → Développeurs → Webhooks → Ajouter une destination : URL `https://VOTRE-DOMAINE/api/stripe-webhook`,
+   événements `checkout.session.completed` et `checkout.session.async_payment_succeeded`.
+   Copier la clé de signature (`whsec_…`) dans le secret `STRIPE_WEBHOOK_SECRET`. Les pages sont alors créditées
+   même si le client ferme l'onglet avant la page de remerciement.
 
 Ensuite, dans Cloudflare, rattachez votre nom de domaine au Worker (Workers → correcteur-express → Domaines).
 
