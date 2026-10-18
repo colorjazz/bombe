@@ -42,6 +42,7 @@ const ROUTES = {
   'POST /api/checkout': checkout,
   'GET /api/claim': claim,
   'POST /api/grade': grade,
+  'POST /api/split': split,
 };
 
 // ---------- Utilitaires ----------
@@ -267,7 +268,11 @@ async function callModel(env, prompt, rubricPages, pages) {
   const content = [];
   if (rubricPages.length) content.push({ type: 'text', text: 'CORRIGÉ / GRILLE DE L’ENSEIGNANT :' }, ...rubricPages.map(image));
   content.push({ type: 'text', text: `COPIE DE L'ÉLÈVE (${pages.length} page(s), dans l'ordre) :` }, ...pages.map(image));
+  return aiChat(env, prompt, content, SCHEMA);
+}
 
+// Appel au modèle (format compatible OpenAI) : nouvelles tentatives, modèle de secours, réponse JSON.
+async function aiChat(env, system, content, responseFormat) {
   let model = env.AI_MODEL;
   for (let attempt = 0; ; attempt++) {
     const res = await fetch(`${env.AI_BASE_URL}/chat/completions`, {
@@ -275,8 +280,8 @@ async function callModel(env, prompt, rubricPages, pages) {
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${env.AI_API_KEY}` },
       body: JSON.stringify({
         model,
-        messages: [{ role: 'system', content: prompt }, { role: 'user', content }],
-        response_format: SCHEMA,
+        messages: [{ role: 'system', content: system }, { role: 'user', content }],
+        response_format: responseFormat,
         temperature: 0,
         max_tokens: 8192, // les modèles qui « réfléchissent » comptent aussi ces jetons
       }),
@@ -347,6 +352,69 @@ function normalize(raw, total, unit) {
 }
 
 const fr = (n) => String(n).replace('.', ',');
+
+// ---------- Détection des copies (gratuite) ----------
+
+const SPLIT_BATCH = 40;
+const MAX_THUMB_CHARS = 250_000;
+const SPLIT_SCHEMA = {
+  type: 'json_schema',
+  json_schema: {
+    name: 'decoupage',
+    schema: {
+      type: 'object',
+      required: ['pages'],
+      properties: {
+        pages: {
+          type: 'array',
+          items: {
+            type: 'object',
+            required: ['numero', 'nouvelle_copie', 'nom'],
+            properties: { numero: { type: 'integer' }, nouvelle_copie: { type: 'boolean' }, nom: { type: 'string' } },
+          },
+        },
+      },
+    },
+  },
+};
+
+// Reçoit des miniatures de pages numérisées à la suite et indique où commence chaque copie d'élève.
+async function split(request, env) {
+  const key = bearer(request);
+  await getKey(env, key); // réservé aux clés valides, mais non facturé
+  const body = await readJson(request);
+  const pages = body.pages;
+  if (!Array.isArray(pages) || !pages.length || pages.length > SPLIT_BATCH) throw new HttpError(400, `Entre 1 et ${SPLIT_BATCH} pages par envoi`);
+  const ok = (img) => typeof img === 'string' && /^data:image\/(jpeg|png|webp);base64,/.test(img) && img.length <= MAX_THUMB_CHARS;
+  if (!pages.every(ok) || (body.previous && !ok(body.previous))) throw new HttpError(400, 'Miniature invalide');
+
+  const image = (url) => ({ type: 'image_url', image_url: { url, detail: 'low' } });
+  const content = [];
+  if (body.previous) content.push({ type: 'text', text: 'Page précédente (contexte seulement, ne pas la numéroter) :' }, image(body.previous));
+  pages.forEach((url, i) => content.push({ type: 'text', text: `Page ${i + 1} :` }, image(url)));
+  const system = [
+    "Tu reçois des pages numérisées à la suite, provenant de plusieurs copies d'élèves mises bout à bout.",
+    "Pour chaque page numérotée, indique si elle est la PREMIÈRE page d'une nouvelle copie d'élève.",
+    "Indices d'une nouvelle copie : un nom d'élève ou un en-tête (nom, groupe, date), le titre de l'examen, « page 1 », la première question, une écriture différente de la page précédente.",
+    "Indices d'une suite : numéro de page > 1, suite d'une réponse, questions suivantes, même écriture, aucun en-tête.",
+    body.previous ? "La page de contexte appartient à la copie qui précède la page 1." : "La page 1 commence toujours une nouvelle copie.",
+    "Si une nouvelle copie commence, recopie le nom de l'élève tel qu'écrit (chaîne vide si illisible). Sinon, chaîne vide.",
+  ].join('\n');
+  let raw;
+  try {
+    raw = await aiChat(env, system, content, SPLIT_SCHEMA);
+  } catch (err) {
+    console.error('Détection impossible :', err.message);
+    throw new HttpError(502, 'La détection automatique a échoué. Réessayez ou regroupez les pages manuellement.');
+  }
+  const byNumber = new Map((raw.pages || []).map((p) => [Number(p.numero), p]));
+  return json({
+    pages: pages.map((_, i) => {
+      const p = byNumber.get(i + 1);
+      return { startsNew: (!body.previous && i === 0) || !!p?.nouvelle_copie, name: String(p?.nom || '').trim() };
+    }),
+  });
+}
 
 async function grade(request, env) {
   const key = bearer(request);

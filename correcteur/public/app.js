@@ -197,8 +197,55 @@ async function filesToPages(files) {
 function applyMode() {
   const mode = $('mode').value;
   const per = Math.max(1, Math.min(MAX_PAGES_PER_COPY, Number($('per').value) || 1));
-  state.pages.forEach((p, i) => { p.startsNew = mode === 'file' ? p.firstOfFile : i % per === 0; });
+  state.pages.forEach((p, i) => {
+    p.startsNew = mode === 'file' ? p.firstOfFile : mode === 'auto' ? (p.autoStart ?? p.firstOfFile) : i % per === 0;
+  });
   if (state.pages[0]) state.pages[0].startsNew = true;
+}
+
+// ---------- Détection automatique des copies ----------
+
+function thumbnail(url) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, 640 / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width * scale);
+      c.height = Math.round(img.height * scale);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      resolve(c.toDataURL('image/jpeg', 0.6));
+    };
+    img.onerror = () => reject(new Error('image illisible'));
+    img.src = url;
+  });
+}
+
+const SPLIT_BATCH = 40;
+async function detectCopies() {
+  const todo = state.pages.filter((p) => p.autoStart === undefined);
+  if (!todo.length) { applyMode(); renderPages(); return; }
+  state.detecting = true;
+  renderSummary();
+  try {
+    for (let i = 0; i < todo.length; i += SPLIT_BATCH) {
+      banner('info', `Détection des copies : pages ${i + 1} à ${Math.min(i + SPLIT_BATCH, todo.length)} sur ${todo.length}…`);
+      const batch = todo.slice(i, i + SPLIT_BATCH);
+      const before = state.pages[state.pages.indexOf(batch[0]) - 1];
+      const { pages } = await api('/api/split', { method: 'POST', body: {
+        pages: await Promise.all(batch.map((p) => thumbnail(p.url))),
+        previous: before ? await thumbnail(before.url) : undefined,
+      } });
+      batch.forEach((p, j) => { p.autoStart = pages[j].startsNew; p.detectedName = pages[j].name; });
+    }
+    applyMode();
+    banner('info', `${bundles().length} copie(s) détectée(s). Vérifiez les regroupements (noms affichés sur chaque copie) avant de corriger.`);
+  } catch (err) {
+    banner('err', `${err.message} Les pages non analysées restent regroupées par fichier.`);
+  } finally {
+    state.detecting = false;
+    renderPages();
+  }
 }
 
 function bundles() {
@@ -220,13 +267,13 @@ function renderPages() {
     const label = st?.state === 'running' ? '⏳ correction…' : st?.state === 'error' ? `⚠ ${st.msg}` : tooLong ? `⚠ ${MAX_PAGES_PER_COPY} pages max : plusieurs élèves ? Utilisez « Nombre fixe de pages par élève » ou ✂` : '';
     return h('div', { class: 'bundle' },
       h('div', { class: 'bundle-head' },
-        h('span', {}, `Copie ${bi + 1} · ${b.length} page${b.length > 1 ? 's' : ''}`),
+        h('span', {}, `Copie ${bi + 1}${b[0].detectedName ? ` · ${b[0].detectedName}` : ''} · ${b.length} page${b.length > 1 ? 's' : ''}`),
         h('span', { class: `st ${st?.state === 'error' || tooLong ? 'err' : ''}`, textContent: label }),
         bi > 0 ? h('button', { class: 'btn ghost merge', type: 'button', textContent: 'fusionner avec la précédente', disabled: state.running,
-          onclick: () => { b[0].startsNew = false; renderPages(); } }) : null),
+          onclick: () => { b[0].startsNew = false; b[0].autoStart = false; renderPages(); } }) : null),
       h('div', { class: 'bundle-pages' }, b.map((p, pi) => [
         pi > 0 ? h('button', { class: 'split', type: 'button', title: 'Séparer : une nouvelle copie commence ici', textContent: '✂', disabled: state.running,
-          onclick: () => { p.startsNew = true; renderPages(); } }) : null,
+          onclick: () => { p.startsNew = true; p.autoStart = true; renderPages(); } }) : null,
         h('div', { class: 'thumb', title: p.file },
           h('img', { src: p.url, alt: `Page ${pi + 1}` }),
           h('button', { class: 'x', type: 'button', textContent: '×', title: 'Retirer cette page', disabled: state.running,
@@ -253,7 +300,7 @@ function renderSummary() {
   $('cost').textContent = n ? `${cost} page(s) seront décomptées` : '';
   const enough = state.pagesLeft == null || state.pagesLeft >= cost;
   const run = $('run');
-  run.disabled = state.running || !n || tooLong || !enough || !(Number($('total').value) > 0);
+  run.disabled = state.running || state.detecting || !n || tooLong || !enough || !(Number($('total').value) > 0);
   run.textContent = state.running ? 'Correction en cours…'
     : !enough ? 'Solde insuffisant : rechargez votre compte'
     : n ? `Corriger ${list.length} copie(s)` : 'Corriger';
@@ -494,20 +541,10 @@ dropzone($('drop'), $('files'), async (files) => {
   const added = await filesToPages(files);
   state.pages.push(...added);
   applyMode();
-  // Un fichier trop long contient presque toujours plusieurs élèves : on propose de le découper.
+  // Un fichier trop long contient presque toujours plusieurs élèves : on lance la détection automatique.
   const longest = Math.max(0, ...bundles().map((b) => b.length));
-  if ($('mode').value === 'file' && longest > MAX_PAGES_PER_COPY) {
-    const answer = prompt(`Ce fichier contient ${longest} pages : il regroupe sans doute plusieurs élèves.\n\nCombien de pages compte chaque copie ?`, $('per').value);
-    const per = Math.round(Number(answer));
-    if (per >= 1 && per <= MAX_PAGES_PER_COPY) {
-      $('mode').value = 'fixed';
-      $('per').value = per;
-      applyMode();
-      banner('info', `Pages regroupées par ${per} : ${bundles().length} copies. Vérifiez les regroupements avant de corriger.`);
-    } else {
-      banner('err', `Une copie ne peut pas dépasser ${MAX_PAGES_PER_COPY} pages. Choisissez « Nombre fixe de pages par élève » ou séparez les copies avec ✂.`);
-    }
-  }
+  if ($('mode').value === 'file' && longest > MAX_PAGES_PER_COPY) $('mode').value = 'auto';
+  if ($('mode').value === 'auto') { renderPages(); await detectCopies(); return; }
   renderPages();
 });
 dropzone($('rubric-drop'), $('rubric-files'), async (files) => {
@@ -520,7 +557,10 @@ dropzone($('rubric-drop'), $('rubric-files'), async (files) => {
   renderRubric();
 });
 
-$('mode').addEventListener('change', () => { applyMode(); renderPages(); });
+$('mode').addEventListener('change', () => {
+  applyMode(); renderPages();
+  if ($('mode').value === 'auto') detectCopies();
+});
 $('per').addEventListener('change', () => { applyMode(); renderPages(); });
 $('clear-pages').addEventListener('click', () => { state.pages = []; state.status = {}; renderPages(); });
 $('total').addEventListener('input', renderSummary);
