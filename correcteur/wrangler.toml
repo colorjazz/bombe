@@ -18,3 +18,10 @@ AI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai"
 TRIAL_PAGES = "30"
 # Secrets à définir avec `npx wrangler secret put` :
 #   AI_API_KEY (clé Gemini), STRIPE_SECRET_KEY, IP_SALT
+
+# Journaux visibles dans Cloudflare (onglet Observability). Le serveur n'y écrit jamais le contenu des copies.
+[observability]
+enabled = true
+
+[observability.logs]
+invocation_logs = true
