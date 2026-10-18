@@ -121,8 +121,8 @@ async function buy(pack) {
 
 function canvasToJpeg(canvas) { return canvas.toDataURL('image/jpeg', JPEG_QUALITY); }
 
-function fitCanvas(w, h) {
-  const scale = Math.min(1, MAX_SIDE / Math.max(w, h));
+function fitCanvas(w, h, maxSide = MAX_SIDE) {
+  const scale = Math.min(1, maxSide / Math.max(w, h));
   const c = document.createElement('canvas');
   c.width = Math.round(w * scale);
   c.height = Math.round(h * scale);
@@ -207,15 +207,15 @@ async function textToJpegs(file) {
   return documentToJpegs(`<div style="white-space:pre-wrap">${esc}</div>`);
 }
 
-async function imageToJpeg(file) {
+async function imageToJpeg(file, maxSide = MAX_SIDE, quality = JPEG_QUALITY) {
   const bmp = await decodeImage(file);
-  const c = fitCanvas(bmp.width, bmp.height);
+  const c = fitCanvas(bmp.width, bmp.height, maxSide);
   const ctx = c.getContext('2d');
   ctx.fillStyle = '#fff';
   ctx.fillRect(0, 0, c.width, c.height);
   ctx.drawImage(bmp, 0, 0, c.width, c.height);
   bmp.close?.();
-  return canvasToJpeg(c);
+  return c.toDataURL('image/jpeg', quality);
 }
 
 let pdfjsPromise;
@@ -259,7 +259,8 @@ async function filesToPages(files) {
         const urls = await pdfToJpegs(file, (i, n) => banner('info', `Lecture de « ${file.name} » : page ${i}/${n}…`));
         urls.forEach((url, i) => out.push({ id: uid(), url, file: file.name, firstOfFile: i === 0 }));
       } else if (isImage(file)) {
-        out.push({ id: uid(), url: await imageToJpeg(file), file: file.name, firstOfFile: true });
+        // `source` garde la photo d'origine : la correction de la langue l'envoie en pleine résolution.
+        out.push({ id: uid(), url: await imageToJpeg(file), file: file.name, firstOfFile: true, source: file });
       } else if (isDocx(file) || isText(file)) {
         banner('info', `Mise en page de « ${file.name} »…`);
         const urls = await (isDocx(file) ? docxToJpegs(file) : textToJpegs(file));
@@ -521,7 +522,7 @@ async function runAll() {
       renderPages();
       try {
         if (state.kind === 'lang') {
-          const r = await api('/api/language', { method: 'POST', body: { pages: b.map((p) => p.url), ...langSettings() } });
+          const r = await analyzeLanguage(b);
           setBalance(r.pagesLeft);
           const res = { kind: 'lang', id, exam: settings.exam, group: r.group || settings.group, name: r.name, pageCount: b.length,
             pages: b.map((p, i) => ({ url: p.url, errors: r.pages[i].errors, failed: !!r.pages[i].failed })),
@@ -672,6 +673,23 @@ const CATS = {
   syntaxe: { label: 'Syntaxe', cls: 'c-synt', color: '#10b981' },
   vocabulaire: { label: 'Vocabulaire', cls: 'c-voc', color: '#94a3b8' },
 };
+
+// Photos envoyées en pleine résolution (comme la version Gemini d'origine), une requête par page.
+const LANG_MAX_SIDE = 4096;
+async function analyzeLanguage(bundle) {
+  const urls = await Promise.all(bundle.map((p) => (p.source ? imageToJpeg(p.source, LANG_MAX_SIDE, 0.9) : p.url)));
+  const parts = await Promise.all(urls.map((url, i) => api('/api/language', { method: 'POST',
+    body: { pages: [url], identify: i === 0, ...langSettings() } }).catch((error) => ({ error }))));
+  const blocking = parts.find((x) => x.error && (x.error.status === 401 || x.error.status === 402));
+  if (blocking) throw blocking.error;
+  if (parts.every((x) => x.error)) throw parts[0].error;
+  return {
+    name: parts[0].name || '', group: parts[0].group || '',
+    pages: parts.map((x) => (x.error ? { errors: [], failed: true } : x.pages[0])),
+    failedPages: parts.reduce((a, x) => a + (x.error ? 1 : x.failedPages || 0), 0),
+    pagesLeft: Math.min(...parts.filter((x) => !x.error).map((x) => x.pagesLeft)),
+  };
+}
 
 // 2e passe de précision : on découpe une zone agrandie autour de chaque faute et Gemini y encadre le mot exact.
 const REFINE_BOXES = false; // désactivée pour comparer avec la version Gemini d'origine

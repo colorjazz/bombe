@@ -13,6 +13,7 @@ export const PACKS = {
 const MAX_PAGES_PER_COPY = 10;
 const MAX_RUBRIC_PAGES = 6;
 const MAX_IMAGE_CHARS = 2_500_000; // ~1,8 Mo par page une fois décodée
+const MAX_LANG_IMAGE_CHARS = 14_000_000; // photos en pleine résolution pour la correction de la langue (~10 Mo)
 // Une école entière partage souvent la même adresse IP : on plafonne par jour au lieu de bloquer.
 const TRIALS_PER_IP_PER_DAY = 10;
 const DAY_MS = 24 * 3600 * 1000;
@@ -201,11 +202,11 @@ async function claim(request, env, url) {
 
 // ---------- Correction ----------
 
-function checkImages(list, max, label) {
+function checkImages(list, max, label, maxChars = MAX_IMAGE_CHARS) {
   if (!Array.isArray(list)) throw new HttpError(400, `${label} manquantes`);
   if (list.length > max) throw new HttpError(400, `${label} : ${max} pages maximum`);
   for (const img of list) {
-    if (typeof img !== 'string' || !/^data:image\/(jpeg|png|webp);base64,/.test(img) || img.length > MAX_IMAGE_CHARS) {
+    if (typeof img !== 'string' || !/^data:image\/(jpeg|png|webp);base64,/.test(img) || img.length > maxChars) {
       throw new HttpError(400, `${label} : image invalide ou trop lourde`);
     }
   }
@@ -432,7 +433,7 @@ function cleanBox(box, maxHeight = 400) {
 async function language(request, env) {
   const key = bearer(request);
   const body = await readJson(request);
-  checkImages(body.pages, MAX_PAGES_PER_COPY, 'Copie');
+  checkImages(body.pages, MAX_PAGES_PER_COPY, 'Copie', MAX_LANG_IMAGE_CHARS);
   if (!body.pages.length) throw new HttpError(400, 'Copie vide');
   const cats = (Array.isArray(body.categories) ? body.categories : Object.keys(LANG_CATEGORIES)).filter((c) => LANG_CATEGORIES[c]);
   if (!cats.length) throw new HttpError(400, 'Choisissez au moins un type de faute');
@@ -456,7 +457,7 @@ Ta mission :
 Pour chaque faute, indique aussi sa catégorie et une courte explication de la règle.
 Renvoie EXCLUSIVEMENT un tableau JSON. Si aucune faute n'est trouvée, renvoie un tableau vide [].`;
 
-  const identity = geminiNative(env, [{ text: "Recopie le nom de l'élève et son groupe s'ils sont écrits sur cette copie (sinon chaînes vides)." }, inlineImage(body.pages[0])],
+  const identity = body.identify === false ? Promise.resolve({}) : geminiNative(env, [{ text: "Recopie le nom de l'élève et son groupe s'ils sont écrits sur cette copie (sinon chaînes vides)." }, inlineImage(body.pages[0])],
     { type: 'OBJECT', properties: { nom: { type: 'STRING' }, groupe: { type: 'STRING' } }, required: ['nom', 'groupe'] }, env.LANG_MODEL).catch(() => ({}));
   const results = await Promise.allSettled(body.pages.map((url) => geminiVision(env, system, url)));
   const failed = results.filter((x) => x.status === 'rejected').length;
