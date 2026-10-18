@@ -51,6 +51,8 @@
 .card-head input.group:hover, .card-head input.group:focus { border-color: var(--line-2); background: #0d1527; }
 @media (max-width: 480px) { .card-head { grid-template-columns: minmax(0, 1fr) 4.5rem auto auto auto; gap: .4rem; } }
 .rel { font-size: .75rem; font-weight: 700; padding: .2rem .55rem; border-radius: 999px; border: 1px solid; white-space: nowrap; }
+button.rel { cursor: pointer; font-family: inherit; }
+.info { background: none; border: 0; color: var(--primary-2); cursor: pointer; font-size: .85rem; padding: 0 .15rem; }
 .rel.hi { color: var(--green); border-color: rgba(16,185,129,.4); background: rgba(16,185,129,.1); }
 .rel.mid { color: var(--amber); border-color: rgba(245,158,11,.4); background: rgba(245,158,11,.1); }
 .rel.lo { color: var(--red); border-color: rgba(244,63,94,.45); background: rgba(244,63,94,.1); }

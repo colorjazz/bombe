@@ -326,6 +326,9 @@ async function runAll() {
 
 // ---------- Résultats ----------
 
+function showRelHelp() { $('rel-help').hidden = false; }
+const infoButton = () => h('button', { type: 'button', class: 'info', textContent: 'ⓘ', 'aria-label': 'Que veut dire la fiabilité ?', onclick: showRelHelp });
+
 function recompute(r) {
   r.grade = Math.min(r.total, r.questions.reduce((a, q) => a + q.points, 0));
   state.exported = false;
@@ -342,7 +345,8 @@ function renderStats() {
   const stat = (v, l) => h('div', { class: 'stat' }, h('div', { class: 'v', textContent: v }), h('div', { class: 'l', textContent: l }));
   $('stats').replaceChildren(stat(String(graded.length), 'copies'),
     stat(`${fmt(avg)} %`, `moyenne (min ${fmt(Math.min(...pct))} – max ${fmt(Math.max(...pct))})`),
-    stat(`${fmt(rel)} %`, 'fiabilité moyenne'), stat(String(flagged), 'à vérifier ⚠'));
+    h('div', { class: 'stat' }, h('div', { class: 'v', textContent: `${fmt(rel)} %` }),
+      h('div', { class: 'l' }, 'fiabilité moyenne ', infoButton())), stat(String(flagged), 'à vérifier ⚠'));
 }
 
 function renderResults() {
@@ -400,10 +404,10 @@ function card(r) {
         oninput: (e) => { r.name = e.target.value; state.exported = false; } }),
       h('input', { class: 'group', type: 'text', value: r.group, placeholder: 'Groupe', 'aria-label': 'Groupe',
         oninput: (e) => { r.group = e.target.value; state.exported = false; } }),
-      r.reliability == null ? h('span') : h('span', {
-        class: `rel ${r.reliability >= 90 ? 'hi' : r.reliability >= 80 ? 'mid' : 'lo'}`,
-        title: 'Fiabilité : accord entre deux corrections indépendantes, question par question',
-        textContent: `${r.reliability} %` }),
+      r.reliability == null ? h('span') : h('button', {
+        type: 'button', class: `rel ${r.reliability >= 90 ? 'hi' : r.reliability >= 80 ? 'mid' : 'lo'}`,
+        title: 'Fiabilité de la correction : cliquez pour en savoir plus', onclick: showRelHelp,
+        textContent: `${r.reliability} % ⓘ` }),
       gradeEl,
       h('button', { class: 'icon-btn chev', type: 'button', textContent: '▾', 'aria-label': 'Détails', onclick: () => {
         if (state.open.has(r.id)) state.open.delete(r.id); else state.open.add(r.id);
@@ -495,6 +499,7 @@ $('buy-open').addEventListener('click', () => { $('buy').hidden = false; });
 document.querySelectorAll('[data-open-buy]').forEach((b) => b.addEventListener('click', () => { $('buy').hidden = false; }));
 document.querySelectorAll('[data-close-buy]').forEach((b) => b.addEventListener('click', () => { $('buy').hidden = true; }));
 document.querySelectorAll('[data-pack]').forEach((b) => b.addEventListener('click', () => buy(b.dataset.pack)));
+document.querySelectorAll('[data-close-rel]').forEach((b) => b.addEventListener('click', () => { $('rel-help').hidden = true; }));
 document.querySelector('[data-close-newkey]').addEventListener('click', () => { $('newkey').hidden = true; });
 $('newkey-copy').addEventListener('click', () => navigator.clipboard?.writeText($('newkey-value').textContent));
 

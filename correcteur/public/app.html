@@ -136,6 +136,22 @@
     </div>
   </div>
 
+  <!-- Explication de la fiabilité -->
+  <div id="rel-help" class="modal" hidden>
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:center"><h2 style="margin:0">Que veut dire la fiabilité ?</h2><button class="icon-btn" type="button" data-close-rel aria-label="Fermer">×</button></div>
+      <p class="muted" style="margin:0">Chaque copie est corrigée <b>deux fois, indépendamment</b>. La fiabilité mesure à quel point ces deux corrections sont d'accord, question par question.</p>
+      <div class="stack" style="gap:.5rem">
+        <div><span class="rel hi">90 % et +</span> <span class="small">Les deux corrections concordent : la note est solide.</span></div>
+        <div><span class="rel mid">80 – 89 %</span> <span class="small">Léger désaccord sur une question : jetez-y un œil.</span></div>
+        <div><span class="rel lo">moins de 80 %</span> <span class="small">Désaccord important : copie signalée ⚠, à vérifier.</span></div>
+      </div>
+      <p class="muted small" style="margin:0">Les questions en désaccord sont marquées <b style="color:var(--amber)">⚖</b>, avec la note de l'autre correction. La fiabilité baisse aussi si l'IA signale un doute (écriture illisible, copie incomplète), si le nom est illisible ou si le barème ne totalise pas.</p>
+      <p class="muted small" style="margin:0">Exemple : 1 point d'écart sur 20 donne environ 85 %. Une fiabilité élevée n'est pas une garantie : vous restez le correcteur. Un corrigé précis (points par question, réponses acceptées) augmente la fiabilité.</p>
+      <button class="btn primary" type="button" data-close-rel>Compris</button>
+    </div>
+  </div>
+
   <!-- Clé d'essai -->
   <div id="newkey" class="modal" hidden>
     <div class="panel">
