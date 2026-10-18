@@ -43,6 +43,7 @@ const ROUTES = {
   'GET /api/claim': claim,
   'POST /api/grade': grade,
   'POST /api/split': split,
+  'POST /api/rubric': rubric,
 };
 
 // ---------- Utilitaires ----------
@@ -229,6 +230,9 @@ function buildPrompt(o) {
     "INCERTITUDE : mets « incertain » à true si une partie importante est illisible, si la copie semble incomplète ou hors sujet, ou si tu hésites sérieusement sur la note.",
     "COMMENTAIRE : 2 à 4 phrases adressées à l'élève (tutoiement), concrètes et constructives : une réussite, l'erreur principale, une piste de progrès.",
     o.rubric ? `\nCONSIGNES DE L'ENSEIGNANT (prioritaires) :\n"""\n${o.rubric}\n"""` : '',
+    o.grid ? `\nGRILLE DÉTAILLÉE VALIDÉE PAR L'ENSEIGNANT (à appliquer strictement) :
+Pour chaque critère, lis les descriptions de niveaux, choisis celle qui correspond le mieux à la copie et attribue exactement les points de ce niveau. Dans la justification, indique le niveau retenu et ce qui, dans la copie, le justifie.
+${gridText(o.grid)}` : '',
   ].join('\n');
 }
 
@@ -308,6 +312,106 @@ async function aiChat(env, system, content, responseFormat) {
   }
 }
 
+// ---------- Grille détaillée ----------
+
+// Grille envoyée par l'appli : [{ name, max, levels: [{ points, description }] }]. Renvoie null si absente.
+function readGrid(raw) {
+  if (!Array.isArray(raw) || !raw.length) return null;
+  if (raw.length > 30) throw new HttpError(400, 'Grille : 30 critères maximum');
+  return raw.map((c) => {
+    const max = Number(c.max);
+    const levels = (Array.isArray(c.levels) ? c.levels : []).slice(0, 10)
+      .map((l) => ({ points: Number(l.points), description: String(l.description || '').slice(0, 600) }))
+      .filter((l) => Number.isFinite(l.points) && l.points >= 0 && l.points <= max);
+    if (!c.name || !(max > 0)) throw new HttpError(400, 'Grille invalide');
+    return { name: String(c.name).slice(0, 200), max, levels };
+  });
+}
+
+function gridText(grid) {
+  return grid.map((c, i) => [`${i + 1}. ${c.name} (sur ${fr(c.max)} points)`,
+    ...[...c.levels].sort((x, y) => y.points - x.points).map((l) => `   - ${fr(l.points)} pt : ${l.description}`)].join('\n')).join('\n');
+}
+
+// Ramène les points de chaque critère au niveau de la grille le plus proche : c'est ce qui stabilise les notes.
+function snapToGrid(result, grid) {
+  if (result.questions.length !== grid.length) return;
+  result.questions.forEach((q, i) => {
+    const allowed = grid[i].levels.map((l) => l.points);
+    if (!allowed.length) return;
+    q.points = allowed.reduce((best, v) => (Math.abs(v - q.raw) < Math.abs(best - q.raw) ? v : best), allowed[0]);
+    q.max = grid[i].max;
+    q.question = grid[i].name;
+  });
+  result.grade = result.questions.reduce((x, q) => x + q.points, 0);
+  result.sumMax = result.questions.reduce((x, q) => x + q.max, 0);
+}
+
+const GRID_SCHEMA = {
+  type: 'json_schema',
+  json_schema: {
+    name: 'grille',
+    schema: {
+      type: 'object',
+      required: ['criteres'],
+      properties: {
+        criteres: {
+          type: 'array',
+          items: {
+            type: 'object',
+            required: ['nom', 'points_max', 'niveaux'],
+            properties: {
+              nom: { type: 'string' },
+              points_max: { type: 'number' },
+              niveaux: {
+                type: 'array',
+                items: { type: 'object', required: ['points', 'description'], properties: { points: { type: 'number' }, description: { type: 'string' } } },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+};
+
+// Rédige une grille avec descripteurs de niveaux à partir des consignes (gratuit, l'enseignant la valide ensuite).
+async function rubric(request, env) {
+  await getKey(env, bearer(request));
+  const body = await readJson(request);
+  const total = Number(body.total);
+  if (!(total > 0 && total <= 1000)) throw new HttpError(400, 'Barème invalide');
+  const text = String(body.rubric || '').slice(0, 8000);
+  checkImages(body.rubricPages || [], MAX_RUBRIC_PAGES, 'Corrigé');
+  if (!text.trim() && !(body.rubricPages || []).length) throw new HttpError(400, "Écrivez d'abord vos consignes ou ajoutez votre corrigé.");
+  const unit = body.wholePoints ? 1 : 0.5;
+  const system = [
+    "Tu es conseiller pédagogique. À partir des consignes et du corrigé d'un enseignant, rédige une grille d'évaluation critériée.",
+    `Barème total : ${fr(total)} points. Les points maximum des critères doivent totaliser exactement ${fr(total)}.`,
+    "Reprends les critères et les points de l'enseignant s'il en donne ; n'en invente pas d'autres. S'il n'en donne pas, propose 3 à 6 critères pertinents.",
+    `Pour chaque critère, rédige 4 ou 5 niveaux, du maximum à 0, avec des points multiples de ${fr(unit)}.`,
+    "Chaque description de niveau doit être concrète et observable dans une copie (ce qui est présent, combien, avec quelle qualité), pour que deux correcteurs différents choisissent le même niveau.",
+    "Appuie-toi sur les exigences précises des consignes (éléments obligatoires, nombre de causes, sections attendues, etc.). Rédige en français.",
+  ].join('\n');
+  const image = (url) => ({ type: 'image_url', image_url: { url, detail: 'high' } });
+  const content = [{ type: 'text', text: text ? `CONSIGNES DE L'ENSEIGNANT :\n${text}` : 'Consignes : voir le corrigé joint.' },
+    ...(body.rubricPages || []).map(image)];
+  let raw;
+  try { raw = await aiChat(env, system, content, GRID_SCHEMA); } catch (err) {
+    console.error('Grille impossible :', err.message);
+    throw new HttpError(502, 'La préparation de la grille a échoué. Réessayez.');
+  }
+  const snap = (n) => Math.round((Number(n) || 0) / unit) * unit;
+  const grid = (raw.criteres || []).map((c) => {
+    const max = Math.max(unit, snap(c.points_max));
+    const levels = (c.niveaux || []).map((l) => ({ points: Math.min(max, Math.max(0, snap(l.points))), description: String(l.description || '').trim() }))
+      .sort((x, y) => y.points - x.points);
+    return { name: String(c.nom || 'Critère').trim(), max, levels };
+  });
+  if (!grid.length) throw new HttpError(502, "L'IA n'a pas pu préparer de grille à partir de ces consignes. Précisez les critères et réessayez.");
+  return json({ grid });
+}
+
 // Fiabilité : accord des deux corrections question par question (écarts de points rapportés au barème),
 // pénalisée si l'IA exprime un doute, ne lit pas le nom ou si le barème ne totalise pas.
 // Chaque question de la 1re correction reçoit `second` : les points de la 2e quand ils diffèrent.
@@ -341,6 +445,7 @@ function normalize(raw, total, unit) {
     return {
       question: String(q.question || 'Question').trim(),
       points: Math.min(max, Math.max(0, snap(q.points_obtenus))),
+      raw: Number(q.points_obtenus) || 0, // valeur brute, pour l'ajustement au niveau de grille le plus proche
       max,
       justification: String(q.justification || '').trim(),
     };
@@ -437,8 +542,9 @@ async function grade(request, env) {
   }
 
   const unit = body.wholePoints ? 1 : 0.5;
+  const grid = readGrid(body.grid);
   const prompt = buildPrompt({ exam: String(body.exam || '').slice(0, 200), total, wholePoints: !!body.wholePoints,
-    checkLanguage: !!body.checkLanguage, rubric: String(body.rubric || '').slice(0, 8000) });
+    checkLanguage: !!body.checkLanguage, rubric: String(body.rubric || '').slice(0, 8000), grid });
 
   // Double correction : la 1re fixe le découpage en questions, la 2e corrige indépendamment
   // les mêmes questions (intitulés et points maximum, sans les notes de la 1re).
@@ -447,7 +553,12 @@ async function grade(request, env) {
   const attempt = async (p) => {
     try { return normalize(await callModel(env, p, rubricPages, body.pages), total, unit); } catch (err) { errors.push(err); return null; }
   };
-  const a = (await attempt(prompt)) || (await attempt(prompt));
+  const impose = (list) => `${prompt}
+
+STRUCTURE IMPOSÉE : corrige exactement ces ${list.length} questions ou critères, dans cet ordre, avec ces intitulés et ces points maximum. Fais ta propre correction, indépendante.
+${list.map((q, i) => `${i + 1}. ${q.name} (sur ${fr(q.max)} points)`).join('\n')}`;
+  const promptA = grid ? impose(grid) : prompt;
+  const a = (await attempt(promptA)) || (await attempt(promptA));
   if (!a) {
     await env.DB.prepare('UPDATE access_keys SET pages = pages + ? WHERE key = ?').bind(n, key).run();
     const reasons = errors.map((e) => e?.message || '').join(' / ');
@@ -460,11 +571,9 @@ async function grade(request, env) {
     throw new HttpError(502, `La correction a échoué${hint}. Aucune page n'a été décomptée, réessayez.`);
   }
 
-  const structure = a.questions.map((q, i) => `${i + 1}. ${q.question} (sur ${fr(q.max)} points)`).join('\n');
-  const b = deep && a.questions.length ? await attempt(`${prompt}
-
-STRUCTURE IMPOSÉE : corrige exactement ces ${a.questions.length} questions, dans cet ordre, avec ces intitulés et ces points maximum. Fais ta propre correction, indépendante.
-${structure}`) : null;
+  const b = deep && a.questions.length
+    ? await attempt(grid ? promptA : impose(a.questions.map((q) => ({ name: q.question, max: q.max })))) : null;
+  if (grid) { snapToGrid(a, grid); if (b) snapToGrid(b, grid); }
   const flags = [];
   if (a.uncertain && a.reason) flags.push(a.reason);
   else if (a.uncertain) flags.push("L'IA a un doute sur cette copie.");
@@ -475,7 +584,15 @@ ${structure}`) : null;
     await env.DB.prepare('UPDATE access_keys SET pages = pages + ? WHERE key = ?').bind(body.pages.length, key).run();
     flags.push("La contre-vérification a échoué : correction simple seulement (une seule page décomptée par page).");
   }
-  const { reliability: score, questions } = compare(a, b, total);
+  const { reliability: score, questions: compared } = compare(a, b, total);
+  // Mode approfondi : la note retenue est la moyenne des deux corrections, question par question.
+  const sameShape = b && b.questions.length === a.questions.length;
+  const questions = compared.map((q, i) => {
+    if (!sameShape || q.second == null) return q;
+    const mean = Math.round(((q.points + b.questions[i].points) / 2) / unit) * unit;
+    return { ...q, first: q.points, points: Math.min(q.max, mean) };
+  }).map(({ raw, ...q }) => q);
+  const finalGrade = Math.min(total, questions.reduce((x, q) => x + q.points, 0));
   const reliability = b ? score : null; // sans 2e correction, pas de mesure d'accord
   const disputed = questions.filter((q) => q.second != null);
   if (reliability != null && reliability < RELIABILITY_ALERT) {
@@ -486,7 +603,7 @@ ${structure}`) : null;
 
   const left = await env.DB.prepare('SELECT pages FROM access_keys WHERE key = ?').bind(key).first();
   return json({
-    name: a.name, group: a.group, grade: a.grade, total, questions, comment: a.comment,
+    name: a.name, group: a.group, grade: finalGrade, total, questions, comment: a.comment,
     reliability, secondGrade: b ? b.grade : null, flags, pagesLeft: left?.pages ?? 0,
   });
 }

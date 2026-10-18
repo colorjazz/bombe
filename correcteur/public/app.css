@@ -37,6 +37,14 @@
 .analyzing { display: grid; justify-items: center; gap: .5rem; text-align: center; padding: 1.5rem 1rem; border: 1px dashed var(--primary); border-radius: 12px; background: rgba(99,102,241,.06); }
 .spinner { width: 28px; height: 28px; border-radius: 50%; border: 3px solid var(--line-2); border-top-color: var(--primary); animation: spin .8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+.grid-tools { display: grid; gap: .35rem; }
+.grid-editor { border: 1px solid rgba(99,102,241,.45); background: rgba(99,102,241,.06); border-radius: 12px; padding: .8rem; display: grid; gap: .6rem; }
+.grid-head { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+.grid-head b { flex: 1; }
+.crit { border: 1px solid var(--line); border-radius: 10px; padding: .6rem; background: var(--panel-2); display: grid; gap: .4rem; }
+.crit-top { display: grid; grid-template-columns: 1fr 5.5rem; gap: .4rem; }
+.crit textarea { font-size: .8rem; }
+.ok { color: var(--green); } .bad { color: var(--red); }
 .summary { font-size: .85rem; color: var(--muted); display: flex; justify-content: space-between; flex-wrap: wrap; gap: .5rem; }
 .summary b { color: var(--text); }
 

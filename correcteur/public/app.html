@@ -81,6 +81,16 @@
         <span>📋</span><span>Ajouter le corrigé (PDF ou photos) — <b>non facturé</b></span>
       </label>
       <div id="rubric-thumbs" class="thumbs"></div>
+      <div class="grid-tools">
+        <button id="make-grid" class="btn" type="button">✨ Préparer une grille détaillée (gratuit)</button>
+        <span class="muted small">Recommandé pour les travaux de rédaction : l'IA rédige des niveaux précis pour chaque critère, vous les validez, et la même grille s'applique à toutes les copies. Les notes deviennent beaucoup plus constantes.</span>
+      </div>
+      <div id="grid-editor" class="grid-editor" hidden>
+        <div class="grid-head"><b>Grille détaillée</b><span id="grid-total" class="small"></span>
+          <button id="grid-remove" class="btn ghost small" type="button">Retirer la grille</button></div>
+        <p class="muted small" style="margin:0">Relisez et ajustez au besoin. Un niveau par ligne, sous la forme « points : description ».</p>
+        <div id="grid-criteria" class="stack"></div>
+      </div>
 
       <p class="section-label">Copies des élèves</p>
       <label id="drop" class="drop">

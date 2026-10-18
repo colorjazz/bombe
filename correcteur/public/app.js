@@ -315,12 +315,15 @@ function renderSummary() {
   $('cost').textContent = n ? `${cost} page(s) seront décomptées` : '';
   const enough = state.pagesLeft == null || state.pagesLeft >= cost;
   const run = $('run');
-  run.disabled = state.running || state.detecting || !n || !grouped || tooLong || !enough || !(Number($('total').value) > 0);
+  const gridSum = state.grid ? state.grid.reduce((a, c) => a + (Number(c.max) || 0), 0) : null;
+  const gridOk = gridSum == null || Math.abs(gridSum - Number($('total').value)) < 1e-9;
+  run.disabled = state.running || state.detecting || !n || !grouped || tooLong || !enough || !gridOk || !(Number($('total').value) > 0);
   run.textContent = state.running ? 'Correction en cours…'
     : state.detecting ? 'Analyse des copies en cours…'
     : n && !mode ? 'Choisissez comment regrouper les pages'
     : n && !grouped ? 'Indiquez le nombre de pages par élève'
     : !enough ? 'Solde insuffisant : rechargez votre compte'
+    : n && !gridOk ? `La grille totalise ${fmt(gridSum)} points au lieu de ${fmt(Number($('total').value))}`
     : n ? `Corriger ${list.length} copie(s)` : 'Corriger';
   $('export').disabled = $('end').disabled = state.running || !state.results.length;
 }
@@ -331,6 +334,56 @@ function renderRubric() {
     h('button', { class: 'x', type: 'button', textContent: '×', onclick: () => {
       state.rubricPages = state.rubricPages.filter((x) => x !== p); renderRubric();
     } }))));
+}
+
+// ---------- Grille détaillée ----------
+
+const parseLevels = (text) => text.split('\n').map((line) => line.match(/^\s*(\d+(?:[.,]\d+)?)\s*(?:pts?|points?)?\s*[:–-]\s*(.+)$/i))
+  .filter(Boolean).map((m) => ({ points: Number(m[1].replace(',', '.')), description: m[2].trim() }));
+const levelsText = (levels) => levels.map((l) => `${fmt(l.points)} : ${l.description}`).join('\n');
+
+function updateGridTotal() {
+  if (!state.grid) return;
+  const sum = state.grid.reduce((a, c) => a + (Number(c.max) || 0), 0);
+  const total = Number($('total').value);
+  const el = $('grid-total');
+  el.textContent = `Total : ${fmt(sum)} / ${fmt(total)} points`;
+  el.className = `small ${Math.abs(sum - total) < 1e-9 ? 'ok' : 'bad'}`;
+  renderSummary();
+}
+
+function renderGrid() {
+  $('grid-editor').hidden = !state.grid;
+  $('make-grid').textContent = state.grid ? '✨ Régénérer la grille' : '✨ Préparer une grille détaillée (gratuit)';
+  if (!state.grid) { renderSummary(); return; }
+  $('grid-criteria').replaceChildren(...state.grid.map((c) => h('div', { class: 'crit' },
+    h('div', { class: 'crit-top' },
+      h('input', { type: 'text', value: c.name, 'aria-label': 'Critère', oninput: (e) => { c.name = e.target.value; } }),
+      h('input', { type: 'number', min: 0, step: 0.5, value: c.max, 'aria-label': 'Points maximum', title: 'Points maximum',
+        oninput: (e) => { c.max = Number(e.target.value); updateGridTotal(); } })),
+    h('textarea', { rows: Math.max(3, c.levels.length), value: levelsText(c.levels),
+      oninput: (e) => { c.levels = parseLevels(e.target.value); } }))));
+  updateGridTotal();
+}
+
+async function makeGrid() {
+  if (state.grid && !confirm('Remplacer la grille actuelle par une nouvelle ?')) return;
+  const btn = $('make-grid');
+  btn.disabled = true;
+  btn.textContent = '⏳ Un instant, l’IA prépare la grille…';
+  try {
+    const { grid } = await api('/api/rubric', { method: 'POST', body: {
+      rubric: $('rubric').value.trim(), rubricPages: state.rubricPages.map((p) => p.url),
+      total: Number($('total').value), wholePoints: $('whole').value === '1',
+    } });
+    state.grid = grid;
+    banner('info', 'Grille préparée : relisez-la et ajustez au besoin. Elle sera appliquée à toutes les copies.');
+  } catch (err) {
+    banner('err', err.message);
+  } finally {
+    btn.disabled = false;
+    renderGrid();
+  }
 }
 
 // ---------- Correction ----------
@@ -352,6 +405,7 @@ async function runAll() {
     checkLanguage: $('language').checked,
     rubric: $('rubric').value.trim(),
     rubricPages: state.rubricPages.map((p) => p.url),
+    grid: state.grid || undefined,
   };
 
   let next = 0, done = 0, failed = 0, stop = '';
@@ -466,7 +520,9 @@ function card(r) {
         const rowClass = () => [qq.points < qq.max ? 'lost' : '', qq.second != null ? 'disputed' : ''].join(' ');
         const tr = h('tr', { class: rowClass() });
         const second = qq.second != null
-          ? h('div', { class: 'second', textContent: `⚖ 2e correction : ${fmt(qq.second)} / ${fmt(qq.max)}` }) : null;
+          ? h('div', { class: 'second', textContent: qq.first != null
+            ? `⚖ Corrections : ${fmt(qq.first)} et ${fmt(qq.second)} → moyenne retenue`
+            : `⚖ 2e correction : ${fmt(qq.second)} / ${fmt(qq.max)}` }) : null;
         const input = h('input', { type: 'number', min: 0, max: qq.max, step: r.unit, value: qq.points,
           onchange: () => {
             const v = Math.round((Number(input.value) || 0) / r.unit) * r.unit;
@@ -543,7 +599,8 @@ function endSession() {
   Object.assign(state, { results: [], pages: [], rubricPages: [], status: {}, open: new Set(), exported: true });
   $('mode').value = ''; $('per').value = '';
   ['exam', 'group', 'rubric', 'search'].forEach((id) => { $(id).value = ''; });
-  renderRubric(); renderPages(); renderResults();
+  state.grid = null;
+  renderRubric(); renderGrid(); renderPages(); renderResults();
   banner('ok', 'Session terminée : la grille est téléchargée et tout a été effacé.');
 }
 
@@ -579,7 +636,9 @@ $('mode').addEventListener('change', () => {
 });
 $('per').addEventListener('input', () => { applyMode(); renderPages(); });
 $('clear-pages').addEventListener('click', () => { state.pages = []; state.status = {}; renderPages(); });
-$('total').addEventListener('input', renderSummary);
+$('total').addEventListener('input', () => { renderSummary(); updateGridTotal(); });
+$('make-grid').addEventListener('click', makeGrid);
+$('grid-remove').addEventListener('click', () => { state.grid = null; renderGrid(); });
 $('deep').addEventListener('change', renderSummary);
 $('run').addEventListener('click', runAll);
 $('search').addEventListener('input', renderResults);
