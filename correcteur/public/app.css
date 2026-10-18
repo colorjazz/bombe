@@ -28,6 +28,12 @@
 .split:hover { color: var(--primary-2); border-color: var(--primary); }
 .merge { font-size: .72rem; }
 
+.progress { border: 1px solid rgba(99,102,241,.4); background: rgba(99,102,241,.08); border-radius: 12px; padding: .75rem .9rem; display: grid; gap: .5rem; }
+.progress-top { display: flex; justify-content: space-between; gap: .75rem; flex-wrap: wrap; font-size: .85rem; }
+.progress-top span { color: var(--muted); }
+.bar { height: 6px; border-radius: 999px; background: var(--line); overflow: hidden; }
+.bar div { height: 100%; width: 0; background: var(--primary); border-radius: 999px; transition: width .4s; }
+.progress-warn { font-size: .8rem; color: #fcd34d; }
 .summary { font-size: .85rem; color: var(--muted); display: flex; justify-content: space-between; flex-wrap: wrap; gap: .5rem; }
 .summary b { color: var(--text); }
 

@@ -290,10 +290,31 @@ async function runAll() {
   };
 
   let next = 0, done = 0, failed = 0, stop = '';
+  // Temps restant : moyenne des copies déjà corrigées (ou estimation de départ), réparti sur les corrections en parallèle.
+  const durations = [];
+  const started = new Map(); // id → début de correction
+  const guess = (b) => ((settings.deep ? 30 : 15) + 4 * b.length) * 1000;
+  const updateProgress = () => {
+    const finished = done + failed;
+    const avg = (b) => (durations.length ? durations.reduce((x, y) => x + y, 0) / durations.length : guess(b));
+    let work = 0;
+    for (const b of list.slice(next)) work += avg(b);
+    for (const [, t] of started) work += Math.max(avg(list[0]) * 0.15, avg(list[0]) - (Date.now() - t));
+    const lanes = Math.max(1, Math.min(CONCURRENCY, list.length - finished));
+    const min = Math.ceil(work / lanes / 60000);
+    $('progress-count').textContent = `Correction : ${finished} / ${list.length} copie(s)`;
+    $('progress-eta').textContent = finished === list.length ? '' : min <= 1 ? 'Moins d’une minute restante' : `Environ ${min} min restantes`;
+    $('progress-bar').style.width = `${Math.round((finished / list.length) * 100)}%`;
+  };
+  $('progress').hidden = false;
+  updateProgress();
+  const timer = setInterval(updateProgress, 1000);
+
   const worker = async () => {
     while (next < list.length && !stop) {
       const b = list[next++];
       const id = b[0].id;
+      started.set(id, Date.now());
       state.status[id] = { state: 'running' };
       renderPages();
       try {
@@ -308,6 +329,7 @@ async function runAll() {
         state.pages = state.pages.filter((p) => !b.includes(p));
         if (state.pages[0]) state.pages[0].startsNew = true;
         delete state.status[id];
+        durations.push(Date.now() - started.get(id));
         done++;
         renderResults();
       } catch (err) {
@@ -315,10 +337,14 @@ async function runAll() {
         state.status[id] = { state: 'error', msg: err.message };
         if (err.status === 402 || err.status === 401) stop = err.message;
       }
+      started.delete(id);
+      updateProgress();
       renderPages();
     }
   };
   await Promise.all(Array.from({ length: CONCURRENCY }, worker));
+  clearInterval(timer);
+  $('progress').hidden = true;
   state.running = false;
   renderPages();
   if (stop) banner('err', stop);
@@ -508,7 +534,7 @@ document.querySelector('[data-close-newkey]').addEventListener('click', () => { 
 $('newkey-copy').addEventListener('click', () => navigator.clipboard?.writeText($('newkey-value').textContent));
 
 window.addEventListener('beforeunload', (e) => {
-  if (state.results.length && !state.exported) e.preventDefault();
+  if (state.running || (state.results.length && !state.exported)) e.preventDefault();
 });
 
 // ---------- Démarrage ----------
