@@ -44,7 +44,8 @@ npm run dev            # http://localhost:8787
 
 ## Réglages (`wrangler.toml`)
 
-- `AI_MODEL` : modèle utilisé (défaut `gemini-2.5-flash`).
+- `AI_MODEL` : modèle utilisé (défaut `gemini-3.5-flash`).
+- `AI_FALLBACK_MODEL` : modèle de secours si `AI_MODEL` est retiré (défaut `gemini-flash-latest`).
 - `AI_BASE_URL` : adresse de l'API (compatible OpenAI) ; permet de changer de fournisseur.
 - `TRIAL_PAGES` : pages offertes à l'essai (défaut 30).
 - Packs et prix (en $ CA) : constante `PACKS` dans `src/worker.js` (et textes dans `public/index.html`, `public/app.html`).

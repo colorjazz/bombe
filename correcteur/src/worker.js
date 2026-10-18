@@ -266,12 +266,13 @@ async function callModel(env, prompt, rubricPages, pages) {
   if (rubricPages.length) content.push({ type: 'text', text: 'CORRIGÉ / GRILLE DE L’ENSEIGNANT :' }, ...rubricPages.map(image));
   content.push({ type: 'text', text: `COPIE DE L'ÉLÈVE (${pages.length} page(s), dans l'ordre) :` }, ...pages.map(image));
 
+  let model = env.AI_MODEL;
   for (let attempt = 0; ; attempt++) {
     const res = await fetch(`${env.AI_BASE_URL}/chat/completions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${env.AI_API_KEY}` },
       body: JSON.stringify({
-        model: env.AI_MODEL,
+        model,
         messages: [{ role: 'system', content: prompt }, { role: 'user', content }],
         response_format: SCHEMA,
         temperature: 0,
@@ -283,6 +284,12 @@ async function callModel(env, prompt, rubricPages, pages) {
       if (!msg?.content) throw new Error('réponse vide');
       // Certains modèles entourent le JSON de ```json … ``` malgré la consigne.
       return JSON.parse(msg.content.replace(/^\s*```(?:json)?\s*|\s*```\s*$/g, ''));
+    }
+    // Modèle retiré par le fournisseur : on bascule sur l'alias « toujours à jour ».
+    if (res.status === 404 && env.AI_FALLBACK_MODEL && model !== env.AI_FALLBACK_MODEL) {
+      console.error(`Modèle ${model} introuvable, bascule sur ${env.AI_FALLBACK_MODEL}`);
+      model = env.AI_FALLBACK_MODEL;
+      continue;
     }
     if ((res.status === 429 || res.status >= 500) && attempt < 3) {
       await new Promise((r) => setTimeout(r, 1500 * 2 ** attempt));

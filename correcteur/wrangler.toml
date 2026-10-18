@@ -13,7 +13,9 @@ database_id = "9e056bae-7080-4877-80b5-db1305aa3424"
 
 [vars]
 # Gemini, via son accès compatible OpenAI. Pour changer de fournisseur, modifier ces deux lignes.
-AI_MODEL = "gemini-2.5-flash"
+AI_MODEL = "gemini-3.5-flash"
+# Utilisé automatiquement si AI_MODEL est retiré par Google (erreur 404).
+AI_FALLBACK_MODEL = "gemini-flash-latest"
 AI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai"
 TRIAL_PAGES = "30"
 # Secrets à définir avec `npx wrangler secret put` :
