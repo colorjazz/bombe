@@ -13,7 +13,9 @@ export const PACKS = {
 const MAX_PAGES_PER_COPY = 10;
 const MAX_RUBRIC_PAGES = 6;
 const MAX_IMAGE_CHARS = 2_500_000; // ~1,8 Mo par page une fois décodée
-const TRIAL_PERIOD_MS = 90 * 24 * 3600 * 1000;
+// Une école entière partage souvent la même adresse IP : on plafonne par jour au lieu de bloquer.
+const TRIALS_PER_IP_PER_DAY = 10;
+const DAY_MS = 24 * 3600 * 1000;
 const DIVERGENCE_RATIO = 0.075; // 1,5 point sur 20
 
 export default {
@@ -92,14 +94,16 @@ async function trial(request, env) {
   const ip = request.headers.get('CF-Connecting-IP') || 'inconnue';
   const ipHash = await sha256(`${env.IP_SALT || ''}:${ip}`);
   const now = Date.now();
-  const existing = await env.DB.prepare('SELECT created_at FROM trials WHERE ip_hash = ?').bind(ipHash).first();
-  if (existing && now - existing.created_at < TRIAL_PERIOD_MS) {
-    throw new HttpError(429, "L'essai gratuit a déjà été utilisé depuis cette connexion. Choisissez un pack pour continuer.");
+  const recent = await env.DB.prepare('SELECT COUNT(*) AS n FROM trials WHERE ip_hash = ? AND created_at > ?')
+    .bind(ipHash, now - DAY_MS).first();
+  if (recent.n >= TRIALS_PER_IP_PER_DAY) {
+    throw new HttpError(429, "Trop d'essais gratuits depuis cette connexion aujourd'hui. Réessayez demain ou choisissez un pack.");
   }
   const key = newKey();
   const pages = Number(env.TRIAL_PAGES) || 30;
   await env.DB.batch([
-    env.DB.prepare('INSERT OR REPLACE INTO trials (ip_hash, created_at) VALUES (?, ?)').bind(ipHash, now),
+    env.DB.prepare('DELETE FROM trials WHERE created_at < ?').bind(now - DAY_MS),
+    env.DB.prepare('INSERT INTO trials (ip_hash, created_at) VALUES (?, ?)').bind(ipHash, now),
     env.DB.prepare('INSERT INTO access_keys (key, pages, is_trial, created_at) VALUES (?, ?, 1, ?)').bind(key, pages, now),
   ]);
   return json({ key, pages });

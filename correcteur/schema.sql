@@ -15,8 +15,9 @@ CREATE TABLE IF NOT EXISTS payments (
   created_at INTEGER NOT NULL
 );
 
--- Un essai gratuit par adresse IP (hachée) et par période.
+-- Essais gratuits récents par adresse IP (hachée), effacés après 24 h. Sert à plafonner les abus.
 CREATE TABLE IF NOT EXISTS trials (
-  ip_hash    TEXT PRIMARY KEY,
+  ip_hash    TEXT NOT NULL,
   created_at INTEGER NOT NULL
 );
+CREATE INDEX IF NOT EXISTS trials_ip ON trials (ip_hash, created_at);
