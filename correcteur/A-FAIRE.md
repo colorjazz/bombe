@@ -8,7 +8,7 @@
 - Achat avec code promo à 100 % crédité aussi.
 
 ## À vérifier
-1. Webhook : Stripe → Webhooks → Événements envoyés → statut 200 pour l'achat test avec code promo.
+1. ~~Webhook~~ : vérifié, statut 200 (secret STRIPE_WEBHOOK_SECRET ajouté comme Secret dans le Worker).
 2. Code `TESTPROF` : le désactiver, ou le garder (5 utilisations) pour des profs testeurs.
 3. Stripe (production) : nom du compte et nom public « Brûle la pile », logo, langue des courriels en français.
 
