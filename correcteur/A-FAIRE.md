@@ -10,6 +10,16 @@
 - Gemini : niveau Payant 1, recharge automatique, ancienne clé supprimée.
 - EFVP signée.
 
+## Tests d'enseignants (18 oct.) et correctifs
+- 5 profils testeurs (français, univers social, sciences, anglais Ontario, direction / Loi 25) avec le vrai Gemini.
+- Lot 1 : note finale fiable, copies illisibles non notées ni facturées, tentatives de manipulation signalées,
+  2e correction par un autre modèle, sévérité sans corrigé, mode Rapide par défaut, CSV par question,
+  virgule décimale, Échap, mobile, bibliothèques hébergées sur le site, nettoyage horaire des IP.
+- Lot 2 : surlignages recalés sur l'encre (45-63 % → 86-96 % de cadres justes, voir tools/surlignages),
+  ajout d'une faute oubliée, impression une feuille par page, réglages mémorisés.
+- Lot 3 : option « Masquer le nom de l'élève », politique de confidentialité et conditions complétées.
+- À faire : mettre à jour l'EFVP (Cloudflare, Google Fonts, durées, masquage des noms).
+
 ## Reste à faire
 1. Double authentification : Stripe, Cloudflare, Google, Hover, GitHub (garder les codes de secours).
 2. Code promo `TESTPROF` : le désactiver, ou le garder (5 utilisations) pour des profs testeurs.
