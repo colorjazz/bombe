@@ -45,6 +45,7 @@ const ROUTES = {
   'POST /api/split': split,
   'POST /api/rubric': rubric,
   'POST /api/language': language,
+  'POST /api/locate': locate,
 };
 
 // ---------- Utilitaires ----------
@@ -353,8 +354,19 @@ const NATIVE_LANG_SCHEMA = {
   required: ['nom', 'groupe', 'fautes'],
 };
 
-async function geminiVision(env, prompt, dataUrl) {
+const inlineImage = (dataUrl) => {
   const [, mimeType, data] = dataUrl.match(/^data:([^;]+);base64,(.*)$/s) || [];
+  return { inlineData: { mimeType, data } };
+};
+
+async function geminiVision(env, prompt, dataUrl) {
+  const raw = await geminiNative(env, [{ text: prompt }, inlineImage(dataUrl)], NATIVE_LANG_SCHEMA);
+  for (const f of raw.fautes || []) f.box = f.box_2d;
+  return raw;
+}
+
+// Appel natif à Gemini (generateContent) avec réponse JSON structurée.
+async function geminiNative(env, parts, schema) {
   const base = env.GEMINI_NATIVE_URL || 'https://generativelanguage.googleapis.com/v1beta';
   let model = env.AI_MODEL;
   for (let attempt = 0; ; attempt++) {
@@ -362,16 +374,14 @@ async function geminiVision(env, prompt, dataUrl) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': env.AI_API_KEY },
       body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: prompt }, { inlineData: { mimeType, data } }] }],
-        generationConfig: { responseMimeType: 'application/json', responseSchema: NATIVE_LANG_SCHEMA },
+        contents: [{ role: 'user', parts }],
+        generationConfig: { responseMimeType: 'application/json', responseSchema: schema },
       }),
     });
     if (res.ok) {
       const text = (await res.json()).candidates?.[0]?.content?.parts?.map((p) => p.text || '').join('');
       if (!text) throw new Error('réponse vide');
-      const raw = JSON.parse(text.replace(/^\s*```(?:json)?\s*|\s*```\s*$/g, ''));
-      for (const f of raw.fautes || []) f.box = f.box_2d;
-      return raw;
+      return JSON.parse(text.replace(/^\s*```(?:json)?\s*|\s*```\s*$/g, ''));
     }
     if (res.status === 404 && env.AI_FALLBACK_MODEL && model !== env.AI_FALLBACK_MODEL) { model = env.AI_FALLBACK_MODEL; continue; }
     if ((res.status === 429 || res.status >= 500) && attempt < 3) { await new Promise((r) => setTimeout(r, 1500 * 2 ** attempt)); continue; }
@@ -380,11 +390,51 @@ async function geminiVision(env, prompt, dataUrl) {
   }
 }
 
+// 2e passe de précision : l'appli envoie des zones agrandies autour de chaque faute, et Gemini y encadre le mot exact.
+// Non facturé (inclus dans l'analyse de la langue).
+const LOCATE_BATCH = 30;
+const LOCATE_SCHEMA = {
+  type: 'OBJECT',
+  properties: {
+    zones: {
+      type: 'ARRAY',
+      items: {
+        type: 'OBJECT',
+        properties: { numero: { type: 'INTEGER' }, trouve: { type: 'BOOLEAN' }, box_2d: { type: 'ARRAY', items: { type: 'INTEGER' } } },
+        required: ['numero', 'trouve', 'box_2d'],
+      },
+    },
+  },
+  required: ['zones'],
+};
+
+async function locate(request, env) {
+  await getKey(env, bearer(request));
+  const { items } = await readJson(request);
+  if (!Array.isArray(items) || !items.length || items.length > LOCATE_BATCH) throw new HttpError(400, `Entre 1 et ${LOCATE_BATCH} zones`);
+  for (const it of items) {
+    if (typeof it?.image !== 'string' || !/^data:image\/(jpeg|png|webp);base64,/.test(it.image) || it.image.length > MAX_THUMB_CHARS) throw new HttpError(400, 'Zone invalide');
+  }
+  const parts = [{ text: [
+    "Chaque image ci-dessous est un agrandissement d'une copie manuscrite ou dactylographiée.",
+    "Pour chaque image numérotée, trouve le mot ou groupe de mots indiqué et donne le rectangle qui l'encadre exactement (toutes ses lettres, sans déborder sur les mots voisins).",
+    "Format box_2d : [ymin, xmin, ymax, xmax] normalisé de 0 à 1000 par rapport à CETTE image. Si le texte n'apparaît pas dans l'image, mets trouve à false.",
+  ].join('\n') }];
+  items.forEach((it, i) => parts.push({ text: `Image ${i + 1} — texte à trouver : « ${String(it.text || '').slice(0, 120)} »` }, inlineImage(it.image)));
+  let raw;
+  try { raw = await geminiNative(env, parts, LOCATE_SCHEMA); } catch (err) {
+    console.error('Précision impossible :', err.message);
+    throw new HttpError(502, 'Affinage impossible');
+  }
+  const byNumber = new Map((raw.zones || []).map((z) => [Number(z.numero), z]));
+  return json({ boxes: items.map((_, i) => { const z = byNumber.get(i + 1); return z?.trouve ? cleanBox(z.box_2d, 1000) : null; }) });
+}
+
 // Rectangle [ymin, xmin, ymax, xmax] sur 1000, ou null s'il est inutilisable.
-function cleanBox(box) {
+function cleanBox(box, maxHeight = 400) {
   if (!Array.isArray(box) || box.length !== 4) return null;
   const [y0, x0, y1, x1] = box.map((v) => Math.max(0, Math.min(1000, Math.round(Number(v)))));
-  return y1 > y0 && x1 > x0 && y1 - y0 < 400 ? [y0, x0, y1, x1] : null;
+  return y1 > y0 && x1 > x0 && y1 - y0 <= maxHeight ? [y0, x0, y1, x1] : null;
 }
 
 async function language(request, env) {
