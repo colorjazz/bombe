@@ -12,13 +12,13 @@
 2. Code `TESTPROF` : le désactiver, ou le garder (5 utilisations) pour des profs testeurs.
 3. Stripe (production) : nom du compte et nom public « Brûle la pile », logo, langue des courriels en français.
 
-Fait le 18 oct. : achat test avec code promo à 100 % → page de remerciement OK ; achat de 14 $ remboursé
+Fait le 18 oct. : surlignages de la visionneuse alignés en mode zoom ; achat test avec code promo à 100 % → page de remerciement OK ; achat de 14 $ remboursé
 (un remboursement ne retire pas les pages de la clé).
 
 ## Avant la publicité
 5. brulelapile.ca : attendre « Active » dans Cloudflare (serveurs dora / trevor chez Hover), puis Worker → Domains → Add Domain
    (`brulelapile.ca` et `www.brulelapile.ca`). Ajouter aussi `www.burnthepile.com` si ce n'est pas fait.
-6. Email Routing : `hello@burnthepile.com` et `bonjour@brulelapile.ca` → Gmail.
+6. ~~Email Routing~~ : `hello@burnthepile.com` et `bonjour@brulelapile.ca` → Gmail, testés.
 7. Base D1 (console), une seule fois, avant la première vraie vente :
    `DELETE FROM access_keys WHERE key IN (SELECT key FROM payments WHERE session_id LIKE 'cs_test_%'); DELETE FROM payments WHERE session_id LIKE 'cs_test_%';`
 8. Gemini : facturation activée, ancienne clé (vue en photo) supprimée.
