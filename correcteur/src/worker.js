@@ -340,8 +340,14 @@ async function grade(request, env) {
   const ok = runs.filter((r) => r.status === 'fulfilled').map((r) => normalize(r.value, total, unit));
   if (!ok.length) {
     await env.DB.prepare('UPDATE access_keys SET pages = pages + ? WHERE key = ?').bind(n, key).run();
-    console.error('Correction impossible :', runs.map((r) => r.reason?.message).join(' / '));
-    throw new HttpError(502, "La correction a échoué. Aucune page n'a été décomptée, réessayez.");
+    const reasons = runs.map((r) => r.reason?.message || '').join(' / ');
+    console.error('Correction impossible :', reasons);
+    const code = (reasons.match(/IA (\d{3})/) || [])[1];
+    const hint = code === '401' || code === '403' ? ' (clé IA refusée : vérifiez AI_API_KEY)'
+      : code === '429' ? ' (limite du fournisseur IA atteinte : facturation activée ?)'
+      : code === '400' || code === '404' ? ` (requête refusée par l'IA, code ${code} : modèle ou format)`
+      : code ? ` (erreur IA ${code})` : reasons.includes('JSON') ? " (réponse de l'IA illisible)" : '';
+    throw new HttpError(502, `La correction a échoué${hint}. Aucune page n'a été décomptée, réessayez.`);
   }
 
   const [a, b] = ok;
