@@ -151,6 +151,8 @@ button.rel { cursor: pointer; font-family: inherit; }
 .viewer-body { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 1rem; min-height: 0; overflow: hidden; }
 @media (max-width: 800px) { .viewer-body { grid-template-columns: 1fr; overflow: auto; } }
 .viewer-pages, .viewer-list { overflow-y: auto; display: grid; gap: .75rem; align-content: start; }
+/* Chaque page garde la hauteur de son image (sinon le cadre est écrasé et les surlignages se décalent au zoom). */
+.viewer-pages { grid-auto-rows: max-content; }
 .page-wrap { position: relative; border-radius: 8px; overflow: hidden; background: #fff; width: fit-content; max-width: 100%; margin: 0 auto; }
 /* Par défaut, la feuille entière tient dans la fenêtre ; un clic sur l'image agrandit à la largeur. */
 .page-wrap img { display: block; max-width: 100%; max-height: calc(92vh - 9rem); width: auto; height: auto; cursor: zoom-in; }
