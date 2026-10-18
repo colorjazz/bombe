@@ -23,6 +23,7 @@ export default {
     const url = new URL(request.url);
     if (!url.pathname.startsWith('/api/')) return env.ASSETS.fetch(request);
     try {
+      await ensureSchema(env);
       const route = ROUTES[`${request.method} ${url.pathname}`];
       if (!route) return json({ error: 'Introuvable' }, 404);
       return await route(request, env, url);
@@ -44,6 +45,21 @@ const ROUTES = {
 };
 
 // ---------- Utilitaires ----------
+
+// Crée les tables au besoin (une fois par instance) : aucune manipulation manuelle de la base.
+// Garder en accord avec schema.sql.
+const DB_SCHEMA = [
+  `CREATE TABLE IF NOT EXISTS access_keys (key TEXT PRIMARY KEY, pages INTEGER NOT NULL DEFAULT 0, email TEXT,
+     is_trial INTEGER NOT NULL DEFAULT 0, created_at INTEGER NOT NULL)`,
+  `CREATE TABLE IF NOT EXISTS payments (session_id TEXT PRIMARY KEY, key TEXT NOT NULL, pages INTEGER NOT NULL, created_at INTEGER NOT NULL)`,
+  `CREATE TABLE IF NOT EXISTS trials (ip_hash TEXT NOT NULL, created_at INTEGER NOT NULL)`,
+  `CREATE INDEX IF NOT EXISTS trials_ip ON trials (ip_hash, created_at)`,
+];
+let schemaReady;
+function ensureSchema(env) {
+  schemaReady ||= env.DB.batch(DB_SCHEMA.map((q) => env.DB.prepare(q))).catch((err) => { schemaReady = null; throw err; });
+  return schemaReady;
+}
 
 class HttpError extends Error {
   constructor(status, message) { super(message); this.status = status; }
@@ -112,7 +128,7 @@ async function trial(request, env) {
 // ---------- Paiement Stripe ----------
 
 async function stripe(env, method, path, params) {
-  const res = await fetch(`https://api.stripe.com/v1/${path}`, {
+  const res = await fetch(`${env.STRIPE_API_BASE || 'https://api.stripe.com/v1'}/${path}`, {
     method,
     headers: {
       Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`,
