@@ -310,10 +310,12 @@ function compare(a, b, total) {
   const key = (q) => q.question.toLowerCase().replace(/[^a-z0-9]+/g, '');
   const byKey = new Map((b?.questions || []).map((q) => [key(q), q]));
   let gap = 0;
+  // La 2e correction reçoit la structure de la 1re : même nombre de questions → comparaison par position.
+  const sameShape = b && b.questions.length === a.questions.length;
   const questions = a.questions.map((q, i) => {
     if (!b) return { ...q, second: null };
-    const other = byKey.get(key(q)) || b.questions[i];
-    if (!other) { gap += q.max; return { ...q, second: null, unmatched: true }; }
+    const other = sameShape ? b.questions[i] : byKey.get(key(q));
+    if (!other) return { ...q, second: null }; // découpage différent : seul l'écart de note totale compte
     const d = Math.abs(q.points - other.points);
     gap += d;
     return { ...q, second: d > 1e-9 ? other.points : null };
@@ -367,12 +369,17 @@ async function grade(request, env) {
   const prompt = buildPrompt({ exam: String(body.exam || '').slice(0, 200), total, wholePoints: !!body.wholePoints,
     checkLanguage: !!body.checkLanguage, rubric: String(body.rubric || '').slice(0, 8000) });
 
-  // Double correction indépendante : un écart important signale la copie à l'enseignant.
-  const runs = await Promise.allSettled([0, 1].map(() => callModel(env, prompt, body.rubricPages || [], body.pages)));
-  const ok = runs.filter((r) => r.status === 'fulfilled').map((r) => normalize(r.value, total, unit));
-  if (!ok.length) {
+  // Double correction : la 1re fixe le découpage en questions, la 2e corrige indépendamment
+  // les mêmes questions (intitulés et points maximum, sans les notes de la 1re).
+  const rubricPages = body.rubricPages || [];
+  const errors = [];
+  const attempt = async (p) => {
+    try { return normalize(await callModel(env, p, rubricPages, body.pages), total, unit); } catch (err) { errors.push(err); return null; }
+  };
+  const a = (await attempt(prompt)) || (await attempt(prompt));
+  if (!a) {
     await env.DB.prepare('UPDATE access_keys SET pages = pages + ? WHERE key = ?').bind(n, key).run();
-    const reasons = runs.map((r) => r.reason?.message || '').join(' / ');
+    const reasons = errors.map((e) => e?.message || '').join(' / ');
     console.error('Correction impossible :', reasons);
     const code = (reasons.match(/IA (\d{3})/) || [])[1];
     const hint = code === '401' || code === '403' ? ' (clé IA refusée : vérifiez AI_API_KEY)'
@@ -382,7 +389,11 @@ async function grade(request, env) {
     throw new HttpError(502, `La correction a échoué${hint}. Aucune page n'a été décomptée, réessayez.`);
   }
 
-  const [a, b] = ok;
+  const structure = a.questions.map((q, i) => `${i + 1}. ${q.question} (sur ${fr(q.max)} points)`).join('\n');
+  const b = a.questions.length ? await attempt(`${prompt}
+
+STRUCTURE IMPOSÉE : corrige exactement ces ${a.questions.length} questions, dans cet ordre, avec ces intitulés et ces points maximum. Fais ta propre correction, indépendante.
+${structure}`) : null;
   const flags = [];
   if (a.uncertain && a.reason) flags.push(a.reason);
   else if (a.uncertain) flags.push("L'IA a un doute sur cette copie.");
