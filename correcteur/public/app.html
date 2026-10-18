@@ -64,6 +64,12 @@
           <select id="whole"><option value="0">Demi-points permis</option><option value="1">Points entiers seulement</option></select>
         </label>
       </div>
+      <label class="field">Mode de correction
+        <select id="deep">
+          <option value="1">Approfondie : double correction et fiabilité (1 page = 2 pages décomptées)</option>
+          <option value="0">Rapide : une seule correction, 2× plus vite (1 page = 1 page décomptée)</option>
+        </select>
+      </label>
       <label class="toggle"><input id="language" type="checkbox"> Évaluer aussi l'orthographe et la grammaire</label>
 
       <p class="section-label">Corrigé ou grille de correction</p>
@@ -126,7 +132,7 @@
   <div id="buy" class="modal" hidden>
     <div class="panel">
       <div style="display:flex;justify-content:space-between;align-items:center"><h2 style="margin:0">Choisir un pack</h2><button class="icon-btn" type="button" data-close-buy aria-label="Fermer">×</button></div>
-      <p class="muted small" style="margin:0">Paiement unique par Stripe. Les pages n'expirent pas. Une page = une page de copie corrigée (le corrigé est gratuit).</p>
+      <p class="muted small" style="margin:0">Paiement unique par Stripe. Les pages n'expirent pas. Une page de copie = 1 page en mode rapide, 2 en mode approfondi. Le corrigé est gratuit.</p>
       <div class="packs">
         <div class="pack"><div><b>Découverte</b><div class="muted small">200 pages · ~7 ¢ la page</div></div><button class="btn" data-pack="decouverte">14 $</button></div>
         <div class="pack"><div><b>Session</b> <span class="pill">Populaire</span><div class="muted small">500 pages · ~5,8 ¢ la page</div></div><button class="btn primary" data-pack="session">29 $</button></div>
@@ -147,6 +153,7 @@
         <div><span class="rel lo">moins de 80 %</span> <span class="small">Désaccord important : copie signalée ⚠, à vérifier.</span></div>
       </div>
       <p class="muted small" style="margin:0">Les questions en désaccord sont marquées <b style="color:var(--amber)">⚖</b>, avec la note de l'autre correction. La fiabilité baisse aussi si l'IA signale un doute (écriture illisible, copie incomplète), si le nom est illisible ou si le barème ne totalise pas.</p>
+      <p class="muted small" style="margin:0">La fiabilité n'existe qu'en mode <b>Approfondie</b>. En mode Rapide, une seule correction est faite : seuls les doutes signalés par l'IA apparaissent.</p>
       <p class="muted small" style="margin:0">Exemple : 1 point d'écart sur 20 donne environ 85 %. Une fiabilité élevée n'est pas une garantie : vous restez le correcteur. Un corrigé précis (points par question, réponses acceptées) augmente la fiabilité.</p>
       <button class="btn primary" type="button" data-close-rel>Compris</button>
     </div>

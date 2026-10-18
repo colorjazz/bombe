@@ -358,7 +358,10 @@ async function grade(request, env) {
   checkImages(body.rubricPages || [], MAX_RUBRIC_PAGES, 'Corrigé');
 
   // Réserve les pages de façon atomique (le corrigé n'est pas facturé).
-  const n = body.pages.length;
+  // Mode approfondi : deux corrections, donc deux pages décomptées par page de copie.
+  const deep = body.deep !== false;
+  const perPage = deep ? 2 : 1;
+  const n = body.pages.length * perPage;
   const reserved = await env.DB.prepare('UPDATE access_keys SET pages = pages - ? WHERE key = ? AND pages >= ?').bind(n, key, n).run();
   if (!reserved.meta.changes) {
     await getKey(env, key); // 401 si la clé n'existe pas
@@ -390,7 +393,7 @@ async function grade(request, env) {
   }
 
   const structure = a.questions.map((q, i) => `${i + 1}. ${q.question} (sur ${fr(q.max)} points)`).join('\n');
-  const b = a.questions.length ? await attempt(`${prompt}
+  const b = deep && a.questions.length ? await attempt(`${prompt}
 
 STRUCTURE IMPOSÉE : corrige exactement ces ${a.questions.length} questions, dans cet ordre, avec ces intitulés et ces points maximum. Fais ta propre correction, indépendante.
 ${structure}`) : null;
@@ -399,10 +402,15 @@ ${structure}`) : null;
   else if (a.uncertain) flags.push("L'IA a un doute sur cette copie.");
   if (!a.name) flags.push('Nom illisible ou absent.');
   if (Math.abs(a.sumMax - total) > 1e-9) flags.push(`Les questions totalisent ${fr(a.sumMax)} points au lieu de ${fr(total)}.`);
-  if (!b) flags.push('Une seule correction a pu être faite (pas de contre-vérification).');
-  const { reliability, questions } = compare(a, b, total);
+  if (deep && !b) {
+    // La contre-vérification a échoué : on ne facture que la correction simple.
+    await env.DB.prepare('UPDATE access_keys SET pages = pages + ? WHERE key = ?').bind(body.pages.length, key).run();
+    flags.push("La contre-vérification a échoué : correction simple seulement (une seule page décomptée par page).");
+  }
+  const { reliability: score, questions } = compare(a, b, total);
+  const reliability = b ? score : null; // sans 2e correction, pas de mesure d'accord
   const disputed = questions.filter((q) => q.second != null);
-  if (reliability < RELIABILITY_ALERT) {
+  if (reliability != null && reliability < RELIABILITY_ALERT) {
     flags.push(disputed.length
       ? `Fiabilité ${reliability} % : les deux corrections ne s'entendent pas sur ${disputed.map((q) => q.question).join(', ')}.`
       : `Fiabilité ${reliability} % : vérifiez cette copie.`);

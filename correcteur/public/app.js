@@ -249,8 +249,9 @@ function renderSummary() {
   const n = state.pages.length;
   const tooLong = list.some((b) => b.length > MAX_PAGES_PER_COPY);
   $('summary').innerHTML = n ? `<b>${list.length}</b> copie(s) · <b>${n}</b> page(s)` : 'Aucune copie importée';
-  $('cost').textContent = n ? `${n} page(s) seront décomptées` : '';
-  const enough = state.pagesLeft == null || state.pagesLeft >= n;
+  const cost = n * ($('deep').value === '1' ? 2 : 1);
+  $('cost').textContent = n ? `${cost} page(s) seront décomptées` : '';
+  const enough = state.pagesLeft == null || state.pagesLeft >= cost;
   const run = $('run');
   run.disabled = state.running || !n || tooLong || !enough || !(Number($('total').value) > 0);
   run.textContent = state.running ? 'Correction en cours…'
@@ -282,6 +283,7 @@ async function runAll() {
     group: $('group').value.trim(),
     total: Number($('total').value),
     wholePoints: $('whole').value === '1',
+    deep: $('deep').value === '1',
     checkLanguage: $('language').checked,
     rubric: $('rubric').value.trim(),
     rubricPages: state.rubricPages.map((p) => p.url),
@@ -341,11 +343,12 @@ function renderStats() {
   const pct = graded.map((r) => (r.grade / r.total) * 100);
   const avg = pct.reduce((a, b) => a + b, 0) / pct.length;
   const flagged = graded.filter((r) => r.flags.length).length;
-  const rel = graded.reduce((a, r) => a + (r.reliability ?? 0), 0) / graded.length;
+  const withRel = graded.filter((r) => r.reliability != null);
+  const rel = withRel.length ? `${fmt(withRel.reduce((a, r) => a + r.reliability, 0) / withRel.length)} %` : '—';
   const stat = (v, l) => h('div', { class: 'stat' }, h('div', { class: 'v', textContent: v }), h('div', { class: 'l', textContent: l }));
   $('stats').replaceChildren(stat(String(graded.length), 'copies'),
     stat(`${fmt(avg)} %`, `moyenne (min ${fmt(Math.min(...pct))} – max ${fmt(Math.max(...pct))})`),
-    h('div', { class: 'stat' }, h('div', { class: 'v', textContent: `${fmt(rel)} %` }),
+    h('div', { class: 'stat' }, h('div', { class: 'v', textContent: rel }),
       h('div', { class: 'l' }, 'fiabilité moyenne ', infoButton())), stat(String(flagged), 'à vérifier ⚠'));
 }
 
@@ -481,6 +484,7 @@ $('mode').addEventListener('change', () => { applyMode(); renderPages(); });
 $('per').addEventListener('change', () => { applyMode(); renderPages(); });
 $('clear-pages').addEventListener('click', () => { state.pages = []; state.status = {}; renderPages(); });
 $('total').addEventListener('input', renderSummary);
+$('deep').addEventListener('change', renderSummary);
 $('run').addEventListener('click', runAll);
 $('search').addEventListener('input', renderResults);
 $('export').addEventListener('click', exportCSV);
