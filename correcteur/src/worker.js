@@ -329,34 +329,56 @@ const LEVELS = {
   secondaire3: 'élève de secondaire 3-5 : explications précises avec la règle',
   cegep: 'étudiant de cégep ou adulte : exigence élevée, explications précises',
 };
-const LANG_SCHEMA = {
-  type: 'json_schema',
-  json_schema: {
-    name: 'fautes',
-    schema: {
-      type: 'object',
-      required: ['nom', 'groupe', 'fautes'],
-      properties: {
-        nom: { type: 'string' },
-        groupe: { type: 'string' },
-        fautes: {
-          type: 'array',
-          items: {
-            type: 'object',
-            required: ['texte', 'correction', 'categorie', 'explication', 'box'],
-            properties: {
-              texte: { type: 'string' },
-              correction: { type: 'string' },
-              categorie: { type: 'string', enum: Object.keys(LANG_CATEGORIES) },
-              explication: { type: 'string' },
-              box: { type: 'array', items: { type: 'integer' } },
-            },
-          },
+// Le repérage des positions est nettement plus précis avec l'accès natif de Gemini qu'avec l'accès compatible OpenAI.
+const NATIVE_LANG_SCHEMA = {
+  type: 'OBJECT',
+  properties: {
+    nom: { type: 'STRING' },
+    groupe: { type: 'STRING' },
+    fautes: {
+      type: 'ARRAY',
+      items: {
+        type: 'OBJECT',
+        properties: {
+          texte: { type: 'STRING', description: 'Le mot ou groupe de mots exact contenant la faute.' },
+          correction: { type: 'STRING' },
+          categorie: { type: 'STRING', enum: Object.keys(LANG_CATEGORIES) },
+          explication: { type: 'STRING' },
+          box_2d: { type: 'ARRAY', items: { type: 'INTEGER' }, description: 'Rectangle [ymin, xmin, ymax, xmax] normalisé de 0 à 1000 autour du mot fautif.' },
         },
+        required: ['texte', 'correction', 'categorie', 'explication', 'box_2d'],
       },
     },
   },
+  required: ['nom', 'groupe', 'fautes'],
 };
+
+async function geminiVision(env, prompt, dataUrl) {
+  const [, mimeType, data] = dataUrl.match(/^data:([^;]+);base64,(.*)$/s) || [];
+  const base = env.GEMINI_NATIVE_URL || 'https://generativelanguage.googleapis.com/v1beta';
+  let model = env.AI_MODEL;
+  for (let attempt = 0; ; attempt++) {
+    const res = await fetch(`${base}/models/${model}:generateContent`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': env.AI_API_KEY },
+      body: JSON.stringify({
+        contents: [{ role: 'user', parts: [{ text: prompt }, { inlineData: { mimeType, data } }] }],
+        generationConfig: { responseMimeType: 'application/json', responseSchema: NATIVE_LANG_SCHEMA },
+      }),
+    });
+    if (res.ok) {
+      const text = (await res.json()).candidates?.[0]?.content?.parts?.map((p) => p.text || '').join('');
+      if (!text) throw new Error('réponse vide');
+      const raw = JSON.parse(text.replace(/^\s*```(?:json)?\s*|\s*```\s*$/g, ''));
+      for (const f of raw.fautes || []) f.box = f.box_2d;
+      return raw;
+    }
+    if (res.status === 404 && env.AI_FALLBACK_MODEL && model !== env.AI_FALLBACK_MODEL) { model = env.AI_FALLBACK_MODEL; continue; }
+    if ((res.status === 429 || res.status >= 500) && attempt < 3) { await new Promise((r) => setTimeout(r, 1500 * 2 ** attempt)); continue; }
+    const detail = await res.text().catch(() => '');
+    throw new Error(`IA ${res.status} : ${detail.slice(0, 300)}`);
+  }
+}
 
 // Rectangle [ymin, xmin, ymax, xmax] sur 1000, ou null s'il est inutilisable.
 function cleanBox(box) {
@@ -387,12 +409,11 @@ async function language(request, env) {
     `Relève UNIQUEMENT ces types de fautes : ${cats.map((c) => LANG_CATEGORIES[c]).join(' ; ')}.`,
     "Relève seulement de vraies fautes, pas des choix de style. Si un mot est illisible, ne l'invente pas et ne le compte pas comme une faute.",
     "Pour chaque faute : « texte » = le mot ou groupe de mots fautif tel qu'écrit ; « correction » = la forme correcte ; « explication » = la règle en une phrase courte.",
-    "« box » = le rectangle qui entoure exactement le mot fautif sur l'image, au format [ymin, xmin, ymax, xmax], en entiers de 0 à 1000 (0,0 = coin supérieur gauche). Le rectangle doit couvrir le mot entier sur sa ligne, pas toute la ligne.",
+    "« box_2d » = les coordonnées du rectangle qui encadre le MOT COMPLET ou l'EXPRESSION COMPLÈTE contenant la faute, au format [ymin, xmin, ymax, xmax] normalisé entre 0 et 1000 (ymin = haut, xmin = gauche, ymax = bas, xmax = droite).",
     "Relève chaque faute séparément, même si elle se répète. Recopie aussi le nom et le groupe de l'élève s'ils sont écrits sur la page (sinon chaînes vides).",
   ].join('\n');
 
-  const results = await Promise.allSettled(body.pages.map((url) => aiChat(env, system,
-    [{ type: 'text', text: 'Page de la copie :' }, { type: 'image_url', image_url: { url, detail: 'high' } }], LANG_SCHEMA)));
+  const results = await Promise.allSettled(body.pages.map((url) => geminiVision(env, system, url)));
   const failed = results.filter((x) => x.status === 'rejected').length;
   if (failed) {
     await env.DB.prepare('UPDATE access_keys SET pages = pages + ? WHERE key = ?').bind(failed, key).run();
