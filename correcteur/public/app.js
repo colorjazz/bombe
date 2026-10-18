@@ -10,6 +10,7 @@ const KEY_STORAGE = 'ce.accessKey';
 const PDFJS = '/vendor/pdfjs'; // pdf.js 3.11.174, hébergé sur le site
 
 import { t, tr, lang, startI18n } from './i18n.js';
+import { snapToInk } from './boxes.js';
 
 const $ = (id) => document.getElementById(id);
 const state = {
@@ -546,7 +547,7 @@ async function runAll() {
           const res = { kind: 'lang', id, exam: settings.exam, group: r.group || settings.group, name: r.name, pageCount: b.length,
             pages: b.map((p, i) => ({ url: p.url, errors: r.pages[i].errors, failed: !!r.pages[i].failed })),
             scoring: langScoring(), flags: r.failedPages ? [`${r.failedPages} page(s) n'ont pas pu être analysées (non décomptées).`] : [] };
-          if (REFINE_BOXES) await refineBoxes(res);
+          await snapBoxes(res);
           langGrade(res);
           state.results.unshift(res);
         } else {
@@ -715,42 +716,21 @@ async function analyzeLanguage(bundle) {
   };
 }
 
-// 2e passe de précision : on découpe une zone agrandie autour de chaque faute et Gemini y encadre le mot exact.
-const REFINE_BOXES = false; // désactivée pour comparer avec la version Gemini d'origine
+// Recale chaque surlignage sur le mot réellement écrit (voir boxes.js). Gratuit : tout se fait dans le navigateur.
 const loadImage = (url) => new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
-const clamp1000 = (v) => Math.max(0, Math.min(1000, v));
-
-async function refineBoxes(res) {
-  const items = [];
+async function snapBoxes(res) {
   for (const p of res.pages) {
     const located = p.errors.filter((e) => e.box);
     if (!located.length) continue;
-    const img = await loadImage(p.url);
-    for (const e of located) {
-      const [y0, x0, y1, x1] = e.box;
-      const padY = Math.max(60, (y1 - y0) * 1.5); // couvre un décalage d'environ une ligne
-      const padX = Math.max(80, (x1 - x0) * 0.6);
-      const zone = [clamp1000(y0 - padY), clamp1000(x0 - padX), clamp1000(y1 + padY), clamp1000(x1 + padX)];
-      const sx = (zone[1] / 1000) * img.width, sy = (zone[0] / 1000) * img.height;
-      const sw = ((zone[3] - zone[1]) / 1000) * img.width, sh = ((zone[2] - zone[0]) / 1000) * img.height;
-      const scale = Math.min(2, 900 / Math.max(sw, sh));
-      const c = document.createElement('canvas');
-      c.width = Math.round(sw * scale); c.height = Math.round(sh * scale);
-      c.getContext('2d').drawImage(img, sx, sy, sw, sh, 0, 0, c.width, c.height);
-      items.push({ e, zone, image: c.toDataURL('image/jpeg', 0.85) });
-    }
-  }
-  for (let i = 0; i < items.length; i += 30) {
-    const batch = items.slice(i, i + 30);
     try {
-      const { boxes } = await api('/api/locate', { method: 'POST', body: { items: batch.map(({ e, image }) => ({ image, text: e.text })) } });
-      batch.forEach(({ e, zone }, j) => {
-        const b = boxes[j];
-        if (!b) return; // mot non retrouvé dans la zone : on garde le premier repérage
-        const zh = zone[2] - zone[0], zw = zone[3] - zone[1];
-        e.box = [zone[0] + (b[0] / 1000) * zh, zone[1] + (b[1] / 1000) * zw, zone[0] + (b[2] / 1000) * zh, zone[1] + (b[3] / 1000) * zw];
-      });
-    } catch { /* l'affinage est un bonus : en cas d'échec, on garde le premier repérage */ }
+      const img = await loadImage(p.url);
+      const c = document.createElement('canvas');
+      c.width = img.width; c.height = img.height;
+      const g = c.getContext('2d', { willReadFrequently: true });
+      g.drawImage(img, 0, 0);
+      const data = g.getImageData(0, 0, c.width, c.height);
+      for (const e of located) e.box = snapToInk(data, e.box, e.text, e.line);
+    } catch { /* recalage impossible : on garde le repérage de l'IA */ }
   }
 }
 

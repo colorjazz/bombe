@@ -1,0 +1,15 @@
+# Mesure de la précision des surlignages
+
+Copies manuscrites générées dont on connaît la position exacte de chaque mot (vérité terrain), pour mesurer
+le pourcentage de surlignages qui tombent sur le bon mot, avant et après le recalage de `public/boxes.js`.
+
+Prérequis : site local (`npm run dev`, clé Gemini dans `.dev.vars`), Playwright, et une clé d'accès locale
+(`CE-TESTS-AAAAA-BBBBB` dans `score.mjs`, à créer dans la base locale).
+
+    node gen.mjs <dossier>                  # 4 pages + truth.json  (gen-difficile.mjs : écritures plus dures, photo dégradée à part)
+    node score.mjs <dossier> run 2          # 2 analyses de la langue par page avec le vrai Gemini → runs.json
+    node score.mjs <dossier> eval           # score de Gemini seul
+    node recaler.mjs <dossier>              # applique le recalage → runs-snap.json
+    node score.mjs <dossier> eval <dossier>/runs-snap.json
+
+Résultats du 18 octobre 2026 : Gemini seul 45-63 % de cadres justes ; avec le recalage 86-96 %.

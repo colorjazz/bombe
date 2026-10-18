@@ -57,7 +57,6 @@ const ROUTES = {
   'POST /api/split': split,
   'POST /api/rubric': rubric,
   'POST /api/language': language,
-  'POST /api/locate': locate,
 };
 
 // ---------- Utilitaires ----------
@@ -419,6 +418,7 @@ const NATIVE_LANG_SCHEMA = {
       correction: { type: 'STRING', description: 'La correction proposée.' },
       explication: { type: 'STRING', description: 'Une courte explication de la règle (ex: Accord du participe passé).' },
       categorie: { type: 'STRING', enum: Object.keys(LANG_CATEGORIES) },
+      ligne: { type: 'STRING', description: 'La ligne manuscrite complète où se trouve la faute, recopiée exactement telle qu’écrite (de son premier à son dernier mot).' },
       box: { type: 'ARRAY', items: { type: 'INTEGER' }, description: 'Bounding box [ymin, xmin, ymax, xmax] normalisée de 0 à 1000. Laisse vide si introuvable.' },
     },
     required: ['mot_fautif', 'correction', 'explication', 'categorie'],
@@ -461,46 +461,6 @@ async function geminiNative(env, parts, schema, preferredModel) {
   }
 }
 
-// 2e passe de précision : l'appli envoie des zones agrandies autour de chaque faute, et Gemini y encadre le mot exact.
-// Non facturé (inclus dans l'analyse de la langue).
-const LOCATE_BATCH = 30;
-const LOCATE_SCHEMA = {
-  type: 'OBJECT',
-  properties: {
-    zones: {
-      type: 'ARRAY',
-      items: {
-        type: 'OBJECT',
-        properties: { numero: { type: 'INTEGER' }, trouve: { type: 'BOOLEAN' }, box_2d: { type: 'ARRAY', items: { type: 'INTEGER' } } },
-        required: ['numero', 'trouve', 'box_2d'],
-      },
-    },
-  },
-  required: ['zones'],
-};
-
-async function locate(request, env) {
-  await getKey(env, bearer(request));
-  const { items } = await readJson(request);
-  if (!Array.isArray(items) || !items.length || items.length > LOCATE_BATCH) throw new HttpError(400, `Entre 1 et ${LOCATE_BATCH} zones`);
-  for (const it of items) {
-    if (typeof it?.image !== 'string' || !/^data:image\/(jpeg|png|webp);base64,/.test(it.image) || it.image.length > MAX_THUMB_CHARS) throw new HttpError(400, 'Zone invalide');
-  }
-  const parts = [{ text: [
-    "Chaque image ci-dessous est un agrandissement d'une copie manuscrite ou dactylographiée.",
-    "Pour chaque image numérotée, trouve le mot ou groupe de mots indiqué et donne le rectangle qui l'encadre exactement (toutes ses lettres, sans déborder sur les mots voisins).",
-    "Format box_2d : [ymin, xmin, ymax, xmax] normalisé de 0 à 1000 par rapport à CETTE image. Si le texte n'apparaît pas dans l'image, mets trouve à false.",
-  ].join('\n') }];
-  items.forEach((it, i) => parts.push({ text: `Image ${i + 1} — texte à trouver : « ${String(it.text || '').slice(0, 120)} »` }, inlineImage(it.image)));
-  let raw;
-  try { raw = await geminiNative(env, parts, LOCATE_SCHEMA, env.LANG_MODEL); } catch (err) {
-    console.error('Précision impossible :', err.message);
-    throw new HttpError(502, 'Affinage impossible');
-  }
-  const byNumber = new Map((raw.zones || []).map((z) => [Number(z.numero), z]));
-  return json({ boxes: items.map((_, i) => { const z = byNumber.get(i + 1); return z?.trouve ? cleanBox(z.box_2d, 1000) : null; }) });
-}
-
 // Rectangle [ymin, xmin, ymax, xmax] sur 1000, ou null s'il est inutilisable.
 function cleanBox(box, maxHeight = 400) {
   if (!Array.isArray(box) || box.length !== 4) return null;
@@ -532,7 +492,7 @@ Your task:
 3. For EACH error found, give its coordinates (bounding box) on the image, surrounding the COMPLETE WORD or COMPLETE EXPRESSION containing the error.
    The 'box' coordinates must be an array of 4 numbers [ymin, xmin, ymax, xmax] normalized between 0 and 1000.
    (ymin = top, xmin = left, ymax = bottom, xmax = right).
-For each error, also give its category and a short explanation of the rule, in English.
+For each error, also copy in 'ligne' the complete handwritten line where it appears, exactly as written, and give its category and a short explanation of the rule, in English.
 Return ONLY a JSON array. If no error is found, return an empty array [].` : `Tu es un expert en langue française. Voici l'image d'un document manuscrit (ou dactylographié), une copie de ${level}.
 Ta mission :
 1. Lis le texte attentivement.
@@ -540,7 +500,7 @@ Ta mission :
 3. Pour CHAQUE faute trouvée, déduis ses coordonnées (bounding box) sur l'image en encadrant le MOT COMPLET ou l'EXPRESSION COMPLÈTE qui contient la faute.
    Les coordonnées 'box' doivent être un tableau de 4 nombres [ymin, xmin, ymax, xmax] normalisés entre 0 et 1000.
    (ymin = haut, xmin = gauche, ymax = bas, xmax = droite).
-Pour chaque faute, indique aussi sa catégorie et une courte explication de la règle.
+Pour chaque faute, recopie aussi dans « ligne » la ligne manuscrite complète où elle se trouve, exactement telle qu'écrite, et indique sa catégorie et une courte explication de la règle.
 Renvoie EXCLUSIVEMENT un tableau JSON. Si aucune faute n'est trouvée, renvoie un tableau vide [].`;
 
   const identity = body.identify === false ? Promise.resolve({}) : geminiNative(env, [{ text: "Recopie le nom de l'élève et son groupe s'ils sont écrits sur cette copie (sinon chaînes vides)." }, inlineImage(body.pages[0])],
@@ -560,6 +520,7 @@ Renvoie EXCLUSIVEMENT un tableau JSON. Si aucune faute n'est trouvée, renvoie u
       && String(f.correction || '').trim().normalize('NFC') !== String(f.texte || '').trim().normalize('NFC')).map((f) => ({
       text: String(f.texte || '').slice(0, 200), correction: String(f.correction || '').slice(0, 200),
       category: f.categorie, explanation: String(f.explication || '').slice(0, 400), box: cleanBox(f.box),
+      line: String(f.ligne || '').slice(0, 400), // sert à recaler le cadre sur le bon mot de la ligne (voir app.js)
     })),
   } : { errors: [], failed: true }));
   const who = await identity;
