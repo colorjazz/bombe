@@ -207,9 +207,12 @@
   <!-- Copie annotée (correction de la langue) -->
   <div id="viewer" class="modal" hidden>
     <div class="panel viewer-panel">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem">
+      <div class="stack" style="gap:.5rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap">
         <h2 id="viewer-title" style="margin:0"></h2>
-        <div style="display:flex;gap:.5rem"><button id="viewer-print" class="btn" type="button"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9V3h12v6"/><rect x="4" y="9" width="16" height="8" rx="2"/><path d="M7 14h10v7H7z"/></svg> Imprimer / PDF</button><button class="icon-btn" type="button" data-close-viewer aria-label="Fermer">×</button></div>
+        <div style="display:flex;gap:.5rem"><button id="viewer-add" class="btn" type="button">+ Ajouter une faute</button><button id="viewer-print" class="btn" type="button"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9V3h12v6"/><rect x="4" y="9" width="16" height="8" rx="2"/><path d="M7 14h10v7H7z"/></svg> Imprimer / PDF</button><button class="icon-btn" type="button" data-close-viewer aria-label="Fermer">×</button></div>
+      </div>
+      <p id="viewer-hint" class="banner info" hidden style="margin:0">Tracez un cadre sur la copie autour du mot fautif.</p>
       </div>
       <div class="viewer-body">
         <div id="viewer-pages" class="viewer-pages"></div>

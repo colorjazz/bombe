@@ -788,8 +788,10 @@ function langCard(r) {
 
 // Visionneuse : la copie avec les fautes surlignées, et la liste des fautes (supprimables si l'IA s'est trompée).
 let viewing = null;
+let adding = null; // ajout d'une faute oubliée : { stage: 'draw' } puis { stage: 'form', page, box }
 function openViewer(r) {
   viewing = r;
+  adding = null;
   $('viewer-pages').classList.remove('zoom');
   $('viewer').hidden = false;
   renderViewer();
@@ -801,18 +803,22 @@ function renderViewer(focus) {
   $('viewer-title').textContent = `${r.name || 'Élève'} · ${count} faute(s)${r.grade != null ? ` · ${fmt(r.grade)} / ${fmt(r.total)}` : ''}`;
   let n = 0;
   const numbered = r.pages.map((p) => p.errors.map((e) => ({ e, p, n: ++n })));
-  $('viewer-pages').replaceChildren(...r.pages.map((p, pi) => h('div', { class: 'page-wrap' },
-    h('img', { src: p.url, alt: `Page ${pi + 1}`, title: 'Cliquez pour agrandir ou réduire',
-      onclick: () => $('viewer-pages').classList.toggle('zoom') }),
-    numbered[pi].filter(({ e }) => e.box).map(({ e, n: k }) => {
-      const [y0, x0, y1, x1] = e.box;
-      const el = h('div', { class: `hl ${CATS[e.category].cls} ${focus === e ? 'focus' : ''}`, title: `${e.text} → ${e.correction}\n${e.explanation}`,
-        onclick: () => renderViewer(e) }, h('span', { textContent: String(k) }));
-      el.style.cssText = `top:${y0 / 10}%;left:${x0 / 10}%;height:${(y1 - y0) / 10}%;width:${(x1 - x0) / 10}%`;
-      return el;
-    }))));
+  const place = (el, [y0, x0, y1, x1]) => { el.style.cssText = `top:${y0 / 10}%;left:${x0 / 10}%;height:${(y1 - y0) / 10}%;width:${(x1 - x0) / 10}%`; return el; };
+  $('viewer-add').textContent = adding ? 'Annuler l’ajout' : '+ Ajouter une faute';
+  $('viewer-hint').hidden = adding?.stage !== 'draw';
+  $('viewer-pages').replaceChildren(...r.pages.map((p, pi) => {
+    const wrap = h('div', { class: `page-wrap ${adding?.stage === 'draw' ? 'adding' : ''}` },
+      h('img', { src: p.url, alt: `Page ${pi + 1}`, title: adding ? '' : 'Cliquez pour agrandir ou réduire', draggable: false,
+        onclick: () => { if (!adding) $('viewer-pages').classList.toggle('zoom'); } }),
+      numbered[pi].filter(({ e }) => e.box).map(({ e, n: k }) => place(h('div', { class: `hl ${CATS[e.category].cls} ${focus === e ? 'focus' : ''}`,
+        title: `${e.text} → ${e.correction}\n${e.explanation}`, onclick: () => { if (!adding) renderViewer(e); } }, h('span', { textContent: String(k) })), e.box)),
+      adding?.stage === 'form' && adding.page === p ? place(h('div', { class: 'hl draft' }), adding.box) : null);
+    if (adding?.stage === 'draw') drawBox(wrap, p);
+    return wrap;
+  }));
   const items = numbered.flat();
   $('viewer-list').replaceChildren(
+    adding?.stage === 'form' ? addErrorForm() : null,
     items.length ? categoryChips(items.map((i) => i.e)) : h('p', { class: 'muted', textContent: 'Aucune faute relevée.' }),
     ...items.map(({ e, p, n: k }) => {
       const el = h('div', { class: `err ${CATS[e.category].cls} ${focus === e ? 'focus' : ''}`, onclick: () => renderViewer(e) },
@@ -830,14 +836,62 @@ function renderViewer(focus) {
     }));
 }
 
+// Tracer un cadre à la souris ou au doigt autour d'une faute que l'IA a oubliée.
+function drawBox(wrap, page) {
+  let start = null, draft = null;
+  const at = (ev) => { const r = wrap.getBoundingClientRect();
+    return [Math.max(0, Math.min(1000, ((ev.clientY - r.top) / r.height) * 1000)), Math.max(0, Math.min(1000, ((ev.clientX - r.left) / r.width) * 1000))]; };
+  const boxOf = (a, b) => [Math.min(a[0], b[0]), Math.min(a[1], b[1]), Math.max(a[0], b[0]), Math.max(a[1], b[1])];
+  wrap.addEventListener('pointerdown', (ev) => {
+    ev.preventDefault(); wrap.setPointerCapture(ev.pointerId);
+    start = at(ev); draft = h('div', { class: 'hl draft' }); wrap.append(draft);
+  });
+  wrap.addEventListener('pointermove', (ev) => {
+    if (!start) return;
+    const [y0, x0, y1, x1] = boxOf(start, at(ev));
+    draft.style.cssText = `top:${y0 / 10}%;left:${x0 / 10}%;height:${(y1 - y0) / 10}%;width:${(x1 - x0) / 10}%`;
+  });
+  wrap.addEventListener('pointerup', (ev) => {
+    if (!start) return;
+    const box = boxOf(start, at(ev));
+    start = null;
+    if (box[2] - box[0] < 5 || box[3] - box[1] < 5) { draft.remove(); return; } // simple clic : on ignore
+    adding = { stage: 'form', page, box };
+    renderViewer();
+  });
+}
+
+function addErrorForm() {
+  const field = (label, input) => h('label', { class: 'field' }, label, input);
+  const text = h('input', { type: 'text', placeholder: 'Ex. : ils mange' });
+  const fix = h('input', { type: 'text', placeholder: 'Ex. : ils mangent' });
+  const cat = h('select', {}, Object.entries(CATS).map(([k, c]) => h('option', { value: k, textContent: c.label })));
+  const why = h('input', { type: 'text', placeholder: 'Ex. : accord du verbe avec le sujet' });
+  const save = () => {
+    if (!text.value.trim() || !fix.value.trim()) { text.focus(); return; }
+    const e = { text: text.value.trim(), correction: fix.value.trim(), category: cat.value, explanation: why.value.trim(), box: adding.box, manual: true };
+    adding.page.errors.push(e);
+    adding = null;
+    state.exported = false;
+    renderViewer(e); renderResults();
+  };
+  setTimeout(() => text.focus(), 0);
+  return h('div', { class: 'err add-form' },
+    h('b', { textContent: 'Nouvelle faute' }),
+    field('Mot ou passage écrit', text), field('Correction', fix), field('Catégorie', cat), field('Explication (facultatif)', why),
+    h('div', { style: 'display:flex;gap:.5rem' },
+      h('button', { class: 'btn primary small', type: 'button', textContent: 'Ajouter', onclick: save }),
+      h('button', { class: 'btn ghost small', type: 'button', textContent: 'Annuler', onclick: () => { adding = null; renderViewer(); } })));
+}
+
 // Impression : chaque page avec ses surlignages dessinés, puis la liste des corrections. « Enregistrer en PDF » depuis l'impression.
 async function printViewer() {
   const r = viewing;
   const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   let n = 0;
-  const pages = [];
-  const list = [];
+  const sheets = [];
   for (const p of r.pages) {
+    const list = [];
     const img = await new Promise((res) => { const i = new Image(); i.onload = () => res(i); i.src = p.url; });
     const c = document.createElement('canvas');
     c.width = img.width; c.height = img.height;
@@ -855,15 +909,18 @@ async function printViewer() {
       ctx.font = `bold ${Math.round(c.width / 55)}px sans-serif`;
       ctx.fillText(String(k), x0 * c.width, y0 * c.height - 4);
     }
-    pages.push(`<img src="${c.toDataURL('image/jpeg', 0.85)}">`);
+    sheets.push(`<section class="sheet"><img src="${c.toDataURL('image/jpeg', 0.85)}">${list.length ? `<ol>${list.join('')}</ol>` : ''}</section>`);
   }
   const w = window.open('', '_blank');
   if (!w) { alert(tr('Autorisez les fenêtres surgissantes pour imprimer.')); return; }
   w.document.write(`<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><title>${esc(r.name || tr('Copie'))} — ${tr('correction de la langue')}</title>
-    <style>body{font:13px/1.45 system-ui,sans-serif;margin:24px;color:#111}img{width:100%;page-break-after:always;margin-bottom:16px}
-    h1{font-size:18px}li{margin:.35rem 0}</style></head><body>
+    <style>@page{size:letter;margin:10mm}body{font:10.5px/1.35 system-ui,sans-serif;margin:0;color:#111}
+    h1{font-size:14px;margin:0 0 4px}.sheet{break-after:page;page-break-after:always}.sheet:last-child{break-after:auto;page-break-after:auto}
+    img{display:block;max-width:100%;max-height:205mm;margin:0 auto 6px;object-fit:contain}
+    ol{list-style:none;padding:0;margin:0;column-count:2;column-gap:14px}li{break-inside:avoid;margin:0 0 4px}
+    @media screen{body{margin:16px}.sheet{border-bottom:1px dashed #bbb;padding-bottom:12px;margin-bottom:12px}}</style></head><body>
     <h1>${esc(r.name || tr('Élève'))}${r.group ? ` · ${esc(r.group)}` : ''} — ${tr(`${n} faute(s)`)}${r.grade != null ? ` · ${fmt(r.grade)} / ${fmt(r.total)}` : ''}</h1>
-    ${pages.join('')}<h1>${tr('Corrections')}</h1><ol style="list-style:none;padding:0">${list.join('')}</ol>
+    ${sheets.join('')}
     <script>window.onload=()=>window.print()<\/script></body></html>`);
   w.document.close();
 }
@@ -987,8 +1044,10 @@ $('make-grid').addEventListener('click', makeGrid);
 $('kind-content').addEventListener('click', () => setKind('content'));
 $('kind-lang').addEventListener('click', () => setKind('lang'));
 $('viewer-print').addEventListener('click', printViewer);
+$('viewer-add').addEventListener('click', () => { adding = adding ? null : { stage: 'draw' }; renderViewer(); });
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape') return;
+  if (adding && !$('viewer').hidden) { adding = null; renderViewer(); return; }
   for (const id of ['viewer', 'rel-help', 'buy']) {
     if (!$(id).hidden) { $(id).hidden = true; if (id === 'viewer') viewing = null; return; }
   }
@@ -1021,6 +1080,29 @@ $('newkey-copy').addEventListener('click', () => navigator.clipboard?.writeText(
 window.addEventListener('beforeunload', (e) => {
   if (state.running || (state.results.length && !state.exported)) e.preventDefault();
 });
+
+// Réglages de l'enseignant retenus d'une session à l'autre (dans ce navigateur seulement ; aucune donnée d'élève).
+// Le regroupement des pages n'est pas retenu : il repart toujours d'un choix neutre.
+const PREF_IDS = ['total', 'whole', 'deep', 'language', 'lang-level', 'lang-total', 'lang-per', 'lang-max'];
+function savePrefs() {
+  const prefs = Object.fromEntries(PREF_IDS.map((id) => [id, $(id).type === 'checkbox' ? $(id).checked : $(id).value]));
+  prefs.cats = [...document.querySelectorAll('#lang-cats input')].filter((i) => i.checked).map((i) => i.value);
+  try { localStorage.setItem('ce.prefs', JSON.stringify(prefs)); } catch { /* navigation privée */ }
+}
+function loadPrefs() {
+  let prefs = null;
+  try { prefs = JSON.parse(localStorage.getItem('ce.prefs') || 'null'); } catch { /* ignoré */ }
+  if (!prefs) return;
+  for (const id of PREF_IDS) {
+    if (prefs[id] == null) continue;
+    if ($(id).type === 'checkbox') $(id).checked = !!prefs[id];
+    else if ($(id).tagName !== 'SELECT' || [...$(id).options].some((o) => o.value === prefs[id])) $(id).value = prefs[id];
+  }
+  if (Array.isArray(prefs.cats)) document.querySelectorAll('#lang-cats input').forEach((i) => { i.checked = prefs.cats.includes(i.value); });
+}
+loadPrefs();
+for (const id of PREF_IDS) $(id).addEventListener('change', savePrefs);
+document.querySelectorAll('#lang-cats input').forEach((i) => i.addEventListener('change', savePrefs));
 
 // ---------- Démarrage ----------
 

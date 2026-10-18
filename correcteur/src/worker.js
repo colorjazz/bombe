@@ -290,6 +290,7 @@ function buildPrompt(o) {
     "IDENTITÉ : lis le nom de l'élève sur la copie. S'il est absent ou illisible, renvoie une chaîne vide. N'invente jamais un nom.",
     "GROUPE : lis le groupe ou la classe écrit sur la copie (ex. « 541 », « Gr. 02 », « 4e B »), tel qu'écrit. S'il n'y en a pas, renvoie une chaîne vide.",
     "INCERTITUDE : mets « incertain » à true si une partie importante est illisible, si la copie semble incomplète ou hors sujet, ou si tu hésites sérieusement sur la note.",
+    "NIVEAUX : si tu mentionnes un niveau de rendement ou une cote (ex. « Level 3 », « niveau 2 », « B »), il doit correspondre au pourcentage réellement obtenu selon l'échelle fournie par l'enseignant (en Ontario : niveau 4 = 80-100 %, niveau 3 = 70-79 %, niveau 2 = 60-69 %, niveau 1 = 50-59 %, R = moins de 50 %). Sans échelle claire, ne mentionne pas de niveau.",
     "COMMENTAIRE : 2 à 4 phrases adressées à l'élève (tutoiement), concrètes et constructives : une réussite, l'erreur principale, une piste de progrès.",
     o.english ? `\n${ENGLISH_OUTPUT}` : '',
     o.rubric ? `\nCONSIGNES DE L'ENSEIGNANT (prioritaires) :\n"""\n${o.rubric}\n"""` : '',

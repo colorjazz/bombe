@@ -161,6 +161,11 @@ button.rel { cursor: pointer; font-family: inherit; }
 .zoom-hint { font-size: .75rem; color: var(--muted); text-align: center; }
 .hl { position: absolute; border: 2px solid var(--dot); background: color-mix(in srgb, var(--dot) 28%, transparent); border-radius: 3px; cursor: pointer; }
 .hl.focus { outline: 3px solid #fde047; z-index: 2; }
+.page-wrap.adding { cursor: crosshair; touch-action: none; user-select: none; }
+.page-wrap.adding img { cursor: crosshair; }
+.hl.draft { --dot: #fde047; border-style: dashed; pointer-events: none; }
+.add-form { cursor: default; gap: .45rem; }
+.add-form .field { font-size: .78rem; }
 .hl span { position: absolute; top: -.95rem; left: -2px; font-size: .62rem; font-weight: 700; color: #fff; background: var(--dot); padding: 0 .25rem; border-radius: 4px; }
 .err { border: 1px solid var(--line); border-left: 4px solid var(--dot); border-radius: 10px; padding: .55rem .7rem; background: var(--panel-2); font-size: .82rem; display: grid; gap: .2rem; cursor: pointer; }
 .err.focus { border-color: #fde047; }

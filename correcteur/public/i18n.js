@@ -208,6 +208,10 @@ const EN = {
     'Illegible paper (blurry, dark or cut-off photo): no grade was given and no pages were used. Retake the photo or grade this paper yourself.',
   'Certains passages sont difficiles à lire : vérifiez les questions concernées.': 'Some passages are hard to read: check the affected questions.',
   'Les copies analysées apparaîtront ici, avec les fautes surlignées.': 'Checked papers will appear here, with errors highlighted.',
+  '+ Ajouter une faute': '+ Add an error', 'Annuler l’ajout': 'Cancel', 'Tracez un cadre sur la copie autour du mot fautif.': 'Draw a box on the paper around the incorrect word.',
+  'Nouvelle faute': 'New error', 'Mot ou passage écrit': 'Word or passage as written', 'Correction': 'Correction', 'Catégorie': 'Category',
+  'Explication (facultatif)': 'Explanation (optional)', 'Ajouter': 'Add', 'Annuler': 'Cancel',
+  'Ex. : ils mange': 'E.g., they goes', 'Ex. : ils mangent': 'E.g., they go', 'Ex. : accord du verbe avec le sujet': 'E.g., subject-verb agreement',
 };
 
 // Textes avec des valeurs variables : [modèle français, traduction] ($1, $2… = valeurs capturées).
