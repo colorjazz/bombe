@@ -8,13 +8,12 @@
 - Achat avec code promo à 100 % crédité aussi.
 
 ## À vérifier
-1. Créditer l'achat test du 18 oct. 14 h 10 : ouvrir `https://burnthepile.com/merci.html?session_id=cs_live_…`
-   (identifiant de session dans Stripe → Transactions → le paiement).
-2. Renvoyer le reçu de cet achat (Stripe → le paiement → Envoyer le reçu) et vérifier qu'il contient la clé.
-3. Test gratuit avec un code promo à 100 % : la page de remerciement s'affiche-t-elle ? Le webhook répond-il 200 ?
-   Noter ce qui s'affiche après la validation (la page de remerciement n'est pas apparue au premier achat ; cause inconnue).
-   Désactiver le code ensuite.
-4. Stripe (production) : nom du compte et nom public « Brûle la pile », logo (Adaptation à votre marque), langue des courriels en français.
+1. Webhook : Stripe → Webhooks → Événements envoyés → statut 200 pour l'achat test avec code promo.
+2. Code `TESTPROF` : le désactiver, ou le garder (5 utilisations) pour des profs testeurs.
+3. Stripe (production) : nom du compte et nom public « Brûle la pile », logo, langue des courriels en français.
+
+Fait le 18 oct. : achat test avec code promo à 100 % → page de remerciement OK ; achat de 14 $ remboursé
+(un remboursement ne retire pas les pages de la clé).
 
 ## Avant la publicité
 5. brulelapile.ca : attendre « Active » dans Cloudflare (serveurs dora / trevor chez Hover), puis Worker → Domains → Add Domain
