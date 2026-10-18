@@ -9,7 +9,7 @@ binding = "ASSETS"
 [[d1_databases]]
 binding = "DB"
 database_name = "correcteur-express"
-database_id = "REMPLACER_PAR_L_ID_DE_VOTRE_BASE"
+database_id = "9e056bae-7080-4877-80b5-db1305aa3424"
 
 [vars]
 OPENAI_MODEL = "gpt-4o"
