@@ -1,8 +1,8 @@
 // Correcteur Express — application de l'enseignant.
 // Les copies restent en mémoire dans cet onglet ; seule la clé d'accès est retenue sur l'appareil.
 
-const MAX_SIDE = 1600;          // pixels, côté le plus long d'une page envoyée
-const JPEG_QUALITY = 0.82;
+const MAX_SIDE = 2000;          // pixels, côté le plus long d'une page envoyée (précision du surlignage)
+const JPEG_QUALITY = 0.85;
 const MAX_PAGES_PER_COPY = 10;
 const MAX_RUBRIC_PAGES = 6;
 const CONCURRENCY = 3;
@@ -129,8 +129,86 @@ function fitCanvas(w, h) {
   return c;
 }
 
+// Bibliothèques chargées seulement au besoin (versions figées).
+const LIBS = {
+  heic: 'https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js',
+  mammoth: 'https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js',
+  html2canvas: 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js',
+};
+const loaded = {};
+function loadLib(name) {
+  loaded[name] ||= new Promise((resolve, reject) => {
+    const s = h('script', { src: LIBS[name] });
+    s.onload = resolve;
+    s.onerror = () => { loaded[name] = null; reject(new Error('module de lecture indisponible (connexion ?)')); };
+    document.head.append(s);
+  });
+  return loaded[name];
+}
+
+const ext = (file) => (file.name.match(/\.([a-z0-9]+)$/i)?.[1] || '').toLowerCase();
+const isHeic = (file) => /heic|heif/.test(file.type) || ['heic', 'heif'].includes(ext(file));
+const isImage = (file) => file.type.startsWith('image/') || ['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp', 'heic', 'heif'].includes(ext(file));
+const isDocx = (file) => ext(file) === 'docx' || file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+const isText = (file) => ext(file) === 'txt' || file.type === 'text/plain';
+
+async function decodeImage(file) {
+  try {
+    return await createImageBitmap(file, { imageOrientation: 'from-image' });
+  } catch (err) {
+    // Photos d'iPhone (HEIC) : Chrome et Edge ne savent pas les lire, on les convertit d'abord.
+    if (!isHeic(file)) throw new Error('image illisible');
+    await loadLib('heic');
+    const out = await window.heic2any({ blob: file, toType: 'image/jpeg', quality: 0.92 });
+    return createImageBitmap(Array.isArray(out) ? out[0] : out);
+  }
+}
+
+// Word et texte brut : mis en page comme des feuilles lettre, puis découpés en pages images.
+async function documentToJpegs(html) {
+  await loadLib('html2canvas');
+  const sheet = h('div');
+  sheet.style.cssText = 'position:fixed;left:-10000px;top:0;width:816px;padding:72px;box-sizing:border-box;background:#fff;color:#111;font:15px/1.6 Georgia,serif';
+  sheet.innerHTML = html; // contenu converti localement (Word / texte), jamais exécuté : aucune balise script n'est produite
+  sheet.querySelectorAll('script, iframe, object').forEach((el) => el.remove());
+  sheet.querySelectorAll('img').forEach((img) => { img.style.maxWidth = '100%'; });
+  document.body.append(sheet);
+  try {
+    const full = await window.html2canvas(sheet, { scale: 2, backgroundColor: '#ffffff', logging: false });
+    const pageH = 1056 * 2;
+    const out = [];
+    for (let y = 0; y < full.height; y += pageH) {
+      const c = document.createElement('canvas');
+      c.width = full.width; c.height = pageH;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+      ctx.drawImage(full, 0, y, full.width, Math.min(pageH, full.height - y), 0, 0, full.width, Math.min(pageH, full.height - y));
+      const f = fitCanvas(c.width, c.height);
+      f.getContext('2d').drawImage(c, 0, 0, f.width, f.height);
+      out.push(canvasToJpeg(f));
+    }
+    return out;
+  } finally {
+    sheet.remove();
+  }
+}
+
+async function docxToJpegs(file) {
+  await loadLib('mammoth');
+  const { value } = await window.mammoth.convertToHtml({ arrayBuffer: await file.arrayBuffer() });
+  if (!value.trim()) throw new Error('document vide');
+  return documentToJpegs(value);
+}
+
+async function textToJpegs(file) {
+  const text = await file.text();
+  if (!text.trim()) throw new Error('document vide');
+  const esc = text.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  return documentToJpegs(`<div style="white-space:pre-wrap">${esc}</div>`);
+}
+
 async function imageToJpeg(file) {
-  const bmp = await createImageBitmap(file, { imageOrientation: 'from-image' });
+  const bmp = await decodeImage(file);
   const c = fitCanvas(bmp.width, bmp.height);
   const ctx = c.getContext('2d');
   ctx.fillStyle = '#fff';
@@ -180,10 +258,14 @@ async function filesToPages(files) {
       if (file.type === 'application/pdf' || /\.pdf$/i.test(file.name)) {
         const urls = await pdfToJpegs(file, (i, n) => banner('info', `Lecture de « ${file.name} » : page ${i}/${n}…`));
         urls.forEach((url, i) => out.push({ id: uid(), url, file: file.name, firstOfFile: i === 0 }));
-      } else if (file.type.startsWith('image/')) {
+      } else if (isImage(file)) {
         out.push({ id: uid(), url: await imageToJpeg(file), file: file.name, firstOfFile: true });
+      } else if (isDocx(file) || isText(file)) {
+        banner('info', `Mise en page de « ${file.name} »…`);
+        const urls = await (isDocx(file) ? docxToJpegs(file) : textToJpegs(file));
+        urls.forEach((url, i) => out.push({ id: uid(), url, file: file.name, firstOfFile: i === 0 }));
       } else {
-        errors.push(`${file.name} (format non pris en charge)`);
+        errors.push(`${file.name} (format non pris en charge : enregistrez-le en PDF${ext(file) === 'doc' ? ' ou en .docx' : ''})`);
       }
     } catch (err) {
       errors.push(`${file.name} (${err.message || 'illisible'})`);
@@ -444,7 +526,7 @@ async function runAll() {
           const res = { kind: 'lang', id, exam: settings.exam, group: r.group || settings.group, name: r.name, pageCount: b.length,
             pages: b.map((p, i) => ({ url: p.url, errors: r.pages[i].errors, failed: !!r.pages[i].failed })),
             scoring: langScoring(), flags: r.failedPages ? [`${r.failedPages} page(s) n'ont pas pu être analysées (non décomptées).`] : [] };
-          await refineBoxes(res);
+          if (REFINE_BOXES) await refineBoxes(res);
           langGrade(res);
           state.results.unshift(res);
         } else {
@@ -592,6 +674,7 @@ const CATS = {
 };
 
 // 2e passe de précision : on découpe une zone agrandie autour de chaque faute et Gemini y encadre le mot exact.
+const REFINE_BOXES = false; // désactivée pour comparer avec la version Gemini d'origine
 const loadImage = (url) => new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
 const clamp1000 = (v) => Math.max(0, Math.min(1000, v));
 

@@ -332,26 +332,18 @@ const LEVELS = {
 };
 // Le repérage des positions est nettement plus précis avec l'accès natif de Gemini qu'avec l'accès compatible OpenAI.
 const NATIVE_LANG_SCHEMA = {
-  type: 'OBJECT',
-  properties: {
-    nom: { type: 'STRING' },
-    groupe: { type: 'STRING' },
-    fautes: {
-      type: 'ARRAY',
-      items: {
-        type: 'OBJECT',
-        properties: {
-          texte: { type: 'STRING', description: 'Le mot ou groupe de mots exact contenant la faute.' },
-          correction: { type: 'STRING' },
-          categorie: { type: 'STRING', enum: Object.keys(LANG_CATEGORIES) },
-          explication: { type: 'STRING' },
-          box_2d: { type: 'ARRAY', items: { type: 'INTEGER' }, description: 'Rectangle [ymin, xmin, ymax, xmax] normalisé de 0 à 1000 autour du mot fautif.' },
-        },
-        required: ['texte', 'correction', 'categorie', 'explication', 'box_2d'],
-      },
+  type: 'ARRAY',
+  items: {
+    type: 'OBJECT',
+    properties: {
+      mot_fautif: { type: 'STRING', description: 'Le mot ou groupe de mots exact contenant la faute.' },
+      correction: { type: 'STRING', description: 'La correction proposée.' },
+      explication: { type: 'STRING', description: 'Une courte explication de la règle (ex: Accord du participe passé).' },
+      categorie: { type: 'STRING', enum: Object.keys(LANG_CATEGORIES) },
+      box: { type: 'ARRAY', items: { type: 'INTEGER' }, description: 'Bounding box [ymin, xmin, ymax, xmax] normalisée de 0 à 1000. Laisse vide si introuvable.' },
     },
+    required: ['mot_fautif', 'correction', 'explication', 'categorie'],
   },
-  required: ['nom', 'groupe', 'fautes'],
 };
 
 const inlineImage = (dataUrl) => {
@@ -360,15 +352,15 @@ const inlineImage = (dataUrl) => {
 };
 
 async function geminiVision(env, prompt, dataUrl) {
-  const raw = await geminiNative(env, [{ text: prompt }, inlineImage(dataUrl)], NATIVE_LANG_SCHEMA);
-  for (const f of raw.fautes || []) f.box = f.box_2d;
-  return raw;
+  const list = await geminiNative(env, [{ text: prompt }, inlineImage(dataUrl)], NATIVE_LANG_SCHEMA, env.LANG_MODEL);
+  return { fautes: (Array.isArray(list) ? list : list.fautes || []).map((f) => ({ ...f, texte: f.mot_fautif ?? f.texte, box: f.box ?? f.box_2d })) };
 }
 
 // Appel natif à Gemini (generateContent) avec réponse JSON structurée.
-async function geminiNative(env, parts, schema) {
+async function geminiNative(env, parts, schema, preferredModel) {
   const base = env.GEMINI_NATIVE_URL || 'https://generativelanguage.googleapis.com/v1beta';
-  let model = env.AI_MODEL;
+  const chain = [...new Set([preferredModel, env.AI_MODEL, env.AI_FALLBACK_MODEL].filter(Boolean))];
+  let model = chain.shift();
   for (let attempt = 0; ; attempt++) {
     const res = await fetch(`${base}/models/${model}:generateContent`, {
       method: 'POST',
@@ -383,7 +375,7 @@ async function geminiNative(env, parts, schema) {
       if (!text) throw new Error('réponse vide');
       return JSON.parse(text.replace(/^\s*```(?:json)?\s*|\s*```\s*$/g, ''));
     }
-    if (res.status === 404 && env.AI_FALLBACK_MODEL && model !== env.AI_FALLBACK_MODEL) { model = env.AI_FALLBACK_MODEL; continue; }
+    if (res.status === 404 && chain.length) { console.error(`Modèle ${model} introuvable, essai de ${chain[0]}`); model = chain.shift(); continue; }
     if ((res.status === 429 || res.status >= 500) && attempt < 3) { await new Promise((r) => setTimeout(r, 1500 * 2 ** attempt)); continue; }
     const detail = await res.text().catch(() => '');
     throw new Error(`IA ${res.status} : ${detail.slice(0, 300)}`);
@@ -422,7 +414,7 @@ async function locate(request, env) {
   ].join('\n') }];
   items.forEach((it, i) => parts.push({ text: `Image ${i + 1} — texte à trouver : « ${String(it.text || '').slice(0, 120)} »` }, inlineImage(it.image)));
   let raw;
-  try { raw = await geminiNative(env, parts, LOCATE_SCHEMA); } catch (err) {
+  try { raw = await geminiNative(env, parts, LOCATE_SCHEMA, env.LANG_MODEL); } catch (err) {
     console.error('Précision impossible :', err.message);
     throw new HttpError(502, 'Affinage impossible');
   }
@@ -453,16 +445,19 @@ async function language(request, env) {
     throw new HttpError(402, 'Solde de pages insuffisant. Rechargez votre compte pour continuer.');
   }
 
-  const system = [
-    "Tu es un correcteur de français expérimenté. Tu reçois la photo ou la numérisation d'une page de copie d'élève (manuscrite ou dactylographiée).",
-    `Profil : ${level}.`,
-    `Relève UNIQUEMENT ces types de fautes : ${cats.map((c) => LANG_CATEGORIES[c]).join(' ; ')}.`,
-    "Relève seulement de vraies fautes, pas des choix de style. Si un mot est illisible, ne l'invente pas et ne le compte pas comme une faute.",
-    "Pour chaque faute : « texte » = le mot ou groupe de mots fautif tel qu'écrit ; « correction » = la forme correcte ; « explication » = la règle en une phrase courte.",
-    "« box_2d » = les coordonnées du rectangle qui encadre le MOT COMPLET ou l'EXPRESSION COMPLÈTE contenant la faute, au format [ymin, xmin, ymax, xmax] normalisé entre 0 et 1000 (ymin = haut, xmin = gauche, ymax = bas, xmax = droite).",
-    "Relève chaque faute séparément, même si elle se répète. Recopie aussi le nom et le groupe de l'élève s'ils sont écrits sur la page (sinon chaînes vides).",
-  ].join('\n');
+  // Consigne calquée sur la version Gemini de l'enseignant, dont le surlignage est précis.
+  const system = `Tu es un expert en langue française. Voici l'image d'un document manuscrit (ou dactylographié), une copie de ${level}.
+Ta mission :
+1. Lis le texte attentivement.
+2. Identifie UNIQUEMENT ces fautes : ${cats.map((c) => LANG_CATEGORIES[c]).join(' ; ')}. Pas de choix de style ; si un mot est illisible, ignore-le.
+3. Pour CHAQUE faute trouvée, déduis ses coordonnées (bounding box) sur l'image en encadrant le MOT COMPLET ou l'EXPRESSION COMPLÈTE qui contient la faute.
+   Les coordonnées 'box' doivent être un tableau de 4 nombres [ymin, xmin, ymax, xmax] normalisés entre 0 et 1000.
+   (ymin = haut, xmin = gauche, ymax = bas, xmax = droite).
+Pour chaque faute, indique aussi sa catégorie et une courte explication de la règle.
+Renvoie EXCLUSIVEMENT un tableau JSON. Si aucune faute n'est trouvée, renvoie un tableau vide [].`;
 
+  const identity = geminiNative(env, [{ text: "Recopie le nom de l'élève et son groupe s'ils sont écrits sur cette copie (sinon chaînes vides)." }, inlineImage(body.pages[0])],
+    { type: 'OBJECT', properties: { nom: { type: 'STRING' }, groupe: { type: 'STRING' } }, required: ['nom', 'groupe'] }, env.LANG_MODEL).catch(() => ({}));
   const results = await Promise.allSettled(body.pages.map((url) => geminiVision(env, system, url)));
   const failed = results.filter((x) => x.status === 'rejected').length;
   if (failed) {
@@ -478,8 +473,9 @@ async function language(request, env) {
       category: f.categorie, explanation: String(f.explication || '').slice(0, 400), box: cleanBox(f.box),
     })),
   } : { errors: [], failed: true }));
-  const name = (ok.find((x) => x?.nom?.trim()) || {}).nom?.trim() || '';
-  const group = (ok.find((x) => x?.groupe?.trim()) || {}).groupe?.trim() || '';
+  const who = await identity;
+  const name = String(who.nom || '').trim();
+  const group = String(who.groupe || '').trim();
   const left = await env.DB.prepare('SELECT pages FROM access_keys WHERE key = ?').bind(key).first();
   return json({ name, group, pages, failedPages: failed, pagesLeft: left?.pages ?? 0 });
 }

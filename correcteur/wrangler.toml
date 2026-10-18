@@ -16,6 +16,8 @@ database_id = "9e056bae-7080-4877-80b5-db1305aa3424"
 AI_MODEL = "gemini-3.5-flash"
 # Utilisé automatiquement si AI_MODEL est retiré par Google (erreur 404).
 AI_FALLBACK_MODEL = "gemini-flash-latest"
+# Correction de la langue : même modèle que la version Gemini de l'enseignant (surlignage précis).
+LANG_MODEL = "gemini-3-flash-preview"
 AI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai"
 TRIAL_PAGES = "30"
 # Secrets à définir avec `npx wrangler secret put` :
