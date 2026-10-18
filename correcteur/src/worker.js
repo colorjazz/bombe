@@ -1,7 +1,7 @@
 // Correcteur Express — serveur (Cloudflare Worker).
 //
-// Rôle : garder la clé OpenAI, décompter les pages achetées et encaisser via Stripe.
-// Confidentialité : les copies transitent en mémoire vers OpenAI puis sont oubliées.
+// Rôle : garder la clé de l'IA (Gemini), décompter les pages achetées et encaisser via Stripe.
+// Confidentialité : les copies transitent en mémoire vers l'IA puis sont oubliées.
 // Rien n'est écrit sur disque ni dans les journaux, à part les clés d'accès et leur solde.
 
 export const PACKS = {
@@ -254,15 +254,15 @@ async function callModel(env, prompt, rubricPages, pages) {
   content.push({ type: 'text', text: `COPIE DE L'ÉLÈVE (${pages.length} page(s), dans l'ordre) :` }, ...pages.map(image));
 
   for (let attempt = 0; ; attempt++) {
-    const res = await fetch(`${env.OPENAI_BASE_URL}/chat/completions`, {
+    const res = await fetch(`${env.AI_BASE_URL}/chat/completions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${env.OPENAI_API_KEY}` },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${env.AI_API_KEY}` },
       body: JSON.stringify({
-        model: env.OPENAI_MODEL,
+        model: env.AI_MODEL,
         messages: [{ role: 'system', content: prompt }, { role: 'user', content }],
         response_format: SCHEMA,
         temperature: 0,
-        max_tokens: 3000,
+        max_tokens: 8192, // les modèles qui « réfléchissent » comptent aussi ces jetons
       }),
     });
     if (res.ok) {
@@ -274,7 +274,7 @@ async function callModel(env, prompt, rubricPages, pages) {
       await new Promise((r) => setTimeout(r, 1500 * 2 ** attempt));
       continue;
     }
-    throw new Error(`OpenAI ${res.status}`);
+    throw new Error(`IA ${res.status}`);
   }
 }
 

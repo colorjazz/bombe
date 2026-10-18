@@ -12,8 +12,9 @@ database_name = "correcteur-express"
 database_id = "9e056bae-7080-4877-80b5-db1305aa3424"
 
 [vars]
-OPENAI_MODEL = "gpt-4o"
-OPENAI_BASE_URL = "https://api.openai.com/v1"
+# Gemini, via son accès compatible OpenAI. Pour changer de fournisseur, modifier ces deux lignes.
+AI_MODEL = "gemini-2.5-flash"
+AI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai"
 TRIAL_PAGES = "30"
 # Secrets à définir avec `npx wrangler secret put` :
-#   OPENAI_API_KEY, STRIPE_SECRET_KEY, IP_SALT
+#   AI_API_KEY (clé Gemini), STRIPE_SECRET_KEY, IP_SALT

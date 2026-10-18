@@ -33,7 +33,7 @@ ask_secret() {
   echo "$2"
   npx wrangler secret put "$1"
 }
-ask_secret OPENAI_API_KEY "Collez votre clé API OpenAI (sk-...) :"
+ask_secret AI_API_KEY "Collez votre clé API Gemini (AIza...) :"
 ask_secret STRIPE_SECRET_KEY "Collez votre clé secrète Stripe (sk_test_... pour tester, sk_live_... pour vendre) :"
 if ! printf '%s' "$existing" | grep -q '"IP_SALT"'; then
   head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n' | npx wrangler secret put IP_SALT
