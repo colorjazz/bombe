@@ -234,10 +234,8 @@ const SCHEMA = {
   type: 'json_schema',
   json_schema: {
     name: 'correction',
-    strict: true,
     schema: {
       type: 'object',
-      additionalProperties: false,
       required: ['nom', 'questions', 'commentaire', 'incertain', 'raison_incertitude'],
       properties: {
         nom: { type: 'string' },
@@ -245,7 +243,6 @@ const SCHEMA = {
           type: 'array',
           items: {
             type: 'object',
-            additionalProperties: false,
             required: ['question', 'points_obtenus', 'points_max', 'justification'],
             properties: {
               question: { type: 'string' },
@@ -284,13 +281,16 @@ async function callModel(env, prompt, rubricPages, pages) {
     if (res.ok) {
       const msg = (await res.json()).choices?.[0]?.message;
       if (!msg?.content) throw new Error('réponse vide');
-      return JSON.parse(msg.content);
+      // Certains modèles entourent le JSON de ```json … ``` malgré la consigne.
+      return JSON.parse(msg.content.replace(/^\s*```(?:json)?\s*|\s*```\s*$/g, ''));
     }
     if ((res.status === 429 || res.status >= 500) && attempt < 3) {
       await new Promise((r) => setTimeout(r, 1500 * 2 ** attempt));
       continue;
     }
-    throw new Error(`IA ${res.status}`);
+    // Le message d'erreur du fournisseur ne contient pas la copie : on peut le journaliser.
+    const detail = await res.text().catch(() => '');
+    throw new Error(`IA ${res.status} : ${detail.slice(0, 300)}`);
   }
 }
 

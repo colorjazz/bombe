@@ -35,7 +35,7 @@ function h(tag, props = {}, ...children) {
     else if (k.includes('-')) el.setAttribute(k, v);
     else if (v !== false && v != null) el[k] = v;
   }
-  el.append(...children.flat().filter((c) => c != null && c !== false));
+  el.append(...children.flat(Infinity).filter((c) => c != null && c !== false));
   return el;
 }
 
