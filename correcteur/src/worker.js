@@ -16,7 +16,7 @@ const MAX_IMAGE_CHARS = 2_500_000; // ~1,8 Mo par page une fois décodée
 // Une école entière partage souvent la même adresse IP : on plafonne par jour au lieu de bloquer.
 const TRIALS_PER_IP_PER_DAY = 10;
 const DAY_MS = 24 * 3600 * 1000;
-const DIVERGENCE_RATIO = 0.075; // 1,5 point sur 20
+const RELIABILITY_ALERT = 80; // en dessous, la copie est signalée à vérifier
 
 export default {
   async fetch(request, env) {
@@ -224,6 +224,7 @@ function buildPrompt(o) {
       : "5. Ne pénalise pas l'orthographe ni la grammaire.",
     '',
     "IDENTITÉ : lis le nom de l'élève sur la copie. S'il est absent ou illisible, renvoie une chaîne vide. N'invente jamais un nom.",
+    "GROUPE : lis le groupe ou la classe écrit sur la copie (ex. « 541 », « Gr. 02 », « 4e B »), tel qu'écrit. S'il n'y en a pas, renvoie une chaîne vide.",
     "INCERTITUDE : mets « incertain » à true si une partie importante est illisible, si la copie semble incomplète ou hors sujet, ou si tu hésites sérieusement sur la note.",
     "COMMENTAIRE : 2 à 4 phrases adressées à l'élève (tutoiement), concrètes et constructives : une réussite, l'erreur principale, une piste de progrès.",
     o.rubric ? `\nCONSIGNES DE L'ENSEIGNANT (prioritaires) :\n"""\n${o.rubric}\n"""` : '',
@@ -236,9 +237,10 @@ const SCHEMA = {
     name: 'correction',
     schema: {
       type: 'object',
-      required: ['nom', 'questions', 'commentaire', 'incertain', 'raison_incertitude'],
+      required: ['nom', 'groupe', 'questions', 'commentaire', 'incertain', 'raison_incertitude'],
       properties: {
         nom: { type: 'string' },
+        groupe: { type: 'string' },
         questions: {
           type: 'array',
           items: {
@@ -301,6 +303,29 @@ async function callModel(env, prompt, rubricPages, pages) {
   }
 }
 
+// Fiabilité : accord des deux corrections question par question (écarts de points rapportés au barème),
+// pénalisée si l'IA exprime un doute, ne lit pas le nom ou si le barème ne totalise pas.
+// Chaque question de la 1re correction reçoit `second` : les points de la 2e quand ils diffèrent.
+function compare(a, b, total) {
+  const key = (q) => q.question.toLowerCase().replace(/[^a-z0-9]+/g, '');
+  const byKey = new Map((b?.questions || []).map((q) => [key(q), q]));
+  let gap = 0;
+  const questions = a.questions.map((q, i) => {
+    if (!b) return { ...q, second: null };
+    const other = byKey.get(key(q)) || b.questions[i];
+    if (!other) { gap += q.max; return { ...q, second: null, unmatched: true }; }
+    const d = Math.abs(q.points - other.points);
+    gap += d;
+    return { ...q, second: d > 1e-9 ? other.points : null };
+  });
+  if (b) gap = Math.max(gap, Math.abs(a.grade - b.grade)); // découpages différents des questions
+  let score = b ? 100 * (1 - Math.min(1, (gap / total) * 3)) : 70; // 1 point d'écart sur 20 → 85 %
+  if (a.uncertain) score -= 15;
+  if (!a.name) score -= 5;
+  if (Math.abs(a.sumMax - total) > 1e-9) score -= 15;
+  return { reliability: Math.max(0, Math.min(100, Math.round(score))), questions };
+}
+
 // Ramène les points sur la granularité choisie et dans les bornes, puis calcule la note.
 function normalize(raw, total, unit) {
   const snap = (n) => Math.round((Number(n) || 0) / unit) * unit;
@@ -315,7 +340,7 @@ function normalize(raw, total, unit) {
   });
   const sumMax = questions.reduce((a, q) => a + q.max, 0);
   const grade = Math.min(total, questions.reduce((a, q) => a + q.points, 0));
-  return { name: String(raw.nom || '').trim(), questions, sumMax, grade, comment: String(raw.commentaire || '').trim(),
+  return { name: String(raw.nom || '').trim(), group: String(raw.groupe || '').trim(), questions, sumMax, grade, comment: String(raw.commentaire || '').trim(),
     uncertain: !!raw.incertain, reason: String(raw.raison_incertitude || '').trim() };
 }
 
@@ -364,13 +389,17 @@ async function grade(request, env) {
   if (!a.name) flags.push('Nom illisible ou absent.');
   if (Math.abs(a.sumMax - total) > 1e-9) flags.push(`Les questions totalisent ${fr(a.sumMax)} points au lieu de ${fr(total)}.`);
   if (!b) flags.push('Une seule correction a pu être faite (pas de contre-vérification).');
-  else if (Math.abs(a.grade - b.grade) > total * DIVERGENCE_RATIO) {
-    flags.push(`Deux corrections indépendantes divergent : ${fr(a.grade)} et ${fr(b.grade)} sur ${fr(total)}.`);
+  const { reliability, questions } = compare(a, b, total);
+  const disputed = questions.filter((q) => q.second != null);
+  if (reliability < RELIABILITY_ALERT) {
+    flags.push(disputed.length
+      ? `Fiabilité ${reliability} % : les deux corrections ne s'entendent pas sur ${disputed.map((q) => q.question).join(', ')}.`
+      : `Fiabilité ${reliability} % : vérifiez cette copie.`);
   }
 
   const left = await env.DB.prepare('SELECT pages FROM access_keys WHERE key = ?').bind(key).first();
   return json({
-    name: a.name, grade: a.grade, total, questions: a.questions, comment: a.comment,
-    secondGrade: b ? b.grade : null, flags, pagesLeft: left?.pages ?? 0,
+    name: a.name, group: a.group, grade: a.grade, total, questions, comment: a.comment,
+    reliability, secondGrade: b ? b.grade : null, flags, pagesLeft: left?.pages ?? 0,
   });
 }

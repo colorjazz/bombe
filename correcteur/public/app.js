@@ -298,10 +298,10 @@ async function runAll() {
         const r = await api('/api/grade', { method: 'POST', body: { ...settings, pages: b.map((p) => p.url) } });
         setBalance(r.pagesLeft);
         state.results.unshift({
-          id, exam: settings.exam, group: settings.group, name: r.name, grade: r.grade, total: r.total,
+          id, exam: settings.exam, group: r.group || settings.group, name: r.name, reliability: r.reliability, grade: r.grade, total: r.total,
           unit: settings.wholePoints ? 1 : 0.5, questions: r.questions, comment: r.comment, flags: r.flags, pageCount: b.length,
         });
-        if (r.flags.length) state.open.add(id);
+        if (r.flags.length || r.questions.some((q) => q.second != null)) state.open.add(id);
         state.exported = false;
         state.pages = state.pages.filter((p) => !b.includes(p));
         if (state.pages[0]) state.pages[0].startsNew = true;
@@ -338,9 +338,11 @@ function renderStats() {
   const pct = graded.map((r) => (r.grade / r.total) * 100);
   const avg = pct.reduce((a, b) => a + b, 0) / pct.length;
   const flagged = graded.filter((r) => r.flags.length).length;
+  const rel = graded.reduce((a, r) => a + (r.reliability ?? 0), 0) / graded.length;
   const stat = (v, l) => h('div', { class: 'stat' }, h('div', { class: 'v', textContent: v }), h('div', { class: 'l', textContent: l }));
-  $('stats').replaceChildren(stat(String(graded.length), 'copies'), stat(`${fmt(avg)} %`, 'moyenne'),
-    stat(`${fmt(Math.min(...pct))} – ${fmt(Math.max(...pct))} %`, 'min – max'), stat(String(flagged), 'à vérifier ⚠'));
+  $('stats').replaceChildren(stat(String(graded.length), 'copies'),
+    stat(`${fmt(avg)} %`, `moyenne (min ${fmt(Math.min(...pct))} – max ${fmt(Math.max(...pct))})`),
+    stat(`${fmt(rel)} %`, 'fiabilité moyenne'), stat(String(flagged), 'à vérifier ⚠'));
 }
 
 function renderResults() {
@@ -363,24 +365,29 @@ function card(r) {
     h('table', { class: 'qtable' },
       h('thead', {}, h('tr', {}, h('th', { textContent: 'Question' }), h('th', { textContent: 'Points' }), h('th', { textContent: 'Justification' }))),
       h('tbody', {}, r.questions.map((qq) => {
-        const tr = h('tr', { class: qq.points < qq.max ? 'lost' : '' });
+        const rowClass = () => [qq.points < qq.max ? 'lost' : '', qq.second != null ? 'disputed' : ''].join(' ');
+        const tr = h('tr', { class: rowClass() });
+        const second = qq.second != null
+          ? h('div', { class: 'second', textContent: `⚖ 2e correction : ${fmt(qq.second)} / ${fmt(qq.max)}` }) : null;
         const input = h('input', { type: 'number', min: 0, max: qq.max, step: r.unit, value: qq.points,
           onchange: () => {
             const v = Math.round((Number(input.value) || 0) / r.unit) * r.unit;
             qq.points = Math.min(qq.max, Math.max(0, v));
             input.value = qq.points;
-            tr.className = qq.points < qq.max ? 'lost' : '';
+            qq.second = null; // l'enseignant a tranché
+            second?.remove();
+            tr.className = rowClass();
             recompute(r); updateGrade(); renderStats();
           } });
         tr.append(h('td', { class: 'q', textContent: qq.question }),
-          h('td', { class: 'pts' }, input, h('span', { class: 'muted', textContent: ` / ${fmt(qq.max)}` })),
+          h('td', { class: 'pts' }, input, h('span', { class: 'muted', textContent: ` / ${fmt(qq.max)}` }), second),
           h('td', { class: 'just', textContent: qq.justification }));
         return tr;
       }))),
     h('label', { class: 'field comment' }, 'Commentaire pour l\'élève',
       h('textarea', { rows: 3, value: r.comment, oninput: (e) => { r.comment = e.target.value; state.exported = false; } })),
     h('div', { class: 'card-foot' },
-      h('span', { textContent: [r.exam, r.group, `${r.pageCount} page(s)`].filter(Boolean).join(' · ') }),
+      h('span', { textContent: [r.exam, `${r.pageCount} page(s)`].filter(Boolean).join(' · ') }),
       h('button', { class: 'btn ghost small', type: 'button', textContent: 'Supprimer', onclick: () => {
         if (!confirm(`Supprimer la correction de ${r.name || 'cet élève'} ?`)) return;
         state.results = state.results.filter((x) => x !== r); renderResults();
@@ -391,7 +398,12 @@ function card(r) {
     h('div', { class: 'card-head' },
       h('input', { class: 'name', type: 'text', value: r.name, placeholder: '⚠ Nom à compléter', 'aria-label': "Nom de l'élève",
         oninput: (e) => { r.name = e.target.value; state.exported = false; } }),
-      r.flags.length ? h('span', { title: r.flags.join('\n'), textContent: '⚠' }) : h('span'),
+      h('input', { class: 'group', type: 'text', value: r.group, placeholder: 'Groupe', 'aria-label': 'Groupe',
+        oninput: (e) => { r.group = e.target.value; state.exported = false; } }),
+      r.reliability == null ? h('span') : h('span', {
+        class: `rel ${r.reliability >= 90 ? 'hi' : r.reliability >= 80 ? 'mid' : 'lo'}`,
+        title: 'Fiabilité : accord entre deux corrections indépendantes, question par question',
+        textContent: `${r.reliability} %` }),
       gradeEl,
       h('button', { class: 'icon-btn chev', type: 'button', textContent: '▾', 'aria-label': 'Détails', onclick: () => {
         if (state.open.has(r.id)) state.open.delete(r.id); else state.open.add(r.id);
@@ -412,9 +424,9 @@ function csvCell(v) {
 
 function exportCSV() {
   const num = (n) => String(n).replace('.', ',');
-  const rows = [['Évaluation', 'Groupe', 'Élève', 'Note', 'Sur', 'Pourcentage', 'Détail par question', 'Commentaire', 'À vérifier']];
+  const rows = [['Évaluation', 'Groupe', 'Élève', 'Note', 'Sur', 'Pourcentage', 'Fiabilité (%)', 'Détail par question', 'Commentaire', 'À vérifier']];
   for (const r of [...state.results].reverse()) {
-    rows.push([r.exam, r.group, r.name, num(r.grade), num(r.total), num(Math.round((r.grade / r.total) * 1000) / 10),
+    rows.push([r.exam, r.group, r.name, num(r.grade), num(r.total), num(Math.round((r.grade / r.total) * 1000) / 10), r.reliability ?? '',
       r.questions.map((q) => `${q.question} : ${num(q.points)}/${num(q.max)}${q.points < q.max && q.justification ? ` (${q.justification})` : ''}`).join(' | '),
       r.comment, r.flags.join(' ')]);
   }
