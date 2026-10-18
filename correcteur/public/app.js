@@ -295,6 +295,27 @@ function applyMode() {
 
 // ---------- Détection automatique des copies ----------
 
+// Option « masquer le nom » : le haut de la 1re page (en-tête avec le nom) est blanchi dans le navigateur
+// avant l'envoi. Le nom ne quitte donc jamais l'ordinateur ; l'enseignant voit toujours la copie complète.
+const MASK_TOP = 0.14;
+const anonymous = () => $('anon').checked;
+function maskTop(url) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement('canvas');
+      c.width = img.width; c.height = img.height;
+      const g = c.getContext('2d');
+      g.drawImage(img, 0, 0);
+      g.fillStyle = '#fff';
+      g.fillRect(0, 0, c.width, Math.round(c.height * MASK_TOP));
+      resolve(c.toDataURL('image/jpeg', 0.9));
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
 function thumbnail(url) {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -324,8 +345,8 @@ async function detectCopies() {
       const batch = todo.slice(i, i + SPLIT_BATCH);
       const before = state.pages[state.pages.indexOf(batch[0]) - 1];
       const { pages } = await api('/api/split', { method: 'POST', body: {
-        pages: await Promise.all(batch.map((p) => thumbnail(p.url))),
-        previous: before ? await thumbnail(before.url) : undefined,
+        pages: await Promise.all(batch.map(async (p) => thumbnail(anonymous() ? await maskTop(p.url) : p.url))),
+        previous: before ? await thumbnail(anonymous() ? await maskTop(before.url) : before.url) : undefined,
       } });
       batch.forEach((p, j) => { p.autoStart = pages[j].startsNew; p.detectedName = pages[j].name; });
     }
@@ -509,6 +530,7 @@ async function runAll() {
     rubric: $('rubric').value.trim(),
     rubricPages: state.rubricPages.map((p) => p.url),
     grid: state.grid || undefined,
+    anonymous: anonymous(),
   };
   const hasKey = !!(settings.rubric || settings.rubricPages.length || settings.grid);
 
@@ -551,7 +573,8 @@ async function runAll() {
           langGrade(res);
           state.results.unshift(res);
         } else {
-        const r = await api('/api/grade', { method: 'POST', body: { ...settings, pages: b.map((p) => p.url) } });
+        const pages = await Promise.all(b.map((p, i) => (i === 0 && settings.anonymous ? maskTop(p.url) : p.url)));
+        const r = await api('/api/grade', { method: 'POST', body: { ...settings, pages } });
         setBalance(r.pagesLeft);
         state.results.unshift({
           id, exam: settings.exam, group: r.group || settings.group, name: r.name, reliability: r.reliability, grade: r.grade, total: r.total,
@@ -702,9 +725,13 @@ const CATS = {
 // Photos envoyées en pleine résolution (comme la version Gemini d'origine), une requête par page.
 const LANG_MAX_SIDE = 4096;
 async function analyzeLanguage(bundle) {
-  const urls = await Promise.all(bundle.map((p) => (p.source ? imageToJpeg(p.source, LANG_MAX_SIDE, 0.9) : p.url)));
+  const anon = anonymous();
+  const urls = await Promise.all(bundle.map(async (p, i) => {
+    const url = p.source ? await imageToJpeg(p.source, LANG_MAX_SIDE, 0.9) : p.url;
+    return i === 0 && anon ? maskTop(url) : url;
+  }));
   const parts = await Promise.all(urls.map((url, i) => api('/api/language', { method: 'POST',
-    body: { pages: [url], identify: i === 0, ...langSettings() } }).catch((error) => ({ error }))));
+    body: { pages: [url], identify: i === 0 && !anon, ...langSettings() } }).catch((error) => ({ error }))));
   const blocking = parts.find((x) => x.error && (x.error.status === 401 || x.error.status === 402));
   if (blocking) throw blocking.error;
   if (parts.every((x) => x.error)) throw parts[0].error;
@@ -1083,7 +1110,7 @@ window.addEventListener('beforeunload', (e) => {
 
 // Réglages de l'enseignant retenus d'une session à l'autre (dans ce navigateur seulement ; aucune donnée d'élève).
 // Le regroupement des pages n'est pas retenu : il repart toujours d'un choix neutre.
-const PREF_IDS = ['total', 'whole', 'deep', 'language', 'lang-level', 'lang-total', 'lang-per', 'lang-max'];
+const PREF_IDS = ['total', 'whole', 'deep', 'language', 'lang-level', 'lang-total', 'lang-per', 'lang-max', 'anon'];
 function savePrefs() {
   const prefs = Object.fromEntries(PREF_IDS.map((id) => [id, $(id).type === 'checkbox' ? $(id).checked : $(id).value]));
   prefs.cats = [...document.querySelectorAll('#lang-cats input')].filter((i) => i.checked).map((i) => i.value);

@@ -21,28 +21,45 @@
 
     <h2>In short</h2>
     <ul>
-      <li>We store <strong>no student work, no grades and no student names</strong>.</li>
-      <li>Papers are sent, encrypted, to our artificial intelligence provider solely to produce the grading you request.</li>
-      <li>We only keep your access key, its page balance and, if you buy a pack, your payment email.</li>
+      <li>We keep <strong>no student work, no grades and no student names</strong>.</li>
+      <li>Papers pass through our server without being stored, then are sent to our artificial intelligence provider (Google) solely to produce the grading you request.</li>
+      <li>You can <strong>hide the student’s name before sending</strong>: the top of the first page is then blanked in your browser and never sent.</li>
+      <li>We keep only your access key, its page balance and, if you buy a pack, the payment email.</li>
     </ul>
 
     <h2>Student work and results</h2>
-    <p>The pages you upload are prepared in your browser and sent to our server, which forwards them to Google (Gemini API) for grading. Our server does not save them or write them to any log. Results are sent back to your browser and stay in your tab until you end the session or close the page.</p>
-    <p>We use the paid tier of the Gemini API. Under its terms, Google does not use this data to improve its products or train its models; it may be retained for a limited time solely for abuse detection.</p>
-    <p>Because the data is processed outside Quebec, we carried out a privacy impact assessment and concluded that the protection offered by this provider is adequate.</p>
+    <p>The pages you import are prepared in your browser (converted to images, resized, name hidden if you chose to), then sent over an encrypted connection (HTTPS) to our server, which forwards them to Google (Gemini API) for grading. Our server processes the papers in memory only: it does not store them and does not write their content to any log. Results are returned to your browser and stay in your tab until you end the session or close the page.</p>
+    <p>We use the paid tier of the Gemini API. Under <a href="https://ai.google.dev/gemini-api/terms" rel="noopener">its terms</a>, Google does not use this data to improve its products or train its models; it may be kept for a limited time solely to detect abuse. At Google, images are readable while they are processed: encryption protects them in transit, not from being read by the grading service.</p>
+    <p>Grades and comments produced by the AI are <strong>suggestions</strong>: the teacher reviews and edits them before using them. We make no decision about any student.</p>
 
-    <h2>Information we keep</h2>
+    <h2>Students and schools</h2>
+    <p>Papers may contain information about students, often minors. Teachers use the service on behalf of their school and under its rules. To limit what is sent, we recommend hiding the name (an option in the app) or using a student number instead of a name, and leaving out sensitive information that is not needed for grading. The school informs students and parents about the use of artificial intelligence tools according to its own policies (for example, under MFIPPA in Ontario).</p>
+    <p>Schools and school boards that want a data processing agreement or the summary of our privacy impact assessment can write to <a href="mailto:hello@burnthepile.com">hello@burnthepile.com</a>.</p>
+
+    <h2>Our providers and where data is processed</h2>
     <ul>
-      <li>Access key and page balance: to provide the service.</li>
-      <li>Email provided at payment: to help you if you lose your key and for our accounting obligations. Payment is processed by Stripe; we never see your card.</li>
-      <li>An irreversible fingerprint (hash) of your IP address for free trials, kept 24 hours, to limit abuse.</li>
+      <li><strong>Google LLC</strong> (Gemini API): grading. Processed in the United States and other countries where Google operates data centres.</li>
+      <li><strong>Cloudflare, Inc.</strong>: hosting of the site and server, access-key database, technical logs. Global network; company based in the United States.</li>
+      <li><strong>Stripe</strong>: payments. We never see your card.</li>
+      <li><strong>Google Fonts</strong>: the site’s fonts; your browser sends your IP address when it downloads them.</li>
     </ul>
+    <p>Because data is processed outside Quebec, we carried out a privacy impact assessment and concluded that the protections offered by these providers, given the measures above (nothing kept on our side, paid tier without training, optional name hiding), are adequate. This data may be subject to the laws of the countries where it is processed.</p>
 
-    <h2>Your responsibilities</h2>
-    <p>You are responsible for using the service in accordance with your school’s policies. Avoid including sensitive information on papers that is not needed for grading.</p>
+    <h2>Information we keep, and for how long</h2>
+    <ul>
+      <li><strong>Access key and page balance</strong>: to provide the service. Free-trial keys are deleted after 90 days; purchased keys are kept while in use, or until you ask us to delete them.</li>
+      <li><strong>Email given at payment</strong>: linked to your key, to help you if you lose it. It is deleted with the key. Stripe keeps the transaction records required by law.</li>
+      <li><strong>Non-reversible fingerprint (keyed hash) of your IP address</strong> for a free trial: to limit abuse. Automatically erased in less than 24 hours (hourly clean-up).</li>
+      <li><strong>Cloudflare technical logs</strong> (page requested, time, result code and, where applicable, IP address; never the content of papers): for security and troubleshooting, kept a few days (7 days at most).</li>
+      <li><strong>In your browser</strong>: your access key and your settings (point total, mode, options) are kept in your browser so you don’t have to re-enter them. The “Change key” button removes the key from the device; on a shared computer, use it at the end of your session.</li>
+    </ul>
+    <p>No advertising cookies, no tracking or audience analytics.</p>
+
+    <h2>Privacy incidents</h2>
+    <p>If a privacy incident presents a risk of serious harm, we promptly notify Quebec’s Commission d’accès à l’information and the people affected (and the school, when known), and take steps to reduce the risk. We keep a register of incidents.</p>
 
     <h2>Your rights</h2>
-    <p>You can request access to, correction of or deletion of information about you by writing to <a href="mailto:hello@burnthepile.com">hello@burnthepile.com</a>.</p>
+    <p>You can ask to access, correct or delete information about you, or withdraw your consent, by writing to <a href="mailto:hello@burnthepile.com">hello@burnthepile.com</a>. We reply within 30 days. You can also file a complaint with Quebec’s <a href="https://www.cai.gouv.qc.ca" rel="noopener">Commission d’accès à l’information</a> or, outside Quebec, with the <a href="https://www.priv.gc.ca" rel="noopener">Office of the Privacy Commissioner of Canada</a>.</p>
   </main>
   <footer><div class="wrap"><span>© 2026 Burn the Pile</span><span><a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a> · <a href="mailto:hello@burnthepile.com">Contact us</a></span></div></footer>
 </body>

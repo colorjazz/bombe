@@ -22,27 +22,44 @@
     <h2>En bref</h2>
     <ul>
       <li>Nous ne conservons <strong>aucune copie d'élève, aucune note, aucun nom d'élève</strong>.</li>
-      <li>Les copies sont transmises, chiffrées, à notre fournisseur d'intelligence artificielle uniquement pour produire la correction demandée.</li>
+      <li>Les copies passent par notre serveur, sans y être enregistrées, puis sont transmises à notre fournisseur d'intelligence artificielle (Google) uniquement pour produire la correction demandée.</li>
+      <li>Vous pouvez <strong>masquer le nom de l'élève avant l'envoi</strong> : le haut de la première page est alors blanchi dans votre navigateur et n'est jamais transmis.</li>
       <li>Nous conservons seulement votre clé d'accès, son solde de pages et, si vous achetez un pack, le courriel de paiement.</li>
     </ul>
 
     <h2>Copies et résultats</h2>
-    <p>Les pages que vous importez sont préparées dans votre navigateur puis envoyées à notre serveur, qui les transmet à Google (API Gemini) pour la correction. Notre serveur ne les enregistre pas et ne les inscrit dans aucun journal. Les résultats sont renvoyés à votre navigateur et restent dans votre onglet jusqu'à ce que vous terminiez la session ou fermiez la page.</p>
-    <p>Nous utilisons l'offre payante de l'API Gemini. Selon ses conditions, Google n'utilise pas ces données pour améliorer ses produits ni entraîner ses modèles ; elles peuvent être conservées pour une durée limitée aux seules fins de détection d'abus.</p>
-    <p>Comme les données sont traitées à l'extérieur du Québec, nous avons réalisé une évaluation des facteurs relatifs à la vie privée et conclu que les protections offertes par ce fournisseur sont adéquates.</p>
+    <p>Les pages que vous importez sont préparées dans votre navigateur (conversion en images, réduction de taille, masquage du nom si vous l'avez choisi), puis envoyées par une connexion chiffrée (HTTPS) à notre serveur, qui les transmet à Google (API Gemini) pour la correction. Notre serveur traite les copies en mémoire seulement : il ne les enregistre pas et n'inscrit leur contenu dans aucun journal. Les résultats sont renvoyés à votre navigateur et restent dans votre onglet jusqu'à ce que vous terminiez la session ou fermiez la page.</p>
+    <p>Nous utilisons l'offre payante de l'API Gemini. Selon <a href="https://ai.google.dev/gemini-api/terms" rel="noopener">ses conditions</a>, Google n'utilise pas ces données pour améliorer ses produits ni entraîner ses modèles ; elles peuvent être conservées pour une durée limitée aux seules fins de détection d'abus. Chez Google, les images sont lisibles pendant leur traitement : le chiffrement protège leur transport, pas leur lecture par le service de correction.</p>
+    <p>Les notes et les commentaires produits par l'IA sont des <strong>propositions</strong> : l'enseignant les vérifie et les modifie avant de s'en servir. Nous ne prenons aucune décision au sujet d'un élève.</p>
 
-    <h2>Renseignements que nous conservons</h2>
+    <h2>Élèves et établissements</h2>
+    <p>Les copies peuvent contenir des renseignements sur des élèves, souvent mineurs. L'enseignant utilise le service au nom de son établissement et selon ses règles. Pour réduire les renseignements transmis, nous recommandons de masquer le nom (option de l'application) ou d'utiliser un code d'élève plutôt qu'un nom, et de ne pas inclure de renseignements sensibles non nécessaires à la correction. L'établissement informe les élèves et les parents de l'usage d'outils d'intelligence artificielle selon ses propres politiques.</p>
+    <p>Les établissements qui souhaitent une entente de traitement des renseignements personnels ou le résumé de notre évaluation des facteurs relatifs à la vie privée peuvent nous écrire à <a href="mailto:bonjour@brulelapile.ca">bonjour@brulelapile.ca</a>.</p>
+
+    <h2>Nos fournisseurs et lieux de traitement</h2>
     <ul>
-      <li>Clé d'accès et solde de pages : pour fournir le service.</li>
-      <li>Courriel fourni lors du paiement : pour vous retrouver si vous perdez votre clé et pour nos obligations comptables. Le paiement est traité par Stripe ; nous ne voyons jamais votre carte.</li>
-      <li>Empreinte non réversible (hachage) de votre adresse IP lors d'un essai gratuit, conservée 24 heures, pour limiter les abus.</li>
+      <li><strong>Google LLC</strong> (API Gemini) : correction des copies. Traitement aux États-Unis et dans d'autres pays où Google exploite ses centres de données.</li>
+      <li><strong>Cloudflare, Inc.</strong> : hébergement du site et du serveur, base de données des clés d'accès, journaux techniques. Réseau mondial ; entreprise établie aux États-Unis.</li>
+      <li><strong>Stripe</strong> : paiements. Nous ne voyons jamais votre carte.</li>
+      <li><strong>Google Fonts</strong> : polices de caractères du site ; votre navigateur transmet votre adresse IP lorsqu'il les télécharge.</li>
     </ul>
+    <p>Comme les données sont traitées à l'extérieur du Québec, nous avons réalisé une évaluation des facteurs relatifs à la vie privée et conclu que les protections offertes par ces fournisseurs, compte tenu des mesures ci-dessus (aucune conservation de notre côté, offre payante sans entraînement, masquage possible du nom), sont adéquates. Ces données peuvent être soumises aux lois des pays où elles sont traitées.</p>
 
-    <h2>Vos responsabilités</h2>
-    <p>Vous êtes responsable d'utiliser le service conformément aux politiques de votre établissement. Évitez d'inclure sur les copies des renseignements sensibles non nécessaires à la correction.</p>
+    <h2>Renseignements que nous conservons, et pendant combien de temps</h2>
+    <ul>
+      <li><strong>Clé d'accès et solde de pages</strong> : pour fournir le service. Les clés d'essai gratuit sont supprimées après 90 jours ; les clés achetées sont conservées tant qu'elles servent, ou jusqu'à votre demande de suppression.</li>
+      <li><strong>Courriel fourni lors du paiement</strong> : associé à votre clé, pour vous aider si vous la perdez. Il est supprimé avec la clé. Stripe conserve de son côté les renseignements de transaction exigés par la loi.</li>
+      <li><strong>Empreinte non réversible (hachage avec un secret) de votre adresse IP</strong> lors d'un essai gratuit : pour limiter les abus. Effacée automatiquement en moins de 24 heures (nettoyage chaque heure).</li>
+      <li><strong>Journaux techniques de Cloudflare</strong> (page demandée, heure, code de résultat et, le cas échéant, adresse IP ; jamais le contenu des copies) : pour la sécurité et le dépannage, conservés quelques jours (7 jours au plus).</li>
+      <li><strong>Dans votre navigateur</strong> : votre clé d'accès et vos réglages (barème, mode, options) sont gardés dans votre navigateur pour vous éviter de les ressaisir. Le bouton « Changer de clé » retire la clé de l'appareil ; sur un ordinateur partagé, utilisez-le en fin de séance.</li>
+    </ul>
+    <p>Aucun témoin publicitaire, aucun outil de suivi ou de statistiques d'audience.</p>
+
+    <h2>Incidents de confidentialité</h2>
+    <p>En cas d'incident de confidentialité présentant un risque de préjudice sérieux, nous avisons sans délai la Commission d'accès à l'information et les personnes concernées (ainsi que l'établissement, lorsqu'il est connu), et prenons les mesures pour réduire le risque. Nous tenons un registre des incidents.</p>
 
     <h2>Vos droits</h2>
-    <p>Vous pouvez demander l'accès, la rectification ou la suppression des renseignements vous concernant en écrivant à <a href="mailto:bonjour@brulelapile.ca">bonjour@brulelapile.ca</a>.</p>
+    <p>Vous pouvez demander l'accès, la rectification ou la suppression des renseignements vous concernant, ou retirer votre consentement, en écrivant à <a href="mailto:bonjour@brulelapile.ca">bonjour@brulelapile.ca</a>. Nous répondons dans un délai de 30 jours. Vous pouvez aussi porter plainte auprès de la <a href="https://www.cai.gouv.qc.ca" rel="noopener">Commission d'accès à l'information du Québec</a>.</p>
   </main>
   <footer><div class="wrap"><span>© 2026 Brûle la pile</span><span><a href="confidentialite.html">Confidentialité</a> · <a href="conditions.html">Conditions</a> · <a href="mailto:bonjour@brulelapile.ca">Nous joindre</a></span></div></footer>
 </body>
