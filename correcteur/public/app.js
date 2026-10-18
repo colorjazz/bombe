@@ -361,7 +361,7 @@ function renderPages() {
   $('bundles').replaceChildren(...list.map((b, bi) => {
     const st = state.status[b[0].id];
     const tooLong = ready && b.length > MAX_PAGES_PER_COPY;
-    const label = st?.state === 'running' ? '⏳ correction…' : st?.state === 'error' ? `⚠ ${st.msg}` : tooLong ? `⚠ ${MAX_PAGES_PER_COPY} pages max : plusieurs élèves ? Utilisez « Nombre fixe de pages par élève » ou ✂` : '';
+    const label = st?.state === 'running' ? 'Correction en cours…' : st?.state === 'error' ? `⚠ ${st.msg}` : tooLong ? `⚠ ${MAX_PAGES_PER_COPY} pages max : plusieurs élèves ? Utilisez « Nombre fixe de pages par élève » ou ✂` : '';
     return h('div', { class: 'bundle' },
       h('div', { class: 'bundle-head' },
         h('span', {}, `Copie ${bi + 1}${b[0].detectedName ? ` · ${b[0].detectedName}` : ''} · ${b.length} page${b.length > 1 ? 's' : ''}`),
@@ -438,7 +438,7 @@ function updateGridTotal() {
 
 function renderGrid() {
   $('grid-editor').hidden = !state.grid;
-  $('make-grid').textContent = state.grid ? '✨ Régénérer la grille' : '✨ Préparer une grille détaillée (gratuit)';
+  $('make-grid').textContent = state.grid ? 'Régénérer la grille' : 'Préparer une grille détaillée (gratuit)';
   if (!state.grid) { renderSummary(); return; }
   $('grid-criteria').replaceChildren(...state.grid.map((c) => h('div', { class: 'crit' },
     h('div', { class: 'crit-top' },
@@ -454,7 +454,7 @@ async function makeGrid() {
   if (state.grid && !confirm('Remplacer la grille actuelle par une nouvelle ?')) return;
   const btn = $('make-grid');
   btn.disabled = true;
-  btn.textContent = '⏳ Un instant, l’IA prépare la grille…';
+  btn.textContent = 'Un instant, l’IA prépare la grille…';
   try {
     const { grid } = await api('/api/rubric', { method: 'POST', body: {
       rubric: $('rubric').value.trim(), rubricPages: state.rubricPages.map((p) => p.url),
@@ -775,7 +775,7 @@ function langCard(r) {
       h('div', { class: 'card-foot' },
         h('span', { textContent: [r.exam, `${r.pageCount} page(s)`].filter(Boolean).join(' · ') }),
         h('div', { style: 'display:flex;gap:.4rem' },
-          h('button', { class: 'btn primary small', type: 'button', textContent: '👁 Voir la copie annotée', onclick: () => openViewer(r) }),
+          h('button', { class: 'btn primary small', type: 'button', textContent: 'Voir la copie annotée', onclick: () => openViewer(r) }),
           h('button', { class: 'btn ghost small', type: 'button', textContent: 'Supprimer', onclick: () => {
             if (!confirm(`Supprimer l'analyse de ${r.name || 'cet élève'} ?`)) return;
             state.results = state.results.filter((x) => x !== r); renderResults();
@@ -869,6 +869,9 @@ function setKind(kind) {
   state.kind = kind;
   $('kind-content').classList.toggle('active', kind === 'content');
   $('kind-lang').classList.toggle('active', kind === 'lang');
+  $('kind-content').setAttribute('aria-selected', String(kind === 'content'));
+  $('kind-lang').setAttribute('aria-selected', String(kind === 'lang'));
+  document.querySelector('.kind').dataset.active = kind;
   $('content-settings').hidden = kind !== 'content';
   $('lang-settings').hidden = kind !== 'lang';
   $('step1-title').textContent = kind === 'lang' ? 'Correction de la langue' : 'Évaluation et copies';

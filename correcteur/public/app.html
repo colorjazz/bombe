@@ -46,9 +46,16 @@
   <!-- Application -->
   <main id="app" class="wrap layout" hidden>
     <section class="panel stack">
-      <div class="kind" role="tablist">
-        <button id="kind-content" class="active" type="button" role="tab">✅ Correction de copies</button>
-        <button id="kind-lang" type="button" role="tab">📝 Correction de la langue</button>
+      <div class="kind" role="tablist" data-active="content">
+        <span class="kind-pill" aria-hidden="true"></span>
+        <button id="kind-content" class="active" type="button" role="tab" aria-selected="true">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>
+          <span><span class="kind-long">Correction de c</span><span class="kind-short">C</span>opies</span>
+        </button>
+        <button id="kind-lang" type="button" role="tab" aria-selected="false">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7V5h16v2"/><path d="M9 19h6"/><path d="M12 5v14"/></svg>
+          <span><span class="kind-long">Correction de la l</span><span class="kind-short">L</span>angue</span>
+        </button>
       </div>
       <h2><span class="step">1</span> <span id="step1-title">Évaluation et copies</span></h2>
 
@@ -106,15 +113,15 @@
 
       <p class="section-label">Corrigé ou grille de correction</p>
       <label class="field">Consignes, réponses attendues, points par question
-        <textarea id="rubric" rows="5" placeholder="💡 Fournir le corrigé (ici ou en PDF/photo ci-dessous) améliore beaucoup la fiabilité de la correction.&#10;&#10;Ex. : Q1 (2 pts) : 1960, début de la Révolution tranquille. Q2 (3 pts) : nommer deux réformes… Accepter les synonymes."></textarea>
+        <textarea id="rubric" rows="5" placeholder="Astuce : fournir le corrigé (ici ou en PDF/photo ci-dessous) améliore beaucoup la fiabilité de la correction.&#10;&#10;Ex. : Q1 (2 pts) : 1960, début de la Révolution tranquille. Q2 (3 pts) : nommer deux réformes… Accepter les synonymes."></textarea>
       </label>
       <label id="rubric-drop" class="drop compact">
         <input id="rubric-files" type="file" accept="image/*,.heic,.heif,application/pdf,.docx,.txt" multiple hidden>
-        <span>📋</span><span>Ajouter le corrigé (PDF ou photos) — <b>non facturé</b></span>
+        <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="3" width="8" height="4" rx="1"/><path d="M16 5h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2"/></svg><span>Ajouter le corrigé (PDF ou photos) — <b>non facturé</b></span>
       </label>
       <div id="rubric-thumbs" class="thumbs"></div>
       <div class="grid-tools">
-        <button id="make-grid" class="btn" type="button">✨ Préparer une grille détaillée (gratuit)</button>
+        <button id="make-grid" class="btn" type="button">Préparer une grille détaillée (gratuit)</button>
         <span class="muted small">Recommandé pour les travaux de rédaction : l'IA rédige des niveaux précis pour chaque critère, vous les validez, et la même grille s'applique à toutes les copies. Les notes deviennent beaucoup plus constantes.</span>
       </div>
       <div id="grid-editor" class="grid-editor" hidden>
@@ -128,7 +135,7 @@
       <p class="section-label">Copies des élèves</p>
       <label id="drop" class="drop">
         <input id="files" type="file" accept="image/*,.heic,.heif,application/pdf,.docx,.txt" multiple hidden>
-        <span class="ico">📁</span>
+        <span class="ico"><svg class="ic ic-lg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg></span>
         <b>Glissez les copies ici ou cliquez pour parcourir</b>
         <span class="muted small">PDF, photos (y compris iPhone), Word (.docx) ou texte · plusieurs fichiers à la fois</span>
       </label>
@@ -170,12 +177,12 @@
       </div>
       <div id="stats" class="stats" hidden></div>
       <div id="empty" class="empty">
-        <div style="font-size:1.8rem">📝</div>
+        <div class="empty-ico"><svg class="ic ic-lg" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M8 13h8M8 17h5"/></svg></div>
         Les copies corrigées apparaîtront ici, avec le détail des points par question.
       </div>
       <div id="cards" class="cards"></div>
       <p class="muted small">Les notes sont des propositions : vérifiez-les, surtout les copies marquées ⚠. Tout est modifiable.<br>
-      🔒 Aucune copie ni note n'est conservée : téléchargez la grille avant de fermer la page.</p>
+      <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> Aucune copie ni note n'est conservée : téléchargez la grille avant de fermer la page.</p>
     </section>
   </main>
 
@@ -198,7 +205,7 @@
     <div class="panel viewer-panel">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem">
         <h2 id="viewer-title" style="margin:0"></h2>
-        <div style="display:flex;gap:.5rem"><button id="viewer-print" class="btn" type="button">🖨 Imprimer / PDF</button><button class="icon-btn" type="button" data-close-viewer aria-label="Fermer">×</button></div>
+        <div style="display:flex;gap:.5rem"><button id="viewer-print" class="btn" type="button"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9V3h12v6"/><rect x="4" y="9" width="16" height="8" rx="2"/><path d="M7 14h10v7H7z"/></svg> Imprimer / PDF</button><button class="icon-btn" type="button" data-close-viewer aria-label="Fermer">×</button></div>
       </div>
       <div class="viewer-body">
         <div id="viewer-pages" class="viewer-pages"></div>
