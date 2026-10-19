@@ -82,7 +82,8 @@ export async function startCamera(video, { onCapture, onStatus }) {
   const audio = Audio ? new Audio() : null; // créé pendant le geste qui ouvre la caméra : le son est permis
 
   const small = document.createElement('canvas'), work = document.createElement('canvas');
-  let prev = null, lastShot = null, stableSince = 0, coolUntil = 0, bestSharp = 0, stopped = false, timer = 0;
+  // En pause au départ : rien n'est photographié (la table, la main…) avant que l'enseignant touche « Démarrer ».
+  let armed = false, prev = null, lastShot = null, stableSince = 0, coolUntil = 0, bestSharp = 0, stopped = false, timer = 0;
 
   const shoot = (box) => {
     const vw = video.videoWidth, vh = video.videoHeight;
@@ -117,6 +118,7 @@ export async function startCamera(video, { onCapture, onStatus }) {
     const page = pageOf(lum, w, h);
     if (!page || page.cover < 0.3) { onStatus('Placez une feuille dans le cadre', 'wait', null); return; }
     if (page.ink < 0.002) { onStatus('Feuille vide ?', 'wait', page); return; } // à 160 px, l'écriture ne couvre que 0,5 à 2 % de la feuille
+    if (!armed) { onStatus('En pause : placez la première feuille, puis touchez « Démarrer »', 'wait', page); return; }
     if (lastShot && meanDiff(lum, lastShot) < SAME_PAGE) { onStatus('✓ Photographiée — tournez la page', 'done', page); return; }
     if (moving || now - stableSince < STABLE_MS) { onStatus('Tenez immobile…', 'hold', page); return; }
     const sharp = sharpness(video, page, work);
@@ -129,6 +131,8 @@ export async function startCamera(video, { onCapture, onStatus }) {
   tick();
 
   return {
+    // Démarrer / mettre en pause la prise automatique.
+    setArmed(on) { armed = !!on; stableSince = performance.now(); },
     // Déclencheur manuel : toute l'image, sans attendre.
     capture() { const w = small.width, h = small.height; lastShot = prev; shoot(prev ? pageOf(prev, w, h) : null); },
     stop() {

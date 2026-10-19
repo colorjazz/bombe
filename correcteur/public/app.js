@@ -1189,6 +1189,7 @@ async function openCamera() {
       onCapture: camCapture,
       onStatus: (msg, kind, box) => { status.textContent = tr(msg); status.className = `cam-status ${kind}`; camTarget(box, kind); },
     });
+    camArm(false);
   } catch (err) {
     $('cam').hidden = true;
     if (history.state?.cam) history.back();
@@ -1212,6 +1213,14 @@ $('cam-open').addEventListener('click', openCamera);
 $('cam-done').addEventListener('click', () => closeCamera());
 window.addEventListener('popstate', () => closeCamera(true));
 $('cam-shoot').addEventListener('click', () => camState.session?.capture());
+// Démarrer / Pause : la prise automatique ne commence qu'à la demande de l'enseignant.
+function camArm(on) {
+  camState.armed = on;
+  camState.session?.setArmed(on);
+  $('cam-go').textContent = tr(on ? '⏸ Pause' : '▶ Démarrer');
+  $('cam-go').classList.toggle('primary', !on);
+}
+$('cam-go').addEventListener('click', () => camArm(!camState.armed));
 $('cam-per').addEventListener('change', () => { camGroup(); camAutoRun(); });
 $('cam-auto').addEventListener('change', camAutoRun);
 $('cam-undo').addEventListener('click', () => {
