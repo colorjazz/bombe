@@ -110,7 +110,7 @@
       border-top-color: var(--accent); animation: tourne 0.9s linear infinite; flex: none;
     }
     @keyframes tourne { to { transform: rotate(360deg); } }
-    .erreur { background: var(--rouge-doux); color: var(--rouge); border-radius: 8px; padding: 12px; }
+    .erreur { background: var(--rouge-doux); color: var(--rouge); border-radius: 8px; padding: 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
     .aide { font-size: .875rem; color: var(--doux); }
     .aide a { color: var(--accent); }
     details summary { cursor: pointer; font-weight: 600; }
@@ -139,13 +139,13 @@
   <section class="carte cache" id="ecran-cle">
     <h2>Connexion à l'IA</h2>
     <p class="aide">
-      Colle ta clé API <strong>Gemini</strong> (commence par <code>AIza</code>, gratuite sur
+      Colle ta clé API <strong>Gemini</strong> (gratuite sur
       <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com</a>)
       ou <strong>Claude</strong> (commence par <code>sk-ant-</code>, sur
       <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>).
       Elle reste enregistrée seulement dans ce navigateur, sur cet appareil, et n'est envoyée qu'à l'API correspondante.
     </p>
-    <input type="password" id="champ-cle" placeholder="AIza... ou sk-ant-..." autocomplete="off">
+    <input type="password" id="champ-cle" placeholder="Clé Gemini ou sk-ant-..." autocomplete="off">
     <div class="rangee" style="margin-top:12px">
       <button class="btn" id="btn-sauver-cle" type="button">Enregistrer</button>
       <button class="btn discret cache" id="btn-oublier-cle" type="button">Effacer la clé</button>
@@ -338,7 +338,8 @@ ${COURS_TEXTE}`;
     additionalProperties: false,
   };
 
-  const estCleGemini = cle => cle.startsWith('AIza');
+  // Les clés Claude commencent par sk-ant- ; toute autre clé est traitée comme une clé Gemini.
+  const estCleGemini = cle => !cle.startsWith('sk-ant-');
 
   async function demanderJSON(consigne, schema, effort) {
     return estCleGemini(cleApi)
@@ -522,8 +523,15 @@ ${COURS_TEXTE}`;
     afficher('ecran-choix', 'ecran-attente');
   }
 
+  function texteErreur(e) {
+    const detail = e instanceof ErreurGemini || e instanceof Anthropic.APIError
+      ? `\n\nDétail : ${e.status ? e.status + ' ' : ''}${e.statut ? e.statut + ' – ' : ''}${e.message}`
+      : '';
+    return messageErreur(e) + detail;
+  }
+
   function erreur(e) {
-    $('texte-erreur').textContent = messageErreur(e);
+    $('texte-erreur').textContent = texteErreur(e);
     afficher('ecran-choix', 'ecran-erreur');
     if (estErreurCle(e)) afficher('ecran-cle', 'ecran-erreur');
   }
@@ -626,7 +634,7 @@ Consignes de correction :
       mettreAJourBoutonRatees();
       montrerCorrection(c);
     } catch (e) {
-      $('texte-erreur').textContent = messageErreur(e);
+      $('texte-erreur').textContent = texteErreur(e);
       afficher('ecran-choix', 'ecran-question', 'ecran-erreur');
     } finally {
       $('btn-corriger').disabled = false;
