@@ -465,21 +465,26 @@ async function geminiNative(env, parts, schema, preferredModel) {
 }
 
 // Sens d'une page photographiée de côté (gratuit) : l'appli ne l'appelle que pour les pages dont les lignes semblent verticales.
+// Elle envoie la page tournée dans les deux sens possibles ; l'IA dit laquelle se lit à l'endroit.
+// (Demander directement l'angle donnait presque toujours « 90 » : 9 bonnes réponses sur 18 avec de vraies copies.)
 async function orient(request, env) {
   await getKey(env, bearer(request));
-  const { image } = await readJson(request);
-  if (typeof image !== 'string' || !/^data:image\/(jpeg|png|webp);base64,/.test(image) || image.length > MAX_THUMB_CHARS) throw new HttpError(400, 'Image invalide');
-  const prompt = "Cette image montre une page (copie d'élève, texte imprimé ou manuscrit), peut-être photographiée de côté ou à l'envers. "
-    + "De combien de degrés faut-il la faire pivoter DANS LE SENS DES AIGUILLES D'UNE MONTRE pour que le texte se lise normalement, de gauche à droite et de haut en bas ? Réponds 0, 90, 180 ou 270.";
+  const { images } = await readJson(request);
+  const ok = (im) => typeof im === 'string' && /^data:image\/(jpeg|png|webp);base64,/.test(im) && im.length <= MAX_THUMB_CHARS;
+  if (!Array.isArray(images) || images.length !== 2 || !images.every(ok)) throw new HttpError(400, 'Image invalide');
+  const prompt = "Voici deux fois la même page (copie d'élève, texte imprimé ou manuscrit), tournée de deux façons : image A, puis image B. "
+    + "L'une montre le texte à l'endroit, l'autre à l'envers (tourné de 180°). Pour chacune, recopie les premiers mots que tu arrives à lire "
+    + "de gauche à droite sans tourner la tête (chaîne vide si rien n'est lisible ainsi), puis indique laquelle est à l'endroit.";
   let raw;
   try {
-    raw = await geminiNative(env, [{ text: prompt }, inlineImage(image)],
-      { type: 'OBJECT', properties: { rotation: { type: 'STRING', enum: ['0', '90', '180', '270'] } }, required: ['rotation'] }, env.LANG_MODEL);
+    raw = await geminiNative(env, [{ text: prompt }, { text: 'Image A :' }, inlineImage(images[0]), { text: 'Image B :' }, inlineImage(images[1])],
+      { type: 'OBJECT', properties: { mots_A: { type: 'STRING' }, mots_B: { type: 'STRING' }, endroit: { type: 'STRING', enum: ['A', 'B'] } },
+        required: ['mots_A', 'mots_B', 'endroit'] }, env.LANG_MODEL);
   } catch (err) {
     console.error('Orientation impossible :', err.message);
     throw new HttpError(502, 'Orientation impossible');
   }
-  return json({ rotation: Number(raw.rotation) || 0 });
+  return json({ choice: raw.endroit === 'B' ? 1 : 0 });
 }
 
 // Rectangle [ymin, xmin, ymax, xmax] sur 1000, ou null s'il est inutilisable.
@@ -829,7 +834,7 @@ ${list.map((q, i) => `${i + 1}. ${q.name} (sur ${fr(q.max)} points)`).join('\n')
     // Copie illisible : aucune note inventée, et rien n'est facturé.
     await env.DB.prepare('UPDATE access_keys SET pages = pages + ? WHERE key = ?').bind(n, key).run();
     const left = await env.DB.prepare('SELECT pages FROM access_keys WHERE key = ?').bind(key).first();
-    return json({ name: '', group: a.group, grade: null, total, illegible: true, comment: '', reliability: null, secondGrade: null,
+    return json({ name: '', group: body.anonymous ? '' : a.group, grade: null, total, illegible: true, comment: '', reliability: null, secondGrade: null,
       questions: a.questions.map(({ raw, ...q }) => ({ ...q, points: 0, second: null, justification: q.justification || 'Illisible' })),
       flags: [...flags, "Copie illisible (photo floue, sombre ou coupée) : aucune note n'a été attribuée et aucune page n'a été décomptée. Reprenez la photo ou corrigez cette copie vous-même."],
       pagesLeft: left?.pages ?? 0 });

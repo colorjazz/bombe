@@ -297,8 +297,13 @@ async function straighten(pages) {
     try {
       const img = await loadImage(p.url);
       if (!looksSideways(img)) return;
-      const { rotation } = await api('/api/orient', { method: 'POST', body: { image: await thumbnail(p.url, 768) } });
-      if (!rotation) return;
+      // L'IA reçoit la page tournée dans les deux sens possibles et choisit celle qui se lit à l'endroit.
+      // Nom masqué : seule la partie centrale de la page part (l'en-tête est sur un bord, lequel on ne le sait pas encore).
+      const crop = anonymous() ? [0.25, 0.15, 0.75, 0.85] : null;
+      const small = await thumbnail(p.url, 768, crop);
+      const images = await Promise.all([90, 270].map((d) => rotateDataUrl(small, d, 0.6)));
+      const { choice } = await api('/api/orient', { method: 'POST', body: { images } });
+      const rotation = choice ? 270 : 90;
       p.url = await rotateDataUrl(p.url, rotation);
       p.rot = rotation;
       turned++;
@@ -331,7 +336,7 @@ function applyMode() {
 // ---------- Détection automatique des copies ----------
 
 // Option « masquer le nom » : le haut de la 1re page (en-tête avec le nom) est blanchi dans le navigateur
-// avant l'envoi. Le nom ne quitte donc jamais l'ordinateur ; l'enseignant voit toujours la copie complète.
+// avant l'envoi (le redressement des photos n'envoie que le centre de la page) ; l'enseignant voit toujours la copie complète.
 const MASK_TOP = 0.14;
 const anonymous = () => $('anon').checked;
 function maskTop(url) {
@@ -351,15 +356,18 @@ function maskTop(url) {
   });
 }
 
-function thumbnail(url, size = 640) {
+// crop : [x0, y0, x1, y1] en fractions de l'image, pour n'en envoyer qu'une partie.
+function thumbnail(url, size = 640, crop = null) {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
-      const scale = Math.min(1, size / Math.max(img.width, img.height));
+      const [fx0, fy0, fx1, fy1] = crop || [0, 0, 1, 1];
+      const sx = img.width * fx0, sy = img.height * fy0, sw = img.width * (fx1 - fx0), sh = img.height * (fy1 - fy0);
+      const scale = Math.min(1, size / Math.max(sw, sh));
       const c = document.createElement('canvas');
-      c.width = Math.round(img.width * scale);
-      c.height = Math.round(img.height * scale);
-      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      c.width = Math.round(sw * scale);
+      c.height = Math.round(sh * scale);
+      c.getContext('2d').drawImage(img, sx, sy, sw, sh, 0, 0, c.width, c.height);
       resolve(c.toDataURL('image/jpeg', 0.6));
     };
     img.onerror = () => reject(new Error('image illisible'));
@@ -1061,14 +1069,17 @@ function exportCSV() {
 }
 
 function endSession() {
-  if (!confirm(tr('Télécharger les notes puis tout effacer (copies, corrigé, résultats) ?'))) return;
-  exportCSV();
+  if (!confirm(tr('Terminer la session et tout effacer (copies, corrigé, résultats) ?'))) return;
+  if (state.results.length && !state.exported && confirm(tr('Télécharger les notes (CSV) avant d’effacer ?'))) exportCSV();
+  // Ordinateur partagé : la clé mémorisée permettrait au suivant d'utiliser les pages restantes.
+  const forget = confirm(`${tr('Oublier aussi la clé d’accès sur cet ordinateur ? Notez-la d’abord pour utiliser vos pages restantes :')} ${state.key}`);
   Object.assign(state, { results: [], pages: [], rubricPages: [], status: {}, open: new Set(), exported: true });
   $('mode').value = ''; $('per').value = '';
   ['exam', 'group', 'rubric', 'search'].forEach((id) => { $(id).value = ''; });
   state.grid = null;
   renderRubric(); renderGrid(); renderPages(); renderResults();
-  banner('ok', 'Session terminée : les notes sont téléchargées et tout a été effacé.');
+  if (forget) { store.del(); location.reload(); return; }
+  banner('ok', 'Session terminée : tout a été effacé.');
 }
 
 // ---------- Événements ----------
