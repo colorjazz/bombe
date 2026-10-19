@@ -423,6 +423,7 @@ const NATIVE_LANG_SCHEMA = {
       explication: { type: 'STRING', description: 'Une courte explication de la règle (ex: Accord du participe passé).' },
       categorie: { type: 'STRING', enum: Object.keys(LANG_CATEGORIES) },
       ligne: { type: 'STRING', description: 'La ligne manuscrite complète où se trouve la faute, recopiée exactement telle qu’écrite (de son premier à son dernier mot).' },
+      lecture_douteuse: { type: 'BOOLEAN', description: "true si tu n'es pas certain de ce que l'élève a écrit à cet endroit (lettre ambiguë)." },
       box: { type: 'ARRAY', items: { type: 'INTEGER' }, description: 'Bounding box [ymin, xmin, ymax, xmax] normalisée de 0 à 1000. Laisse vide si introuvable.' },
     },
     required: ['mot_fautif', 'correction', 'explication', 'categorie'],
@@ -516,7 +517,7 @@ async function language(request, env) {
 Your task:
 1. Read the text carefully.
 2. Identify ONLY these errors: ${cats.map((c) => LANG_CATEGORIES_EN[c]).join('; ')}. No style preferences; if a word is illegible, ignore it.
-   Only flag an error if you are sure what the student wrote: an ambiguous letter is not an error. Ignore the teacher's marks (brackets, X, underlining, colored ink).
+   A well-formed letter is never an error. If a letter is ambiguous, flag the error only if it is likely, with lecture_douteuse = true. Ignore the teacher's marks (brackets, X, underlining, colored ink).
 3. For EACH error found, give its coordinates (bounding box) on the image, surrounding the COMPLETE WORD or COMPLETE EXPRESSION containing the error.
    The 'box' coordinates must be an array of 4 numbers [ymin, xmin, ymax, xmax] normalized between 0 and 1000.
    (ymin = top, xmin = left, ymax = bottom, xmax = right).
@@ -525,7 +526,7 @@ Return ONLY a JSON array. If no error is found, return an empty array [].` : `Tu
 Ta mission :
 1. Lis le texte attentivement.
 2. Identifie UNIQUEMENT ces fautes : ${cats.map((c) => LANG_CATEGORIES[c]).join(' ; ')}. Pas de choix de style ; si un mot est illisible, ignore-le.
-   Ne relève une faute que si tu es certain de ce que l'élève a écrit : une lettre ambiguë (q ou d, accent douteux, lettre doublée ou non) n'est pas une faute. Ignore les marques de l'enseignant (crochets, X, soulignés, encre de couleur).
+   Une lettre bien formée n'est jamais une faute. Si une lettre est ambiguë (q ou d, accent douteux, lettre doublée ou non), relève la faute seulement si elle est probable, avec lecture_douteuse = true. Ignore les marques de l'enseignant (crochets, X, soulignés, encre de couleur).
 3. Pour CHAQUE faute trouvée, déduis ses coordonnées (bounding box) sur l'image en encadrant le MOT COMPLET ou l'EXPRESSION COMPLÈTE qui contient la faute.
    Les coordonnées 'box' doivent être un tableau de 4 nombres [ymin, xmin, ymax, xmax] normalisés entre 0 et 1000.
    (ymin = haut, xmin = gauche, ymax = bas, xmax = droite).
@@ -549,7 +550,8 @@ Renvoie EXCLUSIVEMENT un tableau JSON. Si aucune faute n'est trouvée, renvoie u
       && String(f.correction || '').trim().normalize('NFC') !== String(f.texte || '').trim().normalize('NFC')).map((f) => ({
       text: String(f.texte || '').slice(0, 200), correction: String(f.correction || '').slice(0, 200),
       category: f.categorie, explanation: String(f.explication || '').slice(0, 400), box: cleanBox(f.box),
-      line: String(f.ligne || '').slice(0, 400), // sert à recaler le cadre sur le bon mot de la ligne (voir app.js)
+      line: String(f.ligne || '').slice(0, 400), // recopier la ligne fait partie de la consigne avec laquelle les cadres ont été mesurés
+      doubtful: !!f.lecture_douteuse, // lecture incertaine : affichée « à vérifier », non comptée dans la note
     })),
   } : { errors: [], failed: true }));
   const who = await identity;

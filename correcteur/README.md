@@ -52,7 +52,7 @@ npm run dev            # http://localhost:8787
 
 - `AI_MODEL` : modèle utilisé (défaut `gemini-3.5-flash`).
 - `AI_FALLBACK_MODEL` : modèle de secours si `AI_MODEL` est retiré (défaut `gemini-flash-latest`).
-- `LANG_MODEL` : modèle de la correction de la langue (défaut `gemini-3-flash-preview`).
+- `LANG_MODEL` : modèle de la correction de la langue, de la 2e correction (si `SECOND_MODEL` est absent) et du redressement des photos (défaut `gemini-3.7-flash`).
 - `SECOND_MODEL` (facultatif) : modèle de la 2e correction en mode approfondi (défaut : `LANG_MODEL`, pour une contre-vérification réellement indépendante).
 - Nettoyage horaire (`[triggers]` dans `wrangler.toml`) : empreintes d'IP de plus de 24 h et clés d'essai de plus de 90 jours.
 - `public/vendor/` : pdf.js, mammoth, heic2any et html2canvas hébergés sur le site (les réseaux scolaires filtrent souvent les CDN).

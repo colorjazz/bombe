@@ -10,7 +10,7 @@ const KEY_STORAGE = 'ce.accessKey';
 const PDFJS = '/vendor/pdfjs'; // pdf.js 3.11.174, hébergé sur le site
 
 import { t, tr, lang, startI18n } from './i18n.js';
-import { snapToInk } from './boxes.js';
+import { refineToInk } from './boxes.js';
 import { looksSideways, rotateDataUrl } from './orient.js';
 
 const $ = (id) => document.getElementById(id);
@@ -59,7 +59,7 @@ function banner(type, text) {
 async function api(path, { method = 'GET', body, auth = true } = {}) {
   const res = await fetch(path, {
     method,
-    headers: { 'X-Lang': lang, ...(body ? { 'Content-Type': 'application/json' } : {}), ...(auth && state.key ? { Authorization: `Bearer ${state.key}` } : {}) },
+    headers: { 'X-Lang': $('out-lang').value || lang, ...(body ? { 'Content-Type': 'application/json' } : {}), ...(auth && state.key ? { Authorization: `Bearer ${state.key}` } : {}) },
     body: body ? JSON.stringify(body) : undefined,
   });
   const data = await res.json().catch(() => ({}));
@@ -337,7 +337,9 @@ function applyMode() {
 
 // Option « masquer le nom » : le haut de la 1re page (en-tête avec le nom) est blanchi dans le navigateur
 // avant l'envoi (le redressement des photos n'envoie jamais que le centre de la page) ; l'enseignant voit toujours la copie complète.
-const MASK_TOP = 0.14;
+// Hauteur de la bande masquée (part de la page) et pages concernées : réglables, aperçu hachuré sur les miniatures.
+const maskFrac = () => Number($('anon-h').value) || 0.14;
+const masked = (i) => anonymous() && (i === 0 || $('anon-all').checked);
 const anonymous = () => $('anon').checked;
 function maskTop(url) {
   return new Promise((resolve, reject) => {
@@ -348,7 +350,7 @@ function maskTop(url) {
       const g = c.getContext('2d');
       g.drawImage(img, 0, 0);
       g.fillStyle = '#fff';
-      g.fillRect(0, 0, c.width, Math.round(c.height * MASK_TOP));
+      g.fillRect(0, 0, c.width, Math.round(c.height * maskFrac()));
       resolve(c.toDataURL('image/jpeg', 0.9));
     };
     img.onerror = reject;
@@ -388,7 +390,7 @@ async function detectCopies() {
       const batch = todo.slice(i, i + SPLIT_BATCH);
       const before = state.pages[state.pages.indexOf(batch[0]) - 1];
       const { pages } = await api('/api/split', { method: 'POST', body: {
-        pages: await Promise.all(batch.map(async (p) => thumbnail(anonymous() ? await maskTop(p.url) : p.url))),
+        pages: await Promise.all(batch.map(async (p) => thumbnail(anonymous() ? await maskTop(p.url) : p.url))), // page de début possible : toujours masquée
         previous: before ? await thumbnail(anonymous() ? await maskTop(before.url) : before.url) : undefined,
       } });
       batch.forEach((p, j) => { p.autoStart = pages[j].startsNew; p.detectedName = pages[j].name; });
@@ -443,7 +445,7 @@ function renderPages() {
         pi > 0 ? h('button', { class: 'split', type: 'button', title: 'Séparer : une nouvelle copie commence ici', textContent: '✂', disabled: state.running,
           onclick: () => { p.startsNew = true; p.autoStart = true; renderPages(); } }) : null,
         h('div', { class: 'thumb', title: p.file },
-          pi === 0 && anonymous() ? h('div', { class: 'mask-band', style: `height:${MASK_TOP * 100}%`, title: 'Zone masquée : non envoyée' }) : null,
+          masked(pi) ? h('div', { class: 'mask-band', style: `height:${maskFrac() * 100}%`, title: 'Zone masquée : non envoyée' }) : null,
           h('img', { src: p.url, alt: `Page ${pi + 1}`, title: 'Agrandir', onclick: () => openZoom([p.url], `Copie ${nos[bi]} · page ${pi + 1} · ${p.file}`) }),
           h('button', { class: 'rot', type: 'button', textContent: '↻', title: 'Pivoter la page de 90°', disabled: state.running, onclick: () => rotatePage(p) }),
           h('button', { class: 'x', type: 'button', textContent: '×', title: 'Retirer cette page', disabled: state.running,
@@ -619,11 +621,10 @@ async function runAll() {
           const res = { kind: 'lang', id, no: b[0].no, file: b[0].file, exam: settings.exam, group: r.group || settings.group, name: r.name, pageCount: b.length,
             pages: b.map((p, i) => ({ url: p.url, errors: r.pages[i].errors, failed: !!r.pages[i].failed })),
             scoring: langScoring(), flags: r.failedPages ? [`${r.failedPages} page(s) n'ont pas pu être analysées (non décomptées).`] : [] };
-          await snapBoxes(res);
           langGrade(res);
           state.results.unshift(res);
         } else {
-        const pages = await Promise.all(b.map((p, i) => (i === 0 && settings.anonymous ? maskTop(p.url) : p.url)));
+        const pages = await Promise.all(b.map((p, i) => (masked(i) ? maskTop(p.url) : p.url)));
         const r = await api('/api/grade', { method: 'POST', body: { ...settings, pages } });
         setBalance(r.pagesLeft);
         state.results.unshift({
@@ -791,7 +792,7 @@ async function analyzeLanguage(bundle) {
   const anon = anonymous();
   const urls = await Promise.all(bundle.map(async (p, i) => {
     const url = p.source ? await imageToJpeg(p.source, LANG_MAX_SIDE, 0.9, p.rot || 0) : p.url;
-    return i === 0 && anon ? maskTop(url) : url;
+    return masked(i) ? maskTop(url) : url;
   }));
   const parts = await Promise.all(urls.map((url, i) => api('/api/language', { method: 'POST',
     body: { pages: [url], identify: i === 0 && !anon, ...langSettings() } }).catch((error) => ({ error }))));
@@ -806,24 +807,15 @@ async function analyzeLanguage(bundle) {
   };
 }
 
-// Recale chaque surlignage sur le mot réellement écrit (voir boxes.js). Gratuit : tout se fait dans le navigateur.
+// Pixels d'une page : servent à resserrer sur l'encre un cadre tracé à la main (voir boxes.js).
 const loadImage = (url) => new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
-async function snapBoxes(res) {
-  for (const p of res.pages) {
-    const located = p.errors.filter((e) => e.box);
-    if (!located.length) continue;
-    try {
-      const img = await loadImage(p.url);
-      const c = document.createElement('canvas');
-      c.width = img.width; c.height = img.height;
-      const g = c.getContext('2d', { willReadFrequently: true });
-      g.drawImage(img, 0, 0);
-      const data = g.getImageData(0, 0, c.width, c.height);
-      const heights = located.map((e) => e.box[2] - e.box[0]).sort((x, y) => x - y);
-      const lineH = heights[Math.floor(heights.length / 2)];
-      for (const e of located) e.box = snapToInk(data, e.box, e.text, e.line, located.length >= 3 ? lineH : undefined);
-    } catch { /* recalage impossible : on garde le repérage de l'IA */ }
-  }
+async function pageData(url) {
+  const img = await loadImage(url);
+  const c = document.createElement('canvas');
+  c.width = img.width; c.height = img.height;
+  const g = c.getContext('2d', { willReadFrequently: true });
+  g.drawImage(img, 0, 0);
+  return g.getImageData(0, 0, c.width, c.height);
 }
 
 const langSettings = () => ({
@@ -838,8 +830,10 @@ function langScoring() {
 }
 
 // Note de langue : total − (points par faute × nombre de fautes), plafonné au retrait maximum.
+// Les fautes à la lecture incertaine sont montrées « à vérifier » mais ne comptent pas dans la note.
+const counted = (errors) => errors.filter((e) => !e.doubtful);
 function langGrade(r) {
-  const count = r.pages.reduce((a, p) => a + p.errors.length, 0);
+  const count = r.pages.reduce((a, p) => a + counted(p.errors).length, 0);
   if (!r.scoring) { r.grade = null; r.total = null; return count; }
   r.total = r.scoring.total;
   r.grade = Math.max(0, r.scoring.total - Math.min(r.scoring.max, r.scoring.per * count));
@@ -855,9 +849,10 @@ function categoryChips(errors) {
 
 function langCard(r) {
   const errors = r.pages.flatMap((p) => p.errors);
+  const n = counted(errors).length;
   const gradeEl = h('span', { class: 'grade' });
-  gradeEl.replaceChildren(r.grade == null ? `${errors.length} faute${errors.length > 1 ? 's' : ''}`
-    : h('span', {}, fmt(r.grade), h('small', {}, ` / ${fmt(r.total)} · ${errors.length} faute(s)`)));
+  gradeEl.replaceChildren(r.grade == null ? `${n} faute${n > 1 ? 's' : ''}`
+    : h('span', {}, fmt(r.grade), h('small', {}, ` / ${fmt(r.total)} · ${n} faute(s)`)));
   return h('article', { class: `card open ${r.flags.length ? 'flag' : ''}` },
     h('div', { class: 'card-head' },
       h('input', { class: 'name', type: 'text', value: r.name, placeholder: r.no ? `⚠ Nom à compléter (copie ${r.no})` : '⚠ Nom à compléter', 'aria-label': "Nom de l'élève",
@@ -914,7 +909,7 @@ function renderViewer(focus) {
     items.length ? categoryChips(items.map((i) => i.e)) : h('p', { class: 'muted', textContent: 'Aucune faute relevée.' }),
     ...items.map(({ e, p, n: k }) => {
       const el = h('div', { class: `err ${CATS[e.category].cls} ${focus === e ? 'focus' : ''}`, onclick: () => renderViewer(e) },
-        h('div', { class: 'err-head' }, h('b', { textContent: `${k}. ${CATS[e.category].label}${e.box ? '' : ' (non localisée)'}` }),
+        h('div', { class: 'err-head' }, h('b', { textContent: `${k}. ${CATS[e.category].label}${e.box ? '' : ' (non localisée)'}${e.doubtful ? ' · à vérifier' : ''}` }),
           h('button', { class: 'icon-btn', type: 'button', textContent: '×', title: "Ce n'est pas une faute : retirer", onclick: (ev) => {
             ev.stopPropagation();
             p.errors = p.errors.filter((x) => x !== e);
@@ -959,10 +954,14 @@ function addErrorForm() {
   const fix = h('input', { type: 'text', placeholder: 'Ex. : ils mangent' });
   const cat = h('select', {}, Object.entries(CATS).map(([k, c]) => h('option', { value: k, textContent: c.label })));
   const why = h('input', { type: 'text', placeholder: 'Ex. : accord du verbe avec le sujet' });
-  const save = () => {
+  const save = async () => {
     if (!text.value.trim() || !fix.value.trim()) { text.focus(); return; }
-    const e = { text: text.value.trim(), correction: fix.value.trim(), category: cat.value, explanation: why.value.trim(), box: adding.box, manual: true };
-    adding.page.errors.push(e);
+    const { page, box } = adding;
+    // Le cadre tracé à la main est resserré sur l'encre du mot (on garde le tracé si l'encre n'est pas trouvée).
+    let snapped = box;
+    try { snapped = refineToInk(await pageData(page.url), box); } catch { /* tracé gardé */ }
+    const e = { text: text.value.trim(), correction: fix.value.trim(), category: cat.value, explanation: why.value.trim(), box: snapped, manual: true };
+    page.errors.push(e);
     adding = null;
     state.exported = false;
     renderViewer(e); renderResults();
@@ -1012,10 +1011,15 @@ async function printViewer() {
     h1{font-size:14px;margin:0 0 4px}.sheet{break-after:page;page-break-after:always}.sheet:last-child{break-after:auto;page-break-after:auto}
     img{display:block;max-width:100%;max-height:205mm;margin:0 auto 6px;object-fit:contain}
     ol{list-style:none;padding:0;margin:0;column-count:2;column-gap:14px}li{break-inside:avoid;margin:0 0 4px}
-    @media screen{body{margin:16px}.sheet{border-bottom:1px dashed #bbb;padding-bottom:12px;margin-bottom:12px}}</style></head><body>
+    @media screen{body{margin:16px;width:740px}.sheet{border-bottom:1px dashed #bbb;padding-bottom:12px;margin-bottom:12px}}</style></head><body>
     <h1>${esc(copyTitle(r) || tr('Élève'))}${r.group ? ` · ${esc(r.group)}` : ''} — ${tr(`${n} faute(s)`)}${r.grade != null ? ` · ${fmt(r.grade)} / ${fmt(r.total)}` : ''}</h1>
     ${sheets.join('')}
-    <script>window.onload=()=>window.print()<\/script></body></html>`);
+    <script>window.onload=()=>{
+      // Chaque page de copie tient sur une feuille : on réduit l'image tant que la feuille déborde (lettre, marges de 10 mm).
+      const max=(279.4-20)*96/25.4-4;
+      document.querySelectorAll('.sheet').forEach((s,i)=>{const im=s.querySelector('img');const extra=i===0?document.querySelector('h1').offsetHeight:0;
+        while(s.offsetHeight+extra>max&&im.offsetHeight>250)im.style.maxHeight=(im.offsetHeight-15)+'px';});
+      window.print();}<\/script></body></html>`);
   w.document.close();
 }
 
@@ -1064,9 +1068,9 @@ function exportCSV() {
     const rows = [['N° copie', 'Fichier', 'Évaluation', 'Groupe', 'Élève', 'Fautes', ...keys.map((k) => CATS[k].label), 'Note', 'Sur', 'Détail des fautes']];
     for (const r of [...langRes].sort((x, y) => (x.no ?? 0) - (y.no ?? 0))) {
       const errs = r.pages.flatMap((p) => p.errors);
-      rows.push([r.no ?? '', r.file || '', r.exam, r.group, r.name, errs.length, ...keys.map((k) => errs.filter((e) => e.category === k).length),
+      rows.push([r.no ?? '', r.file || '', r.exam, r.group, r.name, counted(errs).length, ...keys.map((k) => counted(errs).filter((e) => e.category === k).length),
         r.grade == null ? '' : num(r.grade), r.grade == null ? '' : num(r.total),
-        errs.map((e) => `${e.text} → ${e.correction} (${e.explanation})`).join(' | ')]);
+        errs.map((e) => `${e.text} → ${e.correction} (${e.explanation})${e.doubtful ? ' [à vérifier, non comptée]' : ''}`).join(' | ')]);
     }
     downloadCSV(rows, lang === 'en' ? '_writing' : '_langue');
   }
@@ -1180,18 +1184,22 @@ window.addEventListener('beforeunload', (e) => {
   if (state.running || (state.results.length && !state.exported)) e.preventDefault();
 });
 
-// Réglages de l'enseignant retenus d'une session à l'autre (dans ce navigateur seulement ; aucune donnée d'élève),
-// y compris le corrigé tapé et le nom de l'évaluation, pour corriger plusieurs groupes de suite. « Terminer la session » les efface.
+// Réglages de l'enseignant retenus d'une session à l'autre (dans ce navigateur seulement ; aucune donnée d'élève).
+// Le corrigé tapé et le nom de l'évaluation ne sont gardés que jusqu'à la fermeture de l'onglet : assez pour corriger
+// plusieurs groupes de suite, sans laisser le corrigé sur un ordinateur partagé. « Terminer la session » les efface aussi.
 // Le regroupement des pages n'est pas retenu : il repart toujours d'un choix neutre.
-const PREF_IDS = ['exam', 'rubric', 'total', 'whole', 'deep', 'language', 'lang-level', 'lang-total', 'lang-per', 'lang-max', 'anon'];
+const PREF_IDS = ['total', 'whole', 'deep', 'language', 'lang-level', 'lang-total', 'lang-per', 'lang-max', 'anon', 'anon-h', 'anon-all', 'out-lang'];
+const TAB_IDS = ['exam', 'rubric'];
 function savePrefs() {
   const prefs = Object.fromEntries(PREF_IDS.map((id) => [id, $(id).type === 'checkbox' ? $(id).checked : $(id).value]));
   prefs.cats = [...document.querySelectorAll('#lang-cats input')].filter((i) => i.checked).map((i) => i.value);
   try { localStorage.setItem('ce.prefs', JSON.stringify(prefs)); } catch { /* navigation privée */ }
+  try { sessionStorage.setItem('ce.tab', JSON.stringify(Object.fromEntries(TAB_IDS.map((id) => [id, $(id).value])))); } catch { /* ignoré */ }
 }
 function loadPrefs() {
   let prefs = null;
   try { prefs = JSON.parse(localStorage.getItem('ce.prefs') || 'null'); } catch { /* ignoré */ }
+  try { const tab = JSON.parse(sessionStorage.getItem('ce.tab') || 'null'); if (tab) TAB_IDS.forEach((id) => { if (tab[id]) $(id).value = tab[id]; }); } catch { /* ignoré */ }
   if (!prefs) return;
   for (const id of PREF_IDS) {
     if (prefs[id] == null) continue;
@@ -1200,9 +1208,11 @@ function loadPrefs() {
   }
   if (Array.isArray(prefs.cats)) document.querySelectorAll('#lang-cats input').forEach((i) => { i.checked = prefs.cats.includes(i.value); });
 }
+$('out-lang').value = lang; // par défaut la langue du site ; le choix de l'enseignant est ensuite retenu
 loadPrefs();
-for (const id of PREF_IDS) $(id).addEventListener('change', savePrefs);
-$('anon').addEventListener('change', () => renderPages());
+$('anon-opts').hidden = !anonymous();
+for (const id of [...PREF_IDS, ...TAB_IDS]) $(id).addEventListener('change', savePrefs);
+['anon', 'anon-h', 'anon-all'].forEach((id) => $(id).addEventListener('change', () => { $('anon-opts').hidden = !anonymous(); renderPages(); }));
 document.querySelectorAll('#lang-cats input').forEach((i) => i.addEventListener('change', savePrefs));
 
 // ---------- Démarrage ----------

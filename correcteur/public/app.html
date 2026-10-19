@@ -71,6 +71,9 @@
           <input id="group" type="text" placeholder="Ex. : 541">
         </label>
       </div>
+      <label class="field">Langue des copies et des commentaires de l'IA
+        <select id="out-lang"><option value="fr">Français</option><option value="en">English</option></select>
+      </label>
       <div id="lang-settings" class="stack" hidden>
         <p class="muted small" style="margin:0">L'IA relève les fautes de français sur chaque page et les surligne directement sur la copie, avec la correction et la règle. 1 page de copie = 1 page décomptée.</p>
         <label class="field">Niveau des élèves
@@ -144,6 +147,11 @@
         <span class="muted small">PDF, photos (y compris iPhone), Word (.docx) ou texte · plusieurs fichiers à la fois</span>
       </label>
       <label class="toggle"><input id="anon" type="checkbox"> Masquer le nom de l'élève avant l'envoi <span class="muted small">— le haut de la 1re page de chaque copie (zone hachurée sur les miniatures) n'est pas transmis ; vous inscrirez les noms vous-même. Vérifiez qu'aucune réponse ne s'y trouve.</span></label>
+      <div id="anon-opts" class="mode" hidden>
+        <span>Bande masquée :</span>
+        <select id="anon-h"><option value="0.08">8 % de la page</option><option value="0.14" selected>14 %</option><option value="0.2">20 %</option><option value="0.3">30 %</option></select>
+        <label class="toggle"><input id="anon-all" type="checkbox"> sur toutes les pages (nom répété)</label>
+      </div>
       <div id="pages-zone" class="stack" hidden>
         <div class="mode">
           <span>Regrouper :</span>
