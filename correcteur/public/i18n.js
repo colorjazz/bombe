@@ -50,7 +50,7 @@ const EN = {
   "Évaluer aussi l'orthographe et la grammaire": 'Also assess spelling and grammar',
   'Corrigé ou grille de correction': 'Answer key or rubric',
   'Consignes, réponses attendues, points par question': 'Instructions, expected answers, points per question',
-  'Astuce : fournir le corrigé (ici ou en PDF/photo ci-dessous) améliore beaucoup la fiabilité de la correction.\n\nEx. : Q1 (2 pts) : 1960, début de la Révolution tranquille. Q2 (3 pts) : nommer deux réformes… Accepter les synonymes.':
+  'Astuce : fournir le corrigé (ici ou en PDF/photo ci-dessous) améliore beaucoup la fiabilité de la correction.\n\nEx. : Q1 (2 pts) : 1960, début de la Révolution tranquille. Q2 (3 pts) : nommer deux réformes… Accepter les synonymes.\n\nVous pouvez aussi demander la forme du rendu : « Commentaire de 2 phrases, au tu, qui commence par un point fort », « Justifications courtes »…':
     'Tip: providing the answer key (here or as a PDF/photo below) greatly improves grading reliability.\n\nE.g., Q1 (2 pts): 1947, start of the Cold War. Q2 (3 pts): name two causes… Accept synonyms.',
   'Ajouter le corrigé (PDF ou photos) —': 'Add the answer key (PDF or photos) —',
   'non facturé': 'not charged',
@@ -220,6 +220,7 @@ const EN = {
   '✓ Photographiée — tournez la page': '✓ Captured — turn the page', 'Image floue : tenez le téléphone immobile': 'Blurry: hold the phone still',
   'Pages par élève': 'Pages per student', 'Corriger pendant la prise de vue': 'Grade while capturing', 'Annuler la dernière': 'Undo last',
   'Relecture en cours : d’autres fautes peuvent s’ajouter…': 'Second reading in progress: more errors may be added…',
+  'Vous pouvez aussi y préciser comment rédiger les résultats : ton, longueur, tutoiement, ce que le commentaire doit souligner.': 'You can also say how results should be written: tone, length, what the comment should highlight.',
   'Terminer': 'Done', '▶ Démarrer': '▶ Start', '⏸ Pause': '⏸ Pause',
   'En pause : placez la première feuille, puis touchez « Démarrer »': 'Paused: place the first page, then tap “Start”', 'Photographier maintenant': 'Capture now',
   'Caméra indisponible : autorisez l’accès à la caméra pour ce site, puis réessayez.': 'Camera unavailable: allow camera access for this site, then try again.',
