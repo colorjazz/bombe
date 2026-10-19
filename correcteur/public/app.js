@@ -282,6 +282,7 @@ async function filesToPages(files) {
       errors.push(`${file.name} (${err.message || 'illisible'})`);
     }
   }
+  if (out.length) banner('info', 'Vérification de l’orientation des pages…');
   const turned = await straighten(out);
   banner(errors.length ? 'err' : turned ? 'info' : '', errors.length ? `Fichiers ignorés : ${errors.join(', ')}`
     : turned ? `${turned} page(s) photographiée(s) de côté ont été redressées. Vérifiez les miniatures (bouton ↻ pour pivoter).` : '');
@@ -291,18 +292,20 @@ async function filesToPages(files) {
 // Redresse les pages photographiées de côté : l'appli repère les lignes verticales, l'IA donne le sens (gratuit).
 async function straighten(pages) {
   if (!state.key) return 0;
-  let turned = 0;
-  for (const p of pages) {
+  let turned = 0, next = 0;
+  const one = async (p) => {
     try {
       const img = await loadImage(p.url);
-      if (!looksSideways(img)) continue;
-      const { rotation } = await api('/api/orient', { method: 'POST', body: { image: await thumbnail(p.url, 900) } });
-      if (!rotation) continue;
+      if (!looksSideways(img)) return;
+      const { rotation } = await api('/api/orient', { method: 'POST', body: { image: await thumbnail(p.url, 768) } });
+      if (!rotation) return;
       p.url = await rotateDataUrl(p.url, rotation);
       p.rot = rotation;
       turned++;
     } catch { /* en cas de doute, on laisse la page telle quelle : le bouton ↻ permet de la pivoter */ }
-  }
+  };
+  // 4 pages à la fois : l'IA met quelques secondes par page
+  await Promise.all(Array.from({ length: Math.min(4, pages.length) }, async () => { while (next < pages.length) await one(pages[next++]); }));
   return turned;
 }
 
@@ -599,7 +602,7 @@ async function runAll() {
         if (state.kind === 'lang') {
           const r = await analyzeLanguage(b);
           setBalance(r.pagesLeft);
-          const res = { kind: 'lang', id, exam: settings.exam, group: r.group || settings.group, name: r.name, pageCount: b.length,
+          const res = { kind: 'lang', id, order: list.indexOf(b), exam: settings.exam, group: r.group || settings.group, name: r.name, pageCount: b.length,
             pages: b.map((p, i) => ({ url: p.url, errors: r.pages[i].errors, failed: !!r.pages[i].failed })),
             scoring: langScoring(), flags: r.failedPages ? [`${r.failedPages} page(s) n'ont pas pu être analysées (non décomptées).`] : [] };
           await snapBoxes(res);
@@ -610,7 +613,7 @@ async function runAll() {
         const r = await api('/api/grade', { method: 'POST', body: { ...settings, pages } });
         setBalance(r.pagesLeft);
         state.results.unshift({
-          id, exam: settings.exam, group: r.group || settings.group, name: r.name, reliability: r.reliability, grade: r.grade, total: r.total,
+          id, order: list.indexOf(b), exam: settings.exam, group: r.group || settings.group, name: r.name, reliability: r.reliability, grade: r.grade, total: r.total,
           unit: settings.wholePoints ? 1 : 0.5, questions: r.questions, comment: r.comment, pageCount: b.length, illegible: !!r.illegible,
           flags: hasKey || r.illegible ? r.flags : [...r.flags, 'Corrigée sans corrigé : vérifiez que la note n’est pas trop généreuse.'],
         });
@@ -1039,7 +1042,8 @@ function exportCSV() {
   const content = state.results.filter((r) => r.kind !== 'lang');
   if (!content.length) { state.exported = true; return; }
   // Une colonne par question quand toutes les copies ont le même découpage (prêt pour le logiciel de notes).
-  const byName = (x, y) => `${x.group} ${x.name}`.localeCompare(`${y.group} ${y.name}`, 'fr', { sensitivity: 'base', numeric: true });
+  // Par groupe et nom ; à égalité (noms absents), dans l'ordre d'importation des copies.
+  const byName = (x, y) => `${x.group} ${x.name}`.localeCompare(`${y.group} ${y.name}`, 'fr', { sensitivity: 'base', numeric: true }) || (x.order ?? 0) - (y.order ?? 0);
   const sorted = [...content].sort(byName);
   const shape = sorted.find((r) => !r.illegible)?.questions || [];
   const perQuestion = shape.length > 0 && sorted.every((r) => r.illegible || r.questions.length === shape.length);

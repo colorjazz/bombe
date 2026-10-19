@@ -211,6 +211,7 @@ const EN = {
   "Masquer le nom de l'élève avant l'envoi": 'Hide the student’s name before sending',
   "— le haut de la 1re page de chaque copie n'est pas transmis ; vous inscrirez les noms vous-même": '— the top of each paper’s first page is not sent; you will enter the names yourself',
   'Pivoter la page de 90°': 'Rotate the page 90°',
+  'Vérification de l’orientation des pages…': 'Checking page orientation…',
   '+ Ajouter une faute': '+ Add an error', 'Annuler l’ajout': 'Cancel', 'Tracez un cadre sur la copie autour du mot fautif.': 'Draw a box on the paper around the incorrect word.',
   'Nouvelle faute': 'New error', 'Mot ou passage écrit': 'Word or passage as written', 'Correction': 'Correction', 'Catégorie': 'Category',
   'Explication (facultatif)': 'Explanation (optional)', 'Ajouter': 'Add', 'Annuler': 'Cancel',
