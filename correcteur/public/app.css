@@ -206,3 +206,25 @@ button.rel { cursor: pointer; font-family: inherit; }
 .cam-target .tr { right: -5px; top: -5px; border-left: 0; border-bottom: 0; }
 .cam-target .bl { left: -5px; bottom: -5px; border-right: 0; border-top: 0; }
 .cam-target .br { right: -5px; bottom: -5px; border-left: 0; border-top: 0; }
+
+/* Téléphone : rien ne dépasse l'écran, et chaque question se lit en bloc (nom, points, puis justification pleine largeur). */
+.layout > *, .cards, .card, .card-body { min-width: 0; }
+.flags div, .qtable td, .card .name { overflow-wrap: anywhere; }
+@media (max-width: 640px) {
+  .qtable thead { display: none; }
+  .qtable, .qtable tbody, .qtable tr, .qtable td { display: block; width: auto; }
+  .qtable tr { border-top: 1px solid var(--line); padding: .55rem .2rem; }
+  .qtable td { border: 0; padding: .15rem 0; }
+  .qtable td.q, .qtable td.pts { width: auto; }
+  .qtable td.pts { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .4rem; white-space: normal; }
+  .qtable td.pts .second { width: 100%; margin: 0; }
+  .qtable td.just { font-size: .85rem; line-height: 1.45; }
+}
+@media (max-width: 640px) {
+  /* Le nom prend toute la première ligne ; groupe, fiabilité et note passent dessous. */
+  .card-head { grid-template-columns: minmax(0, 1fr) auto auto auto; }
+  .card-head .name { grid-column: 1 / -1; }
+  .card-foot { flex-wrap: wrap; }
+  .card-foot > span { flex: 1 1 100%; }
+  .card-foot .btn { white-space: nowrap; }
+}

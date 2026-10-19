@@ -69,3 +69,5 @@ textarea { resize: vertical; }
   .topbar .wrap { height: auto; min-height: 56px; padding-top: .45rem; padding-bottom: .45rem; flex-wrap: wrap; row-gap: .4rem; }
   .top-actions { flex-wrap: wrap; justify-content: flex-end; min-width: 0; }
 }
+/* Téléphone : la barre du haut (deux lignes) ne reste pas collée, elle prendrait le quart de l'écran. */
+@media (max-width: 600px) { .topbar { position: static; } }
