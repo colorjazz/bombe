@@ -1186,7 +1186,7 @@ function closeCamera() {
   renderPages();
 }
 
-if (navigator.mediaDevices?.getUserMedia) $('cam-open').hidden = false;
+if (navigator.mediaDevices?.getUserMedia) $('cam-open').hidden = $('cam-hint').hidden = false;
 $('cam-open').addEventListener('click', openCamera);
 $('cam-done').addEventListener('click', closeCamera);
 $('cam-shoot').addEventListener('click', () => camState.session?.capture());
