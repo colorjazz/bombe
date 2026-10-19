@@ -449,16 +449,19 @@ async function readTwice(env, system, dataUrl, english) {
     geminiVision(env, system + REREAD[english ? 'en' : 'fr'], dataUrl).catch(() => ({ fautes: [] })), // la première lecture suffit
   ]);
   const same = (f, g) => String(f.texte || '').trim().toLowerCase() === String(g.texte || '').trim().toLowerCase() || overlaps(cleanBox(f.box), cleanBox(g.box));
-  return { fautes: [...first.fautes, ...second.fautes.filter((g) => !first.fautes.some((f) => same(f, g)))] };
+  // Une correction hésitante (« capitule / capitulation ») n'a pas sa place sur une copie remise à l'élève.
+  const sure = (f) => !/\S\s*\/\s*\S/.test(String(f.correction || ''));
+  return { fautes: [...first.fautes, ...second.fautes.filter((g) => !first.fautes.some((f) => same(f, g)))].filter(sure) };
 }
 
 async function geminiVision(env, prompt, dataUrl) {
-  const list = await geminiNative(env, [{ text: prompt }, inlineImage(dataUrl)], NATIVE_LANG_SCHEMA, env.LANG_MODEL, { thinking: env.LANG_THINKING || 'low', timeoutMs: 90_000 });
+  const list = await geminiNative(env, [{ text: prompt }, inlineImage(dataUrl)], NATIVE_LANG_SCHEMA, env.LANG_MODEL, { thinking: env.LANG_THINKING, timeoutMs: 90_000 });
   return { fautes: (Array.isArray(list) ? list : list.fautes || []).map((f) => ({ ...f, texte: f.mot_fautif ?? f.texte, box: f.box ?? f.box_2d })) };
 }
 
 // Appel natif à Gemini (generateContent) avec réponse JSON structurée.
-// opts.thinking : niveau de réflexion du modèle (« low » divise le temps par deux) ; chaque appel a une limite de temps.
+// opts.thinking : niveau de réflexion du modèle (par défaut celui du modèle : « low » est deux fois plus rapide mais
+// invente 2 à 3 fois plus de fausses fautes) ; chaque appel a une limite de temps.
 async function geminiNative(env, parts, schema, preferredModel, opts = {}) {
   const base = env.GEMINI_NATIVE_URL || 'https://generativelanguage.googleapis.com/v1beta';
   const chain = [...new Set([preferredModel, env.AI_MODEL, env.AI_FALLBACK_MODEL].filter(Boolean))];
