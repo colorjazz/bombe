@@ -37,6 +37,24 @@
 - Isabelle ne montera qu'avec les documents : entente de traitement, preuve du palier payant Gemini, résumé d'EFVP,
   lettre aux parents, procédure d'incident (brouillons à préparer, relecture par un avocat).
 
+## Point de reprise (19 oct., fin de journée)
+- Langue : 1re lecture affichée tout de suite (~1 min/copie), puis en arrière-plan relecture des fautes oubliées
+  (/api/language-reread, jeton signé 30 min) et loupe (/api/language-verify : mot recadré, recopié à l'aveugle ;
+  s'il égale la correction → « à vérifier », jamais retiré). Modèle gemini-3.7-flash, réflexion normale
+  (« low » = 2-3× plus de fausses fautes), limites de temps sur tous les appels.
+- Redressement des photos : réflexion « low », 30 s max, 18/18.
+- Mode caméra « Numériser « Brûle la pile » » (flamme) : s'ouvre en pause, bouton Démarrer/Pause, cibles aux coins,
+  bip + vibration, correction pendant la prise de vue, geste « retour » = fermer la caméra.
+  Testé seulement avec une caméra simulée : à essayer sur un vrai téléphone (seuils camera.js : MOVE, STABLE_MS).
+- Mesures : vérité de terrain des surlignages (164 mots, 9 vraies copies) hors dépôt, dans le scratchpad de la session ;
+  méthode dans tools/surlignages/README.md. Évaluations : Sylvie 8/10 (version à relecture), Isabelle 7/10, Marc-André 7,5/10.
+- Documents Loi 25 (entente, attestation Gemini, résumé EFVP, lettre aux parents, procédure d'incident) : brouillons
+  dans le document « Brûle la pile — Documents pour les écoles (Loi 25) » ; à compléter (crochets) et faire relire.
+- À FAIRE PAR LE FONDATEUR : supprimer la clé Gemini temporaire dans AI Studio ; double authentification
+  Cloudflare, Google, Hover, GitHub.
+- Idées en attente : licence établissement / sauvegarde des corrigés (sans données d'élèves) ; clé affichée sur la
+  page Stripe pour les commandes à 0 $ ; colonnes CSV Q4.1… et sous-totaux ; FAQ et pub du mode caméra.
+
 ## Reste à faire
 1. Double authentification : Stripe, Cloudflare, Google, Hover, GitHub (garder les codes de secours).
 2. Code promo `TESTPROF` : le désactiver, ou le garder (5 utilisations) pour des profs testeurs.
