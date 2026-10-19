@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Révision GJM</title>
+  <title>Lélia en mission</title>
   <style>
     :root {
       --bg: #f6f4ef;
@@ -126,8 +126,8 @@
 <main>
   <header>
     <div>
-      <h1>Révision GJM</h1>
-      <p>Géographie et justice mondiale · intra du 21 octobre</p>
+      <h1>Lélia en mission</h1>
+      <p>Révision GJM · intra du 21 octobre</p>
     </div>
     <div class="rangee">
       <button class="btn discret" id="btn-stats" type="button">Mes résultats</button>
@@ -271,7 +271,7 @@
   let sansFallback = false;
 
   // --- Prompt système : consignes + tout le contenu du cours (mis en cache) ---
-  const COURS_TEXTE = ['guide', 'intro', 'outils', 'physique', 'justice', 'developpement']
+  const COURS_TEXTE = ['guide', 'intro', 'outils', 'physique', 'justice4', 'justice', 'developpement6', 'developpement']
     .map(k => `<document id="${k}" titre="${COURS[k].titre}">\n${COURS[k].texte}\n</document>`)
     .join('\n\n');
 
@@ -284,7 +284,7 @@ Ce que la prof a dit de l'examen :
 - Méthode de réponse enseignée : 1) établir les faits importants (définitions, aspects importants) ; 2) comparer/contraster les faits ; 3) si approprié, arriver à une conclusion.
   Exemple de la prof : « La loi three strikes est un exemple de justice rétributive, par contre elle n'est pas un exemple idéal. Décrivez en quoi elle contrevient à l'idéal. » → Définitions : la loi dicte qu'après le 3e crime grave, le criminel reçoit automatiquement 25 ans minimum ; la justice rétributive veut que chaque méfait soit puni de manière proportionnelle. → Comparaison/conclusion : la punition du 3e crime ne mérite pas forcément 25 ans, donc rien ne garantit la proportionnalité voulue par la justice rétributive idéale.
 
-Le contenu officiel du cours suit : le guide d'étude de l'intra (ce qui est matière à examen) et le texte des diapos de chaque cours, avec les notes de la prof. Les diapos sont numérotées [Diapo N]. Base-toi uniquement sur ce contenu ; n'invente pas de faits absents du cours. Quand tu cites une diapo, utilise la forme « <titre du cours>, diapo N ».
+Le contenu officiel du cours suit : le guide d'étude de l'intra (ce qui est matière à examen) et le texte des diapos des cours 1 à 7, avec les notes de la prof. Les diapos sont numérotées [Diapo N]. Base-toi uniquement sur ce contenu ; n'invente pas de faits absents du cours. Quand tu cites une diapo, utilise la forme « <titre du cours>, diapo N ».
 
 ${COURS_TEXTE}`;
 
