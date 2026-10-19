@@ -51,7 +51,7 @@ const EN = {
   'Corrigé ou grille de correction': 'Answer key or rubric',
   'Consignes, réponses attendues, points par question': 'Instructions, expected answers, points per question',
   'Astuce : fournir le corrigé (ici ou en PDF/photo ci-dessous) améliore beaucoup la fiabilité de la correction.\n\nEx. : Q1 (2 pts) : 1960, début de la Révolution tranquille. Q2 (3 pts) : nommer deux réformes… Accepter les synonymes.\n\nVous pouvez aussi demander la forme du rendu : « Commentaire de 2 phrases, au tu, qui commence par un point fort », « Justifications courtes »…':
-    'Tip: providing the answer key (here or as a PDF/photo below) greatly improves grading reliability.\n\nE.g., Q1 (2 pts): 1947, start of the Cold War. Q2 (3 pts): name two causes… Accept synonyms.',
+    'Tip: providing the answer key (here or as a PDF/photo below) greatly improves grading reliability.\n\nE.g., Q1 (2 pts): 1947, start of the Cold War. Q2 (3 pts): name two causes… Accept synonyms.\n\nYou can also ask for a style: “2-sentence comment that starts with a strength”, “Short justifications”…',
   'Ajouter le corrigé (PDF ou photos) —': 'Add the answer key (PDF or photos) —',
   'non facturé': 'not charged',
   'Préparer une grille détaillée (gratuit)': 'Build a detailed rubric (free)',
