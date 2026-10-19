@@ -234,6 +234,8 @@ const EN = {
 
 // Textes avec des valeurs variables : [modèle français, traduction] ($1, $2… = valeurs capturées).
 const PATTERNS = [
+  [/^(\d+) page\(s\) photographiée\(s\)\. Vérifiez les miniatures \(photo floue, page de trop, pages bien regroupées par élève\), puis lancez la correction\.$/, '$1 page(s) captured. Check the thumbnails (blurry photo, extra page, pages grouped by student), then start grading.'],
+  [/^(\d+) copie\(s\), (\d+) page\(s\) : (\d+) page\(s\) seront décomptées\. Lancer la correction \?$/, '$1 paper(s), $2 page(s): $3 page(s) will be used. Start grading?'],
   [/^(\d+) pages? · (\d+) copie\(s\) corrigée\(s\)(.*)$/, (m, n, g, rest) => `${n} page(s) · ${g} paper(s) graded${rest.replace(' · correction en cours…', ' · grading…').replace(' · en attente : ', ' · waiting: ')}`],
   [/^(\d+) page\(s\) photographiée\(s\)\.( La correction se poursuit\.)?$/, (m, n, r) => `${n} page(s) captured.${r ? ' Grading continues.' : ''}`],
   [/^(\d+) pages ont été ajoutées\. Solde : (\d+) pages\.$/, '$1 pages added. Balance: $2 pages.'],

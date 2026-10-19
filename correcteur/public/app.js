@@ -1259,8 +1259,15 @@ function closeCamera(fromHistory) {
   camState.session = null;
   $('cam').hidden = true;
   const n = camState.shots.length;
-  if (n) banner('ok', `${n} page(s) photographiée(s).${state.running ? ' La correction se poursuit.' : ''}`);
   renderPages();
+  if (!n) return;
+  // Par défaut rien n'est encore corrigé : l'enseignant vérifie d'un coup d'œil les miniatures (photo floue, page de
+  // trop, pages bien regroupées) avant de lancer — et de payer — la correction.
+  camState.review = state.pages.length > 0;
+  banner(camState.review ? 'info' : 'ok', camState.review
+    ? `${n} page(s) photographiée(s). Vérifiez les miniatures (photo floue, page de trop, pages bien regroupées par élève), puis lancez la correction.`
+    : `${n} page(s) photographiée(s).${state.running ? ' La correction se poursuit.' : ''}`);
+  if (camState.review) $('pages-zone').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 if (navigator.mediaDevices?.getUserMedia) $('cam-open').hidden = $('cam-hint').hidden = false;
@@ -1338,7 +1345,16 @@ $('zoom-close').addEventListener('click', () => { $('zoom').hidden = true; });
 document.querySelectorAll('[data-close-viewer]').forEach((b) => b.addEventListener('click', () => { $('viewer').hidden = true; viewing = null; }));
 $('grid-remove').addEventListener('click', () => { state.grid = null; renderGrid(); });
 $('deep').addEventListener('change', renderSummary);
-$('run').addEventListener('click', () => runAll());
+$('run').addEventListener('click', () => {
+  // Après une numérisation : dernière confirmation, avec le nombre de pages qui seront décomptées.
+  if (camState.review) {
+    const copies = bundles().length, pages = state.pages.length;
+    const cost = pages * (state.kind === 'content' && $('deep').value === '1' ? 2 : 1);
+    if (!confirm(tr(`${copies} copie(s), ${pages} page(s) : ${cost} page(s) seront décomptées. Lancer la correction ?`))) return;
+    camState.review = false;
+  }
+  runAll();
+});
 $('search').addEventListener('input', renderResults);
 $('export').addEventListener('click', exportCSV);
 $('end').addEventListener('click', endSession);
