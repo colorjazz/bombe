@@ -55,6 +55,7 @@ const ROUTES = {
   'POST /api/stripe-webhook': stripeWebhook,
   'POST /api/grade': grade,
   'POST /api/split': split,
+  'POST /api/orient': orient,
   'POST /api/rubric': rubric,
   'POST /api/language': language,
 };
@@ -461,6 +462,24 @@ async function geminiNative(env, parts, schema, preferredModel) {
     const detail = await res.text().catch(() => '');
     throw new Error(`IA ${res.status} : ${detail.slice(0, 300)}`);
   }
+}
+
+// Sens d'une page photographiée de côté (gratuit) : l'appli ne l'appelle que pour les pages dont les lignes semblent verticales.
+async function orient(request, env) {
+  await getKey(env, bearer(request));
+  const { image } = await readJson(request);
+  if (typeof image !== 'string' || !/^data:image\/(jpeg|png|webp);base64,/.test(image) || image.length > MAX_THUMB_CHARS) throw new HttpError(400, 'Image invalide');
+  const prompt = "Cette image montre une page (copie d'élève, texte imprimé ou manuscrit), peut-être photographiée de côté ou à l'envers. "
+    + "De combien de degrés faut-il la faire pivoter DANS LE SENS DES AIGUILLES D'UNE MONTRE pour que le texte se lise normalement, de gauche à droite et de haut en bas ? Réponds 0, 90, 180 ou 270.";
+  let raw;
+  try {
+    raw = await geminiNative(env, [{ text: prompt }, inlineImage(image)],
+      { type: 'OBJECT', properties: { rotation: { type: 'STRING', enum: ['0', '90', '180', '270'] } }, required: ['rotation'] }, env.LANG_MODEL);
+  } catch (err) {
+    console.error('Orientation impossible :', err.message);
+    throw new HttpError(502, 'Orientation impossible');
+  }
+  return json({ rotation: Number(raw.rotation) || 0 });
 }
 
 // Rectangle [ymin, xmin, ymax, xmax] sur 1000, ou null s'il est inutilisable.

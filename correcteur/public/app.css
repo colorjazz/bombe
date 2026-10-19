@@ -14,6 +14,8 @@
 .thumb { position: relative; width: 54px; height: 72px; border-radius: 8px; overflow: hidden; border: 1px solid var(--line-2); background: #0d1527; }
 .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .thumb .x { position: absolute; top: 2px; right: 2px; width: 18px; height: 18px; border-radius: 50%; border: 0; background: rgba(0,0,0,.65); color: #fff; font-size: 12px; line-height: 18px; cursor: pointer; padding: 0; }
+/* bouton pour pivoter une page photographiée de côté */
+.thumb .rot { position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; border: 0; background: rgba(0,0,0,.65); color: #fff; font-size: 12px; line-height: 18px; cursor: pointer; padding: 0; }
 
 .mode { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; font-size: .85rem; }
 .mode select, .mode input { width: auto; padding: .4rem .6rem; }

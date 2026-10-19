@@ -11,6 +11,7 @@ const PDFJS = '/vendor/pdfjs'; // pdf.js 3.11.174, hébergé sur le site
 
 import { t, tr, lang, startI18n } from './i18n.js';
 import { snapToInk } from './boxes.js';
+import { looksSideways, rotateDataUrl } from './orient.js';
 
 const $ = (id) => document.getElementById(id);
 const state = {
@@ -211,13 +212,18 @@ async function textToJpegs(file) {
   return documentToJpegs(`<div style="white-space:pre-wrap">${esc}</div>`);
 }
 
-async function imageToJpeg(file, maxSide = MAX_SIDE, quality = JPEG_QUALITY) {
+// `rot` : rotation horaire (0, 90, 180, 270) pour redresser une photo prise de côté.
+async function imageToJpeg(file, maxSide = MAX_SIDE, quality = JPEG_QUALITY, rot = 0) {
   const bmp = await decodeImage(file);
-  const c = fitCanvas(bmp.width, bmp.height, maxSide);
+  const side = rot % 180 !== 0;
+  const c = fitCanvas(side ? bmp.height : bmp.width, side ? bmp.width : bmp.height, maxSide);
   const ctx = c.getContext('2d');
   ctx.fillStyle = '#fff';
   ctx.fillRect(0, 0, c.width, c.height);
-  ctx.drawImage(bmp, 0, 0, c.width, c.height);
+  ctx.translate(c.width / 2, c.height / 2);
+  ctx.rotate((rot * Math.PI) / 180);
+  const [w, hh] = side ? [c.height, c.width] : [c.width, c.height];
+  ctx.drawImage(bmp, -w / 2, -hh / 2, w, hh);
   bmp.close?.();
   return c.toDataURL('image/jpeg', quality);
 }
@@ -276,8 +282,34 @@ async function filesToPages(files) {
       errors.push(`${file.name} (${err.message || 'illisible'})`);
     }
   }
-  banner(errors.length ? 'err' : '', errors.length ? `Fichiers ignorés : ${errors.join(', ')}` : '');
+  const turned = await straighten(out);
+  banner(errors.length ? 'err' : turned ? 'info' : '', errors.length ? `Fichiers ignorés : ${errors.join(', ')}`
+    : turned ? `${turned} page(s) photographiée(s) de côté ont été redressées. Vérifiez les miniatures (bouton ↻ pour pivoter).` : '');
   return out;
+}
+
+// Redresse les pages photographiées de côté : l'appli repère les lignes verticales, l'IA donne le sens (gratuit).
+async function straighten(pages) {
+  if (!state.key) return 0;
+  let turned = 0;
+  for (const p of pages) {
+    try {
+      const img = await loadImage(p.url);
+      if (!looksSideways(img)) continue;
+      const { rotation } = await api('/api/orient', { method: 'POST', body: { image: await thumbnail(p.url, 900) } });
+      if (!rotation) continue;
+      p.url = await rotateDataUrl(p.url, rotation);
+      p.rot = rotation;
+      turned++;
+    } catch { /* en cas de doute, on laisse la page telle quelle : le bouton ↻ permet de la pivoter */ }
+  }
+  return turned;
+}
+
+async function rotatePage(p) {
+  p.url = await rotateDataUrl(p.url, 90);
+  p.rot = ((p.rot || 0) + 90) % 360;
+  renderPages();
 }
 
 // ---------- Regroupement des pages en copies ----------
@@ -316,11 +348,11 @@ function maskTop(url) {
   });
 }
 
-function thumbnail(url) {
+function thumbnail(url, size = 640) {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
-      const scale = Math.min(1, 640 / Math.max(img.width, img.height));
+      const scale = Math.min(1, size / Math.max(img.width, img.height));
       const c = document.createElement('canvas');
       c.width = Math.round(img.width * scale);
       c.height = Math.round(img.height * scale);
@@ -398,6 +430,7 @@ function renderPages() {
           onclick: () => { p.startsNew = true; p.autoStart = true; renderPages(); } }) : null,
         h('div', { class: 'thumb', title: p.file },
           h('img', { src: p.url, alt: `Page ${pi + 1}` }),
+          h('button', { class: 'rot', type: 'button', textContent: '↻', title: 'Pivoter la page de 90°', disabled: state.running, onclick: () => rotatePage(p) }),
           h('button', { class: 'x', type: 'button', textContent: '×', title: 'Retirer cette page', disabled: state.running,
             onclick: () => removePage(p) })),
       ])));
@@ -727,7 +760,7 @@ const LANG_MAX_SIDE = 4096;
 async function analyzeLanguage(bundle) {
   const anon = anonymous();
   const urls = await Promise.all(bundle.map(async (p, i) => {
-    const url = p.source ? await imageToJpeg(p.source, LANG_MAX_SIDE, 0.9) : p.url;
+    const url = p.source ? await imageToJpeg(p.source, LANG_MAX_SIDE, 0.9, p.rot || 0) : p.url;
     return i === 0 && anon ? maskTop(url) : url;
   }));
   const parts = await Promise.all(urls.map((url, i) => api('/api/language', { method: 'POST',
