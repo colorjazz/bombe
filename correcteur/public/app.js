@@ -298,9 +298,9 @@ async function straighten(pages) {
       const img = await loadImage(p.url);
       if (!looksSideways(img)) return;
       // L'IA reçoit la page tournée dans les deux sens possibles et choisit celle qui se lit à l'endroit.
-      // Nom masqué : seule la partie centrale de la page part (l'en-tête est sur un bord, lequel on ne le sait pas encore).
-      const crop = anonymous() ? [0.25, 0.15, 0.75, 0.85] : null;
-      const small = await thumbnail(p.url, 768, crop);
+      // Seule la partie centrale de la page part, que le nom soit masqué ou non : l'en-tête est sur un bord (lequel, on ne
+      // le sait pas encore), et la case « Masquer le nom » peut être cochée après l'import. Le centre suffit (18/18 sur de vraies copies).
+      const small = await thumbnail(p.url, 768, [0.25, 0.15, 0.75, 0.85]);
       const images = await Promise.all([90, 270].map((d) => rotateDataUrl(small, d, 0.6)));
       const { choice } = await api('/api/orient', { method: 'POST', body: { images } });
       const rotation = choice ? 270 : 90;
@@ -336,7 +336,7 @@ function applyMode() {
 // ---------- Détection automatique des copies ----------
 
 // Option « masquer le nom » : le haut de la 1re page (en-tête avec le nom) est blanchi dans le navigateur
-// avant l'envoi (le redressement des photos n'envoie que le centre de la page) ; l'enseignant voit toujours la copie complète.
+// avant l'envoi (le redressement des photos n'envoie jamais que le centre de la page) ; l'enseignant voit toujours la copie complète.
 const MASK_TOP = 0.14;
 const anonymous = () => $('anon').checked;
 function maskTop(url) {
