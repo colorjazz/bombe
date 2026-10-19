@@ -1420,3 +1420,6 @@ if (saved) useKey(saved).catch((err) => { if (err.status === 401) store.del(); s
 else showGate();
 renderPages();
 renderResults();
+
+// Lien « J'ai une clé » de l'accueil : le curseur est déjà dans le champ de la clé.
+if (location.hash === '#cle' && !$('gate').hidden) $('key-input').focus();

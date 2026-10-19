@@ -18,7 +18,7 @@ T = {
   desc="Importez vos copies numérisées : l'IA propose une note détaillée question par question, corrige la langue et rédige un commentaire pour chaque élève. Vous validez. 30 pages gratuites.",
   og_title='Brûle la pile : corrigez une classe entière pendant votre pause café',
   og_desc="L'IA propose la note et la rétroaction, et surligne les fautes de français. Vous gardez le dernier mot. 30 pages gratuites.",
-  nav_prices='Tarifs', nav_try='Essayer gratuitement', anchor_prices='tarifs',
+  nav_prices='Tarifs', nav_key='J’ai une clé', nav_try='Essayer gratuitement', anchor_prices='tarifs',
   eyebrow='Pour les enseignants du primaire, du secondaire et du collégial',
   h1='Corrigez une classe entière <em>pendant votre pause café</em>.',
   lead="Numérisez les copies, ajoutez votre corrigé : <b>Brûle la pile</b> propose une note détaillée question par question, surligne les fautes de français et rédige une rétroaction pour chaque élève. Vous vérifiez, ajustez et exportez.",
@@ -66,7 +66,7 @@ T = {
   desc='Upload scanned student work: the AI suggests a detailed, question-by-question grade, checks the writing and drafts feedback for each student. You approve. 30 free pages.',
   og_title='Burn the Pile: grade a whole class during your coffee break',
   og_desc='The AI suggests grades and feedback and highlights language errors. You have the final say. 30 free pages.',
-  nav_prices='Pricing', nav_try='Try for free', anchor_prices='pricing',
+  nav_prices='Pricing', nav_key='I have a key', nav_try='Try for free', anchor_prices='pricing',
   eyebrow='For elementary, high school and college teachers',
   h1='Grade a whole class <em>during your coffee break</em>.',
   lead='Scan the papers, add your answer key: <b>Burn the Pile</b> suggests a detailed grade question by question, highlights language errors and drafts feedback for every student. You review, adjust and export.',
@@ -140,7 +140,7 @@ def page(L, d):
   <meta property="og:url" content="{d['site']}/">
 </head>
 <body>
-  <header class="topbar"><div class="wrap"><a class="brand" href="{d['file']}"><img class="logo" src="logo-96.png" alt="" width="40" height="40"><strong>{d['brand']}</strong></a><div class="top-actions">{sw}<a class="btn ghost" href="#{d['anchor_prices']}">{d['nav_prices']}</a><a class="btn primary" href="app.html">{d['nav_try']}</a></div></div></header>
+  <header class="topbar"><div class="wrap"><a class="brand" href="{d['file']}"><img class="logo" src="logo-96.png" alt="" width="40" height="40"><strong>{d['brand']}</strong></a><div class="top-actions">{sw}<a class="btn ghost" href="#{d['anchor_prices']}">{d['nav_prices']}</a><a class="btn ghost" href="app.html#cle">{d['nav_key']}</a><a class="btn primary" href="app.html">{d['nav_try']}</a></div></div></header>
   <main class="wrap">
     <section class="hero">
       <div>
