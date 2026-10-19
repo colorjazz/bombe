@@ -30,6 +30,13 @@
   arrondi de la moyenne en mode approfondi ; choix de la langue des commentaires ; modèles « preview » (2e correction, langue) ;
   entente de traitement et résumé d'EFVP à fournir aux écoles.
 
+## 3e mesure (19 oct., matin)
+- Modèle stable gemini-3.7-flash : surlignages exacts à 81-82 % (vérité de terrain, 9 vraies copies), 2 % sur le mauvais mot.
+- Deuxième lecture des fautes oubliées : repérage ≈ 73 % → ≈ 88 %, environ 1 fausse faute par copie (évaluation de Sylvie).
+- Notes : Sylvie 8/10 (achèterait le pack Session après un essai réel), Isabelle 7/10, Marc-André 7,5/10.
+- Isabelle ne montera qu'avec les documents : entente de traitement, preuve du palier payant Gemini, résumé d'EFVP,
+  lettre aux parents, procédure d'incident (brouillons à préparer, relecture par un avocat).
+
 ## Reste à faire
 1. Double authentification : Stripe, Cloudflare, Google, Hover, GitHub (garder les codes de secours).
 2. Code promo `TESTPROF` : le désactiver, ou le garder (5 utilisations) pour des profs testeurs.
