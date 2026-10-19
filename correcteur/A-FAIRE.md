@@ -20,6 +20,16 @@
 - Lot 3 : option « Masquer le nom de l'élève », politique de confidentialité et conditions complétées.
 - À faire : mettre à jour l'EFVP (Cloudflare, Google Fonts, durées, masquage des noms).
 
+## 2e ronde de tests (19 oct., 9 vraies copies d'univers social)
+- Notes : Isabelle (direction) 6/10, Marc-André (univers social) 7,5/10, Sylvie (français) 6,5/10.
+- Notes de l'IA proches d'une application stricte du corrigé (écart moyen 0,9 point sur 19 avec l'évaluateur, 1,6 pour l'enseignant).
+- Correctifs : redressement fiable (4 copies sur 9 étaient laissées à l'envers) et sans envoyer le nom ; n° de copie et fichier
+  partout ; « Voir la copie » ; corrigé retenu ; remboursement sur erreur imprévue ; fin de session qui peut oublier la clé ;
+  surlignages sur vraies photos (≈ 45 % → 68 %) ; catégories selon la grammaire du Québec ; zone masquée visible.
+- Reste : surlignages sur écritures serrées ; colonnes CSV nommées selon le corrigé (Q4.1…) et sous-totaux par partie ;
+  arrondi de la moyenne en mode approfondi ; choix de la langue des commentaires ; modèles « preview » (2e correction, langue) ;
+  entente de traitement et résumé d'EFVP à fournir aux écoles.
+
 ## Reste à faire
 1. Double authentification : Stripe, Cloudflare, Google, Hover, GitHub (garder les codes de secours).
 2. Code promo `TESTPROF` : le désactiver, ou le garder (5 utilisations) pour des profs testeurs.
