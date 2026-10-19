@@ -11,7 +11,7 @@
 .drop .ico { font-size: 1.6rem; }
 
 .thumbs { display: flex; flex-wrap: wrap; gap: .4rem; }
-.thumb { position: relative; width: 54px; height: 72px; border-radius: 8px; overflow: hidden; border: 1px solid var(--line-2); background: #0d1527; }
+.thumb { position: relative; width: 84px; height: 112px; border-radius: 8px; overflow: hidden; border: 1px solid var(--line-2); background: #0d1527; }
 .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .thumb .x { position: absolute; top: 2px; right: 2px; width: 18px; height: 18px; border-radius: 50%; border: 0; background: rgba(0,0,0,.65); color: #fff; font-size: 12px; line-height: 18px; cursor: pointer; padding: 0; }
 /* bouton pour pivoter une page photographiée de côté */
@@ -26,6 +26,10 @@
 .bundle-head .st.err { color: var(--red); }
 .bundle-pages { display: flex; flex-wrap: wrap; gap: .35rem; align-items: center; }
 .bundle-pages .thumb { cursor: default; }
+.thumb img { cursor: zoom-in; }
+.zoom-panel { width: min(1100px, 100%) !important; max-height: calc(100vh - 32px); grid-template-rows: auto 1fr; }
+.zoom-pages { overflow-y: auto; display: grid; gap: .75rem; }
+.zoom-pages img { width: 100%; border-radius: 8px; background: #fff; }
 .split { border: 1px dashed var(--line-2); background: none; color: var(--faint); border-radius: 8px; height: 72px; width: 22px; cursor: pointer; font-size: .8rem; padding: 0; }
 .split:hover { color: var(--primary-2); border-color: var(--primary); }
 .merge { font-size: .72rem; }

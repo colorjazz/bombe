@@ -789,89 +789,97 @@ async function grade(request, env) {
     await getKey(env, key); // 401 si la clé n'existe pas
     throw new HttpError(402, 'Solde de pages insuffisant. Rechargez votre compte pour continuer.');
   }
+  // Toute erreur imprévue après la réservation (bogue, IA qui plante) rend les pages pas encore remboursées.
+  let refunded = 0;
+  const refund = async (k) => { refunded += k; await env.DB.prepare('UPDATE access_keys SET pages = pages + ? WHERE key = ?').bind(k, key).run(); };
+  try {
 
-  const unit = body.wholePoints ? 1 : 0.5;
-  const grid = readGrid(body.grid);
-  const prompt = buildPrompt({ exam: String(body.exam || '').slice(0, 200), total, wholePoints: !!body.wholePoints,
-    checkLanguage: !!body.checkLanguage, rubric: String(body.rubric || '').slice(0, 8000), grid, english: isEnglish(request),
-    hasKey: !!(String(body.rubric || '').trim() || (body.rubricPages || []).length || grid), anonymous: !!body.anonymous });
+    const unit = body.wholePoints ? 1 : 0.5;
+    const grid = readGrid(body.grid);
+    const prompt = buildPrompt({ exam: String(body.exam || '').slice(0, 200), total, wholePoints: !!body.wholePoints,
+      checkLanguage: !!body.checkLanguage, rubric: String(body.rubric || '').slice(0, 8000), grid, english: isEnglish(request),
+      hasKey: !!(String(body.rubric || '').trim() || (body.rubricPages || []).length || grid), anonymous: !!body.anonymous });
 
-  // Double correction : la 1re fixe le découpage en questions, la 2e corrige indépendamment
-  // les mêmes questions (intitulés et points maximum, sans les notes de la 1re).
-  const rubricPages = body.rubricPages || [];
-  const errors = [];
-  const attempt = async (p, opts) => {
-    try { return normalize(await callModel(env, p, rubricPages, body.pages, opts), total, unit); } catch (err) { errors.push(err); return null; }
-  };
-  const impose = (list) => `${prompt}
+    // Double correction : la 1re fixe le découpage en questions, la 2e corrige indépendamment
+    // les mêmes questions (intitulés et points maximum, sans les notes de la 1re).
+    const rubricPages = body.rubricPages || [];
+    const errors = [];
+    const attempt = async (p, opts) => {
+      try { return normalize(await callModel(env, p, rubricPages, body.pages, opts), total, unit); } catch (err) { errors.push(err); return null; }
+    };
+    const impose = (list) => `${prompt}
 
 STRUCTURE IMPOSÉE : corrige exactement ces ${list.length} questions ou critères, dans cet ordre, avec ces intitulés et ces points maximum. Fais ta propre correction, indépendante.
 ${list.map((q, i) => `${i + 1}. ${q.name} (sur ${fr(q.max)} points)`).join('\n')}`;
-  const promptA = grid ? impose(grid) : prompt;
-  const a = (await attempt(promptA)) || (await attempt(promptA));
-  if (!a) {
-    await env.DB.prepare('UPDATE access_keys SET pages = pages + ? WHERE key = ?').bind(n, key).run();
-    const reasons = errors.map((e) => e?.message || '').join(' / ');
-    console.error('Correction impossible :', reasons);
-    const code = (reasons.match(/IA (\d{3})/) || [])[1];
-    const hint = code === '401' || code === '403' ? ' (clé IA refusée : vérifiez AI_API_KEY)'
-      : code === '429' ? ' (limite du fournisseur IA atteinte : facturation activée ?)'
-      : code === '400' || code === '404' ? ` (requête refusée par l'IA, code ${code} : modèle ou format)`
-      : code ? ` (erreur IA ${code})` : reasons.includes('JSON') ? " (réponse de l'IA illisible)" : '';
-    throw new HttpError(502, `La correction a échoué${hint}. Aucune page n'a été décomptée, réessayez.`);
-  }
+    const promptA = grid ? impose(grid) : prompt;
+    const a = (await attempt(promptA)) || (await attempt(promptA));
+    if (!a) {
+      await refund(n);
+      const reasons = errors.map((e) => e?.message || '').join(' / ');
+      console.error('Correction impossible :', reasons);
+      const code = (reasons.match(/IA (\d{3})/) || [])[1];
+      const hint = code === '401' || code === '403' ? ' (clé IA refusée : vérifiez AI_API_KEY)'
+        : code === '429' ? ' (limite du fournisseur IA atteinte : facturation activée ?)'
+        : code === '400' || code === '404' ? ` (requête refusée par l'IA, code ${code} : modèle ou format)`
+        : code ? ` (erreur IA ${code})` : reasons.includes('JSON') ? " (réponse de l'IA illisible)" : '';
+      throw new HttpError(502, `La correction a échoué${hint}. Aucune page n'a été décomptée, réessayez.`);
+    }
 
-  // Contre-vérification réellement indépendante : un autre modèle, une autre consigne de lecture et un peu de variabilité,
-  // pour que deux corrections d'accord veuillent dire quelque chose (et non la même réponse répétée).
-  const SECOND_LOOK = "\n\nDEUXIÈME CORRECTEUR : tu es un second enseignant qui corrige cette copie sans connaître la première correction. Relis chaque réponse mot à mot avant de noter ; ne donne le bénéfice du doute que si la réponse le justifie.";
-  const b = deep && a.questions.length && !a.illegible
-    ? await attempt((grid ? promptA : impose(a.questions.map((q) => ({ name: q.question, max: q.max })))) + SECOND_LOOK,
-      { model: env.SECOND_MODEL || env.LANG_MODEL, temperature: 0.4 }) : null;
-  if (grid) { snapToGrid(a, grid); if (b) snapToGrid(b, grid); }
-  const flags = [];
-  if (a.manipulation) flags.push(`Tentative de manipulation de l'IA détectée et ignorée : « ${a.manipulation} »`);
-  if (a.illegible) {
-    // Copie illisible : aucune note inventée, et rien n'est facturé.
-    await env.DB.prepare('UPDATE access_keys SET pages = pages + ? WHERE key = ?').bind(n, key).run();
+    // Contre-vérification réellement indépendante : un autre modèle, une autre consigne de lecture et un peu de variabilité,
+    // pour que deux corrections d'accord veuillent dire quelque chose (et non la même réponse répétée).
+    const SECOND_LOOK = "\n\nDEUXIÈME CORRECTEUR : tu es un second enseignant qui corrige cette copie sans connaître la première correction. Relis chaque réponse mot à mot avant de noter ; ne donne le bénéfice du doute que si la réponse le justifie.";
+    const b = deep && a.questions.length && !a.illegible
+      ? await attempt((grid ? promptA : impose(a.questions.map((q) => ({ name: q.question, max: q.max })))) + SECOND_LOOK,
+        { model: env.SECOND_MODEL || env.LANG_MODEL, temperature: 0.4 }) : null;
+    if (grid) { snapToGrid(a, grid); if (b) snapToGrid(b, grid); }
+    const flags = [];
+    if (a.manipulation) flags.push(`Tentative de manipulation de l'IA détectée et ignorée : « ${a.manipulation} »`);
+    if (a.illegible) {
+      // Copie illisible : aucune note inventée, et rien n'est facturé.
+      await refund(n);
+      const left = await env.DB.prepare('SELECT pages FROM access_keys WHERE key = ?').bind(key).first();
+      return json({ name: '', group: body.anonymous ? '' : a.group, grade: null, total, illegible: true, comment: '', reliability: null, secondGrade: null,
+        questions: a.questions.map(({ raw, ...q }) => ({ ...q, points: 0, second: null, justification: q.justification || 'Illisible' })),
+        flags: [...flags, "Copie illisible (photo floue, sombre ou coupée) : aucune note n'a été attribuée et aucune page n'a été décomptée. Reprenez la photo ou corrigez cette copie vous-même."],
+        pagesLeft: left?.pages ?? 0 });
+    }
+    if (a.partial) flags.push("Certains passages sont difficiles à lire : vérifiez les questions concernées.");
+    if (a.uncertain && a.reason) flags.push(a.reason);
+    else if (a.uncertain) flags.push("L'IA a un doute sur cette copie.");
+    // Nom absent : signalé par le champ « Nom à compléter » de la fiche, pas par une alerte qui noierait les vraies.
+    if (Math.abs(a.sumMax - total) > 1e-9) flags.push(`Les questions totalisent ${fr(a.sumMax)} points au lieu de ${fr(total)} : la note a été ramenée sur ${fr(total)}. Vérifiez le barème.`);
+    if (deep && !b) {
+      // La contre-vérification a échoué : on ne facture que la correction simple.
+      await refund(body.pages.length);
+      flags.push("La contre-vérification a échoué : correction simple seulement (une seule page décomptée par page).");
+    }
+    const { reliability: score, questions: compared } = compare(a, b, total, !!body.anonymous);
+    // Mode approfondi : la note retenue est la moyenne des deux corrections, question par question.
+    const sameShape = b && b.questions.length === a.questions.length;
+    const questions = compared.map((q, i) => {
+      if (!sameShape || q.second == null) return q;
+      const mean = Math.round(((q.points + b.questions[i].points) / 2) / unit) * unit;
+      return { ...q, first: q.points, points: Math.min(q.max, mean) };
+    }).map(({ raw, ...q }) => q);
+    // Si les questions ne totalisent pas le barème, on ramène la note à l'échelle au lieu de la plafonner en silence.
+    const sumMax = questions.reduce((x, q) => x + q.max, 0);
+    const sum = questions.reduce((x, q) => x + q.points, 0);
+    const finalGrade = sumMax > 0 && Math.abs(sumMax - total) > 1e-9 ? Math.round((sum * total / sumMax) / unit) * unit : Math.min(total, sum);
+    const reliability = b ? score : null; // sans 2e correction, pas de mesure d'accord
+    const disputed = questions.filter((q) => q.second != null);
+    if (reliability != null && reliability < RELIABILITY_ALERT) {
+      flags.push(disputed.length
+        ? `Fiabilité ${reliability} % : les deux corrections ne s'entendent pas sur ${disputed.map((q) => q.question).join(', ')}.`
+        : `Fiabilité ${reliability} % : vérifiez cette copie.`);
+    }
+
     const left = await env.DB.prepare('SELECT pages FROM access_keys WHERE key = ?').bind(key).first();
-    return json({ name: '', group: body.anonymous ? '' : a.group, grade: null, total, illegible: true, comment: '', reliability: null, secondGrade: null,
-      questions: a.questions.map(({ raw, ...q }) => ({ ...q, points: 0, second: null, justification: q.justification || 'Illisible' })),
-      flags: [...flags, "Copie illisible (photo floue, sombre ou coupée) : aucune note n'a été attribuée et aucune page n'a été décomptée. Reprenez la photo ou corrigez cette copie vous-même."],
-      pagesLeft: left?.pages ?? 0 });
+    return json({
+      name: a.name, group: a.group, grade: finalGrade, total, questions, comment: a.comment,
+      reliability, secondGrade: b ? b.grade : null, flags, pagesLeft: left?.pages ?? 0,
+    });
+  } catch (err) {
+    if (refunded < n) await refund(n - refunded).catch((e) => console.error('Remboursement impossible :', e.message));
+    throw err;
   }
-  if (a.partial) flags.push("Certains passages sont difficiles à lire : vérifiez les questions concernées.");
-  if (a.uncertain && a.reason) flags.push(a.reason);
-  else if (a.uncertain) flags.push("L'IA a un doute sur cette copie.");
-  if (!a.name && !body.anonymous) flags.push('Nom illisible ou absent.');
-  if (Math.abs(a.sumMax - total) > 1e-9) flags.push(`Les questions totalisent ${fr(a.sumMax)} points au lieu de ${fr(total)} : la note a été ramenée sur ${fr(total)}. Vérifiez le barème.`);
-  if (deep && !b) {
-    // La contre-vérification a échoué : on ne facture que la correction simple.
-    await env.DB.prepare('UPDATE access_keys SET pages = pages + ? WHERE key = ?').bind(body.pages.length, key).run();
-    flags.push("La contre-vérification a échoué : correction simple seulement (une seule page décomptée par page).");
-  }
-  const { reliability: score, questions: compared } = compare(a, b, total, !!body.anonymous);
-  // Mode approfondi : la note retenue est la moyenne des deux corrections, question par question.
-  const sameShape = b && b.questions.length === a.questions.length;
-  const questions = compared.map((q, i) => {
-    if (!sameShape || q.second == null) return q;
-    const mean = Math.round(((q.points + b.questions[i].points) / 2) / unit) * unit;
-    return { ...q, first: q.points, points: Math.min(q.max, mean) };
-  }).map(({ raw, ...q }) => q);
-  // Si les questions ne totalisent pas le barème, on ramène la note à l'échelle au lieu de la plafonner en silence.
-  const sumMax = questions.reduce((x, q) => x + q.max, 0);
-  const sum = questions.reduce((x, q) => x + q.points, 0);
-  const finalGrade = sumMax > 0 && Math.abs(sumMax - total) > 1e-9 ? Math.round((sum * total / sumMax) / unit) * unit : Math.min(total, sum);
-  const reliability = b ? score : null; // sans 2e correction, pas de mesure d'accord
-  const disputed = questions.filter((q) => q.second != null);
-  if (reliability != null && reliability < RELIABILITY_ALERT) {
-    flags.push(disputed.length
-      ? `Fiabilité ${reliability} % : les deux corrections ne s'entendent pas sur ${disputed.map((q) => q.question).join(', ')}.`
-      : `Fiabilité ${reliability} % : vérifiez cette copie.`);
-  }
-
-  const left = await env.DB.prepare('SELECT pages FROM access_keys WHERE key = ?').bind(key).first();
-  return json({
-    name: a.name, group: a.group, grade: finalGrade, total, questions, comment: a.comment,
-    reliability, secondGrade: b ? b.grade : null, flags, pagesLeft: left?.pages ?? 0,
-  });
 }
