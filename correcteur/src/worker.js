@@ -385,7 +385,7 @@ async function aiChat(env, system, content, responseFormat, opts = {}) {
 
 const LANG_CATEGORIES = {
   // Classement de la grammaire enseignée au Québec : apostrophe et trait d'union sont des signes orthographiques.
-  orthographe: "orthographe (mot mal écrit, accent, majuscule, apostrophe et élision, trait d'union, homophones comme a/à, ou/où, ces/ses, mot invariable comme « plusieurs »)",
+  orthographe: "orthographe (mot mal écrit, accent, majuscule, apostrophe et élision, trait d'union, homophones comme a/à, ou/où, ces/ses, mot invariable comme « plusieurs », abréviation comme « 2ème » → « 2e »)",
   accord: "accords (accord du verbe avec le sujet, toujours ici, même si la forme du verbe est fautive ; genre, nombre, participe passé, adjectif, déterminant)",
   conjugaison: "conjugaison (forme du verbe mal construite, temps, mode, auxiliaire ; l'accord du verbe avec son sujet va dans « accords »)",
   ponctuation: 'ponctuation (virgule, point, deux-points, point-virgule, guillemets)',
@@ -423,7 +423,7 @@ const NATIVE_LANG_SCHEMA = {
       explication: { type: 'STRING', description: 'Une courte explication de la règle (ex: Accord du participe passé).' },
       categorie: { type: 'STRING', enum: Object.keys(LANG_CATEGORIES) },
       ligne: { type: 'STRING', description: 'La ligne manuscrite complète où se trouve la faute, recopiée exactement telle qu’écrite (de son premier à son dernier mot).' },
-      lecture_douteuse: { type: 'BOOLEAN', description: "true si tu n'es pas certain de ce que l'élève a écrit à cet endroit (lettre ambiguë)." },
+      lecture_douteuse: { type: 'BOOLEAN', description: "true seulement si une lettre de ce mot est réellement ambiguë sur l'image ; false pour un mot nettement écrit, même fautif." },
       box: { type: 'ARRAY', items: { type: 'INTEGER' }, description: 'Bounding box [ymin, xmin, ymax, xmax] normalisée de 0 à 1000. Laisse vide si introuvable.' },
     },
     required: ['mot_fautif', 'correction', 'explication', 'categorie'],
