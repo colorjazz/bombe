@@ -137,18 +137,21 @@
 
   <!-- Clé API -->
   <section class="carte cache" id="ecran-cle">
-    <h2>Connexion à Claude</h2>
+    <h2>Connexion à l'IA</h2>
     <p class="aide">
-      Colle ta clé API Anthropic (elle commence par <code>sk-ant-</code>). Elle reste enregistrée
-      seulement dans ce navigateur, sur cet appareil, et n'est envoyée qu'à l'API d'Anthropic.
-      Tu peux en créer une sur <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>.
+      Colle ta clé API <strong>Gemini</strong> (commence par <code>AIza</code>, gratuite sur
+      <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com</a>)
+      ou <strong>Claude</strong> (commence par <code>sk-ant-</code>, sur
+      <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>).
+      Elle reste enregistrée seulement dans ce navigateur, sur cet appareil, et n'est envoyée qu'à l'API correspondante.
     </p>
-    <input type="password" id="champ-cle" placeholder="sk-ant-..." autocomplete="off">
+    <input type="password" id="champ-cle" placeholder="AIza... ou sk-ant-..." autocomplete="off">
     <div class="rangee" style="margin-top:12px">
       <button class="btn" id="btn-sauver-cle" type="button">Enregistrer</button>
       <button class="btn discret cache" id="btn-oublier-cle" type="button">Effacer la clé</button>
     </div>
-    <p class="aide">Coût indicatif : environ 5 à 15 ¢ US par question générée et corrigée.</p>
+    <p class="aide">Gemini : gratuit dans les limites du niveau gratuit de Google. Claude : environ 5 à 15 ¢ US par question corrigée.</p>
+    <p class="aide" id="info-modele"></p>
   </section>
 
   <!-- Choix -->
@@ -229,7 +232,8 @@
 <script src="anthropic-sdk.js"></script>
 <script src="contenu.js"></script>
 <script>
-  const MODELE = 'claude-opus-5-5';
+  const MODELE_CLAUDE = 'claude-opus-5-5';
+  const API_GEMINI = 'https://generativelanguage.googleapis.com/v1beta';
   const MOTS_PAR_LIGNE = 12;
 
   const THEMES = {
@@ -334,11 +338,95 @@ ${COURS_TEXTE}`;
     additionalProperties: false,
   };
 
-  // --- Appel à Claude avec sortie JSON structurée ---
+  const estCleGemini = cle => cle.startsWith('AIza');
+
   async function demanderJSON(consigne, schema, effort) {
+    return estCleGemini(cleApi)
+      ? demanderJSONGemini(consigne, schema)
+      : demanderJSONClaude(consigne, schema, effort);
+  }
+
+  // --- Gemini (API REST de Google) ---
+  class ErreurGemini extends Error {
+    constructor(status, statut, message) {
+      super(message);
+      this.status = status;
+      this.statut = statut;
+    }
+  }
+
+  async function appelGemini(chemin, corps) {
+    let r;
+    try {
+      r = await fetch(`${API_GEMINI}/${chemin}`, {
+        method: corps ? 'POST' : 'GET',
+        headers: { 'x-goog-api-key': cleApi, ...(corps && { 'content-type': 'application/json' }) },
+        body: corps && JSON.stringify(corps),
+      });
+    } catch {
+      throw new ErreurGemini(0, 'CONNEXION', 'Pas de connexion');
+    }
+    const donnees = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      const err = donnees.error || {};
+      const raison = (err.details || []).map(d => d.reason).find(Boolean);
+      throw new ErreurGemini(r.status, raison || err.status || '', err.message || r.statusText);
+    }
+    return donnees;
+  }
+
+  // Choisit le modèle Gemini « Flash » stable le plus récent offert à cette clé.
+  let modeleGemini = null;
+  async function choisirModeleGemini() {
+    if (modeleGemini) return modeleGemini;
+    const { models = [] } = await appelGemini('models?pageSize=1000');
+    const flash = models
+      .filter(m => (m.supportedGenerationMethods || []).includes('generateContent'))
+      .map(m => ({ nom: m.name.replace(/^models\//, ''), v: (m.name.match(/^models\/gemini-(\d+(?:\.\d+)?)-flash$/) || [])[1] }))
+      .filter(m => m.v)
+      .sort((a, b) => parseFloat(b.v) - parseFloat(a.v));
+    modeleGemini = flash.length ? flash[0].nom : 'gemini-flash-latest';
+    return modeleGemini;
+  }
+
+  // Gemini accepte un sous-ensemble de JSON Schema (types en majuscules, sans additionalProperties).
+  function schemaGemini(s) {
+    const r = { type: s.type.toUpperCase() };
+    if (s.description) r.description = s.description;
+    if (s.enum) r.enum = s.enum;
+    if (s.items) r.items = schemaGemini(s.items);
+    if (s.properties) {
+      r.properties = Object.fromEntries(Object.entries(s.properties).map(([k, v]) => [k, schemaGemini(v)]));
+      r.propertyOrdering = Object.keys(s.properties);
+    }
+    if (s.required) r.required = s.required;
+    return r;
+  }
+
+  async function demanderJSONGemini(consigne, schema) {
+    const modele = await choisirModeleGemini();
+    const reponse = await appelGemini(`models/${modele}:generateContent`, {
+      systemInstruction: { parts: [{ text: SYSTEME }] },
+      contents: [{ role: 'user', parts: [{ text: consigne }] }],
+      generationConfig: {
+        maxOutputTokens: 16000,
+        responseMimeType: 'application/json',
+        responseSchema: schemaGemini(schema),
+      },
+    });
+    const candidat = (reponse.candidates || [])[0];
+    if (!candidat) throw new Error('Gemini a bloqué cette demande. Réessaie avec une autre question.');
+    if (candidat.finishReason === 'MAX_TOKENS') throw new Error('La réponse de Gemini a été coupée. Réessaie.');
+    if (candidat.finishReason && candidat.finishReason !== 'STOP') throw new Error(`Gemini a interrompu sa réponse (${candidat.finishReason}). Réessaie.`);
+    const texte = (candidat.content?.parts || []).filter(p => !p.thought).map(p => p.text || '').join('');
+    return JSON.parse(texte);
+  }
+
+  // --- Claude (SDK Anthropic) ---
+  async function demanderJSONClaude(consigne, schema, effort) {
     const client = new Anthropic({ apiKey: cleApi, dangerouslyAllowBrowser: true });
     const requete = {
-      model: MODELE,
+      model: MODELE_CLAUDE,
       max_tokens: 16000,
       system: [{ type: 'text', text: SYSTEME, cache_control: { type: 'ephemeral', ttl: '1h' } }],
       messages: [{ role: 'user', content: consigne }],
@@ -364,7 +452,20 @@ ${COURS_TEXTE}`;
     return JSON.parse(texte);
   }
 
+  function estErreurCle(e) {
+    return e instanceof Anthropic.AuthenticationError
+      || (e instanceof ErreurGemini && (e.statut === 'API_KEY_INVALID' || e.status === 401));
+  }
+
   function messageErreur(e) {
+    if (e instanceof ErreurGemini) {
+      if (estErreurCle(e)) return 'Clé API invalide. Vérifie-la dans les réglages (⚙).';
+      if (e.status === 0) return 'Pas de connexion à Internet (ou API injoignable). Réessaie.';
+      if (e.status === 403) return "Ta clé Gemini n'a pas accès à ce service : vérifie qu'elle vient bien de aistudio.google.com.";
+      if (e.status === 429) return 'Limite gratuite de Gemini atteinte pour le moment. Attends une minute et réessaie.';
+      if (e.status >= 500) return 'Gemini est surchargé en ce moment. Réessaie dans quelques secondes.';
+      return `Erreur de Gemini (${e.status}) : ${e.message}`;
+    }
     if (e instanceof Anthropic.AuthenticationError) return 'Clé API invalide. Vérifie-la dans les réglages (⚙).';
     if (e instanceof Anthropic.PermissionDeniedError) return "Ta clé n'a pas accès à ce modèle ou ce service.";
     if (e instanceof Anthropic.RateLimitError) return 'Trop de demandes ou crédits épuisés. Attends un peu ou vérifie ton solde sur console.anthropic.com.';
@@ -424,7 +525,7 @@ ${COURS_TEXTE}`;
   function erreur(e) {
     $('texte-erreur').textContent = messageErreur(e);
     afficher('ecran-choix', 'ecran-erreur');
-    if (e instanceof Anthropic.AuthenticationError) afficher('ecran-cle', 'ecran-erreur');
+    if (estErreurCle(e)) afficher('ecran-cle', 'ecran-erreur');
   }
 
   function mettreAJourBoutonRatees() {
@@ -479,7 +580,7 @@ Type : ${TYPES[type]} (type = "${type}").
 La question doit porter sur une notion listée dans le guide d'étude pour ce thème, s'appuyer sur la matière des diapos, se répondre en environ 5 lignes et ressembler aux exemples de questions du guide. Pour une mise en situation, invente une courte situation ou description de pays réaliste et fournis dans l'énoncé les chiffres nécessaires.
 ${dejaPosees ? `Évite de reposer ces questions déjà posées (varie la notion visée) :\n${dejaPosees}` : ''}`;
     $('btn-nouvelle').disabled = true;
-    attendre('Claude prépare une question…');
+    attendre('L’IA prépare une question…');
     try {
       const q = await demanderJSON(consigne, SCHEMA_QUESTION, 'low');
       montrerQuestion({ ...q, theme, type });
@@ -509,7 +610,7 @@ Consignes de correction :
 - Les conseils sont concrets et courts.`;
     $('btn-corriger').disabled = true;
     $('btn-sais-pas').disabled = true;
-    $('texte-attente').textContent = 'Claude corrige ta réponse…';
+    $('texte-attente').textContent = 'L’IA corrige ta réponse…';
     afficher('ecran-choix', 'ecran-question', 'ecran-attente');
     try {
       const c = await demanderJSON(consigne, SCHEMA_CORRECTION, 'medium');
@@ -606,6 +707,7 @@ Consignes de correction :
     const v = $('champ-cle').value.trim();
     if (!v) return;
     cleApi = v;
+    modeleGemini = null;
     stockage.ecrire('gjm_cle', v);
     $('champ-cle').value = '';
     demarrer();
@@ -617,6 +719,9 @@ Consignes de correction :
   });
   $('btn-reglages').addEventListener('click', () => {
     $('btn-oublier-cle').classList.toggle('cache', !cleApi);
+    $('info-modele').textContent = !cleApi ? ''
+      : estCleGemini(cleApi) ? `Clé actuelle : Gemini${modeleGemini ? ` (modèle ${modeleGemini})` : ''}.`
+      : `Clé actuelle : Claude (modèle ${MODELE_CLAUDE}).`;
     afficher('ecran-cle', 'ecran-choix');
   });
   $('btn-stats').addEventListener('click', montrerStats);
