@@ -419,7 +419,7 @@ const NATIVE_LANG_SCHEMA = {
     type: 'OBJECT',
     properties: {
       mot_fautif: { type: 'STRING', description: 'Le mot ou groupe de mots exact contenant la faute.' },
-      correction: { type: 'STRING', description: 'La correction proposée.' },
+      correction: { type: 'STRING', description: 'La correction proposée : une seule forme, jamais deux au choix.' },
       explication: { type: 'STRING', description: 'Une courte explication de la règle (ex: Accord du participe passé).' },
       categorie: { type: 'STRING', enum: Object.keys(LANG_CATEGORIES) },
       ligne: { type: 'STRING', description: 'La ligne manuscrite complète où se trouve la faute, recopiée exactement telle qu’écrite (de son premier à son dernier mot).' },
@@ -435,29 +435,31 @@ const inlineImage = (dataUrl) => {
   return { inlineData: { mimeType, data } };
 };
 
-// Deux lectures : la première relève les fautes, la seconde relit la copie en connaissant cette liste et cherche
-// seulement les fautes oubliées, surtout celles qu'une première lecture laisse passer (repérage ≈ 73 % en une seule lecture).
+// Deux lectures en parallèle, réunies sans doublons : une lecture complète et une lecture ciblée sur les fautes
+// qu'une première lecture laisse passer (repérage ≈ 73 % en une seule lecture).
 const REREAD = {
-  fr: (list) => `\n\nRELECTURE : une première lecture a déjà relevé ces fautes :\n${list}\nRelis maintenant la copie mot à mot et relève UNIQUEMENT les fautes OUBLIÉES, en particulier : accord du verbe avec un sujet éloigné ou inversé, accord du participe passé, accord dans le groupe du nom, négation incomplète (« ne » absent), majuscules (noms propres, début de phrase), homophones. Ne répète aucune faute de la liste. Mêmes règles : aucune faute sur une lettre bien formée. Si tu n'en trouves pas d'autre, renvoie [].`,
-  en: (list) => `\n\nSECOND READING: a first reading already found these errors:\n${list}\nNow reread the paper word by word and report ONLY the MISSED errors, especially: subject-verb agreement with a distant or inverted subject, pronoun agreement, capitalization (proper nouns, sentence start), homophones. Do not repeat any error from the list. Same rules: a well-formed letter is never an error. If you find no other error, return [].`,
+  fr: "\n\nLECTURE CIBLÉE : lis la copie mot à mot en cherchant surtout les fautes qu'une lecture rapide laisse passer : accord du verbe avec un sujet éloigné ou inversé, accord du participe passé, accord dans le groupe du nom, négation incomplète (« ne » absent), majuscules (noms propres, début de phrase), homophones. Mêmes règles : aucune faute sur une lettre bien formée.",
+  en: "\n\nFOCUSED READING: read the paper word by word, looking especially for errors a quick reading misses: subject-verb agreement with a distant or inverted subject, pronoun agreement, capitalization (proper nouns, sentence start), homophones. Same rules: a well-formed letter is never an error.",
 };
 const overlaps = (a, b) => a && b && Math.min(a[2], b[2]) - Math.max(a[0], b[0]) > 0 && Math.min(a[3], b[3]) - Math.max(a[1], b[1]) > 0.5 * Math.min(a[3] - a[1], b[3] - b[1]);
 async function readTwice(env, system, dataUrl, english) {
-  const first = await geminiVision(env, system, dataUrl);
-  const list = first.fautes.map((f) => `- « ${f.texte} » → « ${f.correction} »`).join('\n') || '(aucune)';
-  let second = { fautes: [] };
-  try { second = await geminiVision(env, system + REREAD[english ? 'en' : 'fr'](list), dataUrl); } catch { /* la première lecture suffit */ }
+  // Les deux lectures partent en même temps (une page prenait 1 à 2 minutes quand la seconde attendait la première).
+  const [first, second] = await Promise.all([
+    geminiVision(env, system, dataUrl),
+    geminiVision(env, system + REREAD[english ? 'en' : 'fr'], dataUrl).catch(() => ({ fautes: [] })), // la première lecture suffit
+  ]);
   const same = (f, g) => String(f.texte || '').trim().toLowerCase() === String(g.texte || '').trim().toLowerCase() || overlaps(cleanBox(f.box), cleanBox(g.box));
   return { fautes: [...first.fautes, ...second.fautes.filter((g) => !first.fautes.some((f) => same(f, g)))] };
 }
 
 async function geminiVision(env, prompt, dataUrl) {
-  const list = await geminiNative(env, [{ text: prompt }, inlineImage(dataUrl)], NATIVE_LANG_SCHEMA, env.LANG_MODEL);
+  const list = await geminiNative(env, [{ text: prompt }, inlineImage(dataUrl)], NATIVE_LANG_SCHEMA, env.LANG_MODEL, { thinking: env.LANG_THINKING || 'low', timeoutMs: 90_000 });
   return { fautes: (Array.isArray(list) ? list : list.fautes || []).map((f) => ({ ...f, texte: f.mot_fautif ?? f.texte, box: f.box ?? f.box_2d })) };
 }
 
 // Appel natif à Gemini (generateContent) avec réponse JSON structurée.
-async function geminiNative(env, parts, schema, preferredModel) {
+// opts.thinking : niveau de réflexion du modèle (« low » divise le temps par deux) ; chaque appel a une limite de temps.
+async function geminiNative(env, parts, schema, preferredModel, opts = {}) {
   const base = env.GEMINI_NATIVE_URL || 'https://generativelanguage.googleapis.com/v1beta';
   const chain = [...new Set([preferredModel, env.AI_MODEL, env.AI_FALLBACK_MODEL].filter(Boolean))];
   let model = chain.shift();
@@ -467,8 +469,10 @@ async function geminiNative(env, parts, schema, preferredModel) {
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': env.AI_API_KEY },
       body: JSON.stringify({
         contents: [{ role: 'user', parts }],
-        generationConfig: { responseMimeType: 'application/json', responseSchema: schema },
+        generationConfig: { responseMimeType: 'application/json', responseSchema: schema,
+          ...(opts.thinking ? { thinkingConfig: { thinkingLevel: opts.thinking } } : {}) },
       }),
+      signal: AbortSignal.timeout(opts.timeoutMs || 120_000),
     });
     if (res.ok) {
       const text = (await res.json()).candidates?.[0]?.content?.parts?.map((p) => p.text || '').join('');
