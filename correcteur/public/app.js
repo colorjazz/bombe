@@ -1180,6 +1180,8 @@ async function openCamera() {
   if ($('mode').value === 'fixed' && Number($('per').value) >= 1) $('cam-per').value = String(Math.round(Number($('per').value)));
   camGroup();
   $('cam').hidden = false;
+  // Le geste « retour » du téléphone ferme la caméra au lieu de quitter le site.
+  history.pushState({ cam: true }, '');
   camCount();
   const status = $('cam-status');
   try {
@@ -1189,11 +1191,14 @@ async function openCamera() {
     });
   } catch (err) {
     $('cam').hidden = true;
+    if (history.state?.cam) history.back();
     banner('err', 'Caméra indisponible : autorisez l’accès à la caméra pour ce site, puis réessayez.');
   }
 }
 
-function closeCamera() {
+function closeCamera(fromHistory) {
+  if ($('cam').hidden) return;
+  if (!fromHistory && history.state?.cam) { history.back(); return; } // repasse par popstate, qui ferme
   camState.session?.stop();
   camState.session = null;
   $('cam').hidden = true;
@@ -1204,7 +1209,8 @@ function closeCamera() {
 
 if (navigator.mediaDevices?.getUserMedia) $('cam-open').hidden = $('cam-hint').hidden = false;
 $('cam-open').addEventListener('click', openCamera);
-$('cam-done').addEventListener('click', closeCamera);
+$('cam-done').addEventListener('click', () => closeCamera());
+window.addEventListener('popstate', () => closeCamera(true));
 $('cam-shoot').addEventListener('click', () => camState.session?.capture());
 $('cam-per').addEventListener('change', () => { camGroup(); camAutoRun(); });
 $('cam-auto').addEventListener('change', camAutoRun);
@@ -1259,6 +1265,7 @@ $('viewer-add').addEventListener('click', () => { adding = adding ? null : { sta
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape') return;
   if (adding && !$('viewer').hidden) { adding = null; renderViewer(); return; }
+  if (!$('cam').hidden) { closeCamera(); return; }
   for (const id of ['zoom', 'viewer', 'rel-help', 'buy']) {
     if (!$(id).hidden) { $(id).hidden = true; if (id === 'viewer') viewing = null; return; }
   }
