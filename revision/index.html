@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Révision GJM</title>
+  <style>
+    :root {
+      --bg: #f6f4ef;
+      --carte: #ffffff;
+      --texte: #1f2328;
+      --doux: #5d6470;
+      --bord: #dcd8cf;
+      --accent: #c2410c;
+      --accent-texte: #ffffff;
+      --accent-doux: #fdeee6;
+      --vert: #15803d;
+      --vert-doux: #e7f6ec;
+      --jaune: #a16207;
+      --jaune-doux: #fdf6dd;
+      --rouge: #b91c1c;
+      --rouge-doux: #fdeaea;
+      --ombre: 0 1px 3px rgba(0, 0, 0, .08);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #16181c;
+        --carte: #1f2228;
+        --texte: #e8e6e3;
+        --doux: #a3a9b3;
+        --bord: #343842;
+        --accent: #fb923c;
+        --accent-texte: #1b1b1b;
+        --accent-doux: #3a2618;
+        --vert: #4ade80;
+        --vert-doux: #16301f;
+        --jaune: #facc15;
+        --jaune-doux: #352d0f;
+        --rouge: #f87171;
+        --rouge-doux: #3a1a1a;
+        --ombre: none;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--texte);
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      font-size: 16px;
+      line-height: 1.5;
+    }
+    main { max-width: 760px; margin: 0 auto; padding: 16px 16px 64px; }
+    header {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      margin-bottom: 16px;
+    }
+    header h1 { font-size: 1.25rem; margin: 0; }
+    header p { margin: 0; color: var(--doux); font-size: .875rem; }
+    .carte {
+      background: var(--carte); border: 1px solid var(--bord); border-radius: 12px;
+      padding: 16px; margin-bottom: 16px; box-shadow: var(--ombre);
+    }
+    .carte h2 { font-size: 1rem; margin: 0 0 12px; }
+    .etiquette { font-size: .8125rem; color: var(--doux); margin: 0 0 6px; font-weight: 600; }
+    .puces { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+    .puce {
+      border: 1px solid var(--bord); background: transparent; color: var(--texte);
+      border-radius: 999px; padding: 6px 12px; font: inherit; font-size: .875rem; cursor: pointer;
+    }
+    .puce[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-texte); }
+    button.btn {
+      font: inherit; font-weight: 600; border-radius: 8px; padding: 10px 16px; cursor: pointer;
+      border: 1px solid var(--accent); background: var(--accent); color: var(--accent-texte);
+    }
+    button.btn.secondaire { background: transparent; color: var(--accent); }
+    button.btn.discret { background: transparent; color: var(--doux); border-color: var(--bord); }
+    header button.btn { white-space: nowrap; padding: 8px 12px; }
+    button.btn:disabled { opacity: .5; cursor: wait; }
+    .rangee { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    input[type="password"], input[type="text"], textarea {
+      width: 100%; font: inherit; color: var(--texte); background: var(--bg);
+      border: 1px solid var(--bord); border-radius: 8px; padding: 10px 12px;
+    }
+    textarea { min-height: 180px; resize: vertical; }
+    .compteur { font-size: .8125rem; color: var(--doux); margin: 6px 0 12px; }
+    .compteur.trop { color: var(--jaune); }
+    .question { font-size: 1.0625rem; font-weight: 600; margin: 8px 0 16px; white-space: pre-wrap; }
+    .badge {
+      display: inline-block; font-size: .75rem; font-weight: 600; border-radius: 999px;
+      padding: 2px 10px; background: var(--accent-doux); color: var(--accent); margin-right: 6px;
+    }
+    .note { display: flex; align-items: baseline; gap: 12px; margin-bottom: 8px; }
+    .note .chiffre { font-size: 2.5rem; font-weight: 700; line-height: 1; }
+    .bien { color: var(--vert); } .moyen { color: var(--jaune); } .faible { color: var(--rouge); }
+    .methode { display: grid; gap: 8px; margin: 12px 0; }
+    .critere { border-radius: 8px; padding: 8px 12px; font-size: .9375rem; }
+    .critere.ok { background: var(--vert-doux); }
+    .critere.ko { background: var(--rouge-doux); }
+    .critere strong { display: block; }
+    .bloc { margin-top: 14px; }
+    .bloc h3 { font-size: .9375rem; margin: 0 0 4px; }
+    .bloc ul { margin: 0; padding-left: 20px; }
+    .modele {
+      background: var(--jaune-doux); border-radius: 8px; padding: 12px; white-space: pre-wrap;
+    }
+    .chargement { display: flex; align-items: center; gap: 12px; color: var(--doux); }
+    .rond {
+      width: 20px; height: 20px; border-radius: 50%; border: 3px solid var(--bord);
+      border-top-color: var(--accent); animation: tourne 0.9s linear infinite; flex: none;
+    }
+    @keyframes tourne { to { transform: rotate(360deg); } }
+    .erreur { background: var(--rouge-doux); color: var(--rouge); border-radius: 8px; padding: 12px; }
+    .aide { font-size: .875rem; color: var(--doux); }
+    .aide a { color: var(--accent); }
+    details summary { cursor: pointer; font-weight: 600; }
+    details ol { margin: 8px 0 0; padding-left: 20px; }
+    table { width: 100%; border-collapse: collapse; font-size: .9375rem; }
+    th, td { text-align: left; padding: 6px 4px; border-bottom: 1px solid var(--bord); }
+    .historique li { margin-bottom: 8px; }
+    .historique button { font: inherit; font-size: .8125rem; }
+    .cache { display: none !important; }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <h1>Révision GJM</h1>
+      <p>Géographie et justice mondiale · intra du 21 octobre</p>
+    </div>
+    <div class="rangee">
+      <button class="btn discret" id="btn-stats" type="button">Mes résultats</button>
+      <button class="btn discret" id="btn-reglages" type="button" aria-label="Réglages">⚙</button>
+    </div>
+  </header>
+
+  <!-- Clé API -->
+  <section class="carte cache" id="ecran-cle">
+    <h2>Connexion à Claude</h2>
+    <p class="aide">
+      Colle ta clé API Anthropic (elle commence par <code>sk-ant-</code>). Elle reste enregistrée
+      seulement dans ce navigateur, sur cet appareil, et n'est envoyée qu'à l'API d'Anthropic.
+      Tu peux en créer une sur <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>.
+    </p>
+    <input type="password" id="champ-cle" placeholder="sk-ant-..." autocomplete="off">
+    <div class="rangee" style="margin-top:12px">
+      <button class="btn" id="btn-sauver-cle" type="button">Enregistrer</button>
+      <button class="btn discret cache" id="btn-oublier-cle" type="button">Effacer la clé</button>
+    </div>
+    <p class="aide">Coût indicatif : environ 5 à 15 ¢ US par question générée et corrigée.</p>
+  </section>
+
+  <!-- Choix -->
+  <section class="carte cache" id="ecran-choix">
+    <p class="etiquette">Thème</p>
+    <div class="puces" id="puces-theme"></div>
+    <p class="etiquette">Type de question</p>
+    <div class="puces" id="puces-type"></div>
+    <div class="rangee">
+      <button class="btn" id="btn-nouvelle" type="button">Nouvelle question</button>
+      <button class="btn secondaire" id="btn-ratees" type="button">Revoir mes questions ratées</button>
+    </div>
+    <details style="margin-top:16px">
+      <summary>Rappel : la méthode de la prof</summary>
+      <ol>
+        <li><strong>Établir les faits</strong> : définitions et aspects importants du sujet.</li>
+        <li><strong>Comparer / contraster</strong> les faits entre eux.</li>
+        <li><strong>Conclure</strong>, si approprié.</li>
+      </ol>
+      <p class="aide">Ex. : la loi « three strikes » → justice rétributive = punition proportionnelle
+        → 25 ans minimum pour un 3e crime « grave » → pas forcément proportionnel → contrevient à l'idéal.
+        Environ 5 lignes : ce qui compte, c'est la compréhension, pas les chiffres par cœur.</p>
+    </details>
+  </section>
+
+  <!-- Question -->
+  <section class="carte cache" id="ecran-question">
+    <div id="meta-question"></div>
+    <p class="question" id="texte-question"></p>
+    <label class="etiquette" for="champ-reponse">Ta réponse (environ 5 lignes)</label>
+    <textarea id="champ-reponse" placeholder="Définitions → comparaison → conclusion…"></textarea>
+    <p class="compteur" id="compteur">0 mot</p>
+    <div class="rangee">
+      <button class="btn" id="btn-corriger" type="button">Corriger</button>
+      <button class="btn discret" id="btn-sais-pas" type="button">Je ne sais pas, montre-moi</button>
+    </div>
+  </section>
+
+  <section class="carte cache" id="ecran-attente">
+    <div class="chargement"><div class="rond"></div><span id="texte-attente"></span></div>
+  </section>
+
+  <section class="carte cache" id="ecran-erreur">
+    <div class="erreur" id="texte-erreur"></div>
+  </section>
+
+  <!-- Correction -->
+  <section class="carte cache" id="ecran-correction">
+    <div class="note"><span class="chiffre" id="note"></span><span id="appreciation"></span></div>
+    <div class="methode" id="methode"></div>
+    <div id="blocs"></div>
+    <div class="bloc">
+      <h3>Réponse modèle</h3>
+      <div class="modele" id="modele"></div>
+    </div>
+    <div class="rangee" style="margin-top:16px">
+      <button class="btn" id="btn-suivante" type="button">Question suivante</button>
+      <button class="btn secondaire" id="btn-reessayer" type="button">Réessayer cette question</button>
+    </div>
+  </section>
+
+  <!-- Résultats -->
+  <section class="carte cache" id="ecran-stats">
+    <h2>Mes résultats</h2>
+    <table>
+      <thead><tr><th>Thème</th><th>Questions</th><th>Moyenne</th></tr></thead>
+      <tbody id="table-stats"></tbody>
+    </table>
+    <h2 style="margin-top:20px">Historique</h2>
+    <ul class="historique" id="liste-historique"></ul>
+    <div class="rangee" style="margin-top:12px">
+      <button class="btn" id="btn-fermer-stats" type="button">Retour</button>
+      <button class="btn discret" id="btn-effacer-historique" type="button">Effacer l'historique</button>
+    </div>
+  </section>
+</main>
+
+<script src="anthropic-sdk.js"></script>
+<script src="contenu.js"></script>
+<script>
+  const MODELE = 'claude-opus-5-5';
+  const MOTS_PAR_LIGNE = 12;
+
+  const THEMES = {
+    outils: 'Outils du géographe',
+    physique: 'Géo physique et El Niño',
+    justice: 'Systèmes de justice',
+    developpement: 'Géo du développement',
+  };
+  const TYPES = {
+    explication: 'Expliquer un concept',
+    comparaison: 'Comparer / contraster',
+    situation: 'Mise en situation',
+    exemple: 'Définition + exemple',
+  };
+
+  // --- Stockage local (peut être indisponible : navigation privée, etc.) ---
+  const stockage = {
+    lire(cle, defaut) {
+      try { const v = localStorage.getItem(cle); return v === null ? defaut : JSON.parse(v); }
+      catch { return defaut; }
+    },
+    ecrire(cle, valeur) {
+      try { localStorage.setItem(cle, JSON.stringify(valeur)); } catch { /* ignoré */ }
+    },
+    effacer(cle) {
+      try { localStorage.removeItem(cle); } catch { /* ignoré */ }
+    },
+  };
+
+  let cleApi = stockage.lire('gjm_cle', '');
+  let historique = stockage.lire('gjm_historique', []);
+  let themeChoisi = 'tous';
+  let typeChoisi = 'hasard';
+  let questionCourante = null;
+  let sansFallback = false;
+
+  // --- Prompt système : consignes + tout le contenu du cours (mis en cache) ---
+  const COURS_TEXTE = ['guide', 'intro', 'outils', 'physique', 'justice', 'developpement']
+    .map(k => `<document id="${k}" titre="${COURS[k].titre}">\n${COURS[k].texte}\n</document>`)
+    .join('\n\n');
+
+  const SYSTEME = `Tu es l'assistant de révision d'un·e étudiant·e de cégep pour le cours « Géographie et justice mondiale » (GJM), en vue de l'examen intra du 21 octobre. Tu écris en français québécois standard, clair et bienveillant, et tu tutoies l'étudiant·e.
+
+Ce que la prof a dit de l'examen :
+- Les questions vérifient la compréhension des concepts et la capacité à faire des liens, pas la mémorisation de faits ou de chiffres (ex. : jamais le rang d'un pays au PIB ; si un chiffre est nécessaire, il est fourni dans l'énoncé).
+- Les réponses attendues sont courtes : environ 5 lignes (parfois 5 à 10).
+- Types de questions : expliquer un concept ; comparer/contraster (ex. : « décrivez 2 similitudes et 2 différences ») ; mise en situation (« suivant la description d'une situation ou d'un pays, identifiez… et décrivez… ») ; définir et illustrer par un exemple vu en cours.
+- Méthode de réponse enseignée : 1) établir les faits importants (définitions, aspects importants) ; 2) comparer/contraster les faits ; 3) si approprié, arriver à une conclusion.
+  Exemple de la prof : « La loi three strikes est un exemple de justice rétributive, par contre elle n'est pas un exemple idéal. Décrivez en quoi elle contrevient à l'idéal. » → Définitions : la loi dicte qu'après le 3e crime grave, le criminel reçoit automatiquement 25 ans minimum ; la justice rétributive veut que chaque méfait soit puni de manière proportionnelle. → Comparaison/conclusion : la punition du 3e crime ne mérite pas forcément 25 ans, donc rien ne garantit la proportionnalité voulue par la justice rétributive idéale.
+
+Le contenu officiel du cours suit : le guide d'étude de l'intra (ce qui est matière à examen) et le texte des diapos de chaque cours, avec les notes de la prof. Les diapos sont numérotées [Diapo N]. Base-toi uniquement sur ce contenu ; n'invente pas de faits absents du cours. Quand tu cites une diapo, utilise la forme « <titre du cours>, diapo N ».
+
+${COURS_TEXTE}`;
+
+  const SCHEMA_QUESTION = {
+    type: 'object',
+    properties: {
+      question: { type: 'string', description: "Énoncé complet de la question, tel qu'à l'examen, incluant la mise en situation s'il y a lieu et la longueur attendue (ex. « en environ 5 lignes »)." },
+      theme: { type: 'string', enum: Object.keys(THEMES) },
+      type: { type: 'string', enum: Object.keys(TYPES) },
+      elements_attendus: { type: 'array', items: { type: 'string' }, description: '3 à 5 éléments clés qu’une bonne réponse doit contenir.' },
+      diapos: { type: 'array', items: { type: 'string' }, description: 'Diapos du cours où se trouve la matière.' },
+    },
+    required: ['question', 'theme', 'type', 'elements_attendus', 'diapos'],
+    additionalProperties: false,
+  };
+
+  const CRITERE = {
+    type: 'object',
+    properties: {
+      ok: { type: 'boolean' },
+      commentaire: { type: 'string', description: 'Une phrase.' },
+    },
+    required: ['ok', 'commentaire'],
+    additionalProperties: false,
+  };
+
+  const SCHEMA_CORRECTION = {
+    type: 'object',
+    properties: {
+      note: { type: 'integer', description: 'Note sur 10 (entier de 0 à 10).' },
+      appreciation: { type: 'string', description: 'Une phrase de bilan.' },
+      methode: {
+        type: 'object',
+        properties: {
+          definitions: CRITERE,
+          comparaison: CRITERE,
+          conclusion: CRITERE,
+          exemple: CRITERE,
+        },
+        required: ['definitions', 'comparaison', 'conclusion', 'exemple'],
+        additionalProperties: false,
+      },
+      points_forts: { type: 'array', items: { type: 'string' } },
+      a_ameliorer: { type: 'array', items: { type: 'string' }, description: 'Éléments manquants ou imprécis, concrets.' },
+      erreurs: { type: 'array', items: { type: 'string' }, description: 'Erreurs factuelles ou contresens par rapport au cours. Vide s’il n’y en a pas.' },
+      longueur: { type: 'string', description: 'Commentaire bref sur la longueur et la concision par rapport aux ~5 lignes attendues.' },
+      reponse_modele: { type: 'string', description: "Réponse modèle d'environ 5 lignes suivant la méthode de la prof." },
+      diapos_a_revoir: { type: 'array', items: { type: 'string' } },
+    },
+    required: ['note', 'appreciation', 'methode', 'points_forts', 'a_ameliorer', 'erreurs', 'longueur', 'reponse_modele', 'diapos_a_revoir'],
+    additionalProperties: false,
+  };
+
+  // --- Appel à Claude avec sortie JSON structurée ---
+  async function demanderJSON(consigne, schema, effort) {
+    const client = new Anthropic({ apiKey: cleApi, dangerouslyAllowBrowser: true });
+    const requete = {
+      model: MODELE,
+      max_tokens: 16000,
+      system: [{ type: 'text', text: SYSTEME, cache_control: { type: 'ephemeral', ttl: '1h' } }],
+      messages: [{ role: 'user', content: consigne }],
+      output_config: { effort, format: { type: 'json_schema', schema } },
+    };
+    let reponse;
+    try {
+      reponse = sansFallback
+        ? await client.messages.create(requete)
+        : await client.beta.messages.create({ ...requete, betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default' });
+    } catch (e) {
+      // Si le compte n'accepte pas les modèles de repli, on réessaie sans.
+      if (!sansFallback && e instanceof Anthropic.BadRequestError && /fallback/i.test(e.message)) {
+        sansFallback = true;
+        reponse = await client.messages.create(requete);
+      } else {
+        throw e;
+      }
+    }
+    if (reponse.stop_reason === 'refusal') throw new Error('Claude a refusé de répondre à cette demande. Réessaie avec une autre question.');
+    if (reponse.stop_reason === 'max_tokens') throw new Error('La réponse de Claude a été coupée. Réessaie.');
+    const texte = reponse.content.filter(b => b.type === 'text').map(b => b.text).join('');
+    return JSON.parse(texte);
+  }
+
+  function messageErreur(e) {
+    if (e instanceof Anthropic.AuthenticationError) return 'Clé API invalide. Vérifie-la dans les réglages (⚙).';
+    if (e instanceof Anthropic.PermissionDeniedError) return "Ta clé n'a pas accès à ce modèle ou ce service.";
+    if (e instanceof Anthropic.RateLimitError) return 'Trop de demandes ou crédits épuisés. Attends un peu ou vérifie ton solde sur console.anthropic.com.';
+    if (e instanceof Anthropic.APIConnectionError) return 'Pas de connexion à Internet (ou API injoignable). Réessaie.';
+    if (e instanceof Anthropic.APIError) return `Erreur de l'API (${e.status ?? '?'}) : ${e.message}`;
+    if (e instanceof SyntaxError) return 'Réponse illisible reçue. Réessaie.';
+    return e.message || String(e);
+  }
+
+  // --- Interface ---
+  const $ = id => document.getElementById(id);
+  const ECRANS = ['ecran-cle', 'ecran-choix', 'ecran-question', 'ecran-attente', 'ecran-erreur', 'ecran-correction', 'ecran-stats'];
+  function afficher(...ids) {
+    for (const id of ECRANS) $(id).classList.toggle('cache', !ids.includes(id));
+  }
+
+  function puces(conteneur, options, valeur, surChoix) {
+    conteneur.replaceChildren();
+    for (const [cle, libelle] of Object.entries(options)) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'puce';
+      b.textContent = libelle;
+      b.setAttribute('aria-pressed', String(cle === valeur));
+      b.addEventListener('click', () => {
+        for (const autre of conteneur.children) autre.setAttribute('aria-pressed', 'false');
+        b.setAttribute('aria-pressed', 'true');
+        surChoix(cle);
+      });
+      conteneur.append(b);
+    }
+  }
+
+  function couleurNote(n) { return n >= 8 ? 'bien' : n >= 6 ? 'moyen' : 'faible'; }
+
+  function liste(titre, elements) {
+    if (!elements || !elements.length) return null;
+    const div = document.createElement('div');
+    div.className = 'bloc';
+    const h = document.createElement('h3');
+    h.textContent = titre;
+    const ul = document.createElement('ul');
+    for (const e of elements) {
+      const li = document.createElement('li');
+      li.textContent = e;
+      ul.append(li);
+    }
+    div.append(h, ul);
+    return div;
+  }
+
+  function attendre(texte) {
+    $('texte-attente').textContent = texte;
+    afficher('ecran-choix', 'ecran-attente');
+  }
+
+  function erreur(e) {
+    $('texte-erreur').textContent = messageErreur(e);
+    afficher('ecran-choix', 'ecran-erreur');
+    if (e instanceof Anthropic.AuthenticationError) afficher('ecran-cle', 'ecran-erreur');
+  }
+
+  function mettreAJourBoutonRatees() {
+    const n = questionsRatees().length;
+    $('btn-ratees').textContent = `Revoir mes questions ratées (${n})`;
+    $('btn-ratees').disabled = n === 0;
+  }
+
+  function questionsRatees() {
+    // Dernière tentative de chaque question < 6/10
+    const derniere = new Map();
+    for (const h of historique) derniere.set(h.question, h);
+    return [...derniere.values()].filter(h => h.note < 6);
+  }
+
+  function montrerQuestion(q) {
+    questionCourante = q;
+    const meta = $('meta-question');
+    meta.replaceChildren();
+    for (const t of [THEMES[q.theme], TYPES[q.type]]) {
+      const s = document.createElement('span');
+      s.className = 'badge';
+      s.textContent = t;
+      meta.append(s);
+    }
+    $('texte-question').textContent = q.question;
+    $('champ-reponse').value = '';
+    majCompteur();
+    afficher('ecran-choix', 'ecran-question');
+    $('champ-reponse').focus();
+  }
+
+  function majCompteur() {
+    const mots = $('champ-reponse').value.trim().split(/\s+/).filter(Boolean).length;
+    const lignes = Math.max(mots ? 1 : 0, Math.round(mots / MOTS_PAR_LIGNE));
+    const c = $('compteur');
+    c.textContent = `${mots} mot${mots > 1 ? 's' : ''} · ≈ ${lignes} ligne${lignes > 1 ? 's' : ''} manuscrite${lignes > 1 ? 's' : ''} (cible : ~5)`;
+    c.classList.toggle('trop', lignes > 8);
+  }
+
+  async function nouvelleQuestion() {
+    const theme = themeChoisi === 'tous'
+      ? Object.keys(THEMES)[Math.floor(Math.random() * 4)]
+      : themeChoisi;
+    const type = typeChoisi === 'hasard'
+      ? Object.keys(TYPES)[Math.floor(Math.random() * 4)]
+      : typeChoisi;
+    const dejaPosees = historique.filter(h => h.theme === theme).slice(-15).map(h => `- ${h.question}`).join('\n');
+    const consigne = `Génère UNE nouvelle question d'examen.
+Thème : ${THEMES[theme]} (theme = "${theme}").
+Type : ${TYPES[type]} (type = "${type}").
+La question doit porter sur une notion listée dans le guide d'étude pour ce thème, s'appuyer sur la matière des diapos, se répondre en environ 5 lignes et ressembler aux exemples de questions du guide. Pour une mise en situation, invente une courte situation ou description de pays réaliste et fournis dans l'énoncé les chiffres nécessaires.
+${dejaPosees ? `Évite de reposer ces questions déjà posées (varie la notion visée) :\n${dejaPosees}` : ''}`;
+    $('btn-nouvelle').disabled = true;
+    attendre('Claude prépare une question…');
+    try {
+      const q = await demanderJSON(consigne, SCHEMA_QUESTION, 'low');
+      montrerQuestion({ ...q, theme, type });
+    } catch (e) {
+      erreur(e);
+    } finally {
+      $('btn-nouvelle').disabled = false;
+    }
+  }
+
+  async function corriger(reponseEtudiant) {
+    const q = questionCourante;
+    const consigne = `Corrige la réponse de l'étudiant·e comme le ferait la prof à l'intra.
+
+<question>${q.question}</question>
+<elements_attendus>
+${q.elements_attendus.map(e => `- ${e}`).join('\n')}
+</elements_attendus>
+<diapos>${q.diapos.join(' ; ')}</diapos>
+<reponse_etudiant>${reponseEtudiant || "(L'étudiant·e ne sait pas répondre.)"}</reponse_etudiant>
+
+Consignes de correction :
+- Évalue la compréhension et la justesse par rapport au cours, pas le style ni l'orthographe.
+- Vérifie la méthode : définitions/faits établis, comparaison ou lien entre les faits, conclusion si appropriée, exemple tiré du cours si la question en demande un (sinon, mets exemple.ok à true et dis qu'il n'était pas exigé).
+- Note sur 10, réaliste et ni trop sévère ni trop généreuse. Une réponse vide vaut 0.
+- La réponse modèle fait environ 5 lignes, suit la méthode (faits → comparaison → conclusion) et n'utilise que la matière du cours.
+- Les conseils sont concrets et courts.`;
+    $('btn-corriger').disabled = true;
+    $('btn-sais-pas').disabled = true;
+    $('texte-attente').textContent = 'Claude corrige ta réponse…';
+    afficher('ecran-choix', 'ecran-question', 'ecran-attente');
+    try {
+      const c = await demanderJSON(consigne, SCHEMA_CORRECTION, 'medium');
+      c.note = Math.max(0, Math.min(10, Math.round(c.note)));
+      historique.push({
+        date: new Date().toISOString(),
+        theme: q.theme, type: q.type, question: q.question,
+        elements_attendus: q.elements_attendus, diapos: q.diapos,
+        reponse: reponseEtudiant, note: c.note,
+      });
+      historique = historique.slice(-200);
+      stockage.ecrire('gjm_historique', historique);
+      mettreAJourBoutonRatees();
+      montrerCorrection(c);
+    } catch (e) {
+      $('texte-erreur').textContent = messageErreur(e);
+      afficher('ecran-choix', 'ecran-question', 'ecran-erreur');
+    } finally {
+      $('btn-corriger').disabled = false;
+      $('btn-sais-pas').disabled = false;
+    }
+  }
+
+  function montrerCorrection(c) {
+    const note = $('note');
+    note.textContent = `${c.note}/10`;
+    note.className = `chiffre ${couleurNote(c.note)}`;
+    $('appreciation').textContent = c.appreciation;
+
+    const methode = $('methode');
+    methode.replaceChildren();
+    const libelles = { definitions: 'Faits et définitions', comparaison: 'Comparaison / liens', conclusion: 'Conclusion', exemple: 'Exemple du cours' };
+    for (const [cle, libelle] of Object.entries(libelles)) {
+      const crit = c.methode[cle];
+      const div = document.createElement('div');
+      div.className = `critere ${crit.ok ? 'ok' : 'ko'}`;
+      const s = document.createElement('strong');
+      s.textContent = `${crit.ok ? '✓' : '✗'} ${libelle}`;
+      div.append(s, document.createTextNode(crit.commentaire));
+      methode.append(div);
+    }
+
+    const blocs = $('blocs');
+    blocs.replaceChildren(...[
+      liste('Points forts', c.points_forts),
+      liste('À améliorer', c.a_ameliorer),
+      liste('Erreurs', c.erreurs),
+      liste('Longueur', [c.longueur]),
+      liste('Diapos à revoir', c.diapos_a_revoir),
+    ].filter(Boolean));
+    $('modele').textContent = c.reponse_modele;
+    afficher('ecran-choix', 'ecran-question', 'ecran-correction');
+    $('ecran-correction').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function montrerStats() {
+    const corps = $('table-stats');
+    corps.replaceChildren();
+    for (const [cle, libelle] of Object.entries({ ...THEMES, tous: 'Total' })) {
+      const h = cle === 'tous' ? historique : historique.filter(x => x.theme === cle);
+      const tr = document.createElement('tr');
+      const moy = h.length ? (h.reduce((s, x) => s + x.note, 0) / h.length).toFixed(1) + '/10' : '–';
+      for (const v of [libelle, String(h.length), moy]) {
+        const td = document.createElement('td');
+        td.textContent = v;
+        tr.append(td);
+      }
+      if (h.length) tr.lastChild.className = couleurNote(parseFloat(moy));
+      corps.append(tr);
+    }
+
+    const ul = $('liste-historique');
+    ul.replaceChildren();
+    for (const h of historique.slice(-30).reverse()) {
+      const li = document.createElement('li');
+      const s = document.createElement('strong');
+      s.className = couleurNote(h.note);
+      s.textContent = `${h.note}/10 `;
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'btn discret';
+      b.style.padding = '2px 8px';
+      b.textContent = 'Refaire';
+      b.addEventListener('click', () => montrerQuestion(h));
+      li.append(s, document.createTextNode(`${THEMES[h.theme]} — ${h.question} `), b);
+      ul.append(li);
+    }
+    if (!historique.length) ul.textContent = 'Aucune question corrigée pour l’instant.';
+    afficher('ecran-stats');
+  }
+
+  // --- Événements ---
+  $('btn-sauver-cle').addEventListener('click', () => {
+    const v = $('champ-cle').value.trim();
+    if (!v) return;
+    cleApi = v;
+    stockage.ecrire('gjm_cle', v);
+    $('champ-cle').value = '';
+    demarrer();
+  });
+  $('btn-oublier-cle').addEventListener('click', () => {
+    cleApi = '';
+    stockage.effacer('gjm_cle');
+    demarrer();
+  });
+  $('btn-reglages').addEventListener('click', () => {
+    $('btn-oublier-cle').classList.toggle('cache', !cleApi);
+    afficher('ecran-cle', 'ecran-choix');
+  });
+  $('btn-stats').addEventListener('click', montrerStats);
+  $('btn-fermer-stats').addEventListener('click', demarrer);
+  $('btn-effacer-historique').addEventListener('click', () => {
+    if (!confirm('Effacer tout ton historique de résultats ?')) return;
+    historique = [];
+    stockage.ecrire('gjm_historique', historique);
+    mettreAJourBoutonRatees();
+    montrerStats();
+  });
+  $('btn-nouvelle').addEventListener('click', nouvelleQuestion);
+  $('btn-suivante').addEventListener('click', nouvelleQuestion);
+  $('btn-ratees').addEventListener('click', () => {
+    const r = questionsRatees();
+    if (r.length) montrerQuestion(r[Math.floor(Math.random() * r.length)]);
+  });
+  $('btn-reessayer').addEventListener('click', () => montrerQuestion(questionCourante));
+  $('champ-reponse').addEventListener('input', majCompteur);
+  $('btn-corriger').addEventListener('click', () => {
+    const r = $('champ-reponse').value.trim();
+    if (!r) { $('champ-reponse').focus(); return; }
+    corriger(r);
+  });
+  $('btn-sais-pas').addEventListener('click', () => corriger(''));
+
+  function demarrer() {
+    mettreAJourBoutonRatees();
+    if (!cleApi) afficher('ecran-cle');
+    else afficher('ecran-choix');
+  }
+
+  puces($('puces-theme'), { tous: 'Tous', ...THEMES }, themeChoisi, v => { themeChoisi = v; });
+  puces($('puces-type'), { hasard: 'Au hasard', ...TYPES }, typeChoisi, v => { typeChoisi = v; });
+  demarrer();
+</script>
+</body>
+</html>
