@@ -12,6 +12,7 @@ const PDFJS = '/vendor/pdfjs'; // pdf.js 3.11.174, hébergé sur le site
 import { t, tr, lang, startI18n } from './i18n.js';
 import { refineToInk } from './boxes.js';
 import { looksSideways, rotateDataUrl } from './orient.js';
+import { startCamera } from './camera.js';
 
 const $ = (id) => document.getElementById(id);
 const state = {
@@ -562,8 +563,9 @@ async function makeGrid() {
 
 // ---------- Correction ----------
 
-async function runAll() {
-  const list = bundles();
+// only : les copies à corriger (par défaut toutes) ; le mode caméra n'envoie que les copies complètes.
+async function runAll(only) {
+  const list = only || bundles();
   if (!list.length) return;
   state.running = true;
   list.forEach((b) => { state.status[b[0].id] = null; });
@@ -1109,6 +1111,97 @@ function endSession() {
   banner('ok', 'Session terminée : tout a été effacé.');
 }
 
+// ---------- Mode caméra ----------
+
+// Chaque feuille photographiée rejoint les pages importées ; avec « Corriger pendant la prise de vue », chaque copie
+// complète (autant de pages que prévu par élève) part en correction pendant que l'enseignant tourne les suivantes.
+const camState = { session: null, shots: [], graded: 0 };
+const camPer = () => Number($('cam-per').value) || 1;
+
+function camCount() {
+  const n = camState.shots.length;
+  const graded = state.results.length - camState.graded;
+  const waiting = $('cam-auto').checked && $('run').disabled && !state.running && state.pages.length ? ` · en attente : ${$('run').textContent}` : '';
+  $('cam-count').textContent = `${n} page${n > 1 ? 's' : ''} · ${graded} copie(s) corrigée(s)${state.running ? ' · correction en cours…' : ''}${waiting}`;
+}
+
+function camGroup() {
+  $('mode').value = 'fixed';
+  $('per').value = String(camPer());
+  applyMode(); renderPages();
+}
+
+async function camAutoRun() {
+  if (!$('cam-auto').checked || state.running || $('run').disabled) { camCount(); return; }
+  const done = bundles().filter((b) => b.length === camPer() && state.status[b[0].id]?.state !== 'error');
+  if (!done.length) { camCount(); return; }
+  const run = runAll(done);
+  camCount();
+  await run;
+  camAutoRun();
+}
+
+async function camCapture(canvas) {
+  const flash = $('cam-flash');
+  flash.classList.add('on'); setTimeout(() => flash.classList.remove('on'), 60);
+  const no = camState.shots.length + 1;
+  const page = fitCanvas(canvas.width, canvas.height);
+  page.getContext('2d').drawImage(canvas, 0, 0, page.width, page.height);
+  // La photo pleine définition sert à la correction de la langue (comme une photo importée).
+  const full = fitCanvas(canvas.width, canvas.height, LANG_MAX_SIDE);
+  full.getContext('2d').drawImage(canvas, 0, 0, full.width, full.height);
+  const blob = await new Promise((r) => full.toBlob(r, 'image/jpeg', 0.9));
+  const p = { id: uid(), url: canvasToJpeg(page), file: `Photo ${no}`, firstOfFile: true, source: new File([blob], `photo-${no}.jpg`, { type: 'image/jpeg' }) };
+  camState.shots.push(p);
+  state.pages.push(p);
+  applyMode(); renderPages();
+  camAutoRun();
+}
+
+async function openCamera() {
+  if (state.running) return;
+  camState.shots = []; camState.graded = state.results.length;
+  if ($('mode').value === 'fixed' && Number($('per').value) >= 1) $('cam-per').value = String(Math.round(Number($('per').value)));
+  camGroup();
+  $('cam').hidden = false;
+  camCount();
+  const status = $('cam-status');
+  try {
+    camState.session = await startCamera($('cam-video'), {
+      onCapture: camCapture,
+      onStatus: (msg, kind) => { status.textContent = tr(msg); status.className = `cam-status ${kind}`; },
+    });
+  } catch (err) {
+    $('cam').hidden = true;
+    banner('err', 'Caméra indisponible : autorisez l’accès à la caméra pour ce site, puis réessayez.');
+  }
+}
+
+function closeCamera() {
+  camState.session?.stop();
+  camState.session = null;
+  $('cam').hidden = true;
+  const n = camState.shots.length;
+  if (n) banner('ok', `${n} page(s) photographiée(s).${state.running ? ' La correction se poursuit.' : ''}`);
+  renderPages();
+}
+
+if (navigator.mediaDevices?.getUserMedia) $('cam-open').hidden = false;
+$('cam-open').addEventListener('click', openCamera);
+$('cam-done').addEventListener('click', closeCamera);
+$('cam-shoot').addEventListener('click', () => camState.session?.capture());
+$('cam-per').addEventListener('change', () => { camGroup(); camAutoRun(); });
+$('cam-auto').addEventListener('change', camAutoRun);
+$('cam-undo').addEventListener('click', () => {
+  const p = camState.shots.at(-1);
+  // Une page déjà partie en correction ne peut plus être retirée.
+  const b = bundles().find((x) => x.includes(p));
+  if (!p || !b || state.status[b[0].id]?.state === 'running') return;
+  camState.shots.pop();
+  removePage(p);
+  camCount();
+});
+
 // ---------- Événements ----------
 
 function dropzone(zone, input, onFiles) {
@@ -1158,7 +1251,7 @@ $('zoom-close').addEventListener('click', () => { $('zoom').hidden = true; });
 document.querySelectorAll('[data-close-viewer]').forEach((b) => b.addEventListener('click', () => { $('viewer').hidden = true; viewing = null; }));
 $('grid-remove').addEventListener('click', () => { state.grid = null; renderGrid(); });
 $('deep').addEventListener('change', renderSummary);
-$('run').addEventListener('click', runAll);
+$('run').addEventListener('click', () => runAll());
 $('search').addEventListener('input', renderResults);
 $('export').addEventListener('click', exportCSV);
 $('end').addEventListener('click', endSession);

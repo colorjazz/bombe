@@ -146,6 +146,7 @@
         <b>Glissez les copies ici ou cliquez pour parcourir</b>
         <span class="muted small">PDF, photos (y compris iPhone), Word (.docx) ou texte · plusieurs fichiers à la fois</span>
       </label>
+      <button id="cam-open" class="btn" type="button" hidden><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg> Photographier les copies avec la caméra</button>
       <label class="toggle"><input id="anon" type="checkbox"> Masquer le nom de l'élève avant l'envoi <span class="muted small">— le haut de la 1re page de chaque copie (zone hachurée sur les miniatures) n'est pas transmis ; vous inscrirez les noms vous-même. Vérifiez qu'aucune réponse ne s'y trouve.</span></label>
       <div id="anon-opts" class="mode" hidden>
         <span>Bande masquée :</span>
@@ -210,6 +211,27 @@
         <div class="pack"><div><b>Année</b><div class="muted small">1 800 pages · ~4,4 ¢ la page</div></div><button class="btn" data-pack="annee">79 $</button></div>
       </div>
       <p id="buy-msg" class="small" style="margin:0;color:var(--red)"></p>
+    </div>
+  </div>
+
+  <!-- Mode caméra : la pile défile devant le téléphone, chaque feuille est photographiée au signal -->
+  <div id="cam" class="cam" hidden>
+    <video id="cam-video" playsinline muted></video>
+    <div id="cam-flash" class="cam-flash"></div>
+    <div class="cam-top">
+      <div id="cam-status" class="cam-status" role="status">Démarrage de la caméra…</div>
+      <div id="cam-count" class="cam-count"></div>
+    </div>
+    <div class="cam-bottom">
+      <label class="cam-opt">Pages par élève
+        <select id="cam-per"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="6">6</option><option value="8">8</option></select>
+      </label>
+      <label class="cam-opt"><input id="cam-auto" type="checkbox" checked> Corriger pendant la prise de vue</label>
+      <div class="cam-buttons">
+        <button id="cam-undo" class="btn" type="button">Annuler la dernière</button>
+        <button id="cam-shoot" class="btn" type="button" aria-label="Photographier maintenant">◉</button>
+        <button id="cam-done" class="btn primary" type="button">Terminer</button>
+      </div>
     </div>
   </div>
 

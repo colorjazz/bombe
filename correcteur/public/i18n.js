@@ -215,6 +215,12 @@ const EN = {
   "Masquer le nom de l'élève avant l'envoi": 'Hide the student’s name before sending',
   "— le haut de la 1re page de chaque copie (zone hachurée sur les miniatures) n'est pas transmis ; vous inscrirez les noms vous-même. Vérifiez qu'aucune réponse ne s'y trouve.": '— the top of each paper’s first page (hatched area on the thumbnails) is not sent; you will enter the names yourself. Make sure no answer is written there.',
   'Zone masquée : non envoyée': 'Hidden area: not sent',
+  'Photographier les copies avec la caméra': 'Photograph the papers with the camera', 'Démarrage de la caméra…': 'Starting the camera…',
+  'Placez une feuille dans le cadre': 'Place a page in the frame', 'Feuille vide ?': 'Blank page?', 'Tenez immobile…': 'Hold still…',
+  '✓ Photographiée — tournez la page': '✓ Captured — turn the page', 'Image floue : tenez le téléphone immobile': 'Blurry: hold the phone still',
+  'Pages par élève': 'Pages per student', 'Corriger pendant la prise de vue': 'Grade while capturing', 'Annuler la dernière': 'Undo last',
+  'Terminer': 'Done', 'Photographier maintenant': 'Capture now',
+  'Caméra indisponible : autorisez l’accès à la caméra pour ce site, puis réessayez.': 'Camera unavailable: allow camera access for this site, then try again.',
   'Bande masquée :': 'Hidden band:', '8 % de la page': '8% of the page', '14 %': '14%', '20 %': '20%', '30 %': '30%', 'sur toutes les pages (nom répété)': 'on every page (name repeated)',
   'Pivoter la page de 90°': 'Rotate the page 90°',
   'Vérification de l’orientation des pages…': 'Checking page orientation…',
@@ -226,6 +232,8 @@ const EN = {
 
 // Textes avec des valeurs variables : [modèle français, traduction] ($1, $2… = valeurs capturées).
 const PATTERNS = [
+  [/^(\d+) pages? · (\d+) copie\(s\) corrigée\(s\)(.*)$/, (m, n, g, rest) => `${n} page(s) · ${g} paper(s) graded${rest.replace(' · correction en cours…', ' · grading…').replace(' · en attente : ', ' · waiting: ')}`],
+  [/^(\d+) page\(s\) photographiée\(s\)\.( La correction se poursuit\.)?$/, (m, n, r) => `${n} page(s) captured.${r ? ' Grading continues.' : ''}`],
   [/^(\d+) pages ont été ajoutées\. Solde : (\d+) pages\.$/, '$1 pages added. Balance: $2 pages.'],
   [/^(\d+) pages? restantes?$/, '$1 pages left'],
   [/^Copie (\d+)(.*) · (\d+) pages?$/, 'Paper $1$2 · $3 page(s)'],
