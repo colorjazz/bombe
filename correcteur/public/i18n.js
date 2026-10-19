@@ -215,7 +215,7 @@ const EN = {
   "Masquer le nom de l'élève avant l'envoi": 'Hide the student’s name before sending',
   "— le haut de la 1re page de chaque copie (zone hachurée sur les miniatures) n'est pas transmis ; vous inscrirez les noms vous-même. Vérifiez qu'aucune réponse ne s'y trouve.": '— the top of each paper’s first page (hatched area on the thumbnails) is not sent; you will enter the names yourself. Make sure no answer is written there.',
   'Zone masquée : non envoyée': 'Hidden area: not sent',
-  'Numériser': 'Scan', 'Tournez les pages devant votre téléphone : chaque copie est photographiée et corrigée au fur et à mesure.': 'Turn the pages in front of your phone: each paper is captured and graded as you go.', 'Démarrage de la caméra…': 'Starting the camera…',
+  'Numériser « Brûle la pile »': 'Scan “Burn the Pile”', 'Tournez les pages devant votre téléphone : chaque copie est photographiée et corrigée au fur et à mesure.': 'Turn the pages in front of your phone: each paper is captured and graded as you go.', 'Démarrage de la caméra…': 'Starting the camera…',
   'Placez une feuille dans le cadre': 'Place a page in the frame', 'Feuille vide ?': 'Blank page?', 'Tenez immobile…': 'Hold still…',
   '✓ Photographiée — tournez la page': '✓ Captured — turn the page', 'Image floue : tenez le téléphone immobile': 'Blurry: hold the phone still',
   'Pages par élève': 'Pages per student', 'Corriger pendant la prise de vue': 'Grade while capturing', 'Annuler la dernière': 'Undo last',
