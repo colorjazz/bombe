@@ -15,7 +15,7 @@ database_id = "9e056bae-7080-4877-80b5-db1305aa3424"
 # Gemini, via son accès compatible OpenAI. Pour changer de fournisseur, modifier ces deux lignes.
 AI_MODEL = "gemini-3.5-flash"
 # Utilisé automatiquement si AI_MODEL est retiré par Google (erreur 404).
-AI_FALLBACK_MODEL = "gemini-flash-latest"
+AI_FALLBACK_MODEL = "gemini-3.6-flash"
 # Correction de la langue, 2e correction et redressement des photos : modèle stable (pas « preview »).
 # Mesuré sur 9 vraies copies (vérité de terrain, voir tools/surlignages) : 81 % de surlignages exacts, contre 59 %.
 LANG_MODEL = "gemini-3.7-flash"
