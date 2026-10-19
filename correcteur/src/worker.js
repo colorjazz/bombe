@@ -384,10 +384,11 @@ async function aiChat(env, system, content, responseFormat, opts = {}) {
 // ---------- Correction de la langue ----------
 
 const LANG_CATEGORIES = {
-  orthographe: "orthographe d'usage (mot mal écrit, accent, majuscule)",
-  accord: 'accords (accord du verbe avec le sujet, genre, nombre, participe passé, adjectif, déterminant)',
+  // Classement de la grammaire enseignée au Québec : apostrophe et trait d'union sont des signes orthographiques.
+  orthographe: "orthographe (mot mal écrit, accent, majuscule, apostrophe et élision, trait d'union, homophones comme a/à, ou/où, ces/ses, mot invariable comme « plusieurs »)",
+  accord: "accords (accord du verbe avec le sujet, toujours ici, même si la forme du verbe est fautive ; genre, nombre, participe passé, adjectif, déterminant)",
   conjugaison: "conjugaison (forme du verbe mal construite, temps, mode, auxiliaire ; l'accord du verbe avec son sujet va dans « accords »)",
-  ponctuation: 'ponctuation (virgule, point, apostrophe et élision, trait d’union)',
+  ponctuation: 'ponctuation (virgule, point, deux-points, point-virgule, guillemets)',
   syntaxe: 'syntaxe (construction de phrase, préposition, négation, pronom)',
   vocabulaire: 'vocabulaire (mot impropre, anglicisme, registre familier)',
 };
@@ -515,6 +516,7 @@ async function language(request, env) {
 Your task:
 1. Read the text carefully.
 2. Identify ONLY these errors: ${cats.map((c) => LANG_CATEGORIES_EN[c]).join('; ')}. No style preferences; if a word is illegible, ignore it.
+   Only flag an error if you are sure what the student wrote: an ambiguous letter is not an error. Ignore the teacher's marks (brackets, X, underlining, colored ink).
 3. For EACH error found, give its coordinates (bounding box) on the image, surrounding the COMPLETE WORD or COMPLETE EXPRESSION containing the error.
    The 'box' coordinates must be an array of 4 numbers [ymin, xmin, ymax, xmax] normalized between 0 and 1000.
    (ymin = top, xmin = left, ymax = bottom, xmax = right).
@@ -523,6 +525,7 @@ Return ONLY a JSON array. If no error is found, return an empty array [].` : `Tu
 Ta mission :
 1. Lis le texte attentivement.
 2. Identifie UNIQUEMENT ces fautes : ${cats.map((c) => LANG_CATEGORIES[c]).join(' ; ')}. Pas de choix de style ; si un mot est illisible, ignore-le.
+   Ne relève une faute que si tu es certain de ce que l'élève a écrit : une lettre ambiguë (q ou d, accent douteux, lettre doublée ou non) n'est pas une faute. Ignore les marques de l'enseignant (crochets, X, soulignés, encre de couleur).
 3. Pour CHAQUE faute trouvée, déduis ses coordonnées (bounding box) sur l'image en encadrant le MOT COMPLET ou l'EXPRESSION COMPLÈTE qui contient la faute.
    Les coordonnées 'box' doivent être un tableau de 4 nombres [ymin, xmin, ymax, xmax] normalisés entre 0 et 1000.
    (ymin = haut, xmin = gauche, ymax = bas, xmax = droite).

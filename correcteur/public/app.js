@@ -443,6 +443,7 @@ function renderPages() {
         pi > 0 ? h('button', { class: 'split', type: 'button', title: 'Séparer : une nouvelle copie commence ici', textContent: '✂', disabled: state.running,
           onclick: () => { p.startsNew = true; p.autoStart = true; renderPages(); } }) : null,
         h('div', { class: 'thumb', title: p.file },
+          pi === 0 && anonymous() ? h('div', { class: 'mask-band', style: `height:${MASK_TOP * 100}%`, title: 'Zone masquée : non envoyée' }) : null,
           h('img', { src: p.url, alt: `Page ${pi + 1}`, title: 'Agrandir', onclick: () => openZoom([p.url], `Copie ${nos[bi]} · page ${pi + 1} · ${p.file}`) }),
           h('button', { class: 'rot', type: 'button', textContent: '↻', title: 'Pivoter la page de 90°', disabled: state.running, onclick: () => rotatePage(p) }),
           h('button', { class: 'x', type: 'button', textContent: '×', title: 'Retirer cette page', disabled: state.running,
@@ -818,7 +819,9 @@ async function snapBoxes(res) {
       const g = c.getContext('2d', { willReadFrequently: true });
       g.drawImage(img, 0, 0);
       const data = g.getImageData(0, 0, c.width, c.height);
-      for (const e of located) e.box = snapToInk(data, e.box, e.text, e.line);
+      const heights = located.map((e) => e.box[2] - e.box[0]).sort((x, y) => x - y);
+      const lineH = heights[Math.floor(heights.length / 2)];
+      for (const e of located) e.box = snapToInk(data, e.box, e.text, e.line, located.length >= 3 ? lineH : undefined);
     } catch { /* recalage impossible : on garde le repérage de l'IA */ }
   }
 }
@@ -889,7 +892,7 @@ function openViewer(r) {
 function renderViewer(focus) {
   const r = viewing;
   const count = langGrade(r);
-  $('viewer-title').textContent = `${r.name || 'Élève'} · ${count} faute(s)${r.grade != null ? ` · ${fmt(r.grade)} / ${fmt(r.total)}` : ''}`;
+  $('viewer-title').textContent = `${copyTitle(r) || 'Élève'} · ${count} faute(s)${r.grade != null ? ` · ${fmt(r.grade)} / ${fmt(r.total)}` : ''}`;
   let n = 0;
   const numbered = r.pages.map((p) => p.errors.map((e) => ({ e, p, n: ++n })));
   const place = (el, [y0, x0, y1, x1]) => { el.style.cssText = `top:${y0 / 10}%;left:${x0 / 10}%;height:${(y1 - y0) / 10}%;width:${(x1 - x0) / 10}%`; return el; };
@@ -906,7 +909,7 @@ function renderViewer(focus) {
     return wrap;
   }));
   const items = numbered.flat();
-  $('viewer-list').replaceChildren(
+  $('viewer-list').replaceChildren(...[
     adding?.stage === 'form' ? addErrorForm() : null,
     items.length ? categoryChips(items.map((i) => i.e)) : h('p', { class: 'muted', textContent: 'Aucune faute relevée.' }),
     ...items.map(({ e, p, n: k }) => {
@@ -922,7 +925,7 @@ function renderViewer(focus) {
         h('div', { class: 'muted small', textContent: e.explanation }));
       if (focus === e) setTimeout(() => el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 0);
       return el;
-    }));
+    })].filter(Boolean)); // replaceChildren afficherait « null » en texte
 }
 
 // Tracer un cadre à la souris ou au doigt autour d'une faute que l'IA a oubliée.
@@ -998,7 +1001,9 @@ async function printViewer() {
       ctx.font = `bold ${Math.round(c.width / 55)}px sans-serif`;
       ctx.fillText(String(k), x0 * c.width, y0 * c.height - 4);
     }
-    sheets.push(`<section class="sheet"><img src="${c.toDataURL('image/jpeg', 0.85)}">${list.length ? `<ol>${list.join('')}</ol>` : ''}</section>`);
+    // Image réduite selon la longueur de la liste (2 colonnes, environ 9 mm par faute) pour tenir sur une seule feuille.
+    const imgMax = Math.max(110, Math.min(205, 248 - Math.ceil(list.length / 2) * 9));
+    sheets.push(`<section class="sheet"><img src="${c.toDataURL('image/jpeg', 0.85)}" style="max-height:${imgMax}mm">${list.length ? `<ol>${list.join('')}</ol>` : ''}</section>`);
   }
   const w = window.open('', '_blank');
   if (!w) { alert(tr('Autorisez les fenêtres surgissantes pour imprimer.')); return; }
@@ -1008,7 +1013,7 @@ async function printViewer() {
     img{display:block;max-width:100%;max-height:205mm;margin:0 auto 6px;object-fit:contain}
     ol{list-style:none;padding:0;margin:0;column-count:2;column-gap:14px}li{break-inside:avoid;margin:0 0 4px}
     @media screen{body{margin:16px}.sheet{border-bottom:1px dashed #bbb;padding-bottom:12px;margin-bottom:12px}}</style></head><body>
-    <h1>${esc(r.name || tr('Élève'))}${r.group ? ` · ${esc(r.group)}` : ''} — ${tr(`${n} faute(s)`)}${r.grade != null ? ` · ${fmt(r.grade)} / ${fmt(r.total)}` : ''}</h1>
+    <h1>${esc(copyTitle(r) || tr('Élève'))}${r.group ? ` · ${esc(r.group)}` : ''} — ${tr(`${n} faute(s)`)}${r.grade != null ? ` · ${fmt(r.grade)} / ${fmt(r.total)}` : ''}</h1>
     ${sheets.join('')}
     <script>window.onload=()=>window.print()<\/script></body></html>`);
   w.document.close();
@@ -1197,6 +1202,7 @@ function loadPrefs() {
 }
 loadPrefs();
 for (const id of PREF_IDS) $(id).addEventListener('change', savePrefs);
+$('anon').addEventListener('change', () => renderPages());
 document.querySelectorAll('#lang-cats input').forEach((i) => i.addEventListener('change', savePrefs));
 
 // ---------- Démarrage ----------

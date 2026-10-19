@@ -27,6 +27,7 @@
 .bundle-pages { display: flex; flex-wrap: wrap; gap: .35rem; align-items: center; }
 .bundle-pages .thumb { cursor: default; }
 .thumb img { cursor: zoom-in; }
+.thumb .mask-band { position: absolute; left: 0; right: 0; top: 0; z-index: 1; pointer-events: none; background: repeating-linear-gradient(45deg, rgba(255,255,255,.85) 0 4px, rgba(120,120,120,.85) 4px 8px); }
 .zoom-panel { width: min(1100px, 100%) !important; max-height: calc(100vh - 32px); grid-template-rows: auto 1fr; }
 .zoom-pages { overflow-y: auto; display: grid; gap: .75rem; }
 .zoom-pages img { width: 100%; border-radius: 8px; background: #fff; }
