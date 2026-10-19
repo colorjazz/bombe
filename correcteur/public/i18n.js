@@ -219,6 +219,7 @@ const EN = {
   'Placez une feuille dans le cadre': 'Place a page in the frame', 'Feuille vide ?': 'Blank page?', 'Tenez immobile…': 'Hold still…',
   '✓ Photographiée — tournez la page': '✓ Captured — turn the page', 'Image floue : tenez le téléphone immobile': 'Blurry: hold the phone still',
   'Pages par élève': 'Pages per student', 'Corriger pendant la prise de vue': 'Grade while capturing', 'Annuler la dernière': 'Undo last',
+  'Relecture en cours : d’autres fautes peuvent s’ajouter…': 'Second reading in progress: more errors may be added…',
   'Terminer': 'Done', '▶ Démarrer': '▶ Start', '⏸ Pause': '⏸ Pause',
   'En pause : placez la première feuille, puis touchez « Démarrer »': 'Paused: place the first page, then tap “Start”', 'Photographier maintenant': 'Capture now',
   'Caméra indisponible : autorisez l’accès à la caméra pour ce site, puis réessayez.': 'Camera unavailable: allow camera access for this site, then try again.',

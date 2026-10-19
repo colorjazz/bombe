@@ -621,10 +621,11 @@ async function runAll(only) {
           const r = await analyzeLanguage(b);
           setBalance(r.pagesLeft);
           const res = { kind: 'lang', id, no: b[0].no, file: b[0].file, exam: settings.exam, group: r.group || settings.group, name: r.name, pageCount: b.length,
-            pages: b.map((p, i) => ({ url: p.url, errors: r.pages[i].errors, failed: !!r.pages[i].failed })),
+            pages: b.map((p, i) => ({ url: p.url, errors: r.pages[i].errors, failed: !!r.pages[i].failed, reread: r.pages[i].reread, sent: r.urls[i] })),
             scoring: langScoring(), flags: r.failedPages ? [`${r.failedPages} page(s) n'ont pas pu être analysées (non décomptées).`] : [] };
           langGrade(res);
           state.results.unshift(res);
+          reread(res);
         } else {
         const pages = await Promise.all(b.map((p, i) => (masked(i) ? maskTop(p.url) : p.url)));
         const r = await api('/api/grade', { method: 'POST', body: { ...settings, pages } });
@@ -802,11 +803,64 @@ async function analyzeLanguage(bundle) {
   if (blocking) throw blocking.error;
   if (parts.every((x) => x.error)) throw parts[0].error;
   return {
-    name: parts[0].name || '', group: parts[0].group || '',
+    name: parts[0].name || '', group: parts[0].group || '', urls,
     pages: parts.map((x) => (x.error ? { errors: [], failed: true } : x.pages[0])),
     failedPages: parts.reduce((a, x) => a + (x.error ? 1 : x.failedPages || 0), 0),
     pagesLeft: Math.min(...parts.filter((x) => !x.error).map((x) => x.pagesLeft)),
   };
+}
+
+// Relecture : une seconde lecture de chaque page, qui connaît les fautes déjà relevées et cherche les oubliées.
+// L'enseignant voit la copie dès la première lecture ; les fautes ajoutées arrivent environ 40 s plus tard (gratuit).
+// Chaque faute passe aussi à la loupe (voir verifyErrors) : celles qui disparaissent quand on agrandit le mot sont marquées « à vérifier ».
+function reread(res) {
+  const todo = res.pages.filter((p) => p.reread && p.sent);
+  res.rereading = todo.length;
+  const refresh = () => { langGrade(res); state.exported = false; renderResults(); if (viewing === res) renderViewer(); };
+  for (const p of todo) {
+    const first = verifyErrors(p, p.errors).then(refresh);
+    const more = api('/api/language-reread', { method: 'POST', body: { page: p.sent, ...p.reread, ...langSettings(),
+      known: p.errors.map(({ text, correction, box }) => ({ text, correction, box })) } })
+      .then(async (r) => { await verifyErrors(p, r.errors); p.errors.push(...r.errors); })
+      .catch(() => { /* la première lecture reste valable */ });
+    Promise.all([first, more]).finally(() => {
+      delete p.sent; // libère la mémoire : l'image envoyée n'est plus utile
+      res.rereading--;
+      refresh();
+    });
+  }
+}
+
+// Vérification à la loupe : le mot de chaque faute est recadré, agrandi et recopié lettre par lettre par l'IA.
+// Si ce qu'elle lit égale la correction (« guerre » bien écrit, lu « guere » sur la page entière), la faute est douteuse.
+async function verifyErrors(p, errors) {
+  const located = errors.filter((e) => e.box && !e.manual);
+  if (!located.length) return;
+  try {
+    const img = await loadImage(p.sent);
+    const crops = located.map((e) => {
+      const [y0, x0, y1, x1] = e.box.map((v) => v / 1000);
+      const h = (y1 - y0) * img.height;
+      const sx = Math.max(0, x0 * img.width - h * 1.2), sy = Math.max(0, y0 * img.height - h * 0.6);
+      const sw = Math.min(img.width - sx, (x1 - x0) * img.width + h * 2.4), sh = Math.min(img.height - sy, h * 2.2);
+      const k = Math.min(Math.max(1, 220 / sh), 1400 / sw);
+      const c = document.createElement('canvas');
+      c.width = Math.round(sw * k); c.height = Math.round(sh * k);
+      c.getContext('2d').drawImage(img, sx, sy, sw, sh, 0, 0, c.width, c.height);
+      return { image: c.toDataURL('image/jpeg', 0.85), text: e.text, correction: e.correction };
+    });
+    const batches = [];
+    for (let i = 0; i < crops.length; i += 12) batches.push(i);
+    await Promise.all(batches.map(async (i) => {
+      const { results } = await api('/api/language-verify', { method: 'POST', body: { crops: crops.slice(i, i + 12) } });
+      results.forEach((r, j) => {
+        const e = located[i + j];
+        // À la loupe, l'IA lit parfois le mot bien écrit alors que l'élève a fait la faute (« sistème » lu « système ») :
+        // un désaccord ne retire donc jamais la faute, il la marque « à vérifier » (montrée, non comptée).
+        if (r && !r.error) e.doubtful = true;
+      });
+    }));
+  } catch { /* vérification impossible : les fautes restent telles quelles */ }
 }
 
 // Pixels d'une page : servent à resserrer sur l'encre un cadre tracé à la main (voir boxes.js).
@@ -865,6 +919,7 @@ function langCard(r) {
     h('div', { class: 'card-body' },
       r.flags.length ? h('div', { class: 'flags' }, r.flags.map((f) => h('div', { textContent: `⚠ ${f}` }))) : null,
       errors.length ? categoryChips(errors) : h('p', { class: 'muted small', style: 'margin:0', textContent: 'Aucune faute relevée.' }),
+      r.rereading ? h('p', { class: 'muted small', style: 'margin:0', textContent: 'Relecture en cours : d’autres fautes peuvent s’ajouter…' }) : null,
       h('div', { class: 'card-foot' },
         h('span', { textContent: copyLabel(r) }),
         h('div', { style: 'display:flex;gap:.4rem' },

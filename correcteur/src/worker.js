@@ -58,6 +58,8 @@ const ROUTES = {
   'POST /api/orient': orient,
   'POST /api/rubric': rubric,
   'POST /api/language': language,
+  'POST /api/language-reread': languageReread,
+  'POST /api/language-verify': languageVerify,
 };
 
 // ---------- Utilitaires ----------
@@ -435,27 +437,83 @@ const inlineImage = (dataUrl) => {
   return { inlineData: { mimeType, data } };
 };
 
-// Deux lectures en parallèle, réunies sans doublons : une lecture complète et une lecture ciblée sur les fautes
-// qu'une première lecture laisse passer (repérage ≈ 73 % en une seule lecture).
+// Deux lectures : /api/language rend tout de suite la première, que l'enseignant peut déjà relire ; l'appli demande
+// ensuite à /api/language-reread une relecture qui connaît cette liste et cherche seulement les fautes oubliées
+// (repérage ≈ 73 % en une lecture, ≈ 88 % avec la relecture ; deux lectures indépendantes en parallèle : ≈ 75 %).
 const REREAD = {
-  fr: "\n\nLECTURE CIBLÉE : lis la copie mot à mot en cherchant surtout les fautes qu'une lecture rapide laisse passer : accord du verbe avec un sujet éloigné ou inversé, accord du participe passé, accord dans le groupe du nom, négation incomplète (« ne » absent), majuscules (noms propres, début de phrase), homophones. Mêmes règles : aucune faute sur une lettre bien formée.",
-  en: "\n\nFOCUSED READING: read the paper word by word, looking especially for errors a quick reading misses: subject-verb agreement with a distant or inverted subject, pronoun agreement, capitalization (proper nouns, sentence start), homophones. Same rules: a well-formed letter is never an error.",
+  fr: (list) => `\n\nRELECTURE : une première lecture a déjà relevé ces fautes :\n${list}\nRelis maintenant la copie mot à mot et relève UNIQUEMENT les fautes OUBLIÉES, en particulier : accord du verbe avec un sujet éloigné ou inversé, accord du participe passé, accord dans le groupe du nom, négation incomplète (« ne » absent), majuscules (noms propres, début de phrase), homophones. Ne répète aucune faute de la liste. Mêmes règles : aucune faute sur une lettre bien formée. Si tu n'en trouves pas d'autre, renvoie [].`,
+  en: (list) => `\n\nSECOND READING: a first reading already found these errors:\n${list}\nNow reread the paper word by word and report ONLY the MISSED errors, especially: subject-verb agreement with a distant or inverted subject, pronoun agreement, capitalization (proper nouns, sentence start), homophones. Do not repeat any error from the list. Same rules: a well-formed letter is never an error. If you find no other error, return [].`,
 };
+const REREAD_MS = 30 * 60 * 1000; // la relecture d'une page analysée reste possible 30 minutes (gratuite : déjà décomptée)
 const overlaps = (a, b) => a && b && Math.min(a[2], b[2]) - Math.max(a[0], b[0]) > 0 && Math.min(a[3], b[3]) - Math.max(a[1], b[1]) > 0.5 * Math.min(a[3] - a[1], b[3] - b[1]);
-async function readTwice(env, system, dataUrl, english) {
-  // Les deux lectures partent en même temps (une page prenait 1 à 2 minutes quand la seconde attendait la première).
-  const [first, second] = await Promise.all([
-    geminiVision(env, system, dataUrl),
-    geminiVision(env, system + REREAD[english ? 'en' : 'fr'], dataUrl).catch(() => ({ fautes: [] })), // la première lecture suffit
-  ]);
-  const same = (f, g) => String(f.texte || '').trim().toLowerCase() === String(g.texte || '').trim().toLowerCase() || overlaps(cleanBox(f.box), cleanBox(g.box));
-  // Une correction hésitante (« capitule / capitulation ») n'a pas sa place sur une copie remise à l'élève.
-  const sure = (f) => !/\S\s*\/\s*\S/.test(String(f.correction || ''));
-  return { fautes: [...first.fautes, ...second.fautes.filter((g) => !first.fautes.some((f) => same(f, g)))].filter(sure) };
+const rereadToken = async (env, key, page, ts) => sha256(`${env.IP_SALT || ''}:reread:${key}:${ts}:${await sha256(page)}`);
+
+// Fautes renvoyées par l'IA → fautes affichées : catégories demandées, pas de « correction » identique au texte
+// (ex. « européen → européen ») ni hésitante (« capitule / capitulation »).
+function langErrors(fautes, cats) {
+  return (fautes || []).filter((f) => LANG_CATEGORIES[f.categorie] && cats.includes(f.categorie)
+    && String(f.correction || '').trim().normalize('NFC') !== String(f.texte || '').trim().normalize('NFC')
+    && !/\S\s*\/\s*\S/.test(String(f.correction || ''))).map((f) => ({
+    text: String(f.texte || '').slice(0, 200), correction: String(f.correction || '').slice(0, 200),
+    category: f.categorie, explanation: String(f.explication || '').slice(0, 400), box: cleanBox(f.box),
+    line: String(f.ligne || '').slice(0, 400), // recopier la ligne fait partie de la consigne avec laquelle les cadres ont été mesurés
+    doubtful: !!f.lecture_douteuse, // lecture incertaine : affichée « à vérifier », non comptée dans la note
+  }));
+}
+
+// Vérification à la loupe (gratuite) : chaque mot relevé, recadré et agrandi, est recopié lettre par lettre sans correction.
+// Une « faute » qui disparaît à la loupe (« guerre » lu « guere » sur la page entière) devient « à vérifier ».
+// L'IA ne fait que recopier ; c'est le code qui compare avec la correction.
+const MAX_CROPS = 12; // par appel : l'appli en envoie plusieurs en parallèle
+async function languageVerify(request, env) {
+  await getKey(env, bearer(request));
+  const { crops } = await readJson(request);
+  const ok = (c) => c && typeof c.image === 'string' && /^data:image\/(jpeg|png|webp);base64,/.test(c.image) && c.image.length <= MAX_THUMB_CHARS;
+  if (!Array.isArray(crops) || !crops.length || crops.length > MAX_CROPS || !crops.every(ok)) throw new HttpError(400, 'Images invalides');
+  // Ni la première lecture ni la correction ne sont montrées : elles poussent le modèle à « voir » le mot bien écrit.
+  const parts = [{ text: "Chaque image montre, agrandi, un mot (ou un petit groupe de mots) manuscrit d'un élève, au centre de l'image. "
+    + "Recopie EXACTEMENT ce que l'élève a écrit au centre, lettre par lettre, majuscules, accents et lettres doublées compris, sans rien corriger, même si c'est une faute." }];
+  crops.forEach((c, k) => parts.push({ text: `Image ${k}${String(c.text || '').includes(' ') ? ' (plusieurs mots)' : ''} :` }, inlineImage(c.image)));
+  let raw;
+  try {
+    raw = await geminiNative(env, parts, { type: 'ARRAY', items: { type: 'OBJECT', properties: {
+      image: { type: 'INTEGER' }, ecrit: { type: 'STRING' } }, required: ['image', 'ecrit'] } },
+    env.LANG_MODEL, { thinking: 'low', timeoutMs: 45_000 }); // recopier des lettres : réflexion courte, temps prévisible
+  } catch (err) {
+    console.error('Vérification impossible :', err.message);
+    throw new HttpError(502, 'Vérification impossible');
+  }
+  const out = crops.map(() => null);
+  for (const r of Array.isArray(raw) ? raw : []) {
+    if (!Number.isInteger(r.image) || r.image < 0 || r.image >= crops.length) continue;
+    // La faute disparaît seulement si ce qui est écrit est exactement la correction (accents et majuscules compris).
+    const clean = (t) => String(t || '').normalize('NFC').replace(/[’]/g, "'").replace(/[.,;:!?]+$/, '').trim();
+    out[r.image] = { written: String(r.ecrit || '').slice(0, 200), error: clean(r.ecrit) !== clean(crops[r.image].correction) };
+  }
+  return json({ results: out });
+}
+
+async function languageReread(request, env) {
+  const key = bearer(request);
+  await getKey(env, key);
+  const body = await readJson(request);
+  checkImages([body.page], 1, 'Copie', MAX_LANG_IMAGE_CHARS);
+  const cats = (Array.isArray(body.categories) ? body.categories : Object.keys(LANG_CATEGORIES)).filter((c) => LANG_CATEGORIES[c]);
+  const ts = Number(body.ts);
+  if (!cats.length || !(Date.now() - ts < REREAD_MS) || body.token !== await rereadToken(env, key, body.page, ts)) throw new HttpError(403, 'Relecture refusée');
+  const known = (Array.isArray(body.known) ? body.known : []).slice(0, 200).map((f) => ({ texte: String(f.text || '').slice(0, 200), correction: String(f.correction || '').slice(0, 200), box: cleanBox(f.box) }));
+  const list = known.map((f) => `- « ${f.texte} » → « ${f.correction} »`).join('\n') || '(aucune)';
+  let raw;
+  try { raw = await geminiVision(env, langSystem(request, body, cats) + REREAD[isEnglish(request) ? 'en' : 'fr'](list), body.page); } catch (err) {
+    console.error('Relecture impossible :', err.message);
+    throw new HttpError(502, 'Relecture impossible');
+  }
+  const same = (f, g) => f.texte.trim().toLowerCase() === String(g.texte || '').trim().toLowerCase() || overlaps(f.box, cleanBox(g.box));
+  return json({ errors: langErrors(raw.fautes.filter((g) => !known.some((f) => same(f, g))), cats) });
 }
 
 async function geminiVision(env, prompt, dataUrl) {
-  const list = await geminiNative(env, [{ text: prompt }, inlineImage(dataUrl)], NATIVE_LANG_SCHEMA, env.LANG_MODEL, { thinking: env.LANG_THINKING, timeoutMs: 90_000 });
+  const list = await geminiNative(env, [{ text: prompt }, inlineImage(dataUrl)], NATIVE_LANG_SCHEMA, env.LANG_MODEL, { thinking: env.LANG_THINKING, timeoutMs: 150_000 });
   return { fautes: (Array.isArray(list) ? list : list.fautes || []).map((f) => ({ ...f, texte: f.mot_fautif ?? f.texte, box: f.box ?? f.box_2d })) };
 }
 
@@ -504,7 +562,7 @@ async function orient(request, env) {
   try {
     raw = await geminiNative(env, [{ text: prompt }, { text: 'Image A :' }, inlineImage(images[0]), { text: 'Image B :' }, inlineImage(images[1])],
       { type: 'OBJECT', properties: { mots_A: { type: 'STRING' }, mots_B: { type: 'STRING' }, endroit: { type: 'STRING', enum: ['A', 'B'] } },
-        required: ['mots_A', 'mots_B', 'endroit'] }, env.LANG_MODEL);
+        required: ['mots_A', 'mots_B', 'endroit'] }, env.LANG_MODEL, { thinking: 'low', timeoutMs: 30_000 }); // question simple : réponse rapide, ou la page reste telle quelle
   } catch (err) {
     console.error('Orientation impossible :', err.message);
     throw new HttpError(502, 'Orientation impossible');
@@ -519,24 +577,10 @@ function cleanBox(box, maxHeight = 400) {
   return y1 > y0 && x1 > x0 && y1 - y0 <= maxHeight ? [y0, x0, y1, x1] : null;
 }
 
-async function language(request, env) {
-  const key = bearer(request);
-  const body = await readJson(request);
-  checkImages(body.pages, MAX_PAGES_PER_COPY, 'Copie', MAX_LANG_IMAGE_CHARS);
-  if (!body.pages.length) throw new HttpError(400, 'Copie vide');
-  const cats = (Array.isArray(body.categories) ? body.categories : Object.keys(LANG_CATEGORIES)).filter((c) => LANG_CATEGORIES[c]);
-  if (!cats.length) throw new HttpError(400, 'Choisissez au moins un type de faute');
+// Consigne calquée sur la version Gemini de l'enseignant, dont le surlignage est précis.
+function langSystem(request, body, cats) {
   const level = LEVELS[body.level] || LEVELS.secondaire1;
-
-  const n = body.pages.length; // 1 page de copie = 1 page décomptée
-  const reserved = await env.DB.prepare('UPDATE access_keys SET pages = pages - ? WHERE key = ? AND pages >= ?').bind(n, key, n).run();
-  if (!reserved.meta.changes) {
-    await getKey(env, key);
-    throw new HttpError(402, 'Solde de pages insuffisant. Rechargez votre compte pour continuer.');
-  }
-
-  // Consigne calquée sur la version Gemini de l'enseignant, dont le surlignage est précis.
-  const system = isEnglish(request) ? `You are an English language expert. Here is the image of a handwritten (or typed) document, written by a ${LEVELS_EN[body.level] || LEVELS_EN.secondaire1}.
+  return isEnglish(request) ? `You are an English language expert. Here is the image of a handwritten (or typed) document, written by a ${LEVELS_EN[body.level] || LEVELS_EN.secondaire1}.
 Your task:
 1. Read the text carefully.
 2. Identify ONLY these errors: ${cats.map((c) => LANG_CATEGORIES_EN[c]).join('; ')}. No style preferences; if a word is illegible, ignore it.
@@ -555,10 +599,28 @@ Ta mission :
    (ymin = haut, xmin = gauche, ymax = bas, xmax = droite).
 Pour chaque faute, recopie aussi dans « ligne » la ligne manuscrite complète où elle se trouve, exactement telle qu'écrite, et indique sa catégorie et une courte explication de la règle.
 Renvoie EXCLUSIVEMENT un tableau JSON. Si aucune faute n'est trouvée, renvoie un tableau vide [].`;
+}
+
+async function language(request, env) {
+  const key = bearer(request);
+  const body = await readJson(request);
+  checkImages(body.pages, MAX_PAGES_PER_COPY, 'Copie', MAX_LANG_IMAGE_CHARS);
+  if (!body.pages.length) throw new HttpError(400, 'Copie vide');
+  const cats = (Array.isArray(body.categories) ? body.categories : Object.keys(LANG_CATEGORIES)).filter((c) => LANG_CATEGORIES[c]);
+  if (!cats.length) throw new HttpError(400, 'Choisissez au moins un type de faute');
+
+  const n = body.pages.length; // 1 page de copie = 1 page décomptée
+  const reserved = await env.DB.prepare('UPDATE access_keys SET pages = pages - ? WHERE key = ? AND pages >= ?').bind(n, key, n).run();
+  if (!reserved.meta.changes) {
+    await getKey(env, key);
+    throw new HttpError(402, 'Solde de pages insuffisant. Rechargez votre compte pour continuer.');
+  }
+
+  const system = langSystem(request, body, cats);
 
   const identity = body.identify === false ? Promise.resolve({}) : geminiNative(env, [{ text: "Recopie le nom de l'élève et son groupe s'ils sont écrits sur cette copie (sinon chaînes vides)." }, inlineImage(body.pages[0])],
     { type: 'OBJECT', properties: { nom: { type: 'STRING' }, groupe: { type: 'STRING' } }, required: ['nom', 'groupe'] }, env.LANG_MODEL).catch(() => ({}));
-  const results = await Promise.allSettled(body.pages.map((url) => readTwice(env, system, url, isEnglish(request))));
+  const results = await Promise.allSettled(body.pages.map((url) => geminiVision(env, system, url)));
   const failed = results.filter((x) => x.status === 'rejected').length;
   if (failed) {
     await env.DB.prepare('UPDATE access_keys SET pages = pages + ? WHERE key = ?').bind(failed, key).run();
@@ -567,16 +629,10 @@ Renvoie EXCLUSIVEMENT un tableau JSON. Si aucune faute n'est trouvée, renvoie u
   if (failed === n) throw new HttpError(502, "L'analyse de la langue a échoué. Aucune page n'a été décomptée, réessayez.");
 
   const ok = results.map((x) => (x.status === 'fulfilled' ? x.value : null));
-  const pages = ok.map((raw) => (raw ? {
-    // Une « correction » identique au texte écrit n'est pas une faute (ex. « européen → européen »).
-    errors: (raw.fautes || []).filter((f) => LANG_CATEGORIES[f.categorie] && cats.includes(f.categorie)
-      && String(f.correction || '').trim().normalize('NFC') !== String(f.texte || '').trim().normalize('NFC')).map((f) => ({
-      text: String(f.texte || '').slice(0, 200), correction: String(f.correction || '').slice(0, 200),
-      category: f.categorie, explanation: String(f.explication || '').slice(0, 400), box: cleanBox(f.box),
-      line: String(f.ligne || '').slice(0, 400), // recopier la ligne fait partie de la consigne avec laquelle les cadres ont été mesurés
-      doubtful: !!f.lecture_douteuse, // lecture incertaine : affichée « à vérifier », non comptée dans la note
-    })),
-  } : { errors: [], failed: true }));
+  const ts = Date.now();
+  const pages = await Promise.all(ok.map(async (raw, i) => (raw
+    ? { errors: langErrors(raw.fautes, cats), reread: { ts, token: await rereadToken(env, key, body.pages[i], ts) } }
+    : { errors: [], failed: true })));
   const who = await identity;
   const name = String(who.nom || '').trim();
   const group = String(who.groupe || '').trim();
