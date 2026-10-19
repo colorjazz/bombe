@@ -67,7 +67,8 @@ function beep(audio) {
 }
 
 // Ouvre la caméra arrière dans `video` et appelle onCapture(canvas) pour chaque feuille photographiée.
-// onStatus(message, kind) décrit ce qu'il faut faire ; renvoie { capture(), stop() }.
+// onStatus(message, kind, box) décrit ce qu'il faut faire ; box = la feuille repérée (fractions de l'image) ou null.
+// Renvoie { capture(), stop() }.
 export async function startCamera(video, { onCapture, onStatus }) {
   const stream = await navigator.mediaDevices.getUserMedia({
     audio: false,
@@ -114,16 +115,16 @@ export async function startCamera(video, { onCapture, onStatus }) {
     if (moving) stableSince = now;
     if (now < coolUntil) return;
     const page = pageOf(lum, w, h);
-    if (!page || page.cover < 0.3) { onStatus('Placez une feuille dans le cadre', 'wait'); return; }
-    if (page.ink < 0.002) { onStatus('Feuille vide ?', 'wait'); return; } // à 160 px, l'écriture ne couvre que 0,5 à 2 % de la feuille
-    if (lastShot && meanDiff(lum, lastShot) < SAME_PAGE) { onStatus('✓ Photographiée — tournez la page', 'done'); return; }
-    if (moving || now - stableSince < STABLE_MS) { onStatus('Tenez immobile…', 'hold'); return; }
+    if (!page || page.cover < 0.3) { onStatus('Placez une feuille dans le cadre', 'wait', null); return; }
+    if (page.ink < 0.002) { onStatus('Feuille vide ?', 'wait', page); return; } // à 160 px, l'écriture ne couvre que 0,5 à 2 % de la feuille
+    if (lastShot && meanDiff(lum, lastShot) < SAME_PAGE) { onStatus('✓ Photographiée — tournez la page', 'done', page); return; }
+    if (moving || now - stableSince < STABLE_MS) { onStatus('Tenez immobile…', 'hold', page); return; }
     const sharp = sharpness(video, page, work);
-    if (sharp < Math.max(20, bestSharp * 0.45)) { onStatus('Image floue : tenez le téléphone immobile', 'hold'); return; }
+    if (sharp < Math.max(20, bestSharp * 0.45)) { onStatus('Image floue : tenez le téléphone immobile', 'hold', page); return; }
     bestSharp = Math.max(bestSharp * 0.9, sharp);
     lastShot = lum;
     shoot(page);
-    onStatus('✓ Photographiée — tournez la page', 'done');
+    onStatus('✓ Photographiée — tournez la page', 'done', page);
   };
   tick();
 

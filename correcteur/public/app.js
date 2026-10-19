@@ -1158,6 +1158,22 @@ async function camCapture(canvas) {
   camAutoRun();
 }
 
+// Cibles aux quatre coins : sans feuille, elles montrent où la placer (format lettre) ; ensuite elles suivent la feuille.
+function camTarget(box, kind) {
+  const v = $('cam-video'), t = $('cam-target');
+  if (!v.videoWidth) return;
+  const r = v.getBoundingClientRect();
+  const s = Math.min(r.width / v.videoWidth, r.height / v.videoHeight); // la vidéo est affichée en entier (contain)
+  const w = v.videoWidth * s, hgt = v.videoHeight * s, ox = (r.width - w) / 2, oy = (r.height - hgt) / 2;
+  let b = box;
+  if (!b) { // guide : une feuille lettre (8,5 × 11) qui occupe 82 % de l'image
+    const fw = Math.min(0.82 * w, (0.82 * hgt * 8.5) / 11) / w, fh = (fw * w * 11) / 8.5 / hgt;
+    b = { x0: (1 - fw) / 2, y0: (1 - fh) / 2, x1: (1 + fw) / 2, y1: (1 + fh) / 2 };
+  }
+  Object.assign(t.style, { left: `${ox + b.x0 * w}px`, top: `${oy + b.y0 * hgt}px`, width: `${(b.x1 - b.x0) * w}px`, height: `${(b.y1 - b.y0) * hgt}px` });
+  t.className = `cam-target ${box ? kind : 'guide'}`;
+}
+
 async function openCamera() {
   if (state.running) return;
   camState.shots = []; camState.graded = state.results.length;
@@ -1169,7 +1185,7 @@ async function openCamera() {
   try {
     camState.session = await startCamera($('cam-video'), {
       onCapture: camCapture,
-      onStatus: (msg, kind) => { status.textContent = tr(msg); status.className = `cam-status ${kind}`; },
+      onStatus: (msg, kind, box) => { status.textContent = tr(msg); status.className = `cam-status ${kind}`; camTarget(box, kind); },
     });
   } catch (err) {
     $('cam').hidden = true;

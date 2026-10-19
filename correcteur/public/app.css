@@ -195,3 +195,13 @@ button.rel { cursor: pointer; font-family: inherit; }
 .cam-buttons { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: center; }
 #cam-shoot { width: 64px; height: 64px; border-radius: 50%; font-size: 1.6rem; padding: 0; }
 .ic.flame { width: 1.35em; height: 1.35em; color: #fb923c; stroke-width: 1.7; }
+
+.cam-target { position: absolute; pointer-events: none; transition: left .15s, top .15s, width .15s, height .15s; --c: rgba(255,255,255,.8); }
+.cam-target.hold { --c: #facc15; }
+.cam-target.done { --c: #4ade80; }
+.cam-target.wait { --c: rgba(255,255,255,.8); }
+.cam-target i { position: absolute; width: 34px; height: 34px; border: 5px solid var(--c); border-radius: 4px; filter: drop-shadow(0 0 2px rgba(0,0,0,.6)); }
+.cam-target .tl { left: -5px; top: -5px; border-right: 0; border-bottom: 0; }
+.cam-target .tr { right: -5px; top: -5px; border-left: 0; border-bottom: 0; }
+.cam-target .bl { left: -5px; bottom: -5px; border-right: 0; border-top: 0; }
+.cam-target .br { right: -5px; bottom: -5px; border-left: 0; border-top: 0; }
