@@ -661,8 +661,10 @@ async function runAll(only) {
     renderPages();
   };
   const worker = async () => { while (next < list.length && !stop) await one(list[next++]); };
-  // Grosse pile d'un même examen : la 1re copie passe seule, pour que toutes les autres profitent de son découpage.
-  if (state.kind === 'content' && hasKey && !settings.grid && !state.structure && list.length > CONCURRENCY) await one(list[next++]);
+  // Grosse pile en mode approfondi : la 1re copie passe seule, pour que toutes les autres profitent de son découpage
+  // (leurs deux corrections partent alors en même temps). En mode rapide, attendre coûte plus que ça ne rapporte
+  // (mesuré : 12 copies en 54 s contre 57 s) ; le découpage s'applique dès qu'une copie est finie.
+  if (settings.deep && state.kind === 'content' && hasKey && !settings.grid && !state.structure && list.length > CONCURRENCY) await one(list[next++]);
   await Promise.all(Array.from({ length: CONCURRENCY }, worker));
   clearInterval(timer);
   $('progress').hidden = true;
