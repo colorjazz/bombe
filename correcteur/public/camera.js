@@ -3,10 +3,10 @@
 // L'analyse se fait sur une image réduite, plusieurs fois par seconde ; rien ne quitte le téléphone avant la prise.
 
 const SMALL = 160;          // largeur de l'image réduite analysée
-const STABLE_MS = 400;      // durée d'immobilité avant la prise
+const STABLE_MS = 250;      // durée d'immobilité avant la prise (la netteté est vérifiée en plus)
 const MOVE = 4.5;           // écart moyen (0-255) entre deux images réduites au-delà duquel ça bouge (une main qui tient le téléphone tremble un peu)
 const SAME_PAGE = 9;        // écart moyen sous lequel la feuille est celle déjà photographiée (une autre feuille : 15 et plus)
-const COOLDOWN_MS = 900;    // pause après une prise
+const COOLDOWN_MS = 500;    // pause après une prise (la même feuille n'est de toute façon pas reprise)
 
 function lumOf(ctx, w, h) {
   const d = ctx.getImageData(0, 0, w, h).data;
@@ -102,7 +102,7 @@ export async function startCamera(video, { onCapture, onStatus }) {
 
   const tick = () => {
     if (stopped) return;
-    timer = setTimeout(tick, 120);
+    timer = setTimeout(tick, 80);
     const vw = video.videoWidth, vh = video.videoHeight;
     if (!vw) return;
     const w = SMALL, h = Math.max(1, Math.round((SMALL * vh) / vw));

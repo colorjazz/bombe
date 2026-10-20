@@ -658,6 +658,14 @@ function readGrid(raw) {
   });
 }
 
+// Questions fixées par l'appli d'après la première copie corrigée (intitulés et points maximum seulement) :
+// toutes les copies d'un même examen sont découpées pareil, et les deux corrections peuvent partir en même temps.
+function readStructure(raw) {
+  if (!Array.isArray(raw) || !raw.length || raw.length > 40) return null;
+  const list = raw.map((q) => ({ name: String(q?.name || '').slice(0, 200), max: Number(q?.max) }));
+  return list.every((q) => q.name && q.max > 0) ? list : null;
+}
+
 function gridText(grid) {
   return grid.map((c, i) => [`${i + 1}. ${c.name} (sur ${fr(c.max)} points)`,
     ...[...c.levels].sort((x, y) => y.points - x.points).map((l) => `   - ${fr(l.points)} pt : ${l.description}`),
@@ -897,7 +905,15 @@ async function grade(request, env) {
 
 STRUCTURE IMPOSÉE : corrige exactement ces ${list.length} questions ou critères, dans cet ordre, avec ces intitulés et ces points maximum. Fais ta propre correction, indépendante.
 ${list.map((q, i) => `${i + 1}. ${q.name} (sur ${fr(q.max)} points)`).join('\n')}`;
-    const promptA = grid ? impose(grid) : prompt;
+    const structure = grid ? null : readStructure(body.structure);
+    const fixed = grid || structure;
+    const promptA = fixed ? impose(fixed) : prompt;
+    // Contre-vérification réellement indépendante : un autre modèle, une autre consigne de lecture et un peu de variabilité,
+    // pour que deux corrections d'accord veuillent dire quelque chose (et non la même réponse répétée).
+    const SECOND_LOOK = "\n\nDEUXIÈME CORRECTEUR : tu es un second enseignant qui corrige cette copie sans connaître la première correction. Relis chaque réponse mot à mot avant de noter ; ne donne le bénéfice du doute que si la réponse le justifie.";
+    const secondOpts = { model: env.SECOND_MODEL || env.LANG_MODEL, temperature: 0.4 };
+    // Questions déjà connues : la 2e correction n'attend pas la 1re (deux fois plus rapide).
+    const early = deep && fixed ? attempt(promptA + SECOND_LOOK, secondOpts) : null;
     const a = (await attempt(promptA)) || (await attempt(promptA));
     if (!a) {
       await refund(n);
@@ -911,12 +927,8 @@ ${list.map((q, i) => `${i + 1}. ${q.name} (sur ${fr(q.max)} points)`).join('\n')
       throw new HttpError(502, `La correction a échoué${hint}. Aucune page n'a été décomptée, réessayez.`);
     }
 
-    // Contre-vérification réellement indépendante : un autre modèle, une autre consigne de lecture et un peu de variabilité,
-    // pour que deux corrections d'accord veuillent dire quelque chose (et non la même réponse répétée).
-    const SECOND_LOOK = "\n\nDEUXIÈME CORRECTEUR : tu es un second enseignant qui corrige cette copie sans connaître la première correction. Relis chaque réponse mot à mot avant de noter ; ne donne le bénéfice du doute que si la réponse le justifie.";
     const b = deep && a.questions.length && !a.illegible
-      ? await attempt((grid ? promptA : impose(a.questions.map((q) => ({ name: q.question, max: q.max })))) + SECOND_LOOK,
-        { model: env.SECOND_MODEL || env.LANG_MODEL, temperature: 0.4 }) : null;
+      ? await (early || attempt(impose(a.questions.map((q) => ({ name: q.question, max: q.max }))) + SECOND_LOOK, secondOpts)) : null;
     if (grid) { snapToGrid(a, grid); if (b) snapToGrid(b, grid); }
     const flags = [];
     if (a.manipulation) flags.push(`Tentative de manipulation de l'IA détectée et ignorée : « ${a.manipulation} »`);

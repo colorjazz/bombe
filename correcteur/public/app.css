@@ -65,16 +65,27 @@
 .stat .l { font-size: .72rem; color: var(--muted); }
 .empty { text-align: center; padding: 3.5rem 1rem; color: var(--muted); border: 1px dashed var(--line-2); border-radius: 14px; }
 
-.cards { display: grid; gap: .75rem; }
-.card { border: 1px solid var(--line); border-radius: 14px; background: var(--panel-2); overflow: hidden; }
-.card.flag { border-color: rgba(245,158,11,.5); }
-.card-head { display: grid; grid-template-columns: minmax(0, 1fr) 6.5rem auto auto auto; gap: .75rem; align-items: center; padding: .75rem .9rem; }
-.card-head input.name { background: transparent; border-color: transparent; font-weight: 600; font-size: .95rem; padding: .35rem .5rem; }
+.cards { display: grid; gap: .3rem; }
+.card { border: 1px solid var(--line); border-radius: 10px; background: var(--panel-2); overflow: hidden; }
+.card.flag { border-left: 3px solid var(--amber); }
+/* Une ligne par copie : avec 150 élèves, la liste reste lisible. */
+.card-head { display: grid; grid-template-columns: 2.6rem minmax(0, 1fr) 5rem auto auto auto; gap: .5rem; align-items: center; padding: .2rem .6rem; cursor: pointer; }
+.card-head:hover { background: rgba(255,255,255,.03); }
+.card-head .no { font-size: .75rem; color: var(--faint); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.card.flag .card-head .no { color: var(--amber); font-weight: 700; }
+.card-head input.name { background: transparent; border-color: transparent; font-weight: 600; font-size: .88rem; padding: .15rem .4rem; border-radius: 8px; }
 .card-head input.name:hover, .card-head input.name:focus { border-color: var(--line-2); background: #0d1527; }
-.card-head input.group { background: transparent; border-color: transparent; font-size: .8rem; color: var(--muted); padding: .3rem .45rem; }
+.card-head input.group { background: transparent; border-color: transparent; font-size: .78rem; color: var(--muted); padding: .15rem .4rem; border-radius: 8px; }
 .card-head input.group:hover, .card-head input.group:focus { border-color: var(--line-2); background: #0d1527; }
-@media (max-width: 480px) { .card-head { grid-template-columns: minmax(0, 1fr) 4.5rem auto auto auto; gap: .4rem; } }
-.rel { font-size: .75rem; font-weight: 700; padding: .2rem .55rem; border-radius: 999px; border: 1px solid; white-space: nowrap; }
+/* Téléphone : nom et note sur la 1re ligne ; groupe et fiabilité en petit dessous. */
+@media (max-width: 480px) {
+  .card-head { grid-template-columns: 2rem minmax(0, 1fr) auto auto; grid-template-areas: "no name grade chev" "no group rel ."; gap: 0 .35rem; padding: .25rem .5rem; }
+  .card-head > :nth-child(1) { grid-area: no; } .card-head > :nth-child(2) { grid-area: name; }
+  .card-head > :nth-child(3) { grid-area: group; } .card-head > :nth-child(4) { grid-area: rel; justify-self: end; }
+  .card-head > :nth-child(5) { grid-area: grade; } .card-head > :nth-child(6) { grid-area: chev; }
+  .card-head input.group { padding-top: 0; padding-bottom: 0; font-size: .72rem; }
+}
+.rel { font-size: .7rem; font-weight: 700; padding: .1rem .45rem; border-radius: 999px; border: 1px solid; white-space: nowrap; }
 button.rel { cursor: pointer; font-family: inherit; }
 .info { background: none; border: 0; color: var(--primary-2); cursor: pointer; font-size: .85rem; padding: 0 .15rem; }
 .rel.hi { color: var(--green); border-color: rgba(16,185,129,.4); background: rgba(16,185,129,.1); }
@@ -83,8 +94,8 @@ button.rel { cursor: pointer; font-family: inherit; }
 .qtable tr.disputed td { background: rgba(245,158,11,.07); }
 .qtable tr.disputed td.q::before { content: "⚖ "; color: var(--amber); }
 .qtable .second { font-size: .72rem; color: var(--amber); margin-top: .25rem; }
-.grade { font-size: 1.15rem; font-weight: 800; color: var(--primary-2); white-space: nowrap; }
-.grade small { color: var(--muted); font-weight: 500; font-size: .8rem; }
+.grade { font-size: .95rem; font-weight: 800; color: var(--primary-2); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.grade small { color: var(--muted); font-weight: 500; font-size: .75rem; }
 .chev { transition: transform .15s; }
 .card.open .chev { transform: rotate(180deg); }
 .card-body { border-top: 1px solid var(--line); padding: .75rem .9rem 1rem; display: grid; gap: .75rem; }
@@ -222,9 +233,17 @@ button.rel { cursor: pointer; font-family: inherit; }
 }
 @media (max-width: 640px) {
   /* Le nom prend toute la première ligne ; groupe, fiabilité et note passent dessous. */
-  .card-head { grid-template-columns: minmax(0, 1fr) auto auto auto; }
-  .card-head .name { grid-column: 1 / -1; }
+  .card-head .name { font-size: .85rem; }
   .card-foot { flex-wrap: wrap; }
   .card-foot > span { flex: 1 1 100%; }
   .card-foot .btn { white-space: nowrap; }
 }
+
+/* Affichage simple / avancé des réglages */
+.step-head { display: flex; justify-content: space-between; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.step-head h2 { margin: 0; }
+.seg { display: inline-flex; border: 1px solid var(--line-2); border-radius: 999px; padding: 2px; }
+.seg button { background: none; border: 0; color: var(--muted); font: inherit; font-size: .78rem; font-weight: 600; padding: .25rem .7rem; border-radius: 999px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--panel-2); color: var(--text); box-shadow: inset 0 0 0 1px var(--line-2); }
+.ui-simple .adv { display: none !important; }
+.ui-simple .row2:has(> .adv) { grid-template-columns: 1fr; }

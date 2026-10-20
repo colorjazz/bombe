@@ -5,7 +5,7 @@ const MAX_SIDE = 2000;          // pixels, côté le plus long d'une page envoy�
 const JPEG_QUALITY = 0.85;
 const MAX_PAGES_PER_COPY = 10;
 const MAX_RUBRIC_PAGES = 6;
-const CONCURRENCY = 3;
+const CONCURRENCY = 5;
 const KEY_STORAGE = 'ce.accessKey';
 const PDFJS = '/vendor/pdfjs'; // pdf.js 3.11.174, hébergé sur le site
 
@@ -585,6 +585,9 @@ async function runAll(only) {
     anonymous: anonymous(),
   };
   const hasKey = !!(settings.rubric || settings.rubricPages.length || settings.grid);
+  // Même examen que la copie déjà corrigée : on réutilise son découpage en questions (voir plus bas).
+  const examKey = JSON.stringify([settings.exam, settings.total, settings.wholePoints, settings.rubric, settings.rubricPages.length, !!settings.grid]);
+  if (state.structure?.key !== examKey) state.structure = null;
 
   // N° de copie dans l'ordre d'importation, gardé si la copie est relancée : il permet de retrouver la copie papier.
   for (const b of list) b[0].no ??= (state.seq = (state.seq || 0) + 1);
@@ -609,51 +612,57 @@ async function runAll(only) {
   updateProgress();
   const timer = setInterval(updateProgress, 1000);
 
-  const worker = async () => {
-    while (next < list.length && !stop) {
-      const b = list[next++];
-      const id = b[0].id;
-      started.set(id, Date.now());
-      state.status[id] = { state: 'running' };
-      renderPages();
-      try {
-        if (state.kind === 'lang') {
-          const r = await analyzeLanguage(b);
-          setBalance(r.pagesLeft);
-          const res = { kind: 'lang', id, no: b[0].no, file: b[0].file, exam: settings.exam, group: r.group || settings.group, name: r.name, pageCount: b.length,
-            pages: b.map((p, i) => ({ url: p.url, errors: r.pages[i].errors, failed: !!r.pages[i].failed, reread: r.pages[i].reread, sent: r.urls[i] })),
-            scoring: langScoring(), flags: r.failedPages ? [`${r.failedPages} page(s) n'ont pas pu être analysées (non décomptées).`] : [] };
-          langGrade(res);
-          state.results.unshift(res);
-          reread(res);
-        } else {
-        const pages = await Promise.all(b.map((p, i) => (masked(i) ? maskTop(p.url) : p.url)));
-        const r = await api('/api/grade', { method: 'POST', body: { ...settings, pages } });
+  const one = async (b) => {
+    const id = b[0].id;
+    started.set(id, Date.now());
+    state.status[id] = { state: 'running' };
+    renderPages();
+    try {
+      if (state.kind === 'lang') {
+        const r = await analyzeLanguage(b);
         setBalance(r.pagesLeft);
-        state.results.unshift({
-          id, no: b[0].no, file: b[0].file, pageUrls: b.map((p) => p.url), exam: settings.exam, group: r.group || settings.group, name: r.name, reliability: r.reliability, grade: r.grade, total: r.total,
-          unit: settings.wholePoints ? 1 : 0.5, questions: r.questions, comment: r.comment, pageCount: b.length, illegible: !!r.illegible,
-          flags: hasKey || r.illegible ? r.flags : [...r.flags, 'Corrigée sans corrigé : vérifiez que la note n’est pas trop généreuse.'],
-        });
-        if (r.flags.length || r.questions.some((q) => q.second != null)) state.open.add(id);
-        }
-        state.exported = false;
-        state.pages = state.pages.filter((p) => !b.includes(p));
-        if (state.pages[0]) state.pages[0].startsNew = true;
-        delete state.status[id];
-        durations.push(Date.now() - started.get(id));
-        done++;
-        renderResults();
-      } catch (err) {
-        failed++;
-        state.status[id] = { state: 'error', msg: err.message };
-        if (err.status === 402 || err.status === 401) stop = err.message;
+        const res = { kind: 'lang', id, no: b[0].no, file: b[0].file, exam: settings.exam, group: r.group || settings.group, name: r.name, pageCount: b.length,
+          pages: b.map((p, i) => ({ url: p.url, errors: r.pages[i].errors, failed: !!r.pages[i].failed, reread: r.pages[i].reread, sent: r.urls[i] })),
+          scoring: langScoring(), flags: r.failedPages ? [`${r.failedPages} page(s) n'ont pas pu être analysées (non décomptées).`] : [] };
+        langGrade(res);
+        state.results.unshift(res);
+        reread(res);
+      } else {
+      const pages = await Promise.all(b.map((p, i) => (masked(i) ? maskTop(p.url) : p.url)));
+      const r = await api('/api/grade', { method: 'POST', body: { ...settings, pages, structure: state.structure?.list } });
+      // 1re copie bien corrigée avec un corrigé : ses questions servent de modèle pour les suivantes. Elles sont
+      // découpées pareil, et les deux corrections du mode approfondi partent en même temps (deux fois plus rapide).
+      // Seulement si les points maximum totalisent le barème : une question oubliée ne se propage pas.
+      if (!state.structure && hasKey && !settings.grid && !r.illegible && r.questions.length
+        && Math.abs(r.questions.reduce((x, q) => x + q.max, 0) - settings.total) < 1e-9) {
+        state.structure = { key: examKey, list: r.questions.map((q) => ({ name: q.question, max: q.max })) };
       }
-      started.delete(id);
-      updateProgress();
-      renderPages();
+      setBalance(r.pagesLeft);
+      state.results.unshift({
+        id, no: b[0].no, file: b[0].file, pageUrls: b.map((p) => p.url), exam: settings.exam, group: r.group || settings.group, name: r.name, reliability: r.reliability, grade: r.grade, total: r.total,
+        unit: settings.wholePoints ? 1 : 0.5, questions: r.questions, comment: r.comment, pageCount: b.length, illegible: !!r.illegible,
+        flags: hasKey || r.illegible ? r.flags : [...r.flags, 'Corrigée sans corrigé : vérifiez que la note n’est pas trop généreuse.'],
+      });
+      }
+      state.exported = false;
+      state.pages = state.pages.filter((p) => !b.includes(p));
+      if (state.pages[0]) state.pages[0].startsNew = true;
+      delete state.status[id];
+      durations.push(Date.now() - started.get(id));
+      done++;
+      renderResults();
+    } catch (err) {
+      failed++;
+      state.status[id] = { state: 'error', msg: err.message };
+      if (err.status === 402 || err.status === 401) stop = err.message;
     }
+    started.delete(id);
+    updateProgress();
+    renderPages();
   };
+  const worker = async () => { while (next < list.length && !stop) await one(list[next++]); };
+  // Grosse pile d'un même examen : la 1re copie passe seule, pour que toutes les autres profitent de son découpage.
+  if (state.kind === 'content' && hasKey && !settings.grid && !state.structure && list.length > CONCURRENCY) await one(list[next++]);
   await Promise.all(Array.from({ length: CONCURRENCY }, worker));
   clearInterval(timer);
   $('progress').hidden = true;
@@ -714,8 +723,28 @@ function openZoom(urls, title) {
   $('zoom').hidden = false;
 }
 
+// Fiche d'une copie : une ligne compacte (n°, nom, groupe, note), toujours fermée ; un clic sur la ligne l'ouvre.
+function cardShell(r, cells, body) {
+  const el = h('article', { class: `card ${r.flags.length ? 'flag' : ''}` });
+  const setOpen = (on) => { body.hidden = !on; el.classList.toggle('open', on); };
+  const head = h('div', { class: 'card-head', onclick: (e) => {
+    if (e.target.closest('input, textarea, select, button:not(.chev)')) return;
+    if (state.open.has(r.id)) state.open.delete(r.id); else state.open.add(r.id);
+    setOpen(state.open.has(r.id));
+  } },
+    h('span', { class: 'no', title: r.flags.length ? 'À vérifier' : '', textContent: `${r.flags.length ? '⚠ ' : ''}${r.no ?? ''}` }),
+    h('input', { class: 'name', type: 'text', value: r.name, placeholder: r.no ? `Nom à compléter (copie ${r.no})` : 'Nom à compléter', 'aria-label': "Nom de l'élève",
+      oninput: (e) => { r.name = e.target.value; state.exported = false; } }),
+    h('input', { class: 'group', type: 'text', value: r.group, placeholder: 'Groupe', 'aria-label': 'Groupe',
+      oninput: (e) => { r.group = e.target.value; state.exported = false; } }),
+    ...cells,
+    h('button', { class: 'icon-btn chev', type: 'button', textContent: '▾', 'aria-label': 'Détails' }));
+  el.append(head, body);
+  setOpen(state.open.has(r.id));
+  return el;
+}
+
 function card(r) {
-  const open = state.open.has(r.id);
   const gradeEl = h('span', { class: 'grade' });
   const updateGrade = () => { gradeEl.replaceChildren(...(r.grade == null ? [tr('Illisible')] : [fmt(r.grade), h('small', {}, ` / ${fmt(r.total)}`)])); };
   updateGrade();
@@ -756,26 +785,12 @@ function card(r) {
           if (!confirm(tr(`Supprimer la correction de ${r.name || 'cet élève'} ?`))) return;
           state.results = state.results.filter((x) => x !== r); renderResults();
         } }))));
-  body.hidden = !open;
-
-  const el = h('article', { class: `card ${r.flags.length ? 'flag' : ''} ${open ? 'open' : ''}` },
-    h('div', { class: 'card-head' },
-      h('input', { class: 'name', type: 'text', value: r.name, placeholder: r.no ? `⚠ Nom à compléter (copie ${r.no})` : '⚠ Nom à compléter', 'aria-label': "Nom de l'élève",
-        oninput: (e) => { r.name = e.target.value; state.exported = false; } }),
-      h('input', { class: 'group', type: 'text', value: r.group, placeholder: 'Groupe', 'aria-label': 'Groupe',
-        oninput: (e) => { r.group = e.target.value; state.exported = false; } }),
-      r.reliability == null ? h('span') : h('button', {
-        type: 'button', class: `rel ${r.reliability >= 90 ? 'hi' : r.reliability >= 80 ? 'mid' : 'lo'}`,
-        title: 'Fiabilité de la correction : cliquez pour en savoir plus', onclick: showRelHelp,
-        textContent: `${pctText(r.reliability)} ⓘ` }),
-      gradeEl,
-      h('button', { class: 'icon-btn chev', type: 'button', textContent: '▾', 'aria-label': 'Détails', onclick: () => {
-        if (state.open.has(r.id)) state.open.delete(r.id); else state.open.add(r.id);
-        body.hidden = !state.open.has(r.id);
-        el.classList.toggle('open', !body.hidden);
-      } })),
-    body);
-  return el;
+  return cardShell(r, [
+    r.reliability == null ? h('span') : h('button', {
+      type: 'button', class: `rel ${r.reliability >= 90 ? 'hi' : r.reliability >= 80 ? 'mid' : 'lo'}`,
+      title: 'Fiabilité de la correction : cliquez pour en savoir plus', onclick: showRelHelp,
+      textContent: `${pctText(r.reliability)} ⓘ` }),
+    gradeEl], body);
 }
 
 // ---------- Correction de la langue ----------
@@ -909,13 +924,7 @@ function langCard(r) {
   const gradeEl = h('span', { class: 'grade' });
   gradeEl.replaceChildren(r.grade == null ? `${n} faute${n > 1 ? 's' : ''}`
     : h('span', {}, fmt(r.grade), h('small', {}, ` / ${fmt(r.total)} · ${n} faute(s)`)));
-  return h('article', { class: `card open ${r.flags.length ? 'flag' : ''}` },
-    h('div', { class: 'card-head' },
-      h('input', { class: 'name', type: 'text', value: r.name, placeholder: r.no ? `⚠ Nom à compléter (copie ${r.no})` : '⚠ Nom à compléter', 'aria-label': "Nom de l'élève",
-        oninput: (e) => { r.name = e.target.value; state.exported = false; } }),
-      h('input', { class: 'group', type: 'text', value: r.group, placeholder: 'Groupe', 'aria-label': 'Groupe',
-        oninput: (e) => { r.group = e.target.value; state.exported = false; } }),
-      h('span'), gradeEl, h('span')),
+  return cardShell(r, [h('span'), gradeEl],
     h('div', { class: 'card-body' },
       r.flags.length ? h('div', { class: 'flags' }, r.flags.map((f) => h('div', { textContent: `⚠ ${f}` }))) : null,
       errors.length ? categoryChips(errors) : h('p', { class: 'muted small', style: 'margin:0', textContent: 'Aucune faute relevée.' }),
@@ -1157,7 +1166,7 @@ function endSession() {
   if (state.results.length && !state.exported && confirm(tr('Télécharger les notes (CSV) avant d’effacer ?'))) exportCSV();
   // Ordinateur partagé : la clé mémorisée permettrait au suivant d'utiliser les pages restantes.
   const forget = confirm(`${tr('Oublier aussi la clé d’accès sur cet ordinateur ? Notez-la d’abord pour utiliser vos pages restantes :')} ${state.key}`);
-  Object.assign(state, { results: [], pages: [], rubricPages: [], status: {}, open: new Set(), exported: true, seq: 0 });
+  Object.assign(state, { results: [], pages: [], rubricPages: [], status: {}, open: new Set(), exported: true, seq: 0, structure: null });
   $('mode').value = ''; $('per').value = '';
   ['exam', 'group', 'rubric', 'search'].forEach((id) => { $(id).value = ''; });
   state.grid = null;
@@ -1410,6 +1419,29 @@ $('anon-opts').hidden = !anonymous();
 for (const id of [...PREF_IDS, ...TAB_IDS]) $(id).addEventListener('change', savePrefs);
 ['anon', 'anon-h', 'anon-all'].forEach((id) => $(id).addEventListener('change', () => { $('anon-opts').hidden = !anonymous(); renderPages(); }));
 document.querySelectorAll('#lang-cats input').forEach((i) => i.addEventListener('change', savePrefs));
+
+// Affichage simple (par défaut) ou avancé : le mode simple cache les réglages fins (classe « adv »), qui restent appliqués.
+// Si l'un d'eux n'a pas sa valeur par défaut, une ligne le signale : rien ne change en douce (ex. double correction facturée).
+const advControls = () => [...document.querySelectorAll('.adv input, .adv select')];
+const isDefault = (el) => (el.id === 'out-lang' ? el.value === lang
+  : el.type === 'checkbox' ? el.checked === el.defaultChecked
+  : el.tagName === 'SELECT' ? el.value === ([...el.options].find((o) => o.defaultSelected) || el.options[0])?.value
+  : el.value === el.defaultValue);
+function setUiMode(adv) {
+  $('app').classList.toggle('ui-simple', !adv);
+  $('ui-simple').setAttribute('aria-pressed', String(!adv));
+  $('ui-adv').setAttribute('aria-pressed', String(adv));
+  $('adv-note').hidden = adv || advControls().every(isDefault);
+  try { localStorage.setItem('ce.ui', adv ? 'adv' : 'simple'); } catch { /* ignoré */ }
+}
+const uiAdv = () => !$('app').classList.contains('ui-simple');
+$('ui-simple').addEventListener('click', () => setUiMode(false));
+$('ui-adv').addEventListener('click', () => setUiMode(true));
+$('adv-show').addEventListener('click', (e) => { e.preventDefault(); setUiMode(true); });
+advControls().forEach((el) => el.addEventListener('change', () => setUiMode(uiAdv())));
+let savedUi = null;
+try { savedUi = localStorage.getItem('ce.ui'); } catch { /* ignoré */ }
+setUiMode(savedUi === 'adv');
 
 // ---------- Démarrage ----------
 

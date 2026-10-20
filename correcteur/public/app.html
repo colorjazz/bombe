@@ -61,17 +61,23 @@
           <span class="kind-long">Correction de la langue</span><span class="kind-short">Langue</span>
         </button>
       </div>
-      <h2><span class="step">1</span> <span id="step1-title">Évaluation et copies</span></h2>
+      <div class="step-head">
+        <h2><span class="step">1</span> <span id="step1-title">Évaluation et copies</span></h2>
+        <div class="seg" role="group" aria-label="Affichage des options">
+          <button id="ui-simple" type="button" aria-pressed="true">Simple</button><button id="ui-adv" type="button" aria-pressed="false">Avancé</button>
+        </div>
+      </div>
+      <p id="adv-note" class="muted small" style="margin:0" hidden>Des réglages avancés sont actifs (<a href="#" id="adv-show">voir</a>).</p>
 
       <div class="row2">
         <label class="field">Nom de l'évaluation
           <input id="exam" type="text" placeholder="Ex. : Examen — Révolution tranquille">
         </label>
-        <label class="field" title="Utilisé seulement si le groupe n'est pas écrit sur la copie">Groupe par défaut
+        <label class="field adv" title="Utilisé seulement si le groupe n'est pas écrit sur la copie">Groupe par défaut
           <input id="group" type="text" placeholder="Ex. : 541">
         </label>
       </div>
-      <label class="field">Langue des copies et des commentaires de l'IA
+      <label class="field adv">Langue des copies et des commentaires de l'IA
         <select id="out-lang"><option value="fr">Français</option><option value="en">English</option></select>
       </label>
       <div id="lang-settings" class="stack" hidden>
@@ -84,7 +90,7 @@
             <option value="cegep">Cégep / adultes</option>
           </select>
         </label>
-        <div class="field">Fautes à relever
+        <div class="field adv">Fautes à relever
           <div class="cats" id="lang-cats">
             <label class="cat c-orth"><input type="checkbox" value="orthographe" checked> Orthographe d'usage</label>
             <label class="cat c-acc"><input type="checkbox" value="accord" checked> Accords</label>
@@ -94,7 +100,7 @@
             <label class="cat c-voc"><input type="checkbox" value="vocabulaire" checked> Vocabulaire</label>
           </div>
         </div>
-        <div class="row3">
+        <div class="row3 adv">
           <label class="field">Note sur (facultatif)<input id="lang-total" type="text" inputmode="decimal" class="num" placeholder="Ex. : 10"></label>
           <label class="field">Points retirés par faute<input id="lang-per" type="text" inputmode="decimal" class="num" placeholder="Ex. : 0,5"></label>
           <label class="field">Retrait maximum<input id="lang-max" type="text" inputmode="decimal" class="num" placeholder="Ex. : 10"></label>
@@ -106,29 +112,29 @@
         <label class="field">Barème total (points)
           <input id="total" type="number" min="1" max="1000" step="1" value="20">
         </label>
-        <label class="field">Points
+        <label class="field adv">Points
           <select id="whole"><option value="0">Demi-points permis</option><option value="1">Points entiers seulement</option></select>
         </label>
       </div>
-      <label class="field">Mode de correction
+      <label class="field adv">Mode de correction
         <select id="deep">
           <option value="0" selected>Rapide : une seule correction, 2× plus vite (1 page = 1 page décomptée)</option>
           <option value="1">Approfondie : double correction et fiabilité (1 page = 2 pages décomptées)</option>
         </select>
       </label>
-      <label class="toggle"><input id="language" type="checkbox"> Évaluer aussi l'orthographe et la grammaire</label>
+      <label class="toggle adv"><input id="language" type="checkbox"> Évaluer aussi l'orthographe et la grammaire</label>
 
       <p class="section-label">Corrigé ou grille de correction</p>
       <label class="field">Consignes, réponses attendues, points par question
         <textarea id="rubric" rows="5" placeholder="Astuce : fournir le corrigé (ici ou en PDF/photo ci-dessous) améliore beaucoup la fiabilité de la correction.&#10;&#10;Ex. : Q1 (2 pts) : 1960, début de la Révolution tranquille. Q2 (3 pts) : nommer deux réformes… Accepter les synonymes.&#10;&#10;Vous pouvez aussi demander la forme du rendu : « Commentaire de 2 phrases, au tu, qui commence par un point fort », « Justifications courtes »…"></textarea>
-        <span class="muted small">Vous pouvez aussi y préciser comment rédiger les résultats : ton, longueur, tutoiement, ce que le commentaire doit souligner.</span>
+        <span class="muted small adv">Vous pouvez aussi y préciser comment rédiger les résultats : ton, longueur, tutoiement, ce que le commentaire doit souligner.</span>
       </label>
       <label id="rubric-drop" class="drop compact">
         <input id="rubric-files" type="file" accept="image/*,.heic,.heif,application/pdf,.docx,.txt" multiple hidden>
         <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="3" width="8" height="4" rx="1"/><path d="M16 5h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2"/></svg><span>Ajouter le corrigé (PDF ou photos) — <b>non facturé</b></span>
       </label>
       <div id="rubric-thumbs" class="thumbs"></div>
-      <div class="grid-tools">
+      <div class="grid-tools adv">
         <button id="make-grid" class="btn" type="button">Préparer une grille détaillée (gratuit)</button>
         <span class="muted small">Recommandé pour les travaux de rédaction : l'IA rédige des niveaux précis pour chaque critère, vous les validez, et la même grille s'applique à toutes les copies. Les notes deviennent beaucoup plus constantes.</span>
       </div>
@@ -148,9 +154,9 @@
         <span class="muted small">PDF, photos (y compris iPhone), Word (.docx) ou texte · plusieurs fichiers à la fois</span>
       </label>
       <button id="cam-open" class="btn" type="button" hidden><svg class="ic flame" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c1 3.2 5.5 5.6 5.5 10.5a5.5 5.5 0 0 1-11 0c0-2.3 1.2-4 2.5-5.2.2 1.7 1 2.9 2.2 3.4C10.7 9 11 6 12 3z"/><path d="M12 20a2.3 2.3 0 0 1-2.3-2.3c0-1.4 1.2-2.3 2.3-3.7 1.1 1.4 2.3 2.3 2.3 3.7A2.3 2.3 0 0 1 12 20z"/></svg> Numériser « Brûle la pile »</button>
-      <p id="cam-hint" class="muted small" style="margin:0" hidden>Tournez les pages devant votre téléphone : chaque copie est photographiée et corrigée au fur et à mesure.</p>
+      <p id="cam-hint" class="muted small" style="margin:0" hidden>Tournez les pages devant votre téléphone : chaque page est photographiée toute seule. Vous relisez la pile, puis lancez la correction.</p>
       <label class="toggle"><input id="anon" type="checkbox"> Masquer le nom de l'élève avant l'envoi <span class="muted small">— le haut de la 1re page de chaque copie (zone hachurée sur les miniatures) n'est pas transmis ; vous inscrirez les noms vous-même. Vérifiez qu'aucune réponse ne s'y trouve.</span></label>
-      <div id="anon-opts" class="mode" hidden>
+      <div id="anon-opts" class="mode adv" hidden>
         <span>Bande masquée :</span>
         <select id="anon-h"><option value="0.08">8 % de la page</option><option value="0.14" selected>14 %</option><option value="0.2">20 %</option><option value="0.3">30 %</option></select>
         <label class="toggle"><input id="anon-all" type="checkbox"> sur toutes les pages (nom répété)</label>
