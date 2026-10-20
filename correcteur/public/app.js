@@ -1422,7 +1422,11 @@ $('zoom-close').addEventListener('click', () => { $('zoom').hidden = true; });
 document.querySelectorAll('[data-close-viewer]').forEach((b) => b.addEventListener('click', () => { $('viewer').hidden = true; viewing = null; }));
 $('grid-remove').addEventListener('click', () => { state.grid = null; renderGrid(); });
 $('deep').addEventListener('change', renderSummary);
-$('awake-ok').addEventListener('click', () => { $('awake').hidden = true; runAll(); });
+$('awake-ok').addEventListener('click', () => {
+  $('awake').hidden = true;
+  try { sessionStorage.setItem('ce.awake', '1'); } catch { /* ignoré */ }
+  runAll();
+});
 $('run').addEventListener('click', () => {
   // Après une numérisation : dernière confirmation, avec le nombre de pages qui seront décomptées.
   if (camState.review) {
@@ -1431,8 +1435,11 @@ $('run').addEventListener('click', () => {
     if (!confirm(tr(`${copies} copie(s), ${pages} page(s) : ${cost} page(s) seront décomptées. Lancer la correction ?`))) return;
     camState.review = false;
   }
-  // Téléphone ou tablette : rappel de garder l'écran allumé (un appareil en veille arrête la correction).
-  if (matchMedia('(pointer: coarse)').matches) {
+  // Téléphone ou tablette : rappel de garder l'écran allumé (un appareil en veille arrête la correction),
+  // une fois par session (jusqu'à la fermeture de l'onglet).
+  let seen = false;
+  try { seen = sessionStorage.getItem('ce.awake') === '1'; } catch { /* ignoré */ }
+  if (!seen && matchMedia('(pointer: coarse)').matches) {
     $('awake').hidden = false;
     $('awake-ok').focus();
     return;
