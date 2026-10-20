@@ -20,14 +20,14 @@ const DAY_MS = 24 * 3600 * 1000;
 const RELIABILITY_ALERT = 80; // en dessous, la copie est signalée à vérifier
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
     if (!url.pathname.startsWith('/api/')) return env.ASSETS.fetch(request);
     try {
       await ensureSchema(env);
       const route = ROUTES[`${request.method} ${url.pathname}`];
       if (!route) return json({ error: 'Introuvable' }, 404);
-      return await route(request, env, url);
+      return await route(request, env, url, ctx);
     } catch (err) {
       if (err instanceof HttpError) return json({ error: err.message }, err.status);
       // On ne journalise que le message : jamais le contenu des copies.
@@ -603,7 +603,28 @@ Pour chaque faute, recopie aussi dans « ligne » la ligne manuscrite complète 
 Renvoie EXCLUSIVEMENT un tableau JSON. Si aucune faute n'est trouvée, renvoie un tableau vide [].`;
 }
 
-async function language(request, env) {
+// Pages réservées pour une copie. Si l'enseignant perd la connexion pendant la correction (écran éteint, réseau
+// coupé), il ne reçoit jamais le résultat : les pages réservées lui sont rendues (le remboursement continue après
+// la coupure grâce à waitUntil). Un remboursement ne rend jamais plus que ce qui a été réservé.
+async function reserve(env, key, n, request, ctx) {
+  const reserved = await env.DB.prepare('UPDATE access_keys SET pages = pages - ? WHERE key = ? AND pages >= ?').bind(n, key, n).run();
+  if (!reserved.meta.changes) {
+    await getKey(env, key); // 401 si la clé n'existe pas
+    throw new HttpError(402, 'Solde de pages insuffisant. Rechargez votre compte pour continuer.');
+  }
+  let back = 0;
+  const refund = async (k) => {
+    k = Math.min(k, n - back);
+    if (k <= 0) return;
+    back += k;
+    await env.DB.prepare('UPDATE access_keys SET pages = pages + ? WHERE key = ?').bind(k, key).run();
+  };
+  const onAbort = () => { const p = refund(n).catch((e) => console.error('Remboursement impossible :', e.message)); ctx?.waitUntil(p); };
+  request.signal?.addEventListener?.('abort', onAbort);
+  return { refund, close: () => request.signal?.removeEventListener?.('abort', onAbort) };
+}
+
+async function language(request, env, url, ctx) {
   const key = bearer(request);
   const body = await readJson(request);
   checkImages(body.pages, MAX_PAGES_PER_COPY, 'Copie', MAX_LANG_IMAGE_CHARS);
@@ -612,12 +633,16 @@ async function language(request, env) {
   if (!cats.length) throw new HttpError(400, 'Choisissez au moins un type de faute');
 
   const n = body.pages.length; // 1 page de copie = 1 page décomptée
-  const reserved = await env.DB.prepare('UPDATE access_keys SET pages = pages - ? WHERE key = ? AND pages >= ?').bind(n, key, n).run();
-  if (!reserved.meta.changes) {
-    await getKey(env, key);
-    throw new HttpError(402, 'Solde de pages insuffisant. Rechargez votre compte pour continuer.');
-  }
+  const pay = await reserve(env, key, n, request, ctx);
+  try {
+    return await analyzeLanguagePages(request, env, key, body, cats, n, pay);
+  } catch (err) {
+    await pay.refund(n).catch((e) => console.error('Remboursement impossible :', e.message)); // ce qui n'a pas déjà été rendu
+    throw err;
+  } finally { pay.close(); }
+}
 
+async function analyzeLanguagePages(request, env, key, body, cats, n, pay) {
   const system = langSystem(request, body, cats);
 
   const identity = body.identify === false ? Promise.resolve({}) : geminiNative(env, [{ text: "Recopie le nom de l'élève et son groupe s'ils sont écrits sur cette copie (sinon chaînes vides)." }, inlineImage(body.pages[0])],
@@ -625,7 +650,7 @@ async function language(request, env) {
   const results = await Promise.allSettled(body.pages.map((url) => geminiVision(env, system, url)));
   const failed = results.filter((x) => x.status === 'rejected').length;
   if (failed) {
-    await env.DB.prepare('UPDATE access_keys SET pages = pages + ? WHERE key = ?').bind(failed, key).run();
+    await pay.refund(failed);
     console.error('Langue : pages en échec :', results.filter((x) => x.status === 'rejected').map((x) => x.reason?.message).join(' / '));
   }
   if (failed === n) throw new HttpError(502, "L'analyse de la langue a échoué. Aucune page n'a été décomptée, réessayez.");
@@ -864,7 +889,7 @@ async function split(request, env) {
   });
 }
 
-async function grade(request, env) {
+async function grade(request, env, url, ctx) {
   const key = bearer(request);
   const body = await readJson(request);
   const total = Number(body.total);
@@ -878,14 +903,9 @@ async function grade(request, env) {
   const deep = body.deep !== false;
   const perPage = deep ? 2 : 1;
   const n = body.pages.length * perPage;
-  const reserved = await env.DB.prepare('UPDATE access_keys SET pages = pages - ? WHERE key = ? AND pages >= ?').bind(n, key, n).run();
-  if (!reserved.meta.changes) {
-    await getKey(env, key); // 401 si la clé n'existe pas
-    throw new HttpError(402, 'Solde de pages insuffisant. Rechargez votre compte pour continuer.');
-  }
+  const pay = await reserve(env, key, n, request, ctx);
+  const refund = pay.refund;
   // Toute erreur imprévue après la réservation (bogue, IA qui plante) rend les pages pas encore remboursées.
-  let refunded = 0;
-  const refund = async (k) => { refunded += k; await env.DB.prepare('UPDATE access_keys SET pages = pages + ? WHERE key = ?').bind(k, key).run(); };
   try {
 
     const unit = body.wholePoints ? 1 : 0.5;
@@ -977,7 +997,7 @@ ${list.map((q, i) => `${i + 1}. ${q.name} (sur ${fr(q.max)} points)`).join('\n')
       reliability, secondGrade: b ? b.grade : null, flags, pagesLeft: left?.pages ?? 0,
     });
   } catch (err) {
-    if (refunded < n) await refund(n - refunded).catch((e) => console.error('Remboursement impossible :', e.message));
+    await refund(n).catch((e) => console.error('Remboursement impossible :', e.message));
     throw err;
-  }
+  } finally { pay.close(); }
 }

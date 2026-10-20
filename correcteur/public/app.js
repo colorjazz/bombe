@@ -435,7 +435,7 @@ function renderPages() {
   $('bundles').replaceChildren(...list.map((b, bi) => {
     const st = state.status[b[0].id];
     const tooLong = ready && b.length > MAX_PAGES_PER_COPY;
-    const label = st?.state === 'running' ? 'Correction en cours…' : st?.state === 'error' ? `⚠ ${st.msg}` : tooLong ? `⚠ ${MAX_PAGES_PER_COPY} pages max : plusieurs élèves ? Utilisez « Nombre fixe de pages par élève » ou ✂` : '';
+    const label = st?.state === 'running' ? st.msg || 'Correction en cours…' : st?.state === 'error' ? `⚠ ${st.msg}` : tooLong ? `⚠ ${MAX_PAGES_PER_COPY} pages max : plusieurs élèves ? Utilisez « Nombre fixe de pages par élève » ou ✂` : '';
     return h('div', { class: 'bundle' },
       h('div', { class: 'bundle-head' },
         h('span', {}, `Copie ${nos[bi]}${b[0].detectedName ? ` · ${b[0].detectedName}` : ''} · ${b.length} page${b.length > 1 ? 's' : ''}`),
@@ -563,11 +563,43 @@ async function makeGrid() {
 
 // ---------- Correction ----------
 
+// Coupure passagère : réseau perdu (souvent l'écran du téléphone qui s'éteint), IA surchargée ou limite atteinte.
+// La copie n'est pas mise en erreur : on attend que la page soit visible et le réseau revenu, puis on réessaie.
+const RETRY_WAITS = [5, 15, 40]; // secondes
+const transient = (err) => !err.status || err.status === 429 || err.status >= 500;
+const pageReady = () => new Promise((res) => {
+  const ok = () => !document.hidden && navigator.onLine !== false;
+  if (ok()) return res();
+  const check = () => { if (ok()) { document.removeEventListener('visibilitychange', check); window.removeEventListener('online', check); res(); } };
+  document.addEventListener('visibilitychange', check); window.addEventListener('online', check);
+});
+async function withRetry(fn, onWait) {
+  for (let attempt = 0; ; attempt++) {
+    try { return await fn(); } catch (err) {
+      if (!transient(err) || attempt >= RETRY_WAITS.length) throw err;
+      onWait(RETRY_WAITS[attempt], !err.status);
+      await new Promise((r) => setTimeout(r, RETRY_WAITS[attempt] * 1000));
+      await pageReady();
+    }
+  }
+}
+
+// L'écran reste allumé pendant la correction : un téléphone qui se met en veille coupe les connexions en cours.
+let wakeLock = null;
+async function keepAwake(on) {
+  try {
+    if (on && !wakeLock && navigator.wakeLock) { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); }
+    if (!on && wakeLock) { await wakeLock.release(); wakeLock = null; }
+  } catch { /* refusé (économie d'énergie) : la reprise automatique prend le relais */ }
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden && state.running) keepAwake(true); });
+
 // only : les copies à corriger (par défaut toutes) ; le mode caméra n'envoie que les copies complètes.
 async function runAll(only) {
   const list = only || bundles();
   if (!list.length) return;
   state.running = true;
+  keepAwake(true);
   list.forEach((b) => { state.status[b[0].id] = null; });
   banner();
   renderPages();
@@ -617,9 +649,14 @@ async function runAll(only) {
     started.set(id, Date.now());
     state.status[id] = { state: 'running' };
     renderPages();
+    const waiting = (sec, offline) => {
+      state.status[id] = { state: 'running', msg: offline ? `Connexion perdue : nouvel essai dans ${sec} s…` : `IA occupée : nouvel essai dans ${sec} s…` };
+      if (offline) banner('info', 'Connexion perdue : la correction reprendra toute seule. Gardez cette page ouverte et l’écran allumé.');
+      renderPages();
+    };
     try {
       if (state.kind === 'lang') {
-        const r = await analyzeLanguage(b);
+        const r = await withRetry(() => analyzeLanguage(b), waiting);
         setBalance(r.pagesLeft);
         const res = { kind: 'lang', id, no: b[0].no, file: b[0].file, exam: settings.exam, group: r.group || settings.group, name: r.name, pageCount: b.length,
           pages: b.map((p, i) => ({ url: p.url, errors: r.pages[i].errors, failed: !!r.pages[i].failed, reread: r.pages[i].reread, sent: r.urls[i] })),
@@ -629,7 +666,7 @@ async function runAll(only) {
         reread(res);
       } else {
       const pages = await Promise.all(b.map((p, i) => (masked(i) ? maskTop(p.url) : p.url)));
-      const r = await api('/api/grade', { method: 'POST', body: { ...settings, pages, structure: state.structure?.list } });
+      const r = await withRetry(() => api('/api/grade', { method: 'POST', body: { ...settings, pages, structure: state.structure?.list } }), waiting);
       // 1re copie bien corrigée avec un corrigé : ses questions servent de modèle pour les suivantes. Elles sont
       // découpées pareil, et les deux corrections du mode approfondi partent en même temps (deux fois plus rapide).
       // Seulement si les points maximum totalisent le barème : une question oubliée ne se propage pas.
@@ -653,7 +690,7 @@ async function runAll(only) {
       renderResults();
     } catch (err) {
       failed++;
-      state.status[id] = { state: 'error', msg: err.message };
+      state.status[id] = { state: 'error', msg: err.status ? err.message : 'Connexion perdue. Relancez la correction.' };
       if (err.status === 402 || err.status === 401) stop = err.message;
     }
     started.delete(id);
@@ -669,6 +706,7 @@ async function runAll(only) {
   clearInterval(timer);
   $('progress').hidden = true;
   state.running = false;
+  keepAwake(false);
   renderPages();
   if (stop) banner('err', stop);
   else if (failed) banner('err', `${done} copie(s) corrigée(s), ${failed} en erreur : elles restent dans la liste, relancez pour réessayer.`);
