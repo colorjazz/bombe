@@ -1422,6 +1422,7 @@ $('zoom-close').addEventListener('click', () => { $('zoom').hidden = true; });
 document.querySelectorAll('[data-close-viewer]').forEach((b) => b.addEventListener('click', () => { $('viewer').hidden = true; viewing = null; }));
 $('grid-remove').addEventListener('click', () => { state.grid = null; renderGrid(); });
 $('deep').addEventListener('change', renderSummary);
+$('awake-ok').addEventListener('click', () => { $('awake').hidden = true; runAll(); });
 $('run').addEventListener('click', () => {
   // Après une numérisation : dernière confirmation, avec le nombre de pages qui seront décomptées.
   if (camState.review) {
@@ -1429,6 +1430,12 @@ $('run').addEventListener('click', () => {
     const cost = pages * (state.kind === 'content' && $('deep').value === '1' ? 2 : 1);
     if (!confirm(tr(`${copies} copie(s), ${pages} page(s) : ${cost} page(s) seront décomptées. Lancer la correction ?`))) return;
     camState.review = false;
+  }
+  // Téléphone ou tablette : rappel de garder l'écran allumé (un appareil en veille arrête la correction).
+  if (matchMedia('(pointer: coarse)').matches) {
+    $('awake').hidden = false;
+    $('awake-ok').focus();
+    return;
   }
   runAll();
 });
