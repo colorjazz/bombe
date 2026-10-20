@@ -247,3 +247,15 @@ button.rel { cursor: pointer; font-family: inherit; }
 .seg button[aria-pressed="true"] { background: var(--panel-2); color: var(--text); box-shadow: inset 0 0 0 1px var(--line-2); }
 .ui-simple .adv { display: none !important; }
 .ui-simple .row2:has(> .adv) { grid-template-columns: 1fr; }
+
+/* Moyenne par question */
+.qstats { margin: -.4rem 0 1rem; border: 1px solid var(--line); border-radius: 12px; background: var(--panel-2); font-size: .82rem; }
+.qstats summary { cursor: pointer; padding: .5rem .75rem; }
+.qstats-rows { display: grid; gap: .35rem; padding: 0 .75rem .65rem; }
+.qrow { display: grid; grid-template-columns: minmax(0, 10rem) minmax(0, 1fr) auto; gap: .6rem; align-items: center; }
+.qrow .ql { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
+.qrow .qv { font-variant-numeric: tabular-nums; white-space: nowrap; font-size: .78rem; }
+.qbar { height: .45rem; border-radius: 999px; background: var(--line); overflow: hidden; }
+.qbar i { display: block; height: 100%; border-radius: inherit; }
+.qbar i.hi { background: var(--green); } .qbar i.mid { background: var(--amber); } .qbar i.lo { background: var(--red); }
+@media (max-width: 480px) { .qrow { grid-template-columns: minmax(0, 5.5rem) minmax(0, 1fr) auto; gap: .4rem; } }

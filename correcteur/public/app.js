@@ -689,6 +689,7 @@ function recompute(r) {
 function renderStats() {
   const graded = state.results.filter((r) => (r.kind === 'lang') === (state.kind === 'lang') && r.grade != null && r.total > 0);
   $('stats').hidden = !graded.length;
+  renderQuestionStats(graded);
   if (!graded.length) return;
   const pct = graded.map((r) => (r.grade / r.total) * 100);
   const avg = pct.reduce((a, b) => a + b, 0) / pct.length;
@@ -700,6 +701,33 @@ function renderStats() {
     stat(pctText(fmt(avg)), `moyenne (min ${fmt(Math.min(...pct))} – max ${fmt(Math.max(...pct))})`),
     h('div', { class: 'stat' }, h('div', { class: 'v', textContent: rel }),
       h('div', { class: 'l' }, 'fiabilité moyenne ', infoButton())), stat(String(flagged), 'à vérifier ⚠'));
+}
+
+// Moyenne de la classe par question : repère les questions mal comprises.
+// Par position quand toutes les copies ont le même découpage, sinon par intitulé de question.
+function questionAverages(graded) {
+  const shape = graded[0]?.questions || [];
+  const same = shape.length > 0 && graded.every((r) => r.questions.length === shape.length);
+  const rows = new Map();
+  for (const r of graded) r.questions.forEach((q, i) => {
+    const k = same ? i : `${q.question}/${q.max}`;
+    if (!rows.has(k)) rows.set(k, { label: same ? shape[i].question : q.question, max: q.max, sum: 0, n: 0 });
+    const row = rows.get(k); row.sum += q.points; row.n++;
+  });
+  return [...rows.values()].filter((q) => q.max > 0).map((q) => ({ ...q, avg: q.sum / q.n, pct: (q.sum / q.n / q.max) * 100 }));
+}
+
+function renderQuestionStats(graded) {
+  const list = state.kind === 'content' && graded.length >= 2 ? questionAverages(graded) : [];
+  $('qstats').hidden = list.length < 2;
+  if (list.length < 2) return;
+  const weakest = list.reduce((a, b) => (b.pct < a.pct ? b : a));
+  $('qstats').querySelector('summary').replaceChildren(h('b', {}, 'Moyenne par question'),
+    h('span', { class: 'muted' }, ` · la plus faible : ${weakest.label} (${pctText(fmt(Math.round(weakest.pct)))})`));
+  $('qstats-rows').replaceChildren(...list.map((q) => h('div', { class: 'qrow' },
+    h('span', { class: 'ql', title: q.label, textContent: q.label }),
+    h('span', { class: 'qbar' }, h('i', { class: q.pct < 60 ? 'lo' : q.pct < 75 ? 'mid' : 'hi', style: `width:${Math.round(q.pct)}%` })),
+    h('span', { class: 'qv', textContent: `${fmt(Math.round(q.avg * 10) / 10)} / ${fmt(q.max)} · ${pctText(fmt(Math.round(q.pct)))}` }))));
 }
 
 function renderResults() {
