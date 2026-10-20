@@ -576,9 +576,11 @@ const pageReady = () => new Promise((res) => {
 async function withRetry(fn, onWait) {
   for (let attempt = 0; ; attempt++) {
     try { return await fn(); } catch (err) {
-      if (!transient(err) || attempt >= RETRY_WAITS.length) throw err;
+      if (state.stopping || !transient(err) || attempt >= RETRY_WAITS.length) throw err;
       onWait(RETRY_WAITS[attempt], !err.status);
-      await new Promise((r) => setTimeout(r, RETRY_WAITS[attempt] * 1000));
+      // Attente interrompue si l'enseignant arrête la correction.
+      for (let t = 0; t < RETRY_WAITS[attempt] * 2 && !state.stopping; t++) await new Promise((r) => setTimeout(r, 500));
+      if (state.stopping) throw err;
       await pageReady();
     }
   }
@@ -599,6 +601,9 @@ async function runAll(only) {
   const list = only || bundles();
   if (!list.length) return;
   state.running = true;
+  state.stopping = false;
+  $('stop-run').disabled = false;
+  $('stop-run').textContent = tr('Arrêter');
   keepAwake(true);
   list.forEach((b) => { state.status[b[0].id] = null; });
   banner();
@@ -637,7 +642,7 @@ async function runAll(only) {
     const lanes = Math.max(1, Math.min(CONCURRENCY, list.length - finished));
     const min = Math.ceil(work / lanes / 60000);
     $('progress-count').textContent = `Correction : ${finished} / ${list.length} copie(s)`;
-    $('progress-eta').textContent = finished === list.length ? '' : min <= 1 ? 'Moins d’une minute restante' : `Environ ${min} min restantes`;
+    $('progress-eta').textContent = state.stopping ? 'Arrêt : les copies déjà parties se terminent…' : finished === list.length ? '' : min <= 1 ? 'Moins d’une minute restante' : `Environ ${min} min restantes`;
     $('progress-bar').style.width = `${Math.round((finished / list.length) * 100)}%`;
   };
   $('progress').hidden = false;
@@ -697,7 +702,7 @@ async function runAll(only) {
     updateProgress();
     renderPages();
   };
-  const worker = async () => { while (next < list.length && !stop) await one(list[next++]); };
+  const worker = async () => { while (next < list.length && !stop && !state.stopping) await one(list[next++]); };
   // Grosse pile en mode approfondi : la 1re copie passe seule, pour que toutes les autres profitent de son découpage
   // (leurs deux corrections partent alors en même temps). En mode rapide, attendre coûte plus que ça ne rapporte
   // (mesuré : 12 copies en 54 s contre 57 s) ; le découpage s'applique dès qu'une copie est finie.
@@ -709,6 +714,7 @@ async function runAll(only) {
   keepAwake(false);
   renderPages();
   if (stop) banner('err', stop);
+  else if (state.stopping) banner('info', `Correction arrêtée : ${done} copie(s) corrigée(s). Les ${list.length - done} autres restent dans la liste : relancez quand vous voulez.`);
   else if (failed) banner('err', `${done} copie(s) corrigée(s), ${failed} en erreur : elles restent dans la liste, relancez pour réessayer.`);
   else if (state.kind === 'lang') banner('ok', `${done} copie(s) analysée(s). Vérifiez en priorité les copies marquées ⚠.`);
   else if (!hasKey) banner('info', `${done} copie(s) corrigée(s) sans corrigé : les notes ont tendance à être généreuses. Vérifiez-les, ou ajoutez votre corrigé pour des notes plus justes.`);
@@ -1422,6 +1428,14 @@ $('zoom-close').addEventListener('click', () => { $('zoom').hidden = true; });
 document.querySelectorAll('[data-close-viewer]').forEach((b) => b.addEventListener('click', () => { $('viewer').hidden = true; viewing = null; }));
 $('grid-remove').addEventListener('click', () => { state.grid = null; renderGrid(); });
 $('deep').addEventListener('change', renderSummary);
+// Arrêter : plus aucune nouvelle copie ne part. Celles déjà envoyées se terminent (leurs pages sont déjà décomptées,
+// autant recevoir leur résultat) ; les autres restent dans la liste, sans rien décompter.
+$('stop-run').addEventListener('click', () => {
+  state.stopping = true;
+  $('stop-run').disabled = true;
+  $('stop-run').textContent = tr('Arrêt en cours…');
+  $('progress-eta').textContent = tr('Arrêt : les copies déjà parties se terminent…');
+});
 $('awake-ok').addEventListener('click', () => {
   $('awake').hidden = true;
   try { sessionStorage.setItem('ce.awake', '1'); } catch { /* ignoré */ }
