@@ -71,3 +71,10 @@ textarea { resize: vertical; }
 }
 /* Téléphone : la barre du haut (deux lignes) ne reste pas collée, elle prendrait le quart de l'écran. */
 @media (max-width: 600px) { .topbar { position: static; } }
+
+/* « Fait au Canada » : visible seulement pour les visiteurs du Canada (voir /api/geo). */
+.made-ca { display: inline-flex; align-items: center; gap: .4rem; margin-left: .75rem; margin-right: auto; padding: .2rem .6rem; border: 1px solid var(--line-2); border-radius: 999px; font-size: .75rem; font-weight: 600; color: var(--muted); white-space: nowrap; }
+.made-ca[hidden] { display: none; }
+.made-ca .flag { width: 1.5em; height: .75em; border-radius: 2px; }
+.made-ca .flag.qc { height: 1em; }
+@media (max-width: 480px) { .made-ca { font-size: .7rem; margin-left: .4rem; } }

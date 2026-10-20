@@ -60,6 +60,8 @@ const ROUTES = {
   'POST /api/language': language,
   'POST /api/language-reread': languageReread,
   'POST /api/language-verify': languageVerify,
+  // Pays du visiteur (fourni par Cloudflare), pour la mention « Fait au Canada » de l'accueil.
+  'GET /api/geo': async (request) => json({ country: request.cf?.country || '' }),
 };
 
 // ---------- Utilitaires ----------

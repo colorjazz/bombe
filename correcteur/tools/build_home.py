@@ -11,6 +11,10 @@ ICON = {
     'lock': '<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>',
 }
 
+# Mention de l'en-tête, montrée aux visiteurs du Canada seulement : drapeau du Québec en français, du Canada en anglais.
+CA_FLAG = '<svg class="flag" viewBox="0 0 40 20" aria-hidden="true"><rect width="40" height="20" fill="#fff"/><rect width="10" height="20" fill="#d52b1e"/><rect x="30" width="10" height="20" fill="#d52b1e"/><path fill="#d52b1e" d="M20 3l1.2 2.4 1.4-.7-.5 3.2 2-2.1.4 1.2 2.3-.4-.8 2.4 1 .5-3.6 2.9.4 1.3-3.3-.4.1 3.4h-.8l.1-3.4-3.3.4.4-1.3-3.6-2.9 1-.5-.8-2.4 2.3.4.4-1.2 2 2.1-.5-3.2 1.4.7z"/></svg>'
+QC_FLAG = '<svg class="flag qc" viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#003da5"/><path fill="#fff" d="M13 0h4v20h-4zM0 8h30v4H0z"/><g fill="#fff"><g transform="translate(6.5 4)"><path d="M0-3.2C1.1-2.2 1.2-.6 0 .9-1.2-.6-1.1-2.2 0-3.2zM.4.9C.9-1 2.9-1.2 2.6.6 2.4 1.5 1.5 1.3 1.4.8M-.4.9C-.9-1-2.9-1.2-2.6.6-2.4 1.5-1.5 1.3-1.4.8M-1.8.8h3.6v.6h-3.6zM-.5 1.4h1L0 3z"/></g><g transform="translate(23.5 4)"><path d="M0-3.2C1.1-2.2 1.2-.6 0 .9-1.2-.6-1.1-2.2 0-3.2zM.4.9C.9-1 2.9-1.2 2.6.6 2.4 1.5 1.5 1.3 1.4.8M-.4.9C-.9-1-2.9-1.2-2.6.6-2.4 1.5-1.5 1.3-1.4.8M-1.8.8h3.6v.6h-3.6zM-.5 1.4h1L0 3z"/></g><g transform="translate(6.5 16)"><path d="M0-3.2C1.1-2.2 1.2-.6 0 .9-1.2-.6-1.1-2.2 0-3.2zM.4.9C.9-1 2.9-1.2 2.6.6 2.4 1.5 1.5 1.3 1.4.8M-.4.9C-.9-1-2.9-1.2-2.6.6-2.4 1.5-1.5 1.3-1.4.8M-1.8.8h3.6v.6h-3.6zM-.5 1.4h1L0 3z"/></g><g transform="translate(23.5 16)"><path d="M0-3.2C1.1-2.2 1.2-.6 0 .9-1.2-.6-1.1-2.2 0-3.2zM.4.9C.9-1 2.9-1.2 2.6.6 2.4 1.5 1.5 1.3 1.4.8M-.4.9C-.9-1-2.9-1.2-2.6.6-2.4 1.5-1.5 1.3-1.4.8M-1.8.8h3.6v.6h-3.6zM-.5 1.4h1L0 3z"/></g></g></svg>'
+
 T = {
  'fr': dict(
   file='index.html', alt='index-en.html', html_lang='fr-CA', brand='Brûle la pile',
@@ -18,7 +22,7 @@ T = {
   desc="Importez vos copies numérisées : l'IA propose une note détaillée question par question, corrige la langue et rédige un commentaire pour chaque élève. Vous validez. 30 pages gratuites.",
   og_title='Brûle la pile : corrigez une classe entière pendant votre pause café',
   og_desc="L'IA propose la note et la rétroaction, et surligne les fautes de français. Vous gardez le dernier mot. 30 pages gratuites.",
-  nav_prices='Tarifs', nav_key='J’ai une clé', nav_try='Essayer gratuitement', anchor_prices='tarifs',
+  made='Fait au Québec', flag=QC_FLAG, nav_prices='Tarifs', nav_key='J’ai une clé', nav_try='Essayer gratuitement', anchor_prices='tarifs',
   eyebrow='Pour les enseignants du primaire, du secondaire et du collégial',
   h1='Corrigez une classe entière <em>pendant votre pause café</em>.',
   lead="Numérisez les copies, ajoutez votre corrigé : <b>Brûle la pile</b> propose une note détaillée question par question, surligne les fautes de français et rédige une rétroaction pour chaque élève. Vous vérifiez, ajustez et exportez.",
@@ -66,7 +70,7 @@ T = {
   desc='Upload scanned student work: the AI suggests a detailed, question-by-question grade, checks the writing and drafts feedback for each student. You approve. 30 free pages.',
   og_title='Burn the Pile: grade a whole class during your coffee break',
   og_desc='The AI suggests grades and feedback and highlights language errors. You have the final say. 30 free pages.',
-  nav_prices='Pricing', nav_key='I have a key', nav_try='Try for free', anchor_prices='pricing',
+  made='Made in Canada', flag=CA_FLAG, nav_prices='Pricing', nav_key='I have a key', nav_try='Try for free', anchor_prices='pricing',
   eyebrow='For elementary, high school and college teachers',
   h1='Grade a whole class <em>during your coffee break</em>.',
   lead='Scan the papers, add your answer key: <b>Burn the Pile</b> suggests a detailed grade question by question, highlights language errors and drafts feedback for every student. You review, adjust and export.',
@@ -140,7 +144,7 @@ def page(L, d):
   <meta property="og:url" content="{d['site']}/">
 </head>
 <body>
-  <header class="topbar"><div class="wrap"><a class="brand" href="{d['file']}"><img class="logo" src="logo-96.png" alt="" width="40" height="40"><strong>{d['brand']}</strong></a><div class="top-actions">{sw}<a class="btn ghost" href="#{d['anchor_prices']}">{d['nav_prices']}</a><a class="btn ghost" href="app.html#cle">{d['nav_key']}</a><a class="btn primary" href="app.html">{d['nav_try']}</a></div></div></header>
+  <header class="topbar"><div class="wrap"><a class="brand" href="{d['file']}"><img class="logo" src="logo-96.png" alt="" width="40" height="40"><strong>{d['brand']}</strong></a><span id="made-ca" class="made-ca" hidden>{d['flag']}{d['made']}</span><div class="top-actions">{sw}<a class="btn ghost" href="#{d['anchor_prices']}">{d['nav_prices']}</a><a class="btn ghost" href="app.html#cle">{d['nav_key']}</a><a class="btn primary" href="app.html">{d['nav_try']}</a></div></div></header>
   <main class="wrap">
     <section class="hero">
       <div>
@@ -214,6 +218,7 @@ def page(L, d):
     </section>
   </main>
   <footer><div class="wrap"><span>© 2026 {d['brand']}</span><span><a href="{d['privacy_href']}">{d['privacy']}</a> · <a href="{d['terms_href']}">{d['terms']}</a> · <a href="mailto:{d['mail']}">{d['contact']}</a></span></div></footer>
+<script>fetch('/api/geo').then((r) => r.json()).then((g) => {{ if (g.country === 'CA') document.getElementById('made-ca').hidden = false; }}).catch(() => {{}});</script>
 </body>
 </html>
 '''
