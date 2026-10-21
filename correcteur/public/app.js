@@ -487,6 +487,7 @@ function renderSummary() {
     : n && !gridOk ? `La grille totalise ${fmt(gridSum)} points au lieu de ${fmt(Number($('total').value))}`
     : n ? `${state.kind === 'lang' ? 'Analyser la langue de' : 'Corriger'} ${list.length} copie(s)` : 'Corriger';
   $('export').disabled = $('end').disabled = state.running || !state.results.length;
+  $('print-all').disabled = state.running || !state.results.some((r) => r.kind !== 'lang');
 }
 
 function renderRubric() {
@@ -841,7 +842,8 @@ function wrapText(ctx, text, width) {
   if (line) lines.push(line);
   return lines;
 }
-async function annotatedPages(r) {
+// forPrint : image réduite et gardée en mémoire comme fichier (blob) — imprimer 150 copies d'un coup reste léger.
+async function annotatedPages(r, { forPrint = false } = {}) {
   const out = [];
   const general = r.questions.map((q, i) => ({ q, i })).filter(({ q }) => !q.box || !(q.page >= 1 && q.page <= r.pageUrls.length));
   for (let pi = 0; pi < r.pageUrls.length; pi++) {
@@ -928,24 +930,48 @@ async function annotatedPages(r) {
       const lh = (it.kind === 'note' ? mid : small) * 1.2;
       it.lines.forEach((l, k) => ctx.fillText(l, x, it.y + mid * 1.3 + k * lh));
     }
-    out.push(c.toDataURL('image/jpeg', 0.85));
+    if (!forPrint) { out.push(c.toDataURL('image/jpeg', 0.85)); continue; }
+    const k = Math.min(1, 1700 / c.width);
+    const lite = document.createElement('canvas');
+    lite.width = Math.round(c.width * k); lite.height = Math.round(c.height * k);
+    lite.getContext('2d').drawImage(c, 0, 0, lite.width, lite.height);
+    out.push(URL.createObjectURL(await new Promise((res) => lite.toBlob(res, 'image/jpeg', 0.82))));
   }
   return out;
 }
 
-// Impression pour l'élève : une copie annotée par feuille.
-async function printGraded(list) {
+// Impression en lot, dans l'ordre de la pile : pour chaque élève, sa fiche de résultats et/ou sa copie annotée.
+// Fiches seules : plusieurs par feuille, à découper ; avec les copies : chaque élève commence une nouvelle feuille.
+const escHtml = (t) => String(t ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+function resultSheet(r) {
+  const rows = r.questions.map((q, i) => `<tr><td class="q">${escHtml(qLabel(q, i))}</td><td>${escHtml(q.question)}</td><td class="p">${fmt(q.points)}&nbsp;/&nbsp;${fmt(q.max)}</td><td>${escHtml(q.justification)}</td></tr>`).join('');
+  return `<div class="head"><div><b>${escHtml(r.name || tr('Nom à compléter'))}</b>${r.group ? ` · ${escHtml(r.group)}` : ''}${r.exam ? `<br><small>${escHtml(r.exam)}</small>` : ''}</div>
+    <div class="grade">${r.grade == null ? tr('Illisible') : `${fmt(r.grade)} / ${fmt(r.total)}`}</div></div>
+    <table><thead><tr><th></th><th>${tr('Question')}</th><th>${tr('Points')}</th><th>${tr('Justification')}</th></tr></thead><tbody>${rows}</tbody></table>
+    ${r.comment ? `<p class="comment">${escHtml(r.comment)}</p>` : ''}`;
+}
+async function printBatch(list, { copies = true, results = false } = {}) {
   const w = window.open('', '_blank');
   if (!w) { alert(tr('Autorisez les fenêtres surgissantes pour imprimer.')); return; }
-  w.document.write(`<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><title>${tr('Copies corrigées')}</title></head><body style="font:14px system-ui;margin:16px">${tr('Préparation de l’impression…')}</body></html>`);
-  const sheets = [];
-  for (const r of list) for (const url of await annotatedPages(r)) sheets.push(`<section class="sheet"><img src="${url}"></section>`);
+  const wait = (msg) => { w.document.open(); w.document.write(`<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><title>${tr('Copies corrigées')}</title></head><body style="font:15px system-ui;margin:24px">${msg}</body></html>`); w.document.close(); };
+  wait(tr('Préparation de l’impression…'));
+  const parts = [];
+  for (const [k, r] of list.entries()) {
+    if (list.length > 1) wait(tr(`Préparation de l’impression : ${k + 1} / ${list.length}…`));
+    if (results) parts.push(`<section class="result${copies ? ' sheet' : ''}">${resultSheet(r)}</section>`);
+    if (copies && r.pageUrls) for (const url of await annotatedPages(r, { forPrint: true })) parts.push(`<section class="sheet page"><img src="${url}"></section>`);
+  }
   w.document.open();
   w.document.write(`<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><title>${tr('Copies corrigées')}</title>
-    <style>@page{size:letter;margin:8mm}body{margin:0}.sheet{break-after:page;page-break-after:always;height:calc(279.4mm - 16mm);display:flex;align-items:flex-start;justify-content:center}
-    .sheet:last-child{break-after:auto;page-break-after:auto}img{max-width:100%;max-height:100%;object-fit:contain}
-    @media screen{body{margin:16px}.sheet{height:auto;border-bottom:1px dashed #bbb;padding-bottom:12px;margin-bottom:12px}img{max-width:740px}}</style></head><body>
-    ${sheets.join('')}<script>window.onload=()=>window.print()<\/script></body></html>`);
+    <style>@page{size:letter;margin:8mm}body{margin:0;font:11px/1.35 system-ui,sans-serif;color:#111}
+    .sheet{break-after:page;page-break-after:always}.sheet:last-child{break-after:auto;page-break-after:auto}
+    .page{height:calc(279.4mm - 16mm);display:flex;align-items:flex-start;justify-content:center}.page img{max-width:100%;max-height:100%;object-fit:contain}
+    .result{break-inside:avoid;page-break-inside:avoid;padding:6px 2px 10px;border-bottom:1px dashed #999;margin-bottom:8px}.result.sheet{border:0}
+    .head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;font-size:13px}.grade{font-size:20px;font-weight:800;color:#d6283a;white-space:nowrap}
+    table{width:100%;border-collapse:collapse;margin-top:6px}th,td{text-align:left;vertical-align:top;padding:3px 4px;border-top:1px solid #ddd}th{font-size:10px;color:#555}
+    td.q{font-weight:700;white-space:nowrap}td.p{white-space:nowrap}.comment{margin:6px 0 0;font-style:italic}
+    @media screen{body{margin:16px;max-width:780px}.page{height:auto;border-bottom:1px dashed #bbb;padding-bottom:12px;margin-bottom:12px}}</style></head><body>
+    ${parts.join('')}<script>window.onload=()=>window.print()<\/script></body></html>`);
   w.document.close();
 }
 
@@ -986,7 +1012,7 @@ function card(r) {
       h('span', { textContent: copyLabel(r) }),
       h('div', { style: 'display:flex;gap:.4rem' },
         r.pageUrls ? h('button', { class: 'btn small', type: 'button', textContent: 'Voir la copie corrigée', onclick: async () => openZoom(await annotatedPages(r), copyTitle(r)) }) : null,
-        r.pageUrls ? h('button', { class: 'btn small', type: 'button', textContent: 'Imprimer', title: 'Imprimer la copie corrigée pour l’élève', onclick: () => printGraded([r]) }) : null,
+        r.pageUrls ? h('button', { class: 'btn small', type: 'button', textContent: 'Imprimer', title: 'Imprimer la copie corrigée pour l’élève', onclick: () => printBatch([r], { copies: true }) }) : null,
         h('button', { class: 'btn ghost small', type: 'button', textContent: 'Supprimer', onclick: () => {
           if (!confirm(tr(`Supprimer la correction de ${r.name || 'cet élève'} ?`))) return;
           state.results = state.results.filter((x) => x !== r); renderResults();
@@ -1568,6 +1594,23 @@ $('stop-run').addEventListener('click', () => {
   $('stop-run').textContent = tr('Arrêt en cours…');
   $('progress-eta').textContent = tr('Arrêt : les copies déjà parties se terminent…');
 });
+// Impression en lot : toutes les copies corrigées affichées (filtre de recherche compris), dans l'ordre de la pile.
+const printable = () => {
+  const q = $('search').value.trim().toLowerCase();
+  return state.results.filter((r) => r.kind !== 'lang' && (!q || `${r.name} ${r.group} ${r.exam} ${r.file}`.toLowerCase().includes(q)))
+    .sort((x, y) => (x.no ?? 0) - (y.no ?? 0));
+};
+$('print-all').addEventListener('click', () => {
+  $('print-count').textContent = tr(`${printable().length} copie(s) corrigée(s)`);
+  $('print-opts').hidden = false;
+});
+$('print-go').addEventListener('click', () => {
+  const copies = $('print-copies').checked, results = $('print-results').checked;
+  if (!copies && !results) return;
+  $('print-opts').hidden = true;
+  printBatch(printable(), { copies, results });
+});
+document.querySelectorAll('[data-close-print]').forEach((b) => b.addEventListener('click', () => { $('print-opts').hidden = true; }));
 $('awake-ok').addEventListener('click', () => {
   $('awake').hidden = true;
   try { sessionStorage.setItem('ce.awake', '1'); } catch { /* ignoré */ }

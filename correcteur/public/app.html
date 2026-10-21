@@ -194,6 +194,7 @@
         <div class="results-tools">
           <input id="search" type="search" placeholder="Rechercher un élève…" style="width:12rem">
           <button id="export" class="btn green" type="button" disabled>Télécharger les notes (CSV)</button>
+          <button id="print-all" class="btn" type="button" disabled>Imprimer…</button>
           <button id="end" class="btn ghost" type="button" disabled>Terminer la session</button>
         </div>
       </div>
@@ -292,6 +293,16 @@
   </div>
 
   <!-- Clé d'essai -->
+  <div id="print-opts" class="modal" hidden>
+    <div class="panel stack" style="max-width:440px">
+      <div style="display:flex;justify-content:space-between;align-items:center"><h2 style="margin:0">Imprimer les copies corrigées</h2><button class="icon-btn" type="button" data-close-print aria-label="Fermer">×</button></div>
+      <p id="print-count" class="muted small" style="margin:0"></p>
+      <label class="toggle"><input id="print-copies" type="checkbox" checked> Les copies complètes, annotées (note, points et notes dans la marge)</label>
+      <label class="toggle"><input id="print-results" type="checkbox"> Les fiches de résultats (note, points et justification par question, commentaire)</label>
+      <p class="muted small" style="margin:0">Fiches seules : plusieurs par feuille, à découper. Avec les copies : la fiche de chaque élève, puis sa copie.</p>
+      <button id="print-go" class="btn primary big block" type="button">Imprimer</button>
+    </div>
+  </div>
   <div id="awake" class="modal" hidden>
     <div class="panel stack" style="max-width:420px;text-align:center">
       <div style="font-size:2rem" aria-hidden="true">📱</div>
