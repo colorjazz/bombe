@@ -298,6 +298,7 @@ function buildPrompt(o) {
     "INCERTITUDE : mets « incertain » à true si une partie importante est illisible, si la copie semble incomplète ou hors sujet, ou si tu hésites sérieusement sur la note.",
     "NIVEAUX : si tu mentionnes un niveau de rendement ou une cote (ex. « Level 3 », « niveau 2 », « B »), il doit correspondre au pourcentage réellement obtenu selon l'échelle fournie par l'enseignant (en Ontario : niveau 4 = 80-100 %, niveau 3 = 70-79 %, niveau 2 = 60-69 %, niveau 1 = 50-59 %, R = moins de 50 %). Sans échelle claire, ne mentionne pas de niveau.",
     "COMMENTAIRE : 2 à 4 phrases adressées à l'élève (tutoiement), concrètes et constructives : une réussite, l'erreur principale, une piste de progrès.",
+    o.annotate ? ANNOTATION_RULE : '',
     o.english ? `\n${ENGLISH_OUTPUT}` : '',
     o.rubric ? `\nCONSIGNES DE L'ENSEIGNANT (prioritaires) :\n"""\n${o.rubric}\n"""\nSi ces consignes précisent la forme du rendu (ton, longueur ou style des justifications et du commentaire, tutoiement, points forts à souligner…), respecte-les, sans changer le format JSON demandé.` : '',
     o.grid ? `\nGRILLE DÉTAILLÉE VALIDÉE PAR L'ENSEIGNANT (à appliquer strictement) :
@@ -340,12 +341,22 @@ const SCHEMA = {
   },
 };
 
+// En essai : l'IA indique aussi où se trouve chaque réponse sur la copie, pour l'annoter (activé par l'appli seulement
+// quand l'essai est allumé, tant que la précision des cadres n'a pas été mesurée sur de vraies copies).
+const ANNOTATED_SCHEMA = structuredClone(SCHEMA);
+{
+  const item = ANNOTATED_SCHEMA.json_schema.schema.properties.questions.items;
+  item.required.push('note_marge', 'page', 'zone');
+  Object.assign(item.properties, { note_marge: { type: 'string' }, page: { type: 'integer' }, zone: { type: 'array', items: { type: 'number' } } });
+}
+const ANNOTATION_RULE = "ANNOTATION DE LA COPIE : pour chaque question, « page » est le numéro de la page de la copie où se trouve la réponse de l'élève (1 = première page de la copie ; les pages du corrigé ne comptent pas), et « zone » le cadre de cette réponse sur la page : [ymin, xmin, ymax, xmax], entiers de 0 à 1000 (haut, gauche, bas, droite de la page). Encadre seulement ce que l'élève a écrit pour cette question, pas l'énoncé imprimé. Si le critère porte sur l'ensemble de la copie (ex. qualité de la langue, structure du texte) ou si la réponse est absente, mets une liste vide. « note_marge » : 3 à 8 mots que l'enseignant écrirait dans la marge à côté de la réponse (ex. « Bonne cause, mécanisme non expliqué »).";
+
 async function callModel(env, prompt, rubricPages, pages, opts) {
   const image = (url) => ({ type: 'image_url', image_url: { url, detail: 'high' } });
   const content = [];
   if (rubricPages.length) content.push({ type: 'text', text: 'CORRIGÉ / GRILLE DE L’ENSEIGNANT :' }, ...rubricPages.map(image));
   content.push({ type: 'text', text: `COPIE DE L'ÉLÈVE (${pages.length} page(s), dans l'ordre) :` }, ...pages.map(image));
-  return aiChat(env, prompt, content, SCHEMA, opts);
+  return aiChat(env, prompt, content, opts?.annotate ? ANNOTATED_SCHEMA : SCHEMA, opts);
 }
 
 // Appel au modèle (format compatible OpenAI) : nouvelles tentatives, modèle de secours, réponse JSON.
@@ -803,6 +814,18 @@ function compare(a, b, total, anonymous = false) {
 }
 
 // Ramène les points sur la granularité choisie et dans les bornes, puis calcule la note.
+// Où écrire la correction sur la copie : page (à partir de 1) et cadre de la réponse en fractions de la page.
+function placement(q) {
+  const out = { margin: String(q.note_marge || '').trim().slice(0, 120) };
+  const z = Array.isArray(q.zone) ? q.zone.map(Number) : [];
+  const page = Math.round(Number(q.page));
+  if (z.length === 4 && z.every((v) => Number.isFinite(v) && v >= 0 && v <= 1000) && z[2] > z[0] && z[3] > z[1] && page >= 1) {
+    out.page = page;
+    out.box = z.map((v) => v / 1000); // [haut, gauche, bas, droite]
+  }
+  return out;
+}
+
 function normalize(raw, total, unit) {
   const snap = (n) => Math.round((Number(n) || 0) / unit) * unit;
   const TOTAL_ROW = /^\s*(?:[\dQq]+\s*[.)·:–-]?\s*)?(?:total|sous-total|grand total|note (?:finale|totale|globale)|résultat (?:final|total)|overall|final (?:grade|mark|score))\b/i;
@@ -814,6 +837,7 @@ function normalize(raw, total, unit) {
       raw: Number(q.points_obtenus) || 0, // valeur brute, pour l'ajustement au niveau de grille le plus proche
       max,
       justification: String(q.justification || '').trim(),
+      ...placement(q),
     };
   });
   const sumMax = questions.reduce((a, q) => a + q.max, 0);
@@ -912,14 +936,14 @@ async function grade(request, env, url, ctx) {
     const grid = readGrid(body.grid);
     const prompt = buildPrompt({ exam: String(body.exam || '').slice(0, 200), total, wholePoints: !!body.wholePoints,
       checkLanguage: !!body.checkLanguage, rubric: String(body.rubric || '').slice(0, 8000), grid, english: isEnglish(request),
-      hasKey: !!(String(body.rubric || '').trim() || (body.rubricPages || []).length || grid), anonymous: !!body.anonymous });
+      hasKey: !!(String(body.rubric || '').trim() || (body.rubricPages || []).length || grid), anonymous: !!body.anonymous, annotate: !!body.annotate });
 
     // Double correction : la 1re fixe le découpage en questions, la 2e corrige indépendamment
     // les mêmes questions (intitulés et points maximum, sans les notes de la 1re).
     const rubricPages = body.rubricPages || [];
     const errors = [];
     const attempt = async (p, opts) => {
-      try { return normalize(await callModel(env, p, rubricPages, body.pages, opts), total, unit); } catch (err) { errors.push(err); return null; }
+      try { return normalize(await callModel(env, p, rubricPages, body.pages, { ...opts, annotate: !!body.annotate }), total, unit); } catch (err) { errors.push(err); return null; }
     };
     const impose = (list) => `${prompt}
 

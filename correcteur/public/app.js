@@ -620,6 +620,8 @@ async function runAll(only) {
     rubricPages: state.rubricPages.map((p) => p.url),
     grid: state.grid || undefined,
     anonymous: anonymous(),
+    // Essai des annotations sur la copie (cadres et notes en marge) : localStorage « ce.annot » = « 1 ».
+    annotate: (() => { try { return localStorage.getItem('ce.annot') === '1'; } catch { return false; } })(),
   };
   const hasKey = !!(settings.rubric || settings.rubricPages.length || settings.grid);
   // Même examen que la copie déjà corrigée : on réutilise son découpage en questions (voir plus bas).
@@ -818,6 +820,109 @@ function cardShell(r, cells, body) {
   return el;
 }
 
+// Copie corrigée « comme à la main » : chaque réponse encadrée en rouge, avec les points et une courte note
+// dans une marge ajoutée à droite ; la note en haut de la 1re page ; les critères d'ensemble et le commentaire
+// en bas de la dernière. Tout est dessiné ici, dans le navigateur : rien de plus n'est envoyé ni payé.
+const RED = '#d6283a';
+function wrapText(ctx, text, width) {
+  const lines = []; let line = '';
+  for (const w of String(text).split(/\s+/).filter(Boolean)) {
+    const t = line ? `${line} ${w}` : w;
+    if (ctx.measureText(t).width > width && line) { lines.push(line); line = w; } else line = t;
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+async function annotatedPages(r) {
+  const out = [];
+  const general = r.questions.map((q, i) => ({ q, i })).filter(({ q }) => !q.box || !(q.page >= 1 && q.page <= r.pageUrls.length));
+  for (let pi = 0; pi < r.pageUrls.length; pi++) {
+    const img = await loadImage(r.pageUrls[pi]);
+    const W = img.width, M = Math.round(W * 0.34), pad = Math.round(M * 0.07), u = W / 1000;
+    const big = Math.round(26 * u), mid = Math.round(22 * u), small = Math.round(18 * u);
+    // Mise en page de la marge d'abord, pour connaître la hauteur nécessaire.
+    const probe = document.createElement('canvas').getContext('2d');
+    const items = [];
+    let y = pad;
+    if (pi === 0) { items.push({ kind: 'grade', y }); y += big * 2.6; }
+    const here = r.questions.map((q, i) => ({ q, i })).filter(({ q }) => q.box && q.page === pi + 1).sort((a, b) => a.q.box[0] - b.q.box[0]);
+    for (const { q, i } of here) {
+      y = Math.max(y, q.box[0] * img.height);
+      probe.font = `${mid}px sans-serif`;
+      const lines = wrapText(probe, q.margin || q.justification, M - 2 * pad);
+      items.push({ kind: 'note', q, i, y, lines });
+      y += mid * 1.3 + lines.length * mid * 1.2 + mid;
+    }
+    if (pi === r.pageUrls.length - 1) {
+      for (const { q, i } of general) {
+        probe.font = `${small}px sans-serif`;
+        const lines = wrapText(probe, q.margin || q.justification, M - 2 * pad);
+        items.push({ kind: 'general', q, i, y, lines });
+        y += mid * 1.3 + lines.length * small * 1.2 + mid * 0.6;
+      }
+      if (r.comment) {
+        probe.font = `italic ${small}px sans-serif`;
+        const lines = wrapText(probe, r.comment, M - 2 * pad);
+        items.push({ kind: 'comment', y: y + mid * 0.5, lines });
+        y += mid + lines.length * small * 1.25;
+      }
+    }
+    const c = document.createElement('canvas');
+    c.width = W + M; c.height = Math.max(img.height, Math.ceil(y + pad));
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+    ctx.drawImage(img, 0, 0);
+    ctx.strokeStyle = '#e5e5e5'; ctx.lineWidth = Math.max(1, u); ctx.beginPath(); ctx.moveTo(W + 0.5, 0); ctx.lineTo(W + 0.5, c.height); ctx.stroke();
+    const x = W + pad;
+    for (const it of items) {
+      ctx.fillStyle = RED; ctx.strokeStyle = RED; ctx.textBaseline = 'top';
+      if (it.kind === 'grade') {
+        ctx.font = `bold ${big * 1.6}px sans-serif`;
+        ctx.fillText(r.grade == null ? tr('Illisible') : `${fmt(r.grade)} / ${fmt(r.total)}`, x, it.y);
+        continue;
+      }
+      if (it.kind === 'comment') {
+        ctx.fillStyle = '#222'; ctx.font = `italic ${small}px sans-serif`;
+        it.lines.forEach((l, k) => ctx.fillText(l, x, it.y + k * small * 1.25));
+        continue;
+      }
+      const { q, i } = it;
+      const head = `Q${i + 1} · ${fmt(q.points)} / ${fmt(q.max)}`;
+      if (it.kind === 'note') {
+        const [t, l, b, rr] = q.box;
+        ctx.lineWidth = Math.max(2, 2.5 * u);
+        ctx.strokeRect(l * W, t * img.height, (rr - l) * W, (b - t) * img.height);
+        // Trait de la réponse vers sa note dans la marge.
+        ctx.lineWidth = Math.max(1, 1.2 * u); ctx.globalAlpha = 0.6;
+        ctx.beginPath(); ctx.moveTo(rr * W, t * img.height); ctx.lineTo(x - pad * 0.4, it.y + mid * 0.6); ctx.stroke(); ctx.globalAlpha = 1;
+      }
+      ctx.font = `bold ${mid}px sans-serif`;
+      ctx.fillText(head, x, it.y);
+      ctx.font = `${it.kind === 'note' ? mid : small}px sans-serif`;
+      const lh = (it.kind === 'note' ? mid : small) * 1.2;
+      it.lines.forEach((l, k) => ctx.fillText(l, x, it.y + mid * 1.3 + k * lh));
+    }
+    out.push(c.toDataURL('image/jpeg', 0.85));
+  }
+  return out;
+}
+
+// Impression pour l'élève : une copie annotée par feuille.
+async function printGraded(list) {
+  const w = window.open('', '_blank');
+  if (!w) { alert(tr('Autorisez les fenêtres surgissantes pour imprimer.')); return; }
+  w.document.write(`<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><title>${tr('Copies corrigées')}</title></head><body style="font:14px system-ui;margin:16px">${tr('Préparation de l’impression…')}</body></html>`);
+  const sheets = [];
+  for (const r of list) for (const url of await annotatedPages(r)) sheets.push(`<section class="sheet"><img src="${url}"></section>`);
+  w.document.open();
+  w.document.write(`<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><title>${tr('Copies corrigées')}</title>
+    <style>@page{size:letter;margin:8mm}body{margin:0}.sheet{break-after:page;page-break-after:always;height:calc(279.4mm - 16mm);display:flex;align-items:flex-start;justify-content:center}
+    .sheet:last-child{break-after:auto;page-break-after:auto}img{max-width:100%;max-height:100%;object-fit:contain}
+    @media screen{body{margin:16px}.sheet{height:auto;border-bottom:1px dashed #bbb;padding-bottom:12px;margin-bottom:12px}img{max-width:740px}}</style></head><body>
+    ${sheets.join('')}<script>window.onload=()=>window.print()<\/script></body></html>`);
+  w.document.close();
+}
+
 function card(r) {
   const gradeEl = h('span', { class: 'grade' });
   const updateGrade = () => { gradeEl.replaceChildren(...(r.grade == null ? [tr('Illisible')] : [fmt(r.grade), h('small', {}, ` / ${fmt(r.total)}`)])); };
@@ -854,7 +959,8 @@ function card(r) {
     h('div', { class: 'card-foot' },
       h('span', { textContent: copyLabel(r) }),
       h('div', { style: 'display:flex;gap:.4rem' },
-        r.pageUrls ? h('button', { class: 'btn small', type: 'button', textContent: 'Voir la copie', onclick: () => openZoom(r.pageUrls, copyTitle(r)) }) : null,
+        r.pageUrls ? h('button', { class: 'btn small', type: 'button', textContent: 'Voir la copie corrigée', onclick: async () => openZoom(await annotatedPages(r), copyTitle(r)) }) : null,
+        r.pageUrls ? h('button', { class: 'btn small', type: 'button', textContent: 'Imprimer', title: 'Imprimer la copie corrigée pour l’élève', onclick: () => printGraded([r]) }) : null,
         h('button', { class: 'btn ghost small', type: 'button', textContent: 'Supprimer', onclick: () => {
           if (!confirm(tr(`Supprimer la correction de ${r.name || 'cet élève'} ?`))) return;
           state.results = state.results.filter((x) => x !== r); renderResults();

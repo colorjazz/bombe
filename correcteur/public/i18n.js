@@ -127,6 +127,8 @@ const EN = {
   "Pendant la correction, n'éteignez pas l'écran du téléphone et restez sur cette page.": "While grading, don't turn off your phone's screen and stay on this page.",
   "Si le téléphone se met en veille, la correction s'arrête. Elle reprend toute seule quand vous revenez sur la page.": 'If the phone goes to sleep, grading stops. It resumes on its own when you come back to the page.',
   'Je comprends': 'Got it',
+  'Imprimer': 'Print',
+  'Voir la copie corrigée': 'View graded paper', 'Imprimer la copie corrigée pour l’élève': 'Print the graded paper for the student', 'Copies corrigées': 'Graded papers', 'Préparation de l’impression…': 'Preparing to print…',
   'Arrêter': 'Stop', 'Arrêt en cours…': 'Stopping…', 'Arrêt : les copies déjà parties se terminent…': 'Stopping: papers already sent are finishing…',
   'Connexion perdue. Relancez la correction.': 'Connection lost. Run grading again.',
   'Connexion perdue : la correction reprendra toute seule. Gardez cette page ouverte et l’écran allumé.': 'Connection lost: grading will resume on its own. Keep this page open and the screen on.',
