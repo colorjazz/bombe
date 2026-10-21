@@ -820,7 +820,8 @@ function cardShell(r, cells, body) {
   return el;
 }
 
-// Copie corrigée « comme à la main » : chaque réponse encadrée en rouge, avec les points et une courte note
+// Copie corrigée « comme à la main » : les réponses qui perdent des points encadrées en rouge (un ✓ pour les autres),
+// avec les points et une courte note
 // dans une marge ajoutée à droite ; la note en haut de la 1re page ; les critères d'ensemble et le commentaire
 // en bas de la dernière. Tout est dessiné ici, dans le navigateur : rien de plus n'est envoyé ni payé.
 const RED = '#d6283a';
@@ -897,11 +898,22 @@ async function annotatedPages(r) {
       const head = `${qLabel(q, i)} · ${fmt(q.points)} / ${fmt(q.max)}`;
       if (it.kind === 'note') {
         const [t, l, b, rr] = q.box;
-        ctx.lineWidth = Math.max(2, 2.5 * u);
-        ctx.strokeRect(l * W, t * img.height, (rr - l) * W, (b - t) * img.height);
+        let from = [rr * W, t * img.height]; // point de départ du trait vers la marge
+        if (q.points < q.max) {
+          // Points perdus : la réponse est encadrée.
+          ctx.lineWidth = Math.max(2, 2.5 * u);
+          ctx.strokeRect(l * W, t * img.height, (rr - l) * W, (b - t) * img.height);
+        } else {
+          // Tous les points : un simple crochet au bout de la réponse, pour ne pas surcharger la copie.
+          const s = Math.min(34 * u, (b - t) * img.height * 0.8), cx = Math.min(rr * W + s * 0.4, W - s * 1.2), cy = (t + b) / 2 * img.height;
+          ctx.lineWidth = Math.max(2, 3.5 * u); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+          ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + s * 0.35, cy + s * 0.4); ctx.lineTo(cx + s, cy - s * 0.5); ctx.stroke();
+          ctx.lineCap = 'butt'; ctx.lineJoin = 'miter';
+          from = [cx + s, cy - s * 0.5];
+        }
         // Trait de la réponse vers sa note dans la marge.
         ctx.lineWidth = Math.max(1, 1.2 * u); ctx.globalAlpha = 0.6;
-        ctx.beginPath(); ctx.moveTo(rr * W, t * img.height); ctx.lineTo(x - pad * 0.4, it.y + mid * 0.6); ctx.stroke(); ctx.globalAlpha = 1;
+        ctx.beginPath(); ctx.moveTo(...from); ctx.lineTo(x - pad * 0.4, it.y + mid * 0.6); ctx.stroke(); ctx.globalAlpha = 1;
       }
       ctx.font = `bold ${mid}px sans-serif`;
       ctx.fillText(head, x, it.y);
