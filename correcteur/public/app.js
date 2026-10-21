@@ -824,6 +824,13 @@ function cardShell(r, cells, body) {
 // dans une marge ajoutée à droite ; la note en haut de la 1re page ; les critères d'ensemble et le commentaire
 // en bas de la dernière. Tout est dessiné ici, dans le navigateur : rien de plus n'est envoyé ni payé.
 const RED = '#d6283a';
+// Numéro de la question tel qu'écrit sur l'examen (« 4.1 », « Q3 », « 2b ») ; sinon son rang.
+// L'IA ajoute parfois son propre rang devant (« 1. 4.1 Traité… ») : on garde le dernier numéro de la série.
+const qLabel = (q, i) => {
+  const num = '\\d{1,2}(?!\\d)(?:[.,]\\d{1,2}(?!\\d))*[a-z]?(?![a-zà-ü])'; // 1 ou 2 chiffres : « 1960 » n'est pas un numéro
+  const nums = String(q.question).match(new RegExp(`^\\s*(?:(?:Q|question)\\s*)?(?:${num}[.)]?\\s*)+`, 'i'))?.[0].match(new RegExp(num, 'gi'));
+  return nums?.length ? `Q${nums[nums.length - 1].replace(',', '.')}` : `Q${i + 1}`;
+};
 function wrapText(ctx, text, width) {
   const lines = []; let line = '';
   for (const w of String(text).split(/\s+/).filter(Boolean)) {
@@ -887,7 +894,7 @@ async function annotatedPages(r) {
         continue;
       }
       const { q, i } = it;
-      const head = `Q${i + 1} · ${fmt(q.points)} / ${fmt(q.max)}`;
+      const head = `${qLabel(q, i)} · ${fmt(q.points)} / ${fmt(q.max)}`;
       if (it.kind === 'note') {
         const [t, l, b, rr] = q.box;
         ctx.lineWidth = Math.max(2, 2.5 * u);
