@@ -21,6 +21,7 @@
       <a class="brand" href="index.html"><img class="logo" src="logo-96.png" alt="" width="40" height="40"><strong>Brûle la pile</strong></a>
       <div class="top-actions">
         <div class="lang-switch" role="group" aria-label="Langue / Language"><button type="button" data-set-lang="fr">FR</button><button type="button" data-set-lang="en">EN</button></div>
+        <a class="btn ghost" href="guide.html" target="_blank" rel="noopener" title="Le guide s'ouvre dans un nouvel onglet : vos résultats restent ici">Guide</a>
         <span id="balance" class="pill" hidden></span>
         <button id="buy-open" class="btn ghost" type="button" hidden>Recharger</button>
         <button id="logout" class="btn ghost" type="button" hidden title="Retirer la clé de cet appareil">Changer de clé</button>
@@ -43,6 +44,7 @@
       </form>
       <div class="or">ou</div>
       <button class="btn ghost block" type="button" data-open-buy>Acheter un pack</button>
+      <p class="muted small" style="margin:0;text-align:center">Pas encore prêt à essayer ? <a href="guide.html">Découvrez tout ce que fait l'outil dans le guide</a>.</p>
       <p id="gate-msg" class="small" style="margin:0;color:var(--red)"></p>
     </div>
   </main>
@@ -301,6 +303,25 @@
       <label class="toggle"><input id="print-results" type="checkbox"> Les fiches de résultats (note, points et justification par question, commentaire)</label>
       <p class="muted small" style="margin:0">Fiches seules : plusieurs par feuille, à découper. Avec les copies : la fiche de chaque élève, puis sa copie.</p>
       <button id="print-go" class="btn primary big block" type="button">Imprimer</button>
+    </div>
+  </div>
+  <div id="welcome" class="modal" hidden>
+    <div class="panel stack" style="max-width:520px">
+      <h2 style="margin:0">Bienvenue dans Brûle la pile</h2>
+      <ol class="welcome-steps">
+        <li><b>Ajoutez votre corrigé</b> (texte, PDF ou photos) : il n'est pas facturé.</li>
+        <li><b>Déposez les copies</b> (un PDF numérisé, des photos, ou numérisez-les avec votre téléphone).</li>
+        <li><b>Cliquez sur « Corriger »</b>, puis relisez et ajustez avant d'exporter.</li>
+      </ol>
+      <div class="welcome-warn">
+        <b>À savoir</b>
+        <ul>
+          <li><b>Rien n'est sauvegardé</b>, pour protéger vos élèves : téléchargez le CSV ou imprimez avant de partir.</li>
+          <li><b>Ne fermez pas l'onglet et ne rechargez pas la page</b> avant d'avoir exporté.</li>
+          <li><b>Sur téléphone</b>, gardez l'écran allumé pendant la correction.</li>
+        </ul>
+      </div>
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap"><a class="btn" href="guide.html" target="_blank" rel="noopener">Ouvrir le guide complet</a><button id="welcome-ok" class="btn primary" type="button" style="flex:1">Commencer</button></div>
     </div>
   </div>
   <div id="awake" class="modal" hidden>

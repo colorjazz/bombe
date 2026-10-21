@@ -97,6 +97,12 @@ function showGate(msg = '') {
   $('gate-msg').textContent = msg;
 }
 
+// Accueil, une seule fois par appareil : les 3 étapes et les limites à connaître, avec un lien vers le guide.
+function maybeWelcome() {
+  let seen = false;
+  try { seen = localStorage.getItem('ce.welcome') === '1'; } catch { /* ignoré */ }
+  if (!seen && $('newkey').hidden && !$('app').hidden) $('welcome').hidden = false;
+}
 async function startTrial() {
   $('trial').disabled = true;
   try {
@@ -1642,7 +1648,7 @@ $('end').addEventListener('click', endSession);
 $('trial').addEventListener('click', startTrial);
 $('key-form').addEventListener('submit', async (e) => {
   e.preventDefault();
-  try { await useKey($('key-input').value); } catch (err) { showGate(err.message); }
+  try { await useKey($('key-input').value); maybeWelcome(); } catch (err) { showGate(err.message); }
 });
 $('logout').addEventListener('click', () => {
   if (state.results.length && !state.exported && !confirm(tr('Des résultats ne sont pas téléchargés. Continuer ?'))) return;
@@ -1653,7 +1659,8 @@ document.querySelectorAll('[data-open-buy]').forEach((b) => b.addEventListener('
 document.querySelectorAll('[data-close-buy]').forEach((b) => b.addEventListener('click', () => { $('buy').hidden = true; }));
 document.querySelectorAll('[data-pack]').forEach((b) => b.addEventListener('click', () => buy(b.dataset.pack)));
 document.querySelectorAll('[data-close-rel]').forEach((b) => b.addEventListener('click', () => { $('rel-help').hidden = true; }));
-document.querySelector('[data-close-newkey]').addEventListener('click', () => { $('newkey').hidden = true; });
+document.querySelector('[data-close-newkey]').addEventListener('click', () => { $('newkey').hidden = true; maybeWelcome(); });
+$('welcome-ok').addEventListener('click', () => { $('welcome').hidden = true; try { localStorage.setItem('ce.welcome', '1'); } catch { /* ignoré */ } });
 $('newkey-copy').addEventListener('click', () => navigator.clipboard?.writeText($('newkey-value').textContent));
 
 window.addEventListener('beforeunload', (e) => {
@@ -1719,7 +1726,7 @@ setUiMode(savedUi === 'adv');
 startI18n();
 const saved = new URLSearchParams(location.search).get('key') || store.get();
 if (new URLSearchParams(location.search).has('key')) history.replaceState(null, '', location.pathname);
-if (saved) useKey(saved).catch((err) => { if (err.status === 401) store.del(); showGate(err.message); });
+if (saved) useKey(saved).then(maybeWelcome).catch((err) => { if (err.status === 401) store.del(); showGate(err.message); });
 else showGate();
 renderPages();
 renderResults();
