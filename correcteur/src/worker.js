@@ -18,6 +18,12 @@ const MAX_LANG_IMAGE_CHARS = 14_000_000; // photos en pleine résolution pour la
 const TRIALS_PER_IP_PER_DAY = 10;
 const IDEAS_PER_IP_PER_DAY = 5;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// Adresses jetables courantes : la clé d'essai y arriverait quand même, on les refuse.
+const DISPOSABLE_DOMAINS = new Set(['yopmail.com', 'yopmail.fr', 'yopmail.net', 'jetable.org', 'mailinator.com', 'guerrillamail.com',
+  'guerrillamail.net', 'guerrillamail.org', 'sharklasers.com', 'grr.la', '10minutemail.com', '10minutemail.net', 'temp-mail.org',
+  'tempmail.com', 'tempmail.net', 'tempmailo.com', 'tempr.email', 'throwawaymail.com', 'trashmail.com', 'trashmail.fr', 'getnada.com',
+  'maildrop.cc', 'dispostable.com', 'mailnesia.com', 'mytemp.email', 'emailondeck.com', 'mohmal.com', 'fakeinbox.com', 'mintemail.com',
+  'burnermail.io', 'discard.email', 'moakt.com', 'emailfake.com', 'inboxkitten.com', 'mail.tm', 'mail.gw', '1secmail.com', 'spamgourmet.com']);
 const DAY_MS = 24 * 3600 * 1000;
 const RELIABILITY_ALERT = 80; // en dessous, la copie est signalée à vérifier
 
@@ -154,14 +160,29 @@ async function idea(request, env) {
   return json({ ok: true });
 }
 
-// Essai gratuit : le courriel est obligatoire (aider à retrouver la clé, écrire au sujet de l'essai). Il est effacé
-// avec la clé d'essai après 90 jours. Voir les essais et les pages utilisées :
+// Une adresse = une boîte : sans « +étiquette », et sans points pour Gmail (p.rof+2@gmail.com = prof@gmail.com).
+function normalizeEmail(raw) {
+  const email = String(raw || '').trim().toLowerCase().slice(0, 200);
+  const at = email.lastIndexOf('@');
+  if (at < 1) return email;
+  let local = email.slice(0, at).split('+')[0];
+  const domain = email.slice(at + 1).replace(/^googlemail\.com$/, 'gmail.com');
+  if (domain === 'gmail.com') local = local.replace(/\./g, '');
+  return `${local}@${domain}`;
+}
+
+// Essai gratuit : un par adresse courriel. Avec RESEND_API_KEY, la clé est envoyée par courriel et n'est jamais
+// affichée : il faut avoir accès à la boîte. Sans, elle s'affiche à l'écran. Le courriel est effacé avec la clé
+// d'essai après 90 jours. Voir les essais et les pages utilisées :
 // SELECT datetime(created_at / 1000, 'unixepoch') AS quand, email, 30 - pages AS utilisées FROM access_keys WHERE is_trial = 1 ORDER BY created_at DESC;
 async function trial(request, env) {
   const body = await readJson(request);
-  const email = String(body.email || '').trim().toLowerCase().slice(0, 200);
+  const email = normalizeEmail(body.email);
   if (!email) throw new HttpError(400, 'Entrez votre courriel pour recevoir vos 30 pages gratuites.');
   if (!EMAIL_RE.test(email)) throw new HttpError(400, 'Adresse courriel invalide.');
+  if (DISPOSABLE_DOMAINS.has(email.split('@')[1])) {
+    throw new HttpError(400, 'Les adresses courriel jetables ne sont pas acceptées. Utilisez votre courriel habituel ou celui de votre école.');
+  }
   const ip = request.headers.get('CF-Connecting-IP') || 'inconnue';
   const ipHash = await sha256(`${env.IP_SALT || ''}:${ip}`);
   const now = Date.now();
@@ -170,14 +191,63 @@ async function trial(request, env) {
   if (recent.n >= TRIALS_PER_IP_PER_DAY) {
     throw new HttpError(429, "Trop d'essais gratuits depuis cette connexion aujourd'hui. Réessayez demain ou choisissez un pack.");
   }
-  const key = newKey();
+  const byMail = !!env.RESEND_API_KEY;
+  const existing = await env.DB.prepare('SELECT key FROM access_keys WHERE email = ? ORDER BY created_at DESC LIMIT 1').bind(email).first();
+  // Sans envoi par courriel, on ne peut pas redonner la clé existante : n'importe qui pourrait taper l'adresse d'un autre.
+  if (existing && !byMail) throw new HttpError(409, 'Un essai a déjà été créé avec ce courriel. Pour plus de pages, choisissez un pack.');
+  const key = existing?.key || newKey();
   const pages = Number(env.TRIAL_PAGES) || 30;
   await env.DB.batch([
     env.DB.prepare('DELETE FROM trials WHERE created_at < ?').bind(now - DAY_MS),
     env.DB.prepare('INSERT INTO trials (ip_hash, created_at) VALUES (?, ?)').bind(ipHash, now),
-    env.DB.prepare('INSERT INTO access_keys (key, pages, email, is_trial, created_at) VALUES (?, ?, ?, 1, ?)').bind(key, pages, email, now),
+    ...(existing ? [] : [env.DB.prepare('INSERT INTO access_keys (key, pages, email, is_trial, created_at) VALUES (?, ?, ?, 1, ?)').bind(key, pages, email, now)]),
   ]);
-  return json({ key, pages });
+  if (!byMail) return json({ key, pages });
+  try {
+    await sendKeyMail(request, env, email, key);
+  } catch (err) {
+    if (!existing) await env.DB.prepare('DELETE FROM access_keys WHERE key = ?').bind(key).run();
+    throw err;
+  }
+  // Adresse déjà connue : on renvoie sa clé (essai ou achat), ce qui sert aussi à retrouver une clé perdue.
+  return json({ sent: true, again: !!existing });
+}
+
+// Le courriel de la clé, avec un lien qui ouvre l'appli déjà connectée. Envoyé par Resend.
+async function sendKeyMail(request, env, to, key) {
+  const en = isEnglish(request);
+  const link = `${new URL(request.url).origin}/app.html?key=${key}`;
+  const m = en ? {
+    from: env.MAIL_FROM_EN || env.MAIL_FROM, replyTo: 'hello@burnthepile.com', subject: 'Your Burn the Pile key',
+    lines: ['Hello,', 'Here is your Burn the Pile access key:', key, 'To start, open this link:', link,
+      'Or paste the key into “I already have an access key”. Keep this email: the key also works on your other devices.',
+      'Happy marking!', 'Burn the Pile — made by a teacher, for teachers',
+      'You are receiving this email because this address was entered for a free trial on Burn the Pile. If it was not you, ignore it.'],
+    button: 'Start marking',
+  } : {
+    from: env.MAIL_FROM, replyTo: 'bonjour@brulelapile.ca', subject: 'Votre clé Brûle la pile',
+    lines: ['Bonjour,', 'Voici votre clé d’accès Brûle la pile :', key, 'Pour commencer, ouvrez ce lien :', link,
+      'Ou collez la clé dans « J’ai déjà une clé d’accès ». Gardez ce courriel : la clé sert aussi sur vos autres appareils.',
+      'Bonne correction !', 'Brûle la pile — fait par un prof, pour des profs',
+      'Vous recevez ce courriel parce que cette adresse a été entrée pour un essai gratuit sur Brûle la pile. Si ce n’est pas vous, ignorez-le.'],
+    button: 'Commencer à corriger',
+  };
+  const [hello, intro, , , , rest, bye, sign, why] = m.lines;
+  const html = `<div style="font-family:Arial,sans-serif;font-size:15px;line-height:1.5;color:#1f2937;max-width:520px">
+<p>${hello}</p><p>${intro}</p>
+<p style="font-family:monospace;font-size:20px;font-weight:bold;letter-spacing:1px">${key}</p>
+<p><a href="${link}" style="display:inline-block;background:#6366f1;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:bold">${m.button}</a></p>
+<p>${rest}</p><p>${bye}<br>${sign}</p>
+<p style="font-size:12px;color:#6b7280">${why}</p></div>`;
+  const res = await fetch(`${env.RESEND_API_BASE || 'https://api.resend.com'}/emails`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ from: m.from, to: [to], reply_to: m.replyTo, subject: m.subject, text: m.lines.join('\n\n'), html }),
+  });
+  if (!res.ok) {
+    console.log('Courriel de clé refusé par Resend', res.status); // sans l'adresse
+    throw new HttpError(502, "Le courriel n'a pas pu être envoyé. Vérifiez l'adresse et réessayez.");
+  }
 }
 
 // ---------- Paiement Stripe ----------

@@ -106,8 +106,17 @@ function maybeWelcome() {
 async function startTrial(e) {
   e.preventDefault();
   $('trial').disabled = true;
+  $('trial-sent').hidden = true;
+  $('gate-msg').textContent = '';
   try {
-    const { key } = await api('/api/trial', { method: 'POST', auth: false, body: { email: $('trial-email').value.trim() } });
+    const { key, sent, again } = await api('/api/trial', { method: 'POST', auth: false, body: { email: $('trial-email').value.trim() } });
+    if (sent) {
+      $('trial-sent').textContent = again
+        ? 'Un essai existe déjà pour cette adresse : nous vous avons renvoyé votre clé. Pas reçu d’ici 5 minutes ? Regardez dans les courriels indésirables.'
+        : 'C’est parti ! Votre clé vient d’être envoyée à cette adresse : ouvrez le courriel et cliquez sur le lien. Pas reçu d’ici 5 minutes ? Regardez dans les courriels indésirables.';
+      $('trial-sent').hidden = false;
+      return;
+    }
     await useKey(key);
     $('newkey-value').textContent = key;
     $('newkey').hidden = false;

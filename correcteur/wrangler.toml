@@ -23,8 +23,12 @@ AI_FALLBACK_MODEL = "gemini-3.6-flash"
 LANG_MODEL = "gemini-3.7-flash"
 AI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai"
 TRIAL_PAGES = "30"
+# Expéditeur du courriel de la clé d'essai (domaine vérifié dans Resend).
+MAIL_FROM = "Brûle la pile <bonjour@brulelapile.ca>"
+MAIL_FROM_EN = "Burn the Pile <bonjour@brulelapile.ca>"
 # Secrets à définir avec `npx wrangler secret put` :
 #   AI_API_KEY (clé Gemini), STRIPE_SECRET_KEY, IP_SALT
+#   RESEND_API_KEY : active l'envoi de la clé d'essai par courriel (sinon elle s'affiche à l'écran)
 
 # Journaux visibles dans Cloudflare (onglet Observability). Le serveur n'y écrit jamais le contenu des copies.
 [observability]
