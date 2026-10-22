@@ -36,13 +36,10 @@
         </div>
         <p class="muted small">Sans carte de crédit · Aucune copie conservée · Payé à la page, sans abonnement</p>
       </div>
-      <div class="mock" aria-hidden="true">
-        <div class="mock-row"><span>Yasmine Benali · 541</span><b class="g">22 / 25</b></div>
-        <div class="mock-detail"><div>Q1 Révolution russe — 2/2 · Réponse attendue : 1917 ✓</div><div class="lost">Q3 Conférence de Bandung — 0/2 · Écrit : 1942, attendu : 1955</div><div>Q6 Assassinat de l'archiduc — 2/2 · ✓</div></div>
-        <div class="mock-row"><span>Kevin Nguyen · 541</span><b class="g">18 / 25</b></div>
-        <div class="mock-flag">⚖ Q2 : les deux corrections divergent (2 et 4) — fiabilité 78 %</div>
-        <div class="mock-row"><span>Léa Tremblay · 541</span><b class="g">24 / 25</b></div>
-      </div>
+      <figure class="demo">
+        <video id="demo" autoplay muted loop playsinline preload="metadata" poster="demo-fr.jpg" aria-label="Démonstration : une pile corrigée, puis la copie annotée"><source src="demo-fr.webm" type="video/webm"><source src="demo-fr.mp4" type="video/mp4"></video>
+        <figcaption>Vraie démonstration, avec des copies fictives.</figcaption>
+      </figure>
     </section>
 
     <section class="block" id="how">
@@ -96,6 +93,10 @@
     </section>
   </main>
   <footer><div class="wrap"><span>© 2026 Brûle la pile</span><span><a href="guide.html">Guide</a> · <a href="confidentialite.html">Confidentialité</a> · <a href="conditions.html">Conditions</a> · <a href="mailto:bonjour@brulelapile.ca">Nous joindre</a></span></div></footer>
+<script>
+// Mouvement réduit demandé : la démo ne joue pas toute seule ; on peut la lancer au besoin.
+if (matchMedia('(prefers-reduced-motion: reduce)').matches) { const v = document.getElementById('demo'); v.removeAttribute('autoplay'); v.pause(); v.controls = true; }
+</script>
 <script>fetch('/api/geo').then((r) => r.json()).then((g) => { if (g.country === 'CA') document.getElementById('made-ca').hidden = false; }).catch(() => {});</script>
 </body>
 </html>

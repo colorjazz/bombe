@@ -28,8 +28,7 @@ T = {
   lead="Numérisez les copies, ajoutez votre corrigé : <b>Brûle la pile</b> propose une note détaillée question par question, surligne les fautes de français et rédige une rétroaction pour chaque élève. Vous vérifiez, ajustez et exportez.",
   cta1='Essayer avec 30 pages gratuites', cta2='Voir comment ça marche',
   reassure='Sans carte de crédit · Aucune copie conservée · Payé à la page, sans abonnement',
-  mock=[('Yasmine Benali · 541', '22 / 25'), ['Q1 Révolution russe — 2/2 · Réponse attendue : 1917 ✓', 'Q3 Conférence de Bandung — 0/2 · Écrit : 1942, attendu : 1955', "Q6 Assassinat de l'archiduc — 2/2 · ✓"],
-        ('Kevin Nguyen · 541', '18 / 25'), '⚖ Q2 : les deux corrections divergent (2 et 4) — fiabilité 78 %', ('Léa Tremblay · 541', '24 / 25')],
+  demo='demo-fr', demo_label='Démonstration : une pile corrigée, puis la copie annotée', demo_note='Vraie démonstration, avec des copies fictives.',
   steps_h='Trois étapes, quelques minutes', steps_sub="Pas de formation, pas d'installation. Ça fonctionne dans votre navigateur, sur ordinateur comme sur tablette.",
   steps=[('clip', '1. Votre corrigé', "Collez vos consignes ou importez votre corrigé (PDF, photo). Points par question, réponses acceptées, critères : l'IA suit votre grille, ou vous en prépare une détaillée."),
          ('upload', '2. Les copies', "Glissez le PDF de la numérisation de toute la classe, des photos ou des documents Word. L'IA repère où commence chaque copie, et vous pouvez ajuster."),
@@ -76,8 +75,7 @@ T = {
   lead='Scan the papers, add your answer key: <b>Burn the Pile</b> suggests a detailed grade question by question, highlights language errors and drafts feedback for every student. You review, adjust and export.',
   cta1='Try it with 30 free pages', cta2='See how it works',
   reassure='No credit card · No student work stored · Pay per page, no subscription',
-  mock=[('Priya Sharma · Period 3', '22 / 25'), ['Q1 Russian Revolution — 2/2 · Expected: 1917 ✓', 'Q3 Battle of Vimy Ridge — 0/2 · Wrote: 1914, expected: 1917', 'Q6 Archduke’s assassination — 2/2 · ✓'],
-        ('Daniel Okafor · Period 3', '18 / 25'), '⚖ Q2: the two gradings disagree (2 and 4) — reliability 78%', ('Mei Lin Wong · Period 3', '24 / 25')],
+  demo='demo-en', demo_label='Demo: a stack graded, then the annotated paper', demo_note='A real demo, with fictional papers.',
   steps_h='Three steps, a few minutes', steps_sub='No training, nothing to install. It runs in your browser, on a computer or a tablet.',
   steps=[('clip', '1. Your answer key', 'Paste your instructions or upload your answer key (PDF, photo). Points per question, accepted answers, criteria: the AI follows your rubric, or builds a detailed one for you.'),
          ('upload', '2. Student work', 'Drop the scanned PDF of the whole class, photos or Word documents. The AI finds where each paper starts, and you can adjust.'),
@@ -115,7 +113,6 @@ T = {
 }
 
 def page(L, d):
-    m = d['mock']
     other = 'en' if L == 'fr' else 'fr'
     sw = (f'<div class="lang-switch" role="group" aria-label="Langue / Language">'
           f'<a href="index.html" data-set-lang="fr">FR</a><a href="index-en.html" data-set-lang="en">EN</a></div>')
@@ -158,13 +155,10 @@ def page(L, d):
         </div>
         <p class="muted small">{d['reassure']}</p>
       </div>
-      <div class="mock" aria-hidden="true">
-        <div class="mock-row"><span>{m[0][0]}</span><b class="g">{m[0][1]}</b></div>
-        <div class="mock-detail"><div>{m[1][0]}</div><div class="lost">{m[1][1]}</div><div>{m[1][2]}</div></div>
-        <div class="mock-row"><span>{m[2][0]}</span><b class="g">{m[2][1]}</b></div>
-        <div class="mock-flag">{m[3]}</div>
-        <div class="mock-row"><span>{m[4][0]}</span><b class="g">{m[4][1]}</b></div>
-      </div>
+      <figure class="demo">
+        <video id="demo" autoplay muted loop playsinline preload="metadata" poster="{d['demo']}.jpg" aria-label="{d['demo_label']}"><source src="{d['demo']}.webm" type="video/webm"><source src="{d['demo']}.mp4" type="video/mp4"></video>
+        <figcaption>{d['demo_note']}</figcaption>
+      </figure>
     </section>
 
     <section class="block" id="how">
@@ -218,6 +212,10 @@ def page(L, d):
     </section>
   </main>
   <footer><div class="wrap"><span>© 2026 {d['brand']}</span><span><a href="{d['guide_href']}">{d['nav_guide']}</a> · <a href="{d['privacy_href']}">{d['privacy']}</a> · <a href="{d['terms_href']}">{d['terms']}</a> · <a href="mailto:{d['mail']}">{d['contact']}</a></span></div></footer>
+<script>
+// Mouvement réduit demandé : la démo ne joue pas toute seule ; on peut la lancer au besoin.
+if (matchMedia('(prefers-reduced-motion: reduce)').matches) {{ const v = document.getElementById('demo'); v.removeAttribute('autoplay'); v.pause(); v.controls = true; }}
+</script>
 <script>fetch('/api/geo').then((r) => r.json()).then((g) => {{ if (g.country === 'CA') document.getElementById('made-ca').hidden = false; }}).catch(() => {{}});</script>
 </body>
 </html>
