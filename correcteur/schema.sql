@@ -21,3 +21,13 @@ CREATE TABLE IF NOT EXISTS trials (
   created_at INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS trials_ip ON trials (ip_hash, created_at);
+
+-- Idées proposées par les visiteurs (« Proposez une fonctionnalité »). Le courriel est facultatif ;
+-- l'empreinte de connexion limite les envois et est effacée après 24 h.
+CREATE TABLE IF NOT EXISTS ideas (
+  text       TEXT NOT NULL,
+  email      TEXT,
+  lang       TEXT,
+  ip_hash    TEXT,
+  created_at INTEGER NOT NULL
+);

@@ -77,3 +77,23 @@ footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; g
   .guide-toc { position: static; }
   .guide-sec { padding: 1rem 1.1rem; }
 }
+
+/* Bloc « Fait par un prof, pour des profs » */
+.creator { padding: 0 0 2.5rem; }
+.creator-card { display: flex; gap: 1rem; align-items: flex-start; max-width: 52rem; background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--primary); border-radius: 16px; padding: 1.1rem 1.3rem; }
+.creator-card b { font-size: 1.05rem; }
+.creator-card p { margin: .35rem 0 0; color: var(--muted); }
+.creator-mark { font-size: 1.6rem; line-height: 1; }
+
+/* Proposez une fonctionnalité */
+.idea-form { display: grid; gap: .7rem; max-width: 40rem; }
+.idea-form .hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+.idea-row { display: flex; align-items: center; gap: .8rem; flex-wrap: wrap; }
+.idea-form .ok { color: var(--green); }
+.idea-form .err { color: var(--red); }
+
+/* Téléphone : en-tête sur une ligne (logo, langue, essai) et pas de second logo au-dessus du titre. */
+@media (max-width: 640px) {
+  .topbar .nav-x { display: none; }
+  .hero-logo { display: none; }
+}

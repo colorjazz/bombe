@@ -16,6 +16,7 @@ const MAX_IMAGE_CHARS = 2_500_000; // ~1,8 Mo par page une fois décodée
 const MAX_LANG_IMAGE_CHARS = 14_000_000; // photos en pleine résolution pour la correction de la langue (~10 Mo)
 // Une école entière partage souvent la même adresse IP : on plafonne par jour au lieu de bloquer.
 const TRIALS_PER_IP_PER_DAY = 10;
+const IDEAS_PER_IP_PER_DAY = 5;
 const DAY_MS = 24 * 3600 * 1000;
 const RELIABILITY_ALERT = 80; // en dessous, la copie est signalée à vérifier
 
@@ -43,6 +44,7 @@ export default {
     await env.DB.batch([
       env.DB.prepare('DELETE FROM trials WHERE created_at < ?').bind(now - DAY_MS),
       env.DB.prepare('DELETE FROM access_keys WHERE is_trial = 1 AND created_at < ?').bind(now - 90 * DAY_MS),
+      env.DB.prepare('UPDATE ideas SET ip_hash = NULL WHERE ip_hash IS NOT NULL AND created_at < ?').bind(now - DAY_MS),
     ]);
   },
 };
@@ -50,6 +52,7 @@ export default {
 const ROUTES = {
   'GET /api/balance': balance,
   'POST /api/trial': trial,
+  'POST /api/idea': idea,
   'POST /api/checkout': checkout,
   'GET /api/claim': claim,
   'POST /api/stripe-webhook': stripeWebhook,
@@ -74,6 +77,7 @@ const DB_SCHEMA = [
   `CREATE TABLE IF NOT EXISTS payments (session_id TEXT PRIMARY KEY, key TEXT NOT NULL, pages INTEGER NOT NULL, created_at INTEGER NOT NULL)`,
   `CREATE TABLE IF NOT EXISTS trials (ip_hash TEXT NOT NULL, created_at INTEGER NOT NULL)`,
   `CREATE INDEX IF NOT EXISTS trials_ip ON trials (ip_hash, created_at)`,
+  `CREATE TABLE IF NOT EXISTS ideas (text TEXT NOT NULL, email TEXT, lang TEXT, ip_hash TEXT, created_at INTEGER NOT NULL)`,
 ];
 let schemaReady;
 function ensureSchema(env) {
@@ -128,6 +132,25 @@ async function getKey(env, key) {
 async function balance(request, env) {
   const row = await getKey(env, bearer(request));
   return json({ pages: row.pages, trial: !!row.is_trial });
+}
+
+// « Proposez une fonctionnalité » (page d'accueil) : le texte, et le courriel si la personne veut une réponse.
+// L'empreinte de connexion sert seulement à limiter les envois ; elle est effacée après 24 h. Lire les idées :
+// SELECT datetime(created_at / 1000, 'unixepoch') AS quand, lang, email, text FROM ideas ORDER BY created_at DESC;
+async function idea(request, env) {
+  const body = await readJson(request);
+  if (body.website) return json({ ok: true }); // champ invisible rempli : un robot
+  const text = String(body.text || '').trim().slice(0, 2000);
+  const email = String(body.email || '').trim().slice(0, 200);
+  if (text.length < 5) throw new HttpError(400, 'Décrivez votre idée en quelques mots.');
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new HttpError(400, 'Adresse courriel invalide.');
+  const ipHash = await sha256(`${env.IP_SALT || ''}:${request.headers.get('CF-Connecting-IP') || 'inconnue'}`);
+  const now = Date.now();
+  const recent = await env.DB.prepare('SELECT COUNT(*) AS n FROM ideas WHERE ip_hash = ? AND created_at > ?').bind(ipHash, now - DAY_MS).first();
+  if (recent.n >= IDEAS_PER_IP_PER_DAY) throw new HttpError(429, 'Merci ! Vous avez déjà envoyé plusieurs idées aujourd’hui : écrivez-nous par courriel pour la suite.');
+  await env.DB.prepare('INSERT INTO ideas (text, email, lang, ip_hash, created_at) VALUES (?, ?, ?, ?, ?)')
+    .bind(text, email || null, isEnglish(request) ? 'en' : 'fr', ipHash, now).run();
+  return json({ ok: true });
 }
 
 async function trial(request, env) {
