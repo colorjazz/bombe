@@ -68,5 +68,16 @@
   par courriel (Resend, secret RESEND_API_KEY), un essai par adresse (variantes +étiquette et points Gmail),
   adresses jetables refusées, politique de confidentialité à jour. Fait et testé en local sur la branche locale
   `courriel-local` (commit 5740154, non poussée : perdue si la session se ferme).
-- Idée à évaluer : signaler les copies tapées qui ressemblent à un texte produit par l'IA (voir la discussion du 22 oct. :
-  indices à montrer au prof, jamais un verdict ni un pourcentage).
+
+## Idées à développer
+- Détection de l'IA dans les copies tapées, avec l'API de Pangram (Pangram Labs) plutôt qu'un détecteur maison :
+  - Pourquoi Pangram : le plus précis des détecteurs selon des études indépendantes (Chicago, Houston/Berkeley) ;
+    environ 1 fausse accusation sur 10 000 selon Pangram. Laisse passer plus de textes retouchés ou reformulés.
+  - Travail : 1 à 2 jours. Copies tapées seulement (PDF, Word) ; le texte est envoyé à Pangram, le résultat s'affiche
+    sur la copie comme un indice « à vérifier », jamais comme une preuve ni une accusation.
+  - Avant de commencer : tester sur de vraies copies en français du secondaire (les études portent surtout sur l'anglais) ;
+    connaître le tarif de l'API et l'intégrer au prix des pages.
+  - Loi 25 : nouveau fournisseur aux États-Unis recevant des textes d'élèves → politique de confidentialité, EFVP et
+    entente de traitement à mettre à jour.
+  - Argument de vente, sans rien coder : Brûle la pile corrige les copies manuscrites, donc les évaluations faites en classe,
+    la meilleure parade à ChatGPT (« Revenez aux évaluations en classe, sans y passer vos soirées »).
