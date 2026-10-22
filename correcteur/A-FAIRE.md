@@ -64,3 +64,9 @@
 
 ## Ensuite
 - Campagne : vidéo (prompts Veo, mascotte Flammèche), annonces Facebook / Instagram FR et EN.
+- Courriel à l'essai gratuit (mis de côté le 22 oct., l'essai reste en un clic) : courriel obligatoire, clé envoyée
+  par courriel (Resend, secret RESEND_API_KEY), un essai par adresse (variantes +étiquette et points Gmail),
+  adresses jetables refusées, politique de confidentialité à jour. Fait et testé en local sur la branche locale
+  `courriel-local` (commit 5740154, non poussée : perdue si la session se ferme).
+- Idée à évaluer : signaler les copies tapées qui ressemblent à un texte produit par l'IA (voir la discussion du 22 oct. :
+  indices à montrer au prof, jamais un verdict ni un pourcentage).
