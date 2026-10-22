@@ -7,7 +7,7 @@
 .cta { display: flex; gap: .75rem; flex-wrap: wrap; margin: 1.5rem 0 .75rem; }
 /* Démo en boucle (vidéo muette, sans son ni contrôles) : la vraie appli, avec des copies fictives. */
 .demo { margin: 0; display: grid; gap: .5rem; }
-.demo video { width: 100%; aspect-ratio: 16 / 9; border-radius: 16px; border: 1px solid var(--line); background: var(--panel); box-shadow: 0 30px 80px -30px rgba(99,102,241,.45); display: block; }
+.demo video { width: 100%; max-width: 520px; margin: 0 auto; aspect-ratio: 1080 / 1104; border-radius: 16px; border: 1px solid var(--line); background: #f3efe4; box-shadow: 0 30px 80px -30px rgba(99,102,241,.45); display: block; }
 .demo figcaption { font-size: .78rem; color: var(--faint); text-align: center; }
 section.block { padding: 3.5rem 0; border-top: 1px solid var(--line); }
 section.block h2 { font-size: clamp(1.5rem, 3.5vw, 2rem); margin-bottom: .5rem; }
