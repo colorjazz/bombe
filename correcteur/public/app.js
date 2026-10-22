@@ -103,20 +103,10 @@ function maybeWelcome() {
   try { seen = localStorage.getItem('ce.welcome') === '1'; } catch { /* ignoré */ }
   if (!seen && $('newkey').hidden && !$('app').hidden) $('welcome').hidden = false;
 }
-async function startTrial(e) {
-  e.preventDefault();
+async function startTrial() {
   $('trial').disabled = true;
-  $('trial-sent').hidden = true;
-  $('gate-msg').textContent = '';
   try {
-    const { key, sent, again } = await api('/api/trial', { method: 'POST', auth: false, body: { email: $('trial-email').value.trim() } });
-    if (sent) {
-      $('trial-sent').textContent = again
-        ? 'Un essai existe déjà pour cette adresse : nous vous avons renvoyé votre clé. Pas reçu d’ici 5 minutes ? Regardez dans les courriels indésirables.'
-        : 'C’est parti ! Votre clé vient d’être envoyée à cette adresse : ouvrez le courriel et cliquez sur le lien. Pas reçu d’ici 5 minutes ? Regardez dans les courriels indésirables.';
-      $('trial-sent').hidden = false;
-      return;
-    }
+    const { key } = await api('/api/trial', { method: 'POST', auth: false });
     await useKey(key);
     $('newkey-value').textContent = key;
     $('newkey').hidden = false;
@@ -1655,7 +1645,7 @@ $('search').addEventListener('input', renderResults);
 $('export').addEventListener('click', exportCSV);
 $('end').addEventListener('click', endSession);
 
-$('trial-form').addEventListener('submit', startTrial);
+$('trial').addEventListener('click', startTrial);
 $('key-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   try { await useKey($('key-input').value); maybeWelcome(); } catch (err) { showGate(err.message); }

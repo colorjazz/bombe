@@ -24,7 +24,7 @@ FR = dict(
     ('cle', 'Clé d’accès, essai et pages', '''
 <ul>
 <li><b>Pas de compte</b> : vous recevez une <b>clé d’accès</b> (ex. CE-XXXXX-XXXXX-XXXXX) qui contient votre solde de pages. <b>Notez-la</b> : elle sert à utiliser vos pages sur un autre appareil et à recharger. Elle figure aussi sur le reçu de paiement.</li>
-<li><b>Essai gratuit</b> : 30 pages, sans carte de crédit ; votre clé vous est envoyée par courriel (un essai par adresse). Une clé d’essai qui n’a pas servi à un achat est effacée après 90 jours.</li>
+<li><b>Essai gratuit</b> : 30 pages, sans carte de crédit. Une clé d’essai qui n’a pas servi à un achat est effacée après 90 jours.</li>
 <li><b>Ce qui est décompté</b> : 1 page de copie = 1 page en mode rapide, 2 pages en mode approfondi (double correction). Le corrigé, la détection des copies, le redressement des photos et la grille détaillée sont gratuits. Une copie illisible n’est pas facturée.</li>
 <li><b>Les packs</b> : paiement unique, sans abonnement ; les pages achetées n’expirent pas.</li>
 <li>Vous avez déjà une clé ? Sur l’écran d’accès, entrez-la dans « J’ai déjà une clé d’accès ».</li>
@@ -129,7 +129,7 @@ EN = dict(
     ('cle', 'Access key, trial and pages', '''
 <ul>
 <li><b>No account</b>: you get an <b>access key</b> (e.g. CE-XXXXX-XXXXX-XXXXX) that holds your page balance. <b>Write it down</b>: it lets you use your pages on another device and top up. It also appears on your payment receipt.</li>
-<li><b>Free trial</b>: 30 pages, no credit card; your key is sent to you by email (one trial per address). A trial key that was never used for a purchase is deleted after 90 days.</li>
+<li><b>Free trial</b>: 30 pages, no credit card. A trial key that was never used for a purchase is deleted after 90 days.</li>
 <li><b>What is charged</b>: 1 page of student work = 1 page in quick mode, 2 pages in in-depth mode (double grading). The answer key, paper detection, photo straightening and the detailed rubric are free. An illegible paper is not charged.</li>
 <li><b>Packs</b>: one-time payment, no subscription; purchased pages never expire.</li>
 <li>Already have a key? On the access screen, enter it under “I already have an access key”.</li>
