@@ -77,6 +77,10 @@
     sur la copie comme un indice « à vérifier », jamais comme une preuve ni une accusation.
   - Avant de commencer : tester sur de vraies copies en français du secondaire (les études portent surtout sur l'anglais) ;
     connaître le tarif de l'API et l'intégrer au prix des pages.
+  - Tarif Pangram : 0,05 $ US par 100 mots (≈ 0,07 $ CA). Une page tapée (250-500 mots) coûte ≈ 0,17-0,35 $ CA,
+    soit 3 à 8 fois le prix d'une page chez nous (0,044-0,07 $ CA). Facturer 1 ou 2 pages ne couvre pas le coût :
+    facturer au nombre de mots (ex. 2 pages de crédit par tranche de 100 mots), sur demande seulement (copies choisies
+    par le prof), ou négocier un tarif de volume avec Pangram.
   - Loi 25 : nouveau fournisseur aux États-Unis recevant des textes d'élèves → politique de confidentialité, EFVP et
     entente de traitement à mettre à jour.
   - Argument de vente, sans rien coder : Brûle la pile corrige les copies manuscrites, donc les évaluations faites en classe,
