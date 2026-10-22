@@ -103,10 +103,11 @@ function maybeWelcome() {
   try { seen = localStorage.getItem('ce.welcome') === '1'; } catch { /* ignoré */ }
   if (!seen && $('newkey').hidden && !$('app').hidden) $('welcome').hidden = false;
 }
-async function startTrial() {
+async function startTrial(e) {
+  e.preventDefault();
   $('trial').disabled = true;
   try {
-    const { key } = await api('/api/trial', { method: 'POST', auth: false });
+    const { key } = await api('/api/trial', { method: 'POST', auth: false, body: { email: $('trial-email').value.trim() } });
     await useKey(key);
     $('newkey-value').textContent = key;
     $('newkey').hidden = false;
@@ -1645,7 +1646,7 @@ $('search').addEventListener('input', renderResults);
 $('export').addEventListener('click', exportCSV);
 $('end').addEventListener('click', endSession);
 
-$('trial').addEventListener('click', startTrial);
+$('trial-form').addEventListener('submit', startTrial);
 $('key-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   try { await useKey($('key-input').value); maybeWelcome(); } catch (err) { showGate(err.message); }

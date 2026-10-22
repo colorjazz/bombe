@@ -17,6 +17,7 @@ const MAX_LANG_IMAGE_CHARS = 14_000_000; // photos en pleine résolution pour la
 // Une école entière partage souvent la même adresse IP : on plafonne par jour au lieu de bloquer.
 const TRIALS_PER_IP_PER_DAY = 10;
 const IDEAS_PER_IP_PER_DAY = 5;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const DAY_MS = 24 * 3600 * 1000;
 const RELIABILITY_ALERT = 80; // en dessous, la copie est signalée à vérifier
 
@@ -143,7 +144,7 @@ async function idea(request, env) {
   const text = String(body.text || '').trim().slice(0, 2000);
   const email = String(body.email || '').trim().slice(0, 200);
   if (text.length < 5) throw new HttpError(400, 'Décrivez votre idée en quelques mots.');
-  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new HttpError(400, 'Adresse courriel invalide.');
+  if (email && !EMAIL_RE.test(email)) throw new HttpError(400, 'Adresse courriel invalide.');
   const ipHash = await sha256(`${env.IP_SALT || ''}:${request.headers.get('CF-Connecting-IP') || 'inconnue'}`);
   const now = Date.now();
   const recent = await env.DB.prepare('SELECT COUNT(*) AS n FROM ideas WHERE ip_hash = ? AND created_at > ?').bind(ipHash, now - DAY_MS).first();
@@ -153,7 +154,14 @@ async function idea(request, env) {
   return json({ ok: true });
 }
 
+// Essai gratuit : le courriel est obligatoire (aider à retrouver la clé, écrire au sujet de l'essai). Il est effacé
+// avec la clé d'essai après 90 jours. Voir les essais et les pages utilisées :
+// SELECT datetime(created_at / 1000, 'unixepoch') AS quand, email, 30 - pages AS utilisées FROM access_keys WHERE is_trial = 1 ORDER BY created_at DESC;
 async function trial(request, env) {
+  const body = await readJson(request);
+  const email = String(body.email || '').trim().toLowerCase().slice(0, 200);
+  if (!email) throw new HttpError(400, 'Entrez votre courriel pour recevoir vos 30 pages gratuites.');
+  if (!EMAIL_RE.test(email)) throw new HttpError(400, 'Adresse courriel invalide.');
   const ip = request.headers.get('CF-Connecting-IP') || 'inconnue';
   const ipHash = await sha256(`${env.IP_SALT || ''}:${ip}`);
   const now = Date.now();
@@ -167,7 +175,7 @@ async function trial(request, env) {
   await env.DB.batch([
     env.DB.prepare('DELETE FROM trials WHERE created_at < ?').bind(now - DAY_MS),
     env.DB.prepare('INSERT INTO trials (ip_hash, created_at) VALUES (?, ?)').bind(ipHash, now),
-    env.DB.prepare('INSERT INTO access_keys (key, pages, is_trial, created_at) VALUES (?, ?, 1, ?)').bind(key, pages, now),
+    env.DB.prepare('INSERT INTO access_keys (key, pages, email, is_trial, created_at) VALUES (?, ?, ?, 1, ?)').bind(key, pages, email, now),
   ]);
   return json({ key, pages });
 }
