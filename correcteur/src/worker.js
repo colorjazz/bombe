@@ -323,7 +323,9 @@ function buildPrompt(o) {
     "INCERTITUDE : mets « incertain » à true si une partie importante est illisible, si la copie semble incomplète ou hors sujet, ou si tu hésites sérieusement sur la note.",
     "NIVEAUX : si tu mentionnes un niveau de rendement ou une cote (ex. « Level 3 », « niveau 2 », « B »), il doit correspondre au pourcentage réellement obtenu selon l'échelle fournie par l'enseignant (en Ontario : niveau 4 = 80-100 %, niveau 3 = 70-79 %, niveau 2 = 60-69 %, niveau 1 = 50-59 %, R = moins de 50 %). Sans échelle claire, ne mentionne pas de niveau.",
     "COMMENTAIRE : 2 à 4 phrases adressées à l'élève (tutoiement), concrètes et constructives : une réussite, l'erreur principale, une piste de progrès.",
+    "RÉPONSE : pour chaque question, « reponse » résume fidèlement ce que l'élève a répondu, en 25 mots au plus, sans son nom (chaîne vide s'il n'a rien répondu).",
     o.annotate ? ANNOTATION_RULE : '',
+    o.calibration?.length ? calibrationText(o.calibration) : '',
     o.english ? `\n${ENGLISH_OUTPUT}` : '',
     o.rubric ? `\nCONSIGNES DE L'ENSEIGNANT (prioritaires) :\n"""\n${o.rubric}\n"""\nSi ces consignes précisent la forme du rendu (ton, longueur ou style des justifications et du commentaire, tutoiement, points forts à souligner…), respecte-les, sans changer le format JSON demandé.` : '',
     o.grid ? `\nGRILLE DÉTAILLÉE VALIDÉE PAR L'ENSEIGNANT (à appliquer strictement) :
@@ -347,12 +349,13 @@ const SCHEMA = {
           type: 'array',
           items: {
             type: 'object',
-            required: ['question', 'points_obtenus', 'points_max', 'justification'],
+            required: ['question', 'points_obtenus', 'points_max', 'justification', 'reponse'],
             properties: {
               question: { type: 'string' },
               points_obtenus: { type: 'number' },
               points_max: { type: 'number' },
               justification: { type: 'string' },
+              reponse: { type: 'string' },
             },
           },
         },
@@ -721,6 +724,21 @@ function readGrid(raw) {
 
 // Questions fixées par l'appli d'après la première copie corrigée (intitulés et points maximum seulement) :
 // toutes les copies d'un même examen sont découpées pareil, et les deux corrections peuvent partir en même temps.
+// Calibrage : les notes que l'enseignant a changées sur ses premières copies de la même évaluation. Elles montrent
+// sa façon de noter ; l'IA l'applique aux copies suivantes. Rien n'est conservé : l'appli les renvoie à chaque copie.
+function readCalibration(raw) {
+  if (!Array.isArray(raw)) return [];
+  return raw.slice(0, 15).map((c) => ({
+    question: String(c?.question || '').slice(0, 200), answer: String(c?.answer || '').slice(0, 300), why: String(c?.why || '').slice(0, 300),
+    max: Number(c?.max), ai: Number(c?.ai), teacher: Number(c?.teacher),
+  })).filter((c) => c.question && c.max > 0 && [c.ai, c.teacher].every((n) => Number.isFinite(n) && n >= 0 && n <= c.max));
+}
+
+function calibrationText(list) {
+  return `\nCALIBRAGE PAR L'ENSEIGNANT (prioritaire) : sur d'autres copies de cette même évaluation, l'enseignant a revu les notes que tu avais proposées. Ces exemples montrent sa façon de noter : ce qu'il accepte, ce qu'il pénalise et sa sévérité. Applique les mêmes critères à cette copie. Ne recopie pas ces notes : juge la réponse de cette copie-ci.
+${list.map((c) => `- « ${c.question} » (sur ${fr(c.max)}) : réponse de l'élève « ${c.answer || 'non résumée'} » ; note proposée ${fr(c.ai)}, note de l'enseignant ${fr(c.teacher)}.${c.why ? ` Raison : « ${c.why} »` : ''}`).join('\n')}`;
+}
+
 function readStructure(raw) {
   if (!Array.isArray(raw) || !raw.length || raw.length > 40) return null;
   const list = raw.map((q) => ({ name: String(q?.name || '').slice(0, 200), max: Number(q?.max) }));
@@ -862,6 +880,7 @@ function normalize(raw, total, unit) {
       raw: Number(q.points_obtenus) || 0, // valeur brute, pour l'ajustement au niveau de grille le plus proche
       max,
       justification: String(q.justification || '').trim(),
+      answer: String(q.reponse || '').trim().slice(0, 300), // sert d'exemple au calibrage si l'enseignant change la note
       ...placement(q),
     };
   });
@@ -961,7 +980,8 @@ async function grade(request, env, url, ctx) {
     const grid = readGrid(body.grid);
     const prompt = buildPrompt({ exam: String(body.exam || '').slice(0, 200), total, wholePoints: !!body.wholePoints,
       checkLanguage: !!body.checkLanguage, rubric: String(body.rubric || '').slice(0, 8000), grid, english: isEnglish(request),
-      hasKey: !!(String(body.rubric || '').trim() || (body.rubricPages || []).length || grid), anonymous: !!body.anonymous, annotate: !!body.annotate });
+      hasKey: !!(String(body.rubric || '').trim() || (body.rubricPages || []).length || grid), anonymous: !!body.anonymous, annotate: !!body.annotate,
+      calibration: readCalibration(body.calibration) });
 
     // Double correction : la 1re fixe le découpage en questions, la 2e corrige indépendamment
     // les mêmes questions (intitulés et points maximum, sans les notes de la 1re).

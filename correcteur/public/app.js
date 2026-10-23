@@ -496,6 +496,7 @@ function renderSummary() {
     : n ? `${state.kind === 'lang' ? 'Analyser la langue de' : 'Corriger'} ${list.length} copie(s)` : 'Corriger';
   $('export').disabled = $('end').disabled = state.running || !state.results.length;
   $('print-all').disabled = state.running || !state.results.some((r) => r.kind !== 'lang');
+  renderCalib();
 }
 
 function renderRubric() {
@@ -606,7 +607,36 @@ async function keepAwake(on) {
 document.addEventListener('visibilitychange', () => { if (!document.hidden && state.running) keepAwake(true); });
 
 // only : les copies à corriger (par défaut toutes) ; le mode caméra n'envoie que les copies complètes.
-async function runAll(only) {
+// Calibrer d'abord : quelques copies seulement, que l'enseignant relit et ajuste avant de lancer le reste.
+const CALIB_COPIES = 3;
+
+// Clé de l'évaluation en cours : le découpage en questions et le calibrage ne valent que pour la même évaluation.
+const examKeyNow = () => JSON.stringify([$('exam').value.trim(), Number($('total').value), $('whole').value === '1',
+  $('rubric').value.trim(), state.rubricPages.length, !!state.grid]);
+
+// Calibrage : chaque note changée par l'enseignant devient un exemple (réponse résumée, note proposée, sa note, sa raison).
+function calibration(examKey) {
+  const out = [];
+  for (const r of state.results) {
+    if (r.kind === 'lang' || r.examKey !== examKey) continue;
+    for (const q of r.questions) {
+      if (q.ai != null && q.points !== q.ai) out.push({ question: q.question, max: q.max, answer: q.answer || '', ai: q.ai, teacher: q.points, why: (q.why || '').trim() });
+    }
+  }
+  // Les plus récents d'abord, et ceux qui ont une raison en priorité.
+  return out.sort((x, y) => !!y.why - !!x.why).slice(0, 15);
+}
+
+function renderCalib() {
+  const n = state.kind === 'content' ? calibration(examKeyNow()).length : 0;
+  $('calib-info').hidden = !n;
+  if (n) $('calib-info').textContent = `🎯 Calibrage : ${n} note(s) que vous avez ajustée(s) guideront la correction des prochaines copies.`;
+  const pending = bundles().length;
+  $('calib-run').hidden = state.kind !== 'content' || state.running || !!n || pending <= CALIB_COPIES + 1;
+  $('calib-run').disabled = $('run').disabled;
+}
+
+async function runAll(only, calibrating = false) {
   const list = only || bundles();
   if (!list.length) return;
   state.running = true;
@@ -634,7 +664,9 @@ async function runAll(only) {
   };
   const hasKey = !!(settings.rubric || settings.rubricPages.length || settings.grid);
   // Même examen que la copie déjà corrigée : on réutilise son découpage en questions (voir plus bas).
-  const examKey = JSON.stringify([settings.exam, settings.total, settings.wholePoints, settings.rubric, settings.rubricPages.length, !!settings.grid]);
+  const examKey = examKeyNow();
+  // Calibrage : les notes déjà ajustées par l'enseignant pour cette évaluation guident les copies suivantes.
+  if (state.kind === 'content') settings.calibration = calibration(examKey);
   if (state.structure?.key !== examKey) state.structure = null;
 
   // N° de copie dans l'ordre d'importation, gardé si la copie est relancée : il permet de retrouver la copie papier.
@@ -693,7 +725,9 @@ async function runAll(only) {
       setBalance(r.pagesLeft);
       state.results.unshift({
         id, no: b[0].no, file: b[0].file, pageUrls: b.map((p) => p.url), exam: settings.exam, group: r.group || settings.group, name: r.name, reliability: r.reliability, grade: r.grade, total: r.total,
-        unit: settings.wholePoints ? 1 : 0.5, questions: r.questions, comment: r.comment, pageCount: b.length, illegible: !!r.illegible,
+        // `ai` : la note proposée, pour repérer celles que l'enseignant change (calibrage).
+        unit: settings.wholePoints ? 1 : 0.5, questions: r.questions.map((q) => ({ ...q, ai: r.illegible ? null : q.points })), examKey,
+        comment: r.comment, pageCount: b.length, illegible: !!r.illegible,
         flags: hasKey || r.illegible ? r.flags : [...r.flags, 'Corrigée sans corrigé : vérifiez que la note n’est pas trop généreuse.'],
       });
       }
@@ -728,6 +762,7 @@ async function runAll(only) {
   else if (state.stopping) banner('info', `Correction arrêtée : ${done} copie(s) corrigée(s). Les ${list.length - done} autres restent dans la liste : relancez quand vous voulez.`);
   else if (failed) banner('err', `${done} copie(s) corrigée(s), ${failed} en erreur : elles restent dans la liste, relancez pour réessayer.`);
   else if (state.kind === 'lang') banner('ok', `${done} copie(s) analysée(s). Vérifiez en priorité les copies marquées ⚠.`);
+  else if (calibrating) banner('ok', `${done} copie(s) corrigée(s) pour le calibrage. Relisez-les et changez les notes qui ne vous conviennent pas (la raison est facultative), puis cliquez sur « Corriger » : vos ajustements guideront le reste de la pile.`);
   else if (!hasKey) banner('info', `${done} copie(s) corrigée(s) sans corrigé : les notes ont tendance à être généreuses. Vérifiez-les, ou ajoutez votre corrigé pour des notes plus justes.`);
   else banner('ok', `${done} copie(s) corrigée(s). Vérifiez en priorité les copies marquées ⚠.`);
 }
@@ -999,6 +1034,11 @@ function card(r) {
           ? h('div', { class: 'second', textContent: qq.first != null
             ? `⚖ Corrections : ${fmt(qq.first)} et ${fmt(qq.second)} → moyenne retenue`
             : `⚖ 2e correction : ${fmt(qq.second)} / ${fmt(qq.max)}` }) : null;
+        // Note changée : une raison facultative, qui aide le calibrage des copies suivantes.
+        const why = h('input', { type: 'text', class: 'why', value: qq.why || '', maxlength: 300, placeholder: 'Pourquoi ? (facultatif, guide les prochaines copies)',
+          'aria-label': 'Raison du changement de note', oninput: () => { qq.why = why.value; } });
+        const showWhy = () => { why.hidden = qq.ai == null || qq.points === qq.ai; };
+        showWhy();
         const input = h('input', { type: 'text', inputmode: 'decimal', class: 'num', value: fmt(qq.points), 'aria-label': 'Points',
           onchange: () => {
             const v = Math.round((toNumber(input.value) || 0) / r.unit) * r.unit;
@@ -1007,11 +1047,12 @@ function card(r) {
             qq.second = null; // l'enseignant a tranché
             second?.remove();
             tr.className = rowClass();
-            recompute(r); updateGrade(); renderStats();
+            showWhy();
+            recompute(r); updateGrade(); renderStats(); renderCalib();
           } });
         tr.append(h('td', { class: 'q', textContent: qq.question }),
           h('td', { class: 'pts' }, input, h('span', { class: 'muted', textContent: ` / ${fmt(qq.max)}` }), second),
-          h('td', { class: 'just', textContent: qq.justification }));
+          h('td', { class: 'just' }, qq.justification, why));
         return tr;
       }))),
     h('label', { class: 'field comment' }, 'Commentaire pour l\'élève',
@@ -1645,6 +1686,8 @@ $('awake-ok').addEventListener('click', () => {
   try { sessionStorage.setItem('ce.awake', '1'); } catch { /* ignoré */ }
   runAll();
 });
+$('calib-run').addEventListener('click', () => { if (!state.running) runAll(bundles().slice(0, CALIB_COPIES), true); });
+
 $('run').addEventListener('click', () => {
   // Après une numérisation : dernière confirmation, avec le nombre de pages qui seront décomptées.
   if (camState.review) {
