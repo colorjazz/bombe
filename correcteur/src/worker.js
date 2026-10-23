@@ -210,9 +210,11 @@ async function checkout(request, env, url) {
     'line_items[0][quantity]': '1',
     'line_items[0][price_data][currency]': 'cad',
     'line_items[0][price_data][unit_amount]': String(p.amount),
+    // La clé fait partie du nom de l'article : c'est la seule ligne présente sur tous les reçus, y compris
+    // ceux d'une commande à 0 $ (code promo à 100 %), où Stripe ne crée pas de paiement ni sa description.
     'line_items[0][price_data][product_data][name]': isEnglish(request)
-      ? `Burn the Pile — ${p.nameEn}, ${p.pages.toLocaleString('en-CA')} pages`
-      : `Brûle la pile — ${p.name}, ${p.pages.toLocaleString('fr-CA')} pages`,
+      ? `Burn the Pile — ${p.nameEn}, ${p.pages.toLocaleString('en-CA')} pages · Access key ${key}`
+      : `Brûle la pile — ${p.name}, ${p.pages.toLocaleString('fr-CA')} pages · Clé d'accès ${key}`,
     'metadata[key]': key,
     'metadata[pages]': String(p.pages),
     // La description du paiement figure sur le reçu que Stripe envoie par courriel : le client y retrouve sa clé.
