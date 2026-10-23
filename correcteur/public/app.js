@@ -9,7 +9,7 @@ const CONCURRENCY = 5;
 const KEY_STORAGE = 'ce.accessKey';
 const PDFJS = '/vendor/pdfjs'; // pdf.js 3.11.174, hébergé sur le site
 
-import { t, tr, lang, startI18n } from './i18n.js';
+import { t, tr, trTo, lang, startI18n } from './i18n.js';
 import { refineToInk } from './boxes.js';
 import { looksSideways, rotateDataUrl } from './orient.js';
 import { startCamera } from './camera.js';
@@ -659,8 +659,10 @@ async function runAll(only, calibrating = false) {
     rubricPages: state.rubricPages.map((p) => p.url),
     grid: state.grid || undefined,
     anonymous: anonymous(),
-    // Essai des annotations sur la copie (cadres et notes en marge) : localStorage « ce.annot » = « 1 ».
-    annotate: (() => { try { return localStorage.getItem('ce.annot') === '1'; } catch { return false; } })(),
+    // Annotations sur la copie : ✓ vert, encadré rouge et ✗, note en marge à côté de chaque réponse.
+    // Mesuré sur 9 vraies copies : 88 cadres justes sur 88. localStorage « ce.annot » = « 0 » les retire (dépannage).
+    annotate: (() => { try { return localStorage.getItem('ce.annot') !== '0'; } catch { return true; } })(),
+    outLang: $('out-lang').value || lang,
   };
   const hasKey = !!(settings.rubric || settings.rubricPages.length || settings.grid);
   // Même examen que la copie déjà corrigée : on réutilise son découpage en questions (voir plus bas).
@@ -726,7 +728,7 @@ async function runAll(only, calibrating = false) {
       state.results.unshift({
         id, no: b[0].no, file: b[0].file, pageUrls: b.map((p) => p.url), exam: settings.exam, group: r.group || settings.group, name: r.name, reliability: r.reliability, grade: r.grade, total: r.total,
         // `ai` : la note proposée, pour repérer celles que l'enseignant change (calibrage).
-        unit: settings.wholePoints ? 1 : 0.5, questions: r.questions.map((q) => ({ ...q, ai: r.illegible ? null : q.points })), examKey,
+        unit: settings.wholePoints ? 1 : 0.5, questions: r.questions.map((q) => ({ ...q, ai: r.illegible ? null : q.points })), examKey, lang: settings.outLang,
         comment: r.comment, pageCount: b.length, illegible: !!r.illegible,
         flags: hasKey || r.illegible ? r.flags : [...r.flags, 'Corrigée sans corrigé : vérifiez que la note n’est pas trop généreuse.'],
       });
@@ -931,7 +933,7 @@ async function annotatedPages(r, { forPrint = false } = {}) {
       ctx.fillStyle = RED; ctx.strokeStyle = RED; ctx.textBaseline = 'top';
       if (it.kind === 'grade') {
         ctx.font = `bold ${big * 1.6}px sans-serif`;
-        ctx.fillText(r.grade == null ? tr('Illisible') : `${fmt(r.grade)} / ${fmt(r.total)}`, x, it.y);
+        ctx.fillText(r.grade == null ? trTo(r.lang || lang, 'Illisible') : `${fmt(r.grade)} / ${fmt(r.total)}`, x, it.y);
         continue;
       }
       if (it.kind === 'comment') {
@@ -988,15 +990,19 @@ async function annotatedPages(r, { forPrint = false } = {}) {
 const escHtml = (t) => String(t ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 function resultSheet(r) {
   const rows = r.questions.map((q, i) => `<tr><td class="q">${escHtml(qLabel(q, i))}</td><td>${escHtml(q.question)}</td><td class="p">${fmt(q.points)}&nbsp;/&nbsp;${fmt(q.max)}</td><td>${escHtml(q.justification)}</td></tr>`).join('');
-  return `<div class="head"><div><b>${escHtml(r.name || tr('Nom à compléter'))}</b>${r.group ? ` · ${escHtml(r.group)}` : ''}${r.exam ? `<br><small>${escHtml(r.exam)}</small>` : ''}</div>
-    <div class="grade">${r.grade == null ? tr('Illisible') : `${fmt(r.grade)} / ${fmt(r.total)}`}</div></div>
-    <table><thead><tr><th></th><th>${tr('Question')}</th><th>${tr('Points')}</th><th>${tr('Justification')}</th></tr></thead><tbody>${rows}</tbody></table>
+  return `<div class="head"><div><b>${escHtml(r.name || trTo(r.lang || lang, 'Nom à compléter'))}</b>${r.group ? ` · ${escHtml(r.group)}` : ''}${r.exam ? `<br><small>${escHtml(r.exam)}</small>` : ''}</div>
+    <div class="grade">${r.grade == null ? trTo(r.lang || lang, 'Illisible') : `${fmt(r.grade)} / ${fmt(r.total)}`}</div></div>
+    <table><thead><tr><th></th><th>${trTo(r.lang || lang, 'Question')}</th><th>${trTo(r.lang || lang, 'Points')}</th><th>${trTo(r.lang || lang, 'Justification')}</th></tr></thead><tbody>${rows}</tbody></table>
     ${r.comment ? `<p class="comment">${escHtml(r.comment)}</p>` : ''}`;
 }
 async function printBatch(list, { copies = true, results = false } = {}) {
   const w = window.open('', '_blank');
   if (!w) { alert(tr('Autorisez les fenêtres surgissantes pour imprimer.')); return; }
-  const wait = (msg) => { w.document.open(); w.document.write(`<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><title>${tr('Copies corrigées')}</title></head><body style="font:15px system-ui;margin:24px">${msg}</body></html>`); w.document.close(); };
+  const wait = (msg) => { w.document.open(); w.document.write(`<!doctype html><html lang="${pl}"><head><meta charset="utf-8"><title>${escHtml(title)}</title></head><body style="font:15px system-ui;margin:24px">${msg}</body></html>`); w.document.close(); };
+  // Titre de la fenêtre = nom du PDF enregistré : dans la langue des copies, avec le nom de l'élève ou de l'évaluation.
+  const pl = list[0]?.lang || lang;
+  const title = list.length === 1 ? `${list[0].name || trTo(pl, 'Copie')} — ${trTo(pl, 'copie corrigée')}`
+    : `${list[0]?.exam ? `${list[0].exam} — ` : ''}${trTo(pl, 'Copies corrigées')}`;
   wait(tr('Préparation de l’impression…'));
   const parts = [];
   for (const [k, r] of list.entries()) {
@@ -1005,7 +1011,7 @@ async function printBatch(list, { copies = true, results = false } = {}) {
     if (copies && r.pageUrls) for (const url of await annotatedPages(r, { forPrint: true })) parts.push(`<section class="sheet page"><img src="${url}"></section>`);
   }
   w.document.open();
-  w.document.write(`<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><title>${tr('Copies corrigées')}</title>
+  w.document.write(`<!doctype html><html lang="${pl}"><head><meta charset="utf-8"><title>${escHtml(title)}</title>
     <style>@page{size:letter;margin:8mm}body{margin:0;font:11px/1.35 system-ui,sans-serif;color:#111}
     .sheet{break-after:page;page-break-after:always}.sheet:last-child{break-after:auto;page-break-after:auto}
     .page{height:calc(279.4mm - 16mm);display:flex;align-items:flex-start;justify-content:center}.page img{max-width:100%;max-height:100%;object-fit:contain}

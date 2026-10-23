@@ -254,6 +254,7 @@ const EN = {
   'Pivoter la page de 90°': 'Rotate the page 90°',
   'Vérification de l’orientation des pages…': 'Checking page orientation…',
   'Importation…': 'Importing…',
+  'copie corrigée': 'graded paper',
   'Pourquoi ? (facultatif, guide les prochaines copies)': 'Why? (optional, guides the next papers)',
   'Raison du changement de note': 'Reason for changing the mark',
   "🎯 Calibrer d'abord : corriger 3 copies, ajuster, puis le reste": '🎯 Calibrate first: mark 3 papers, adjust, then the rest',
@@ -345,8 +346,11 @@ function translateCause(why) {
 const norm = (s) => s.replace(/\s+/g, ' ').trim();
 
 // Traduit une chaîne française ; renvoie la chaîne d'origine si aucune traduction n'existe.
-export function tr(text) {
-  if (lang !== 'en' || !text) return text;
+export function tr(text) { return trTo(lang, text); }
+
+// Traduit vers une langue donnée : les impressions suivent la langue de la copie, pas celle de l'interface.
+export function trTo(to, text) {
+  if (to !== 'en' || !text) return text;
   const key = norm(text);
   if (!key) return text;
   if (EN[key] != null) return text.replace(text.trim(), EN[key]);

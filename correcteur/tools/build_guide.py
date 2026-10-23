@@ -61,6 +61,15 @@ FR = dict(
 <li><b>Approfondie</b> : deux corrections indépendantes ; la note retenue est leur moyenne, question par question. Une <b>fiabilité</b> (en %) mesure leur accord, et les questions où elles diffèrent sont signalées ⚖. 2 pages décomptées par page.</li>
 <li>Le choix se fait dans l’affichage <b>Avancé</b>.</li>
 </ul>'''),
+    ('calibrage', 'Calibrage : une pile corrigée comme vous', '''
+<p>Comme lorsque vous corrigez quelques copies pour « vous faire la main », le calibrage montre à l’outil votre façon de noter avant qu’il corrige le reste de la pile.</p>
+<ul>
+<li>Avec plus de 4 copies, cliquez sur <b>« 🎯 Calibrer d’abord »</b> : 3 copies seulement sont corrigées.</li>
+<li>Relisez-les et <b>changez les notes</b> qui ne vous conviennent pas. Un champ <b>« Pourquoi ? »</b> apparaît : une courte raison aide beaucoup (ex. « j’accepte une conséquence générale si elle est expliquée »), mais elle est facultative.</li>
+<li>Cliquez ensuite sur <b>« Corriger »</b> pour le reste : chaque note changée sert d’exemple (la réponse de l’élève, la note proposée, la vôtre et votre raison). L’outil applique les mêmes critères sans recopier vos notes.</li>
+<li>Les notes changées plus tard, en cours de relecture, guident aussi les copies corrigées ensuite. Le calibrage vaut pour la même évaluation (même nom, barème et corrigé).</li>
+<li>Rien n’est conservé sur nos serveurs : les exemples restent dans votre navigateur et partent avec chaque copie. Aucune page n’est décomptée en plus.</li>
+</ul>'''),
     ('langue', 'Correction de la langue', '''
 <ul>
 <li>Onglet <b>Correction de la langue</b> : l’IA relève les fautes sur chaque page et les <b>surligne sur la copie</b>, avec la correction et la règle. 1 page de copie = 1 page décomptée.</li>
@@ -80,7 +89,7 @@ FR = dict(
     ('exporter', 'Exporter et imprimer', '''
 <ul>
 <li><b>Télécharger les notes (CSV)</b> : un fichier qui s’ouvre dans Excel ou se charge dans votre logiciel de notes. Une colonne par question quand toutes les copies ont le même découpage. La correction de la langue a son propre fichier.</li>
-<li><b>Voir la copie corrigée</b> : la copie avec la note en haut et, dans la marge, les points et une courte note par question, plus le commentaire.</li>
+<li><b>Voir la copie corrigée</b> : la copie annotée comme à la main : ✓ vert sur les bonnes réponses, encadré rouge (et ✗ si aucun point) sur les autres, la note en haut et, dans la marge, les points et une courte note par question, plus le commentaire.</li>
 <li><b>Imprimer…</b> : toutes les copies d’un coup, dans l’ordre de la pile. Au choix : les <b>copies annotées</b>, les <b>fiches de résultats</b> (plusieurs par feuille, à découper) ou <b>les deux</b> (la fiche de chaque élève, puis sa copie). Pour enregistrer en PDF, choisissez « Enregistrer au format PDF » comme imprimante.</li>
 <li><b>Terminer la session</b> efface tout de l’onglet ; l’appli propose d’abord de télécharger le CSV.</li>
 </ul>'''),
@@ -166,6 +175,15 @@ EN = dict(
 <li><b>In-depth</b>: two independent gradings; the grade kept is their average, question by question. A <b>reliability</b> score (%) measures how much they agree, and questions where they differ are flagged ⚖. 2 pages used per page.</li>
 <li>The choice is in the <b>Advanced</b> view.</li>
 </ul>'''),
+    ('calibrage', 'Calibration: a pile marked your way', '''
+<p>Just like marking a few papers first to “get your eye in”, calibration shows the tool how you mark before it marks the rest of the pile.</p>
+<ul>
+<li>With more than 4 papers, click <b>“🎯 Calibrate first”</b>: only 3 papers are marked.</li>
+<li>Review them and <b>change any marks</b> you disagree with. A <b>“Why?”</b> field appears: a short reason helps a lot (e.g. “I accept a general consequence if it is explained”), but it is optional.</li>
+<li>Then click <b>“Grade”</b> for the rest: each changed mark becomes an example (the student’s answer, the suggested mark, yours and your reason). The tool applies the same criteria without copying your marks.</li>
+<li>Marks you change later, while reviewing, also guide the papers marked afterwards. Calibration applies to the same assessment (same name, total and answer key).</li>
+<li>Nothing is stored on our servers: the examples stay in your browser and are sent with each paper. No extra pages are used.</li>
+</ul>'''),
     ('langue', 'Language check', '''
 <ul>
 <li><b>Language check</b> tab: the AI finds the errors on each page and <b>highlights them on the paper</b>, with the correction and the rule. 1 page of student work = 1 page used.</li>
@@ -185,7 +203,7 @@ EN = dict(
     ('exporter', 'Exporting and printing', '''
 <ul>
 <li><b>Download results (CSV)</b>: a file that opens in Excel or imports into your gradebook. One column per question when every paper has the same breakdown. The language check has its own file.</li>
-<li><b>View graded paper</b>: the paper with the grade at the top and, in the margin, the points and a short note per question, plus the feedback.</li>
+<li><b>View graded paper</b>: the paper marked up as if by hand: green ✓ on correct answers, red box (and ✗ if no points) on the others, the grade at the top and, in the margin, the points and a short note per question, plus the feedback.</li>
 <li><b>Print…</b>: all papers at once, in stack order. Your choice: the <b>annotated papers</b>, the <b>result sheets</b> (several per page, to cut out) or <b>both</b> (each student’s sheet, then their paper). To save as PDF, choose “Save as PDF” as the printer.</li>
 <li><b>End session</b> clears everything from the tab; the app first offers to download the CSV.</li>
 </ul>'''),
