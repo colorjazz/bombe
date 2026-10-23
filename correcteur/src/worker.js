@@ -301,6 +301,9 @@ function buildPrompt(o) {
   const step = o.wholePoints ? '1 point' : '0,5 point';
   return [
     "Tu es un enseignant expérimenté, rigoureux et juste. Tu corriges la copie d'un élève, question par question.",
+    // En anglais, la consigne est rappelée en tête et pour le commentaire : placée seulement à la fin, l'IA écrivait
+    // parfois le commentaire en français (tutoiement), la consigne étant rédigée en français.
+    o.english ? ENGLISH_OUTPUT : '',
     '',
     `Évaluation : « ${o.exam || 'non précisé'} ». Barème total : ${o.total} points. Granularité : ${step} (aucune valeur plus fine).`,
     '',
@@ -322,7 +325,9 @@ function buildPrompt(o) {
     "GROUPE : lis le groupe ou la classe écrit sur la copie (ex. « 541 », « Gr. 02 », « 4e B »), tel qu'écrit. S'il n'y en a pas, renvoie une chaîne vide.",
     "INCERTITUDE : mets « incertain » à true si une partie importante est illisible, si la copie semble incomplète ou hors sujet, ou si tu hésites sérieusement sur la note.",
     "NIVEAUX : si tu mentionnes un niveau de rendement ou une cote (ex. « Level 3 », « niveau 2 », « B »), il doit correspondre au pourcentage réellement obtenu selon l'échelle fournie par l'enseignant (en Ontario : niveau 4 = 80-100 %, niveau 3 = 70-79 %, niveau 2 = 60-69 %, niveau 1 = 50-59 %, R = moins de 50 %). Sans échelle claire, ne mentionne pas de niveau.",
-    "COMMENTAIRE : 2 à 4 phrases adressées à l'élève (tutoiement), concrètes et constructives : une réussite, l'erreur principale, une piste de progrès.",
+    o.english
+      ? "COMMENTAIRE : 2 à 4 phrases EN ANGLAIS adressées à l'élève (« you »), concrètes et constructives : une réussite, l'erreur principale, une piste de progrès."
+      : "COMMENTAIRE : 2 à 4 phrases adressées à l'élève (tutoiement), concrètes et constructives : une réussite, l'erreur principale, une piste de progrès.",
     "RÉPONSE : pour chaque question, « reponse » résume fidèlement ce que l'élève a répondu, en 25 mots au plus, sans son nom (chaîne vide s'il n'a rien répondu).",
     o.annotate ? ANNOTATION_RULE : '',
     o.calibration?.length ? calibrationText(o.calibration) : '',
