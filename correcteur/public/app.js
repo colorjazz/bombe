@@ -267,19 +267,21 @@ async function pdfToJpegs(file, onPage) {
   return out;
 }
 
-async function filesToPages(files) {
+async function filesToPages(files, progress = (text) => banner('info', text)) {
   const out = [];
   const errors = [];
-  for (const file of files) {
+  for (const [k, file] of files.entries()) {
+    const of = files.length > 1 ? `Fichier ${k + 1}/${files.length} · ` : '';
     try {
       if (file.type === 'application/pdf' || /\.pdf$/i.test(file.name)) {
-        const urls = await pdfToJpegs(file, (i, n) => banner('info', `Lecture de « ${file.name} » : page ${i}/${n}…`));
+        const urls = await pdfToJpegs(file, (i, n) => progress(`${of}Lecture de « ${file.name} » : page ${i}/${n}…`));
         urls.forEach((url, i) => out.push({ id: uid(), url, file: file.name, firstOfFile: i === 0 }));
       } else if (isImage(file)) {
+        progress(`${of}Lecture de « ${file.name} »…`);
         // `source` garde la photo d'origine : la correction de la langue l'envoie en pleine résolution.
         out.push({ id: uid(), url: await imageToJpeg(file), file: file.name, firstOfFile: true, source: file });
       } else if (isDocx(file) || isText(file)) {
-        banner('info', `Mise en page de « ${file.name} »…`);
+        progress(`${of}Mise en page de « ${file.name} »…`);
         const urls = await (isDocx(file) ? docxToJpegs(file) : textToJpegs(file));
         urls.forEach((url, i) => out.push({ id: uid(), url, file: file.name, firstOfFile: i === 0 }));
       } else {
@@ -289,7 +291,7 @@ async function filesToPages(files) {
       errors.push(`${file.name} (${err.message || 'illisible'})`);
     }
   }
-  if (out.length) banner('info', 'Vérification de l’orientation des pages…');
+  if (out.length) progress('Vérification de l’orientation des pages…');
   const turned = await straighten(out);
   banner(errors.length ? 'err' : turned ? 'info' : '', errors.length ? `Fichiers ignorés : ${errors.join(', ')}`
     : turned ? `${turned} page(s) photographiée(s) de côté ont été redressées. Vérifiez les miniatures (bouton ↻ pour pivoter).` : '');
@@ -1544,22 +1546,43 @@ $('cam-undo').addEventListener('click', () => {
 
 // ---------- Événements ----------
 
+// Pendant l'import, l'avancement s'affiche dans la zone de dépôt elle-même : sans signe de vie, on a tendance à
+// glisser les fichiers une deuxième fois. Un fichier déjà en cours d'import est ignoré.
 function dropzone(zone, input, onFiles) {
-  input.addEventListener('change', () => { onFiles([...input.files]); input.value = ''; });
+  const status = h('span', { class: 'import-status', 'aria-live': 'polite' });
+  zone.append(status);
+  const pending = new Set();
+  let running = 0;
+  const sig = (f) => `${f.name}|${f.size}|${f.lastModified}`;
+  const take = async (list) => {
+    const files = list.filter((f) => !pending.has(sig(f)));
+    if (!files.length) { if (running) status.textContent = 'Déjà en cours d’importation, patientez…'; return; }
+    files.forEach((f) => pending.add(sig(f)));
+    running++;
+    zone.classList.add('busy');
+    status.textContent = files.length > 1 ? `Importation de ${files.length} fichiers…` : 'Importation…';
+    try {
+      await onFiles(files, (text) => { status.textContent = text; });
+    } finally {
+      files.forEach((f) => pending.delete(sig(f)));
+      if (!--running) { zone.classList.remove('busy'); status.textContent = ''; }
+    }
+  };
+  input.addEventListener('change', () => { take([...input.files]); input.value = ''; });
   ['dragenter', 'dragover'].forEach((t) => zone.addEventListener(t, (e) => { e.preventDefault(); zone.classList.add('over'); }));
   ['dragleave', 'drop'].forEach((t) => zone.addEventListener(t, () => zone.classList.remove('over')));
-  zone.addEventListener('drop', (e) => { e.preventDefault(); onFiles([...e.dataTransfer.files]); });
+  zone.addEventListener('drop', (e) => { e.preventDefault(); take([...e.dataTransfer.files]); });
 }
 
-dropzone($('drop'), $('files'), async (files) => {
-  const added = await filesToPages(files);
+dropzone($('drop'), $('files'), async (files, progress) => {
+  const added = await filesToPages(files, progress);
   state.pages.push(...added);
   applyMode();
   if ($('mode').value === 'auto') { renderPages(); await detectCopies(); return; }
   renderPages();
 });
-dropzone($('rubric-drop'), $('rubric-files'), async (files) => {
-  const added = await filesToPages(files);
+dropzone($('rubric-drop'), $('rubric-files'), async (files, progress) => {
+  const added = await filesToPages(files, progress);
   state.rubricPages.push(...added.map(({ id, url }) => ({ id, url })));
   if (state.rubricPages.length > MAX_RUBRIC_PAGES) {
     state.rubricPages.length = MAX_RUBRIC_PAGES;

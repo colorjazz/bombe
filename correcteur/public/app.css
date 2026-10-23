@@ -9,6 +9,11 @@
 .drop:hover, .drop.over { border-color: var(--primary); background: rgba(99,102,241,.07); }
 .drop.compact { padding: .7rem; grid-auto-flow: column; justify-content: center; gap: .6rem; font-size: .85rem; }
 .drop .ico { font-size: 1.6rem; }
+.drop .import-status { display: none; }
+.drop.busy { border-style: solid; border-color: var(--primary); background: rgba(99,102,241,.1); }
+.drop.busy > :not(.import-status) { display: none; }
+.drop.busy .import-status { display: flex; align-items: center; justify-content: center; gap: .6rem; font-weight: 600; min-height: 2.6rem; }
+.drop.busy .import-status::before { content: ''; flex: none; width: 1.1rem; height: 1.1rem; border: 2px solid var(--primary-2); border-right-color: transparent; border-radius: 50%; animation: spin .8s linear infinite; }
 
 .thumbs { display: flex; flex-wrap: wrap; gap: .4rem; }
 .thumb { position: relative; width: 84px; height: 112px; border-radius: 8px; overflow: hidden; border: 1px solid var(--line-2); background: #0d1527; }
