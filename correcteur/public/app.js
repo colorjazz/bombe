@@ -103,10 +103,18 @@ function maybeWelcome() {
   try { seen = localStorage.getItem('ce.welcome') === '1'; } catch { /* ignoré */ }
   if (!seen && $('newkey').hidden && !$('app').hidden) $('welcome').hidden = false;
 }
-async function startTrial() {
+// Le navigateur se souvient qu'un essai y a été pris (sans garder la clé : sur un ordinateur partagé, le collègue
+// suivant ne doit pas récupérer les pages d'un autre). Reprendre un essai demande alors un clic de plus.
+const TRIAL_TAKEN = 'ce.trialTaken';
+async function startTrial(force = false) {
+  let taken = false;
+  try { taken = localStorage.getItem(TRIAL_TAKEN) === '1'; } catch { /* navigation privée */ }
+  if (taken && force !== true) { $('trial-taken').hidden = false; return; }
+  $('trial-taken').hidden = true;
   $('trial').disabled = true;
   try {
     const { key } = await api('/api/trial', { method: 'POST', auth: false });
+    try { localStorage.setItem(TRIAL_TAKEN, '1'); } catch { /* idem */ }
     await useKey(key);
     $('newkey-value').textContent = key;
     $('newkey').hidden = false;
@@ -1717,7 +1725,8 @@ $('search').addEventListener('input', renderResults);
 $('export').addEventListener('click', exportCSV);
 $('end').addEventListener('click', endSession);
 
-$('trial').addEventListener('click', startTrial);
+$('trial').addEventListener('click', () => startTrial());
+$('trial-anyway').addEventListener('click', () => startTrial(true));
 $('key-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   try { await useKey($('key-input').value); maybeWelcome(); } catch (err) { showGate(err.message); }

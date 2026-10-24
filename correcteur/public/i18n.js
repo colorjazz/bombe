@@ -14,6 +14,8 @@ const EN = {
   'Commencer gratuitement': 'Start for free',
   "30 pages offertes, sans carte de crédit. Votre clé d'accès s'affiche à l'écran : notez-la.": '30 free pages, no credit card. Your access key appears on screen: write it down.',
   'Obtenir mes 30 pages gratuites': 'Get my 30 free pages',
+  'Un essai gratuit a déjà été pris sur ce navigateur. Utilisez la clé reçue (champ ci-dessous), ou choisissez un pack.': 'A free trial was already taken in this browser. Use the key you received (field below), or choose a pack.',
+  'Ordinateur partagé avec un collègue ? Obtenir quand même un essai': 'Sharing this computer with a colleague? Get a trial anyway',
   'ou': 'or',
   "J'ai déjà une clé d'accès": 'I already have an access key',
   'Utiliser cette clé': 'Use this key',
