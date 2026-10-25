@@ -811,7 +811,7 @@ function readGrid(raw) {
   return raw.map((c) => {
     const max = Number(c.max);
     const levels = (Array.isArray(c.levels) ? c.levels : []).slice(0, 10)
-      .map((l) => ({ points: Number(l.points), description: String(l.description || '').slice(0, 600) }))
+      .map((l) => ({ points: Number(l.points), description: String(l.description || '').slice(0, 600), label: String(l.label || '').slice(0, 40) }))
       .filter((l) => Number.isFinite(l.points) && l.points >= 0 && l.points <= max);
     if (!c.name || !(max > 0)) throw new HttpError(400, 'Grille invalide');
     return { name: String(c.name).slice(0, 200), max, levels, note: String(c.note || '').slice(0, 600) };
@@ -843,7 +843,7 @@ function readStructure(raw) {
 
 function gridText(grid) {
   return grid.map((c, i) => [`${i + 1}. ${c.name} (sur ${fr(c.max)} points)`,
-    ...[...c.levels].sort((x, y) => y.points - x.points).map((l) => `   - ${fr(l.points)} pt : ${l.description}`),
+    ...[...c.levels].sort((x, y) => y.points - x.points).map((l) => `   - ${l.label ? `Niveau ${l.label}, ` : ''}${fr(l.points)} pt : ${l.description}`),
     ...(c.note ? [`   Remarque de l'enseignant : ${c.note}`] : [])].join('\n')).join('\n');
 }
 
@@ -879,7 +879,7 @@ const GRID_SCHEMA = {
               points_max: { type: 'number' },
               niveaux: {
                 type: 'array',
-                items: { type: 'object', required: ['points', 'description'], properties: { points: { type: 'number' }, description: { type: 'string' } } },
+                items: { type: 'object', required: ['points', 'description'], properties: { etiquette: { type: 'string' }, points: { type: 'number' }, description: { type: 'string' } } },
               },
             },
           },
@@ -893,13 +893,22 @@ const GRID_SCHEMA = {
 async function rubric(request, env) {
   await getKey(env, bearer(request));
   const body = await readJson(request);
+  const copy = !!body.copy; // « Avec une grille » : recopier la grille de l'enseignant telle quelle, total compris
   const total = Number(body.total);
-  if (!(total > 0 && total <= 1000)) throw new HttpError(400, 'Barème invalide');
+  if (!copy && !(total > 0 && total <= 1000)) throw new HttpError(400, 'Barème invalide');
   const text = String(body.rubric || '').slice(0, 8000);
   checkImages(body.rubricPages || [], MAX_RUBRIC_PAGES, 'Corrigé');
   if (!text.trim() && !(body.rubricPages || []).length) throw new HttpError(400, "Écrivez d'abord vos consignes ou ajoutez votre corrigé.");
   const unit = body.wholePoints ? 1 : 0.5;
-  const system = [
+  const system = copy ? [
+    "Tu es conseiller pédagogique. Voici la grille d'évaluation d'un enseignant (image ou texte). Recopie-la FIDÈLEMENT, sans rien inventer ni reformuler :",
+    "- chaque critère de la grille, dans l'ordre, avec son nom exact et ses points maximum (sa pondération) ;",
+    "- pour chaque critère, tous ses niveaux du plus élevé au plus bas : « etiquette » = l'étiquette courte du niveau, sans pourcentage ni points (« A » et non « A (100 %) » ; aussi 5, 4, 3 ; « Marquée », « Assurée »… ; vide s'il n'y en a pas), « points » = les points de ce niveau, « description » = le texte exact du niveau (corrige seulement les coquilles évidentes).",
+    "- Si la grille donne une échelle commune à tous les critères (ex. une légende A à E), répète-la pour chaque critère, avec les points correspondants.",
+    "- Si un niveau n'a pas de points écrits, calcule-les à partir des points maximum du critère : le plus haut niveau = 100 %, puis 80 %, 60 %, 40 %, 20 % (0 pour un niveau qui signifie « absent » ou « non fait »). Si un critère n'a pas de points maximum, mets 10.",
+    `- Les points doivent être des multiples de ${fr(unit)}.`,
+    "Ne recopie ni le nom de l'élève, ni les notes ou cochages éventuels : seulement la grille vierge. Garde la langue de la grille.",
+  ].join('\n') : [
     "Tu es conseiller pédagogique. À partir des consignes et du corrigé d'un enseignant, rédige une grille d'évaluation critériée.",
     `Barème total : ${fr(total)} points. Les points maximum des critères doivent totaliser exactement ${fr(total)}.`,
     "Reprends les critères et les points de l'enseignant s'il en donne ; n'en invente pas d'autres. S'il n'en donne pas, propose 3 à 6 critères pertinents.",
@@ -909,7 +918,8 @@ async function rubric(request, env) {
     isEnglish(request) ? 'Rédige la grille (noms des critères et descriptions) en anglais.' : 'Rédige en français.',
   ].join('\n');
   const image = (url) => ({ type: 'image_url', image_url: { url, detail: 'high' } });
-  const content = [{ type: 'text', text: text ? `CONSIGNES DE L'ENSEIGNANT :\n${text}` : 'Consignes : voir le corrigé joint.' },
+  const content = [{ type: 'text', text: copy ? (text ? `GRILLE OU PRÉCISIONS DE L'ENSEIGNANT :\n${text}` : 'Grille : voir le document joint.')
+    : text ? `CONSIGNES DE L'ENSEIGNANT :\n${text}` : 'Consignes : voir le corrigé joint.' },
     ...(body.rubricPages || []).map(image)];
   let raw;
   try { raw = await aiChat(env, system, content, GRID_SCHEMA); } catch (err) {
@@ -919,7 +929,9 @@ async function rubric(request, env) {
   const snap = (n) => Math.round((Number(n) || 0) / unit) * unit;
   const grid = (raw.criteres || []).map((c) => {
     const max = Math.max(unit, snap(c.points_max));
-    const levels = (c.niveaux || []).map((l) => ({ points: Math.min(max, Math.max(0, snap(l.points))), description: String(l.description || '').trim() }))
+    const levels = (c.niveaux || []).map((l) => ({ points: Math.min(max, Math.max(0, snap(l.points))), description: String(l.description || '').trim(),
+      // « A (100 %) » → « A » : les points sont déjà dans « points »
+      label: String(l.etiquette || '').replace(/\s*[([][^)\]]*(?:%|pts?|points?)[^)\]]*[)\]]\s*$/i, '').trim().slice(0, 40) }))
       .sort((x, y) => y.points - x.points);
     return { name: String(c.nom || 'Critère').trim(), max, levels };
   });

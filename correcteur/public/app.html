@@ -152,8 +152,14 @@
       </div>
 
       <div id="content-settings" class="stack">
+      <div class="method-row" id="method-row">
+        <span class="method-q">Comment corrigez-vous ?</span>
+        <div class="seg method" role="group" aria-label="Façon de corriger">
+          <button id="m-points" type="button" aria-pressed="true">Points par question</button><button id="m-grid" type="button" aria-pressed="false">Avec une grille (critères et niveaux)</button>
+        </div>
+      </div>
       <div class="row2 f-total">
-        <label class="field"><span>Nombre de points <span class="req" aria-hidden="true">*</span></span>
+        <label class="field" id="f-total-pts"><span>Nombre de points <span class="req" aria-hidden="true">*</span></span>
           <input id="total" type="number" min="1" max="1000" step="1" value="" placeholder="ex. 20" inputmode="decimal">
         </label>
         <label class="field"><span>Pages par élève <span class="req" aria-hidden="true">*</span></span>
@@ -178,19 +184,19 @@
       <label id="rubric-drop" class="drop f-drop">
         <input id="rubric-files" type="file" accept="image/*,.heic,.heif,application/pdf,.docx,.txt" multiple hidden>
         <span class="ico"><svg class="ic ic-lg" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="3" width="8" height="4" rx="1"/><path d="M16 5h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2"/></svg></span>
-        <b class="pc-only">Glissez votre corrigé ici, ou cliquez pour ouvrir le dossier</b><b class="touch-only">Choisir le corrigé (photo ou fichier)</b>
-        <span class="muted small">PDF, photo, Word ou texte (.txt) · facultatif · non facturé</span>
+        <b class="pc-only" id="rubric-drop-pc">Glissez votre corrigé ici, ou cliquez pour ouvrir le dossier</b><b class="touch-only" id="rubric-drop-touch">Choisir le corrigé (photo ou fichier)</b>
+        <span class="muted small" id="rubric-drop-sub">PDF, photo, Word ou texte (.txt) · facultatif · non facturé</span>
       </label>
       <p id="rubric-done" class="added" hidden></p>
       <div id="rubric-thumbs" class="thumbs"></div>
-      <div class="grid-tools adv">
+      <div class="grid-tools adv" id="grid-tools">
         <button id="make-grid" class="btn" type="button">Préparer une grille détaillée (gratuit)</button>
-        <span class="muted small">Recommandé pour les travaux de rédaction : l'IA rédige des niveaux précis pour chaque critère, vous les validez, et la même grille s'applique à toutes les copies. Les notes deviennent beaucoup plus constantes.</span>
+        <span class="muted small" id="grid-tools-hint">Recommandé pour les travaux de rédaction : l'IA rédige des niveaux précis pour chaque critère, vous les validez, et la même grille s'applique à toutes les copies. Les notes deviennent beaucoup plus constantes.</span>
       </div>
       <div id="grid-editor" class="grid-editor" hidden>
         <div class="grid-head"><b>Grille détaillée</b><span id="grid-total" class="small"></span>
           <button id="grid-remove" class="btn ghost small" type="button">Retirer la grille</button></div>
-        <p class="muted small" style="margin:0">Relisez et ajustez au besoin. Un niveau par ligne, sous la forme « points : description ».</p>
+        <p class="muted small" style="margin:0" id="grid-help">Relisez et ajustez au besoin : la même grille s'applique à toutes les copies.</p>
         <div id="grid-criteria" class="stack"></div>
       </div>
       </div>

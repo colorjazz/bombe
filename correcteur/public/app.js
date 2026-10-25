@@ -504,11 +504,14 @@ function renderSummary() {
   const gridSum = state.grid ? state.grid.reduce((a, c) => a + (Number(c.max) || 0), 0) : null;
   const gridOk = state.kind === 'lang' || gridSum == null || Math.abs(gridSum - Number($('total').value)) < 1e-9;
   // Le nombre de points et les pages par élève ne servent qu'à la correction de copies (champs cachés en mode langue).
-  const needTotal = state.kind === 'content' && !(Number($('total').value) > 0);
-  run.disabled = state.running || state.detecting || !n || !grouped || tooLong || !enough || !gridOk || needTotal
+  const needGrid = byGrid() && !state.grid; // avec une grille : la grille lue fixe le total
+  const needTotal = state.kind === 'content' && !needGrid && !(Number($('total').value) > 0);
+  run.disabled = state.running || state.detecting || !n || !grouped || tooLong || !enough || !gridOk || needTotal || needGrid || state.reading
     || (state.kind === 'content' && !(Number($('per-student').value) >= 1));
   run.textContent = state.running ? (state.kind === 'lang' ? 'Analyse en cours…' : 'Correction en cours…')
     : state.detecting ? 'Analyse des copies en cours…'
+    : n && state.reading ? 'Lecture de la grille…'
+    : n && needGrid ? 'Ajoutez votre grille (section 1)'
     : n && needTotal ? 'Indiquez le nombre de points'
     : n && state.kind === 'content' && !(Number($('per-student').value) >= 1) ? 'Indiquez le nombre de pages par élève'
     : n && !grouped ? 'Indiquez le nombre de pages par élève'
@@ -530,23 +533,11 @@ function renderRubric() {
     } }))));
   const n = state.rubricPages.length;
   $('rubric-done').hidden = !n;
-  $('rubric-done').textContent = `✓ Corrigé ajouté (${pl(n, 'page', 'pages')}). Il n’est pas facturé.`;
+  $('rubric-done').textContent = byGrid() ? `✓ Grille ajoutée (${pl(n, 'page', 'pages')}). Elle n’est pas facturée.` : `✓ Corrigé ajouté (${pl(n, 'page', 'pages')}). Il n’est pas facturé.`;
 }
 
 // ---------- Grille détaillée ----------
 
-// Chaque ligne « points : description » est un niveau ; les autres lignes forment une remarque transmise à l'IA (rien n'est perdu).
-const LEVEL_LINE = /^\s*[•*-]?\s*(\d+(?:[.,]\d+)?)\s*(?:pts?|points?)?\s*[:–-]\s*(.+)$/i;
-function parseCriterion(text) {
-  const levels = [], notes = [];
-  for (const line of text.split('\n')) {
-    const m = line.match(LEVEL_LINE);
-    if (m) levels.push({ points: toNumber(m[1]), description: m[2].trim() });
-    else if (line.trim()) notes.push(line.trim());
-  }
-  return { levels, note: notes.join(' ') };
-}
-const levelsText = (levels, note) => [...levels.map((l) => `${fmt(l.points)} : ${l.description}`), ...(note ? [note] : [])].join('\n');
 const toNumber = (v) => Number(String(v).trim().replace(/\s/g, '').replace(',', '.'));
 // Les grilles générées contiennent parfois des lettres cyrilliques ou grecques identiques en apparence.
 const HOMOGLYPHS = { 'а': 'a', 'е': 'e', 'о': 'o', 'р': 'p', 'с': 'c', 'х': 'x', 'у': 'y', 'і': 'i', 'ј': 'j', 'ѕ': 's', 'А': 'A', 'Е': 'E', 'О': 'O', 'Р': 'P', 'С': 'C', 'Х': 'X', 'Т': 'T', 'Н': 'H', 'К': 'K', 'М': 'M', 'В': 'B', 'ο': 'o', 'α': 'a' };
@@ -555,46 +546,98 @@ const cleanText = (t) => String(t).replace(/[аеорсхуіјѕАЕОРСХТ�
 function updateGridTotal() {
   if (!state.grid) return;
   const sum = state.grid.reduce((a, c) => a + (Number(c.max) || 0), 0);
-  const total = Number($('total').value);
   const el = $('grid-total');
-  el.textContent = `Total : ${fmt(sum)} / ${fmt(total)} points`;
-  el.className = `small ${Math.abs(sum - total) < 1e-9 ? 'ok' : 'bad'}`;
+  if (byGrid()) { // avec une grille, le total est celui de la grille
+    $('total').value = sum > 0 ? String(sum) : '';
+    el.textContent = `Total : ${fmt(sum)} points`; el.className = 'small ok';
+  } else {
+    const total = Number($('total').value);
+    el.textContent = `Total : ${fmt(sum)} / ${fmt(total)} points`;
+    el.className = `small ${Math.abs(sum - total) < 1e-9 ? 'ok' : 'bad'}`;
+  }
   renderSummary();
 }
 
+// Chaque critère : son nom, ses points maximum, puis un niveau par ligne (étiquette, points, description).
 function renderGrid() {
   $('grid-editor').hidden = !state.grid;
-  $('make-grid').textContent = state.grid ? 'Régénérer la grille' : 'Préparer une grille détaillée (gratuit)';
+  $('make-grid').textContent = state.reading ? 'Un instant, lecture de la grille…'
+    : byGrid() ? (state.grid ? 'Relire ma grille' : 'Lire ma grille')
+    : state.grid ? 'Régénérer la grille' : 'Préparer une grille détaillée (gratuit)';
   if (!state.grid) { renderSummary(); return; }
-  $('grid-criteria').replaceChildren(...state.grid.map((c) => h('div', { class: 'crit' },
+  const row = (c, l) => h('div', { class: 'lvl' },
+    h('input', { type: 'text', class: 'lvl-label', value: l.label || '', placeholder: '—', 'aria-label': 'Niveau', title: 'Niveau (A, B, 4…)', oninput: (e) => { l.label = e.target.value.trim(); } }),
+    h('input', { type: 'text', inputMode: 'decimal', class: 'num', value: fmt(l.points), 'aria-label': 'Points du niveau', title: 'Points',
+      onchange: (e) => { l.points = Math.max(0, Math.min(c.max, toNumber(e.target.value) || 0)); e.target.value = fmt(l.points); } }),
+    h('textarea', { rows: 2, value: l.description, 'aria-label': 'Description du niveau', oninput: (e) => { l.description = e.target.value; } }),
+    h('button', { class: 'icon-btn', type: 'button', textContent: '×', title: 'Retirer ce niveau', onclick: () => { c.levels = c.levels.filter((x) => x !== l); renderGrid(); } }));
+  $('grid-criteria').replaceChildren(...state.grid.map((c, i) => h('div', { class: 'crit' },
     h('div', { class: 'crit-top' },
+      h('span', { class: 'crit-no', textContent: String(i + 1) }),
       h('input', { type: 'text', value: c.name, 'aria-label': 'Critère', oninput: (e) => { c.name = e.target.value; } }),
-      h('input', { type: 'text', inputMode: 'decimal', class: 'num', value: fmt(c.max), 'aria-label': 'Points maximum', title: 'Points maximum',
-        oninput: (e) => { c.max = toNumber(e.target.value); updateGridTotal(); } })),
-    h('textarea', { rows: Math.max(3, c.levels.length + (c.note ? 1 : 0)), value: levelsText(c.levels, c.note),
-      oninput: (e) => { Object.assign(c, parseCriterion(e.target.value)); } }),
-    h('div', { class: 'muted small', textContent: c.note ? `Remarque transmise à l'IA : ${c.note}` : '' }))));
+      h('label', { class: 'crit-max' }, 'sur ', h('input', { type: 'text', inputMode: 'decimal', class: 'num', value: fmt(c.max), 'aria-label': 'Points maximum',
+        oninput: (e) => { c.max = toNumber(e.target.value); updateGridTotal(); } }), ' pts')),
+    h('div', { class: 'lvl lvl-head muted small' }, h('span', { textContent: 'Niveau' }), h('span', { textContent: 'Points' }), h('span', { textContent: 'Description' }), h('span')),
+    ...c.levels.map((l) => row(c, l)),
+    h('button', { class: 'btn ghost small', type: 'button', textContent: '+ Ajouter un niveau', onclick: () => { c.levels.push({ label: '', points: 0, description: '' }); renderGrid(); } }),
+    c.note ? h('div', { class: 'muted small', textContent: `Remarque transmise à l'IA : ${c.note}` }) : null)));
   updateGridTotal();
 }
 
+// « Avec une grille » : l'IA recopie la grille de l'enseignant telle quelle (critères, niveaux, points).
+// Sinon : elle rédige une grille détaillée à partir des consignes et du corrigé.
 async function makeGrid() {
   if (state.grid && !confirm(tr('Remplacer la grille actuelle par une nouvelle ?'))) return;
+  const copy = byGrid();
+  if (copy && !state.rubricPages.length && !$('rubric').value.trim()) { banner('err', 'Ajoutez d’abord votre grille : glissez-la dans la zone, ou tapez-la dans l’encadré.'); return; }
   const btn = $('make-grid');
   btn.disabled = true;
-  btn.textContent = 'Un instant, l’IA prépare la grille…';
+  state.reading = true;
+  btn.textContent = copy ? 'Un instant, lecture de la grille…' : 'Un instant, l’IA prépare la grille…';
+  renderSummary();
   try {
     const { grid } = await api('/api/rubric', { method: 'POST', body: {
-      rubric: $('rubric').value.trim(), rubricPages: state.rubricPages.map((p) => p.url),
-      total: Number($('total').value), wholePoints: $('whole').value === '1',
+      rubric: $('rubric').value.trim(), rubricPages: state.rubricPages.map((p) => p.url), copy,
+      total: copy ? undefined : Number($('total').value), wholePoints: $('whole').value === '1',
     } });
-    state.grid = grid.map((c) => ({ ...c, name: cleanText(c.name), levels: c.levels.map((l) => ({ ...l, description: cleanText(l.description) })) }));
-    banner('info', 'Grille préparée : relisez-la et ajustez au besoin. Elle sera appliquée à toutes les copies.');
+    state.grid = grid.map((c) => ({ ...c, name: cleanText(c.name), levels: c.levels.map((l) => ({ ...l, label: cleanText(l.label || ''), description: cleanText(l.description) })) }));
+    state.gridFromCopy = copy;
+    banner('info', copy ? 'Grille lue : vérifiez qu’elle est identique à la vôtre et corrigez au besoin. Elle sera appliquée à toutes les copies.'
+      : 'Grille préparée : relisez-la et ajustez au besoin. Elle sera appliquée à toutes les copies.');
+    if (copy) setTimeout(() => $('grid-editor').scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
   } catch (err) {
     banner('err', err.message);
   } finally {
     btn.disabled = false;
+    state.reading = false;
     renderGrid();
   }
+}
+
+// Façon de corriger : points par question (corrigé) ou grille de l'enseignant (critères et niveaux).
+const byGrid = () => state.kind === 'content' && state.method === 'grid';
+try { state.method = localStorage.getItem('ce.method') === 'grid' ? 'grid' : 'points'; } catch { state.method = 'points'; }
+function applyMethod() {
+  const g = state.method === 'grid';
+  $('m-points').setAttribute('aria-pressed', String(!g));
+  $('m-grid').setAttribute('aria-pressed', String(g));
+  $('f-total-pts').hidden = g;
+  $('grid-tools').classList.toggle('adv', !g);
+  $('rubric-drop-pc').textContent = tr(g ? 'Glissez votre grille d’évaluation ici, ou cliquez pour ouvrir le dossier' : 'Glissez votre corrigé ici, ou cliquez pour ouvrir le dossier');
+  $('rubric-drop-touch').textContent = tr(g ? 'Choisir la grille (photo ou fichier)' : 'Choisir le corrigé (photo ou fichier)');
+  $('rubric-drop-sub').textContent = tr(g ? 'PDF, photo, Word ou texte (.txt) · vierge, sans nom d’élève · non facturé' : 'PDF, photo, Word ou texte (.txt) · facultatif · non facturé');
+  $('grid-tools-hint').textContent = tr(g ? 'L’outil recopie votre grille telle quelle : vos critères, vos niveaux, vos points. Vous la vérifiez, puis chaque copie reçoit un niveau par critère.'
+    : 'Recommandé pour les travaux de rédaction : l\'IA rédige des niveaux précis pour chaque critère, vous les validez, et la même grille s\'applique à toutes les copies. Les notes deviennent beaucoup plus constantes.');
+  $('rubric').placeholder = tr(g ? 'Facultatif : précisez ce que l’outil doit savoir pour appliquer votre grille (attentes de la tâche, réponses attendues, ce qu’il ne faut pas pénaliser…).\n\nVous pouvez aussi taper votre grille ici.'
+    : 'Expliquez ou précisez la correction : points par question, réponses acceptées, ce qui vaut des points partiels, ce qu’il ne faut pas pénaliser…\n\nVous pouvez aussi taper tout votre corrigé ici.');
+  if (!g && state.gridFromCopy) { state.grid = null; state.gridFromCopy = false; $('total').value = ''; } // la grille lue ne sert qu'en mode grille
+  renderGrid();
+  renderRubric();
+}
+function setMethod(m) {
+  state.method = m;
+  try { localStorage.setItem('ce.method', m); } catch { /* ignoré */ }
+  applyMethod();
 }
 
 // ---------- Correction ----------
@@ -756,6 +799,7 @@ async function runAll(only, calibrating = false) {
         id, no: b[0].no, file: b[0].file, pageUrls: b.map((p) => p.url), exam: settings.exam, group: r.group || settings.group, name: r.name, reliability: r.reliability, grade: r.grade, total: r.total,
         // `ai` : la note proposée, pour repérer celles que l'enseignant change (calibrage).
         unit: settings.wholePoints ? 1 : 0.5, questions: r.questions.map((q) => ({ ...q, ai: r.illegible ? null : q.points })), examKey, lang: settings.outLang,
+        grid: settings.grid && settings.grid.length === r.questions.length ? structuredClone(settings.grid) : null, // niveaux par critère
         comment: r.comment, pageCount: b.length, illegible: !!r.illegible,
         flags: hasKey || r.illegible ? r.flags : [...r.flags, 'Corrigée sans corrigé : vérifiez que la note n’est pas trop généreuse.'],
       });
@@ -829,10 +873,10 @@ function renderStats() {
   const rel = withRel.length ? pctText(fmt(withRel.reduce((a, r) => a + r.reliability, 0) / withRel.length)) : '—';
   const stat = (v, l) => h('div', { class: 'stat' }, h('div', { class: 'v', textContent: v }), h('div', { class: 'l', textContent: l }));
   // Fiabilité : seulement en correction approfondie (sinon « — » inquiète sans rien dire).
-  $('stats').replaceChildren(stat(String(graded.length), 'copies'),
+  $('stats').replaceChildren(...[stat(String(graded.length), 'copies'),
     stat(pctText(fmt(avg)), `moyenne (min ${fmt(Math.min(...pct))} – max ${fmt(Math.max(...pct))})`),
     withRel.length ? h('div', { class: 'stat' }, h('div', { class: 'v', textContent: rel }),
-      h('div', { class: 'l' }, 'fiabilité moyenne ', infoButton())) : null, stat(String(flagged), 'à vérifier ⚠'));
+      h('div', { class: 'l' }, 'fiabilité moyenne ', infoButton())) : null, stat(String(flagged), 'à vérifier ⚠')].filter(Boolean)); // replaceChildren afficherait « null »
 }
 
 // Moyenne de la classe par question : repère les questions mal comprises.
@@ -854,7 +898,7 @@ function renderQuestionStats(graded) {
   $('qstats').hidden = list.length < 2;
   if (list.length < 2) return;
   const weakest = list.reduce((a, b) => (b.pct < a.pct ? b : a));
-  $('qstats').querySelector('summary').replaceChildren(h('b', {}, 'Moyenne par question'),
+  $('qstats').querySelector('summary').replaceChildren(h('b', {}, graded.every((r) => r.grid) ? 'Moyenne par critère' : 'Moyenne par question'),
     h('span', { class: 'muted' }, ` · la plus faible : ${weakest.label} (${pctText(fmt(Math.round(weakest.pct)))})`));
   $('qstats-rows').replaceChildren(...list.map((q) => h('div', { class: 'qrow' },
     h('span', { class: 'ql', title: q.label, textContent: q.label }),
@@ -1071,8 +1115,8 @@ function card(r) {
   const body = h('div', { class: 'card-body' },
     r.flags.length ? h('div', { class: 'flags' }, r.flags.map((f) => h('div', { textContent: `⚠ ${f}` }))) : null,
     h('table', { class: 'qtable' },
-      h('thead', {}, h('tr', {}, h('th', { textContent: 'Question' }), h('th', { textContent: 'Points' }), h('th', { textContent: 'Justification' }))),
-      h('tbody', {}, r.questions.map((qq) => {
+      h('thead', {}, h('tr', {}, h('th', { textContent: r.grid ? 'Critère' : 'Question' }), h('th', { textContent: r.grid ? 'Niveau' : 'Points' }), h('th', { textContent: 'Justification' }))),
+      h('tbody', {}, r.questions.map((qq, qi) => {
         const rowClass = () => [qq.points < qq.max ? 'lost' : '', qq.second != null ? 'disputed' : ''].join(' ');
         const tr = h('tr', { class: rowClass() });
         const second = qq.second != null
@@ -1097,8 +1141,15 @@ function card(r) {
             const ok = h('span', { class: 'saved', textContent: '✓ Note modifiée' });
             input.parentElement.querySelector('.saved')?.remove(); input.parentElement.append(ok); setTimeout(() => ok.remove(), 2500);
           } });
+        // Avec une grille : on choisit un niveau (A, B…), qui donne ses points ; les points restent modifiables.
+        const levels = r.grid?.[qi]?.levels?.length ? [...r.grid[qi].levels].sort((x, y) => y.points - x.points) : null;
+        const level = levels ? h('select', { class: 'lvl-pick', 'aria-label': 'Niveau', onchange: (e) => {
+          input.value = fmt(Number(e.target.value)); input.dispatchEvent(new Event('change')); } },
+        ...levels.map((l) => h('option', { value: String(l.points), textContent: `${l.label || fmt(l.points)}${l.label ? ` · ${fmt(l.points)} pts` : ' pts'}`, selected: l.points === qq.points })),
+        levels.some((l) => l.points === qq.points) ? null : h('option', { value: String(qq.points), textContent: `Autre · ${fmt(qq.points)} pts`, selected: true })) : null;
+        if (level) input.addEventListener('change', () => { level.value = String(qq.points); });
         tr.append(h('td', { class: 'q', textContent: qq.question }),
-          h('td', { class: 'pts' }, input, h('span', { class: 'muted', textContent: ` / ${fmt(qq.max)}` }), second),
+          h('td', { class: 'pts' }, level, input, h('span', { class: 'muted', textContent: ` / ${fmt(qq.max)}` }), second),
           h('td', { class: 'just' }, qq.justification, why));
         return tr;
       }))),
@@ -1538,12 +1589,18 @@ function exportCSV() {
   const sorted = [...content].sort(byName);
   const shape = sorted.find((r) => !r.illegible)?.questions || [];
   const perQuestion = shape.length > 0 && sorted.every((r) => r.illegible || r.questions.length === shape.length);
-  const qHeads = perQuestion ? shape.map((q, i) => `Q${i + 1} (/${num(q.max)})`) : [];
+  // Avec une grille : une colonne de points et une colonne de niveau par critère, nommées d'après la grille.
+  const grid = perQuestion ? sorted.find((r) => r.grid)?.grid : null;
+  const labelled = grid && grid.some((c) => c.levels.some((l) => l.label));
+  const levelOf = (r, i) => r.grid?.[i]?.levels.find((l) => l.points === r.questions[i]?.points)?.label || '';
+  const numbered = (q, i) => (/^\s*\d/.test(q.question) ? q.question : `${i + 1}. ${q.question}`); // « 1. Hypothèse » est déjà numéroté
+  const qHeads = !perQuestion ? [] : grid ? shape.flatMap((q, i) => [`${numbered(q, i)} (/${num(q.max)})`, ...(labelled ? [`${numbered(q, i)} : niveau`] : [])])
+    : shape.map((q, i) => `Q${i + 1} (/${num(q.max)})`);
   const rows = [['N° copie', 'Fichier', 'Évaluation', 'Groupe', 'Élève', 'Note', 'Sur', 'Pourcentage', ...qHeads, 'Fiabilité (%)', 'Détail par question', 'Commentaire', 'À vérifier']];
   for (const r of sorted) {
     const ok = r.grade != null;
     rows.push([r.no ?? '', r.file || '', r.exam, r.group, r.name, ok ? num(r.grade) : tr('Illisible'), num(r.total), ok ? num(Math.round((r.grade / r.total) * 1000) / 10) : '',
-      ...(perQuestion ? shape.map((_, i) => (ok && r.questions[i] ? num(r.questions[i].points) : '')) : []), r.reliability ?? '',
+      ...(perQuestion ? shape.flatMap((_, i) => [ok && r.questions[i] ? num(r.questions[i].points) : '', ...(labelled ? [ok ? levelOf(r, i) : ''] : [])]) : []), r.reliability ?? '',
       r.questions.map((q) => `${q.question}${lang === 'en' ? ':' : ' :'} ${num(q.points)}/${num(q.max)}${q.points < q.max && q.justification ? ` (${q.justification})` : ''}`).join(' | '),
       r.comment, r.flags.join(' ')]);
   }
@@ -1750,7 +1807,10 @@ dropzone($('rubric-drop'), $('rubric-files'), async (files, progress) => {
     banner('err', `Corrigé limité à ${MAX_RUBRIC_PAGES} pages : les suivantes ont été ignorées.`);
   }
   renderRubric();
+  if (byGrid() && !state.grid && added.length) makeGrid(); // la grille déposée est lue tout de suite
 });
+$('m-points').addEventListener('click', () => setMethod('points'));
+$('m-grid').addEventListener('click', () => setMethod('grid'));
 
 $('mode').addEventListener('change', () => {
   state.modeChosen = true;
@@ -1923,6 +1983,7 @@ setUiMode(savedUi === 'adv');
 
 // ---------- Démarrage ----------
 
+applyMethod();
 startI18n();
 const saved = new URLSearchParams(location.search).get('key') || store.get();
 if (new URLSearchParams(location.search).has('key')) history.replaceState(null, '', location.pathname);
