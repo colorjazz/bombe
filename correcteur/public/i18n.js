@@ -310,6 +310,7 @@ const PATTERNS = [
   [/^Correction : (\d+) \/ (\d+) copie\(s\)$/, 'Marking: $1 of $2 paper(s)'],
   [/^✓ (\d+) copies? ajoutées? \((\d+) pages?\)\. Vérifiez-les ci-dessous\.$/, (m, n, p) => `✓ ${n} paper${n > 1 ? 's' : ''} added (${p} page${p > 1 ? 's' : ''}). Check them below.`],
   [/^✓ Corrigé ajouté \((\d+) pages?\)\. Il n’est pas facturé\.$/, (m, n) => `✓ Answer key added (${n} page${n > 1 ? 's' : ''}). It is not charged.`],
+  [/^✓ (\d+) copies? analysées?\. Ouvrez une copie annotée .*$/, (m, n) => `✓ ${n} paper${n > 1 ? 's' : ''} checked. Open an annotated paper to see the highlighted errors; remove any that are not errors, add any that are missing.`],
   [/^✓ (\d+) copies? corrigées?\. Ouvrez une copie .*$/, (m, n) => `✓ ${n} paper${n > 1 ? 's' : ''} marked. Open a paper to see and change its mark. In pink: questions where points were taken off.`],
   [/^(\d+) copie\(s\) trouvée\(s\)\. Vérifiez que chaque copie .*$/, '$1 paper(s) found. Check that each paper belongs to one student (click a page to enlarge it) before marking.'],
   [/^Environ (\d+) min restantes$/, 'About $1 min left'],
