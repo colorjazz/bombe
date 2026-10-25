@@ -53,6 +53,8 @@ const ROUTES = {
   'GET /api/balance': balance,
   'POST /api/trial': trial,
   'POST /api/idea': idea,
+  'POST /api/admin/keys': adminCreateKey,
+  'GET /api/admin/keys': adminListKeys,
   'POST /api/checkout': checkout,
   'GET /api/claim': claim,
   'POST /api/stripe-webhook': stripeWebhook,
@@ -77,6 +79,7 @@ const DB_SCHEMA = [
   `CREATE TABLE IF NOT EXISTS payments (session_id TEXT PRIMARY KEY, key TEXT NOT NULL, pages INTEGER NOT NULL, created_at INTEGER NOT NULL)`,
   `CREATE TABLE IF NOT EXISTS trials (ip_hash TEXT NOT NULL, created_at INTEGER NOT NULL)`,
   `CREATE INDEX IF NOT EXISTS trials_ip ON trials (ip_hash, created_at)`,
+  `CREATE TABLE IF NOT EXISTS gifts (key TEXT PRIMARY KEY, pages INTEGER NOT NULL, note TEXT, created_at INTEGER NOT NULL)`,
   `CREATE TABLE IF NOT EXISTS ideas (text TEXT NOT NULL, email TEXT, lang TEXT, ip_hash TEXT, created_at INTEGER NOT NULL)`,
 ];
 let schemaReady;
@@ -151,6 +154,37 @@ async function idea(request, env) {
   await env.DB.prepare('INSERT INTO ideas (text, email, lang, ip_hash, created_at) VALUES (?, ?, ?, ?, ?)')
     .bind(text, email || null, isEnglish(request) ? 'en' : 'fr', ipHash, now).run();
   return json({ ok: true });
+}
+
+// ---------- Clés offertes (page admin.html, réservée au fondateur) ----------
+// Protégées par le secret ADMIN_TOKEN (Cloudflare → Variables and Secrets) ; sans lui, ces routes n'existent pas.
+// La note (nom ou courriel du prof testeur) sert seulement au fondateur à savoir à qui il a donné la clé.
+async function requireAdmin(request, env) {
+  const given = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
+  if (!env.ADMIN_TOKEN) throw new HttpError(404, 'Introuvable');
+  // Comparaison des empreintes : même durée quelle que soit la position de la première différence.
+  if (!given || (await sha256(given)) !== (await sha256(env.ADMIN_TOKEN))) throw new HttpError(403, 'Mot de passe administrateur incorrect.');
+}
+
+async function adminCreateKey(request, env) {
+  await requireAdmin(request, env);
+  const body = await readJson(request);
+  const pages = Math.round(Number(body.pages));
+  if (!(pages >= 1 && pages <= 5000)) throw new HttpError(400, 'Nombre de pages invalide (1 à 5000).');
+  const note = String(body.note || '').trim().slice(0, 200);
+  const key = newKey(); const now = Date.now();
+  await env.DB.batch([
+    env.DB.prepare('INSERT INTO access_keys (key, pages, is_trial, created_at) VALUES (?, ?, 0, ?)').bind(key, pages, now),
+    env.DB.prepare('INSERT INTO gifts (key, pages, note, created_at) VALUES (?, ?, ?, ?)').bind(key, pages, note || null, now),
+  ]);
+  return json({ key, pages });
+}
+
+async function adminListKeys(request, env) {
+  await requireAdmin(request, env);
+  const { results } = await env.DB.prepare(`SELECT g.key, g.pages AS given, g.note, g.created_at, k.pages AS left
+    FROM gifts g LEFT JOIN access_keys k ON k.key = g.key ORDER BY g.created_at DESC LIMIT 200`).all();
+  return json({ keys: results });
 }
 
 async function trial(request, env) {

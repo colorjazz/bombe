@@ -31,3 +31,11 @@ CREATE TABLE IF NOT EXISTS ideas (
   ip_hash    TEXT,
   created_at INTEGER NOT NULL
 );
+
+-- Clés offertes par le fondateur (page admin.html) : à qui (note facultative) et combien de pages.
+CREATE TABLE IF NOT EXISTS gifts (
+  key        TEXT PRIMARY KEY,
+  pages      INTEGER NOT NULL,
+  note       TEXT,
+  created_at INTEGER NOT NULL
+);

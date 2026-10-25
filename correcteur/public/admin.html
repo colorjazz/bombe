@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="fr-CA">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Brûle la pile — Clés offertes</title>
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    main { max-width: 760px; margin: 1.5rem auto 3rem; display: grid; gap: 1.2rem; }
+    .panel h1 { font-size: 1.25rem; margin: 0 0 .3rem; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; }
+    @media (max-width: 560px) { .row { grid-template-columns: 1fr; } }
+    .key { font: 700 1.25rem ui-monospace, Menlo, monospace; letter-spacing: .05em; text-align: center; padding: .8rem; border-radius: 12px; background: #f3f4f8; border: 1px dashed var(--primary); user-select: all; }
+    textarea.msg { min-height: 7.5rem; font-size: .85rem; }
+    table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+    th, td { text-align: left; padding: .45rem .4rem; border-top: 1px solid var(--line); vertical-align: top; }
+    th { font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: var(--faint); }
+    td.k { font-family: ui-monospace, Menlo, monospace; white-space: nowrap; }
+    .err { color: var(--red); } .ok { color: var(--green); }
+  </style>
+</head>
+<body>
+  <header class="topbar"><div class="wrap"><a class="brand" href="index.html"><img class="logo" src="logo-96.png" alt="" width="40" height="40"><strong>Brûle la pile</strong></a><span class="muted small">Administration</span></div></header>
+  <main class="wrap">
+    <!-- Page réservée au fondateur : crée des clés d'accès offertes (profs testeurs) et montre leur utilisation. -->
+    <section class="panel stack">
+      <h1>Offrir une clé d'accès</h1>
+      <p class="muted small" style="margin:0">Pour un prof testeur : il reçoit un lien qui l'ouvre directement dans l'appli, sans passer par le paiement.</p>
+      <label class="field">Mot de passe administrateur
+        <input id="token" type="password" autocomplete="current-password">
+      </label>
+      <label class="toggle"><input id="remember" type="checkbox"> Retenir le mot de passe sur cet appareil</label>
+      <div class="row">
+        <label class="field">Nombre de pages
+          <input id="pages" type="number" min="1" max="5000" value="200" inputmode="numeric">
+        </label>
+        <label class="field">Pour qui ? (facultatif)
+          <input id="note" type="text" maxlength="200" placeholder="Ex. : Marie Tremblay, groupe Facebook">
+        </label>
+      </div>
+      <div class="row">
+        <button id="make-fr" class="btn primary" type="button">Créer une clé (message en français)</button>
+        <button id="make-en" class="btn" type="button">Créer une clé (message en anglais)</button>
+      </div>
+      <p id="msg" class="small" style="margin:0"></p>
+      <div id="result" class="stack" hidden>
+        <div id="key" class="key"></div>
+        <label class="field">Message à envoyer au prof
+          <textarea id="text" class="msg" readonly></textarea>
+        </label>
+        <button id="copy" class="btn green" type="button">Copier le message</button>
+      </div>
+    </section>
+    <section class="panel stack">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem"><h1 style="margin:0">Clés offertes</h1><button id="refresh" class="btn small" type="button">Actualiser</button></div>
+      <p class="muted small" style="margin:0">Pages utilisées = pages offertes − pages restantes. 0 utilisée : le prof n'a pas encore essayé, c'est le moment de lui écrire.</p>
+      <div style="overflow-x:auto"><table><thead><tr><th>Date</th><th>Pour qui</th><th>Clé</th><th>Utilisées</th></tr></thead><tbody id="list"><tr><td colspan="4" class="muted">Entrez le mot de passe, puis « Actualiser ».</td></tr></tbody></table></div>
+    </section>
+  </main>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    try { const t = localStorage.getItem('ce.admin'); if (t) { $('token').value = t; $('remember').checked = true; } } catch {}
+    const call = async (method, body) => {
+      const token = $('token').value.trim();
+      if (!token) throw new Error('Entrez le mot de passe administrateur.');
+      try { if ($('remember').checked) localStorage.setItem('ce.admin', token); else localStorage.removeItem('ce.admin'); } catch {}
+      const res = await fetch('/api/admin/keys', { method, headers: { Authorization: `Bearer ${token}`, ...(body ? { 'Content-Type': 'application/json' } : {}) }, body: body ? JSON.stringify(body) : undefined });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || `Erreur ${res.status}`);
+      return data;
+    };
+    const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    async function make(en) {
+      $('msg').textContent = ''; $('msg').className = 'small';
+      try {
+        const { key, pages } = await call('POST', { pages: Number($('pages').value), note: $('note').value });
+        const site = en ? 'https://burnthepile.com' : 'https://brulelapile.ca';
+        const link = `${site}/app.html?key=${key}`;
+        $('key').textContent = key;
+        $('text').value = en
+          ? `Thanks for testing Burn the Pile! 🙏 Here is your access key, with ${pages} free pages: ${key}\n\nTap this link to start right away: ${link}\n\nKeep this message: the key also works on your phone or another computer. Let me know what you think after your first pile!`
+          : `Merci de tester Brûle la pile ! 🙏 Voici ta clé d'accès, avec ${pages} pages gratuites : ${key}\n\nClique sur ce lien pour commencer tout de suite : ${link}\n\nGarde ce message : la clé fonctionne aussi sur ton téléphone ou un autre ordinateur. Dis-moi ce que tu en penses après ta première pile !`;
+        $('result').hidden = false; $('note').value = '';
+        list();
+      } catch (e) { $('msg').textContent = e.message; $('msg').className = 'small err'; }
+    }
+    async function list() {
+      try {
+        const { keys } = await call('GET');
+        $('list').innerHTML = keys.length ? keys.map((k) => `<tr><td>${new Date(k.created_at).toLocaleDateString('fr-CA')}</td><td>${esc(k.note) || '<span class="muted">—</span>'}</td><td class="k">${esc(k.key)}</td><td>${k.left == null ? '—' : `${k.given - k.left} / ${k.given}`}</td></tr>`).join('')
+          : '<tr><td colspan="4" class="muted">Aucune clé offerte pour l’instant.</td></tr>';
+      } catch (e) { $('list').innerHTML = `<tr><td colspan="4" class="err">${esc(e.message)}</td></tr>`; }
+    }
+    $('make-fr').addEventListener('click', () => make(false));
+    $('make-en').addEventListener('click', () => make(true));
+    $('refresh').addEventListener('click', list);
+    $('copy').addEventListener('click', async () => { try { await navigator.clipboard.writeText($('text').value); $('msg').textContent = '✓ Message copié : collez-le dans Messenger.'; $('msg').className = 'small ok'; } catch { $('text').select(); } });
+    if ($('token').value) list();
+  </script>
+</body>
+</html>
