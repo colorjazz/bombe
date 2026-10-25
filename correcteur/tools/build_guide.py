@@ -50,6 +50,7 @@ FR = dict(
 <li>Tapez-le dans la case, ou déposez-le en PDF ou en photos (6 pages au plus). Il n’est pas facturé.</li>
 <li><b>La forme du rendu</b> se demande dans la même case : « commentaire de 2 phrases, au tu, qui commence par un point fort », « justifications courtes », etc.</li>
 <li><b>Grille détaillée (gratuite)</b>, recommandée pour les travaux de rédaction : l’IA rédige des niveaux précis pour chaque critère, vous les validez, et la même grille s’applique à toutes les copies. Les notes deviennent plus constantes.</li>
+<li><b>Vous corrigez avec une grille ?</b> En haut, à « Comment corrigez-vous ? », choisissez <b>« Avec une grille (critères et niveaux) »</b> et déposez votre grille vierge. L’outil la recopie telle quelle (critères, niveaux A, B, C…, points et descriptions) ; vérifiez-la, puis chaque copie reçoit un niveau par critère, avec la phrase de la copie qui le justifie. Le total vient de la grille, et le fichier Excel a une colonne de points et une colonne de niveau par critère.</li>
 <li>Sur une grosse pile d’un même examen, le découpage en questions de la première copie sert de modèle aux suivantes : toutes sont découpées pareil.</li>
 </ul>'''),
     ('modes', 'Correction rapide ou approfondie', '''
@@ -163,6 +164,7 @@ EN = dict(
 <li>Type it in the box, or drop it as a PDF or photos (6 pages at most). It is not charged.</li>
 <li><b>How results are written</b> can be requested in the same box: “2-sentence feedback that starts with a strength”, “short justifications”, etc.</li>
 <li><b>Detailed rubric (free)</b>, recommended for written work: the AI drafts precise levels for each criterion, you approve them, and the same rubric applies to every paper. Grades become more consistent.</li>
+<li><b>Marking with a rubric?</b> At the top, under “How do you mark?”, choose <b>“With a rubric (criteria and levels)”</b> and drop your blank rubric. The tool copies it as is (criteria, levels, points and descriptions); check it, then each paper gets a level for each criterion, with the sentence from the paper that supports it. The total comes from the rubric, and the Excel file has a points column and a level column for each criterion.</li>
 <li>On a large stack of the same test, the question breakdown of the first paper serves as the model for the others, so every paper is split the same way.</li>
 </ul>'''),
     ('modes', 'Quick or in-depth grading', '''
