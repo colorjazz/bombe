@@ -85,7 +85,7 @@ const EN = {
   'Retirer cette page': 'Remove this page',
   'Retirer': 'Remove',
   'Aucune copie importée': 'No work imported',
-  'Corriger': 'Mark', 'Voir ▾': 'View ▾', 'Corrigé': 'Answer key', '✓ Toutes les copies importées sont corrigées.': '✓ All imported papers are marked.',
+  'Corriger': 'Mark', 'Voir ▾': 'View ▾', 'Fermer ▴': 'Close ▴', 'Corrigé': 'Answer key', '✓ Toutes les copies importées sont corrigées.': '✓ All imported papers are marked.',
   'Correction en cours…': 'Marking…',
   'Analyse des copies en cours…': 'Analyzing papers…',
   'Choisissez comment regrouper les pages': 'Choose how to group the pages',

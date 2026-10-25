@@ -876,7 +876,8 @@ function openZoom(urls, title) {
 // Fiche d'une copie : une ligne compacte (n°, nom, groupe, note), toujours fermée ; un clic sur la ligne l'ouvre.
 function cardShell(r, cells, body) {
   const el = h('article', { class: `card ${r.flags.length ? 'flag' : ''}` });
-  const setOpen = (on) => { body.hidden = !on; el.classList.toggle('open', on); };
+  // Le libellé change (et ne pivote pas : « Voir » à l'envers était illisible).
+  const setOpen = (on) => { body.hidden = !on; el.classList.toggle('open', on); el.querySelector('.chev').textContent = tr(on ? 'Fermer ▴' : 'Voir ▾'); };
   const head = h('div', { class: 'card-head', onclick: (e) => {
     if (e.target.closest('input, textarea, select, button:not(.chev)')) return;
     if (state.open.has(r.id)) state.open.delete(r.id); else state.open.add(r.id);

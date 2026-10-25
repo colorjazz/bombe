@@ -103,8 +103,6 @@ button.rel { cursor: pointer; font-family: inherit; }
 .qtable .second { font-size: .72rem; color: var(--amber); margin-top: .25rem; }
 .grade { font-size: .95rem; font-weight: 800; color: var(--primary-2); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .grade small { color: var(--muted); font-weight: 500; font-size: .75rem; }
-.chev { transition: transform .15s; }
-.card.open .chev { transform: rotate(180deg); }
 .card-body { border-top: 1px solid var(--line); padding: .75rem .9rem 1rem; display: grid; gap: .75rem; }
 .flags { display: grid; gap: .3rem; }
 .flags div { font-size: .8rem; color: #fcd34d; background: rgba(245,158,11,.08); border: 1px solid rgba(245,158,11,.3); border-radius: 10px; padding: .4rem .6rem; }
