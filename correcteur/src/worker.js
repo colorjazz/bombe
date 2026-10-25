@@ -512,6 +512,24 @@ const NATIVE_LANG_SCHEMA = {
   },
 };
 
+// Primaire : la notion de la Progression des apprentissages à laquelle se rattache chaque faute (voir public/pda.js).
+const langSchema = (pda) => (pda ? { ...NATIVE_LANG_SCHEMA, items: { ...NATIVE_LANG_SCHEMA.items,
+  properties: { ...NATIVE_LANG_SCHEMA.items.properties, notion: { type: 'STRING', enum: pda.notions.map((n) => n.id) } },
+  required: [...NATIVE_LANG_SCHEMA.items.required, 'notion'] } } : NATIVE_LANG_SCHEMA);
+
+// Réglages primaire envoyés par l'appli : { year: 1-6, notions: [{ id, label, cat, state: 'count' | 'grey' }] }.
+// Les notions ignorées ne sont pas envoyées : l'IA ne les relève pas.
+function readPda(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const year = Number(raw.year);
+  const notions = (Array.isArray(raw.notions) ? raw.notions : []).slice(0, 80)
+    .filter((n) => /^[a-z0-9_]{1,30}$/.test(n?.id) && LANG_CATEGORIES[n.cat] && ['count', 'grey'].includes(n.state))
+    .map((n) => ({ id: n.id, cat: n.cat, state: n.state, label: String(n.label || '').slice(0, 160) }));
+  if (!(year >= 1 && year <= 6) || !notions.length) throw new HttpError(400, 'Réglages du primaire invalides');
+  return { year, notions };
+}
+const countWords = (text) => (String(text || '').match(/[\p{L}\p{N}]+(?:-[\p{L}\p{N}]+)*/gu) || []).length; // comme public/pda.js
+
 const inlineImage = (dataUrl) => {
   const [, mimeType, data] = dataUrl.match(/^data:([^;]+);base64,(.*)$/s) || [];
   return { inlineData: { mimeType, data } };
@@ -530,7 +548,10 @@ const rereadToken = async (env, key, page, ts) => sha256(`${env.IP_SALT || ''}:r
 
 // Fautes renvoyées par l'IA → fautes affichées : catégories demandées, pas de « correction » identique au texte
 // (ex. « européen → européen ») ni hésitante (« capitule / capitulation »).
-function langErrors(fautes, cats) {
+// Primaire : seules les fautes rattachées à une notion demandée restent ; celles d'une notion « en apprentissage » sont grises.
+function langErrors(fautes, cats, pda) {
+  const notion = (f) => pda?.notions.find((n) => n.id === f.notion);
+  if (pda) fautes = (fautes || []).filter(notion).map((f) => ({ ...f, categorie: notion(f).cat }));
   return (fautes || []).filter((f) => LANG_CATEGORIES[f.categorie] && cats.includes(f.categorie)
     && String(f.correction || '').trim().normalize('NFC') !== String(f.texte || '').trim().normalize('NFC')
     && !/\S\s*\/\s*\S/.test(String(f.correction || ''))).map((f) => ({
@@ -538,6 +559,7 @@ function langErrors(fautes, cats) {
     category: f.categorie, explanation: String(f.explication || '').slice(0, 400), box: cleanBox(f.box),
     line: String(f.ligne || '').slice(0, 400), // recopier la ligne fait partie de la consigne avec laquelle les cadres ont été mesurés
     doubtful: !!f.lecture_douteuse, // lecture incertaine : affichée « à vérifier », non comptée dans la note
+    ...(pda ? { notion: f.notion, grey: notion(f).state === 'grey' } : {}),
   }));
 }
 
@@ -579,21 +601,22 @@ async function languageReread(request, env) {
   const body = await readJson(request);
   checkImages([body.page], 1, 'Copie', MAX_LANG_IMAGE_CHARS);
   const cats = (Array.isArray(body.categories) ? body.categories : Object.keys(LANG_CATEGORIES)).filter((c) => LANG_CATEGORIES[c]);
+  const pda = readPda(body.pda);
   const ts = Number(body.ts);
   if (!cats.length || !(Date.now() - ts < REREAD_MS) || body.token !== await rereadToken(env, key, body.page, ts)) throw new HttpError(403, 'Relecture refusée');
   const known = (Array.isArray(body.known) ? body.known : []).slice(0, 200).map((f) => ({ texte: String(f.text || '').slice(0, 200), correction: String(f.correction || '').slice(0, 200), box: cleanBox(f.box) }));
   const list = known.map((f) => `- « ${f.texte} » → « ${f.correction} »`).join('\n') || '(aucune)';
   let raw;
-  try { raw = await geminiVision(env, langSystem(request, body, cats) + REREAD[isEnglish(request) ? 'en' : 'fr'](list), body.page); } catch (err) {
+  try { raw = await geminiVision(env, langSystem(request, body, cats, pda) + REREAD[isEnglish(request) ? 'en' : 'fr'](list), body.page, pda); } catch (err) {
     console.error('Relecture impossible :', err.message);
     throw new HttpError(502, 'Relecture impossible');
   }
   const same = (f, g) => f.texte.trim().toLowerCase() === String(g.texte || '').trim().toLowerCase() || overlaps(f.box, cleanBox(g.box));
-  return json({ errors: langErrors(raw.fautes.filter((g) => !known.some((f) => same(f, g))), cats) });
+  return json({ errors: langErrors(raw.fautes.filter((g) => !known.some((f) => same(f, g))), cats, pda) });
 }
 
-async function geminiVision(env, prompt, dataUrl) {
-  const list = await geminiNative(env, [{ text: prompt }, inlineImage(dataUrl)], NATIVE_LANG_SCHEMA, env.LANG_MODEL, { thinking: env.LANG_THINKING, timeoutMs: 150_000 });
+async function geminiVision(env, prompt, dataUrl, pda) {
+  const list = await geminiNative(env, [{ text: prompt }, inlineImage(dataUrl)], langSchema(pda), env.LANG_MODEL, { thinking: env.LANG_THINKING, timeoutMs: 150_000 });
   return { fautes: (Array.isArray(list) ? list : list.fautes || []).map((f) => ({ ...f, texte: f.mot_fautif ?? f.texte, box: f.box ?? f.box_2d })) };
 }
 
@@ -658,7 +681,8 @@ function cleanBox(box, maxHeight = 400) {
 }
 
 // Consigne calquée sur la version Gemini de l'enseignant, dont le surlignage est précis.
-function langSystem(request, body, cats) {
+function langSystem(request, body, cats, pda) {
+  if (pda) return pdaSystem(pda);
   const level = LEVELS[body.level] || LEVELS.secondaire1;
   return isEnglish(request) ? `You are an English language expert. Here is the image of a handwritten (or typed) document, written by a ${LEVELS_EN[body.level] || LEVELS_EN.secondaire1}.
 Your task:
@@ -679,6 +703,36 @@ Ta mission :
    (ymin = haut, xmin = gauche, ymax = bas, xmax = droite).
 Pour chaque faute, recopie aussi dans « ligne » la ligne manuscrite complète où elle se trouve, exactement telle qu'écrite, et indique sa catégorie et une courte explication de la règle.
 Renvoie EXCLUSIVEMENT un tableau JSON. Si aucune faute n'est trouvée, renvoie un tableau vide [].`;
+}
+
+// Primaire : on ne relève que les fautes des notions vues à cette année, selon la Progression des apprentissages.
+// Même consigne de repérage que langSystem (les cadres ont été mesurés avec elle).
+function pdaSystem(pda) {
+  const year = `${pda.year}${pda.year === 1 ? 're' : 'e'} année du primaire`;
+  return `Tu es une enseignante de français au primaire, au Québec. Voici l'image d'un texte manuscrit (ou dactylographié) écrit par un élève de ${year}.
+Ta mission :
+1. Lis le texte attentivement.
+2. Relève UNIQUEMENT les fautes qui relèvent d'une des notions suivantes, prévues à cette année par la Progression des apprentissages du ministère :
+${pda.notions.map((n) => `   - ${n.id} : ${n.label}`).join('\n')}
+   Si une faute relève de plusieurs notions, choisis toujours la plus simple, celle qu'on apprend le plus tôt (ex. : « les poisson » → accord du déterminant avec le nom, pas l'accord dans tout le groupe du nom).
+   Pour « o_mots », ne relève que des mots courants qu'un élève de ${year} doit savoir écrire ; un mot rare ou difficile mal écrit n'est pas une faute à son âge.
+   Toute faute qui ne relève d'aucune de ces notions doit être IGNORÉE (ne la renvoie pas). Pas de choix de style ; si un mot est illisible, ignore-le.
+   Une lettre bien formée n'est jamais une faute. Si une lettre est ambiguë (q ou d, accent douteux, lettre doublée ou non), relève la faute seulement si elle est probable, avec lecture_douteuse = true. Ignore les marques de l'enseignant (crochets, X, soulignés, encre de couleur).
+3. Pour CHAQUE faute trouvée, déduis ses coordonnées (bounding box) sur l'image en encadrant le MOT COMPLET ou l'EXPRESSION COMPLÈTE qui contient la faute.
+   Les coordonnées 'box' doivent être un tableau de 4 nombres [ymin, xmin, ymax, xmax] normalisés entre 0 et 1000.
+   (ymin = haut, xmin = gauche, ymax = bas, xmax = droite).
+Pour chaque faute, recopie aussi dans « ligne » la ligne manuscrite complète où elle se trouve, exactement telle qu'écrite, indique sa « notion » (l'identifiant ci-dessus) et sa catégorie, et donne une explication très courte et très simple, écrite pour un enfant de ${year} (ex. : « Il y a plusieurs chiens : on ajoute un s. »), sans mots savants de grammaire.
+Renvoie EXCLUSIVEMENT un tableau JSON. Si aucune faute n'est trouvée, renvoie un tableau vide [].`;
+}
+
+// Primaire : le nombre de mots de la copie, pour le pourcentage de fautes. L'IA recopie seulement le texte ; c'est le
+// code qui compte les mots (vérifiable, et toujours le même résultat pour le même texte).
+async function transcribe(env, dataUrl) {
+  const raw = await geminiNative(env, [{ text: "Recopie EXACTEMENT le texte rédigé par l'élève sur cette page, mot à mot, sans rien corriger, "
+    + "dans l'ordre de lecture. N'inclus pas le nom de l'élève, la date, ni les consignes ou le texte imprimés. Chaîne vide s'il n'y a aucun texte de l'élève." }, inlineImage(dataUrl)],
+  { type: 'OBJECT', properties: { texte: { type: 'STRING' } }, required: ['texte'] }, env.LANG_MODEL, { thinking: 'low', timeoutMs: 90_000 });
+  const text = String(raw.texte || '').slice(0, 20000);
+  return { text, words: countWords(text) };
 }
 
 // Pages réservées pour une copie. Si l'enseignant perd la connexion pendant la correction (écran éteint, réseau
@@ -721,11 +775,13 @@ async function language(request, env, url, ctx) {
 }
 
 async function analyzeLanguagePages(request, env, key, body, cats, n, pay) {
-  const system = langSystem(request, body, cats);
+  const pda = readPda(body.pda);
+  const system = langSystem(request, body, cats, pda);
 
   const identity = body.identify === false ? Promise.resolve({}) : geminiNative(env, [{ text: "Recopie le nom de l'élève et son groupe s'ils sont écrits sur cette copie (sinon chaînes vides)." }, inlineImage(body.pages[0])],
     { type: 'OBJECT', properties: { nom: { type: 'STRING' }, groupe: { type: 'STRING' } }, required: ['nom', 'groupe'] }, env.LANG_MODEL).catch(() => ({}));
-  const results = await Promise.allSettled(body.pages.map((url) => geminiVision(env, system, url)));
+  const counts = pda ? Promise.all(body.pages.map((url) => transcribe(env, url).catch(() => null))) : Promise.resolve([]);
+  const results = await Promise.allSettled(body.pages.map((url) => geminiVision(env, system, url, pda)));
   const failed = results.filter((x) => x.status === 'rejected').length;
   if (failed) {
     await pay.refund(failed);
@@ -736,8 +792,9 @@ async function analyzeLanguagePages(request, env, key, body, cats, n, pay) {
   const ok = results.map((x) => (x.status === 'fulfilled' ? x.value : null));
   const ts = Date.now();
   const pages = await Promise.all(ok.map(async (raw, i) => (raw
-    ? { errors: langErrors(raw.fautes, cats), reread: { ts, token: await rereadToken(env, key, body.pages[i], ts) } }
+    ? { errors: langErrors(raw.fautes, cats, pda), reread: { ts, token: await rereadToken(env, key, body.pages[i], ts) } }
     : { errors: [], failed: true })));
+  (await counts).forEach((c, i) => { if (c && !pages[i].failed) Object.assign(pages[i], c); });
   const who = await identity;
   const name = String(who.nom || '').trim();
   const group = String(who.groupe || '').trim();

@@ -13,6 +13,7 @@ import { t, tr, trTo, lang, startI18n } from './i18n.js';
 import { refineToInk } from './boxes.js';
 import { looksSideways, rotateDataUrl } from './orient.js';
 import { startCamera } from './camera.js';
+import { PDA_NOTIONS, pdaDefault, cote } from './pda.js';
 
 const $ = (id) => document.getElementById(id);
 const state = {
@@ -502,11 +503,13 @@ function renderSummary() {
   const run = $('run');
   const gridSum = state.grid ? state.grid.reduce((a, c) => a + (Number(c.max) || 0), 0) : null;
   const gridOk = state.kind === 'lang' || gridSum == null || Math.abs(gridSum - Number($('total').value)) < 1e-9;
-  run.disabled = state.running || state.detecting || !n || !grouped || tooLong || !enough || !gridOk || !(Number($('total').value) > 0)
+  // Le nombre de points et les pages par élève ne servent qu'à la correction de copies (champs cachés en mode langue).
+  const needTotal = state.kind === 'content' && !(Number($('total').value) > 0);
+  run.disabled = state.running || state.detecting || !n || !grouped || tooLong || !enough || !gridOk || needTotal
     || (state.kind === 'content' && !(Number($('per-student').value) >= 1));
   run.textContent = state.running ? (state.kind === 'lang' ? 'Analyse en cours…' : 'Correction en cours…')
     : state.detecting ? 'Analyse des copies en cours…'
-    : n && !(Number($('total').value) > 0) ? 'Indiquez le nombre de points'
+    : n && needTotal ? 'Indiquez le nombre de points'
     : n && state.kind === 'content' && !(Number($('per-student').value) >= 1) ? 'Indiquez le nombre de pages par élève'
     : n && !grouped ? 'Indiquez le nombre de pages par élève'
     : !enough ? 'Solde insuffisant : rechargez votre compte'
@@ -733,8 +736,8 @@ async function runAll(only, calibrating = false) {
         const r = await withRetry(() => analyzeLanguage(b), waiting);
         setBalance(r.pagesLeft);
         const res = { kind: 'lang', id, no: b[0].no, file: b[0].file, exam: settings.exam, group: r.group || settings.group, name: r.name, pageCount: b.length,
-          pages: b.map((p, i) => ({ url: p.url, errors: r.pages[i].errors, failed: !!r.pages[i].failed, reread: r.pages[i].reread, sent: r.urls[i] })),
-          scoring: langScoring(), flags: r.failedPages ? [`${r.failedPages} page(s) n'ont pas pu être analysées (non décomptées).`] : [] };
+          pages: b.map((p, i) => ({ url: p.url, errors: r.pages[i].errors, failed: !!r.pages[i].failed, reread: r.pages[i].reread, sent: r.urls[i], words: r.pages[i].words, text: r.pages[i].text })),
+          scoring: langScoring(), pda: pdaScoring(), flags: r.failedPages ? [`${r.failedPages} page(s) n'ont pas pu être analysées (non décomptées).`] : [] };
         langGrade(res);
         state.results.unshift(res);
         reread(res);
@@ -796,7 +799,9 @@ async function runAll(only, calibrating = false) {
     const first = state.results.find((r) => list.some((b) => b[0].id === r.id));
     if (first && !state.open.size) { state.open.add(first.id); renderResults(); }
     $('done-msg').hidden = false;
-    $('done-msg').textContent = `✓ ${pl(done, 'copie corrigée', 'copies corrigées')}. Ouvrez une copie pour voir et modifier sa note. En rose : les questions où des points ont été retirés.`;
+    $('done-msg').textContent = state.kind === 'lang'
+      ? `✓ ${pl(done, 'copie analysée', 'copies analysées')}. Ouvrez une copie annotée pour voir les fautes surlignées ; retirez celles qui n'en sont pas, ajoutez celles qui manquent.`
+      : `✓ ${pl(done, 'copie corrigée', 'copies corrigées')}. Ouvrez une copie pour voir et modifier sa note. En rose : les questions où des points ont été retirés.`;
     $('done-msg').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 }
@@ -1212,10 +1217,42 @@ async function pageData(url) {
   return g.getImageData(0, 0, c.width, c.height);
 }
 
-const langSettings = () => ({
+const langSettings = () => (isPda() ? {
+  level: 'primaire', categories: Object.keys(CATS),
+  pda: { year: Number($('pda-year').value), notions: PDA_NOTIONS.map((n) => ({ id: n.id, cat: n.cat, label: n.label, state: pdaState(n) })).filter((n) => n.state !== 'ignore') },
+} : {
   level: $('lang-level').value,
   categories: [...document.querySelectorAll('#lang-cats input:checked')].map((i) => i.value),
 });
+
+// Primaire : les fautes qui comptent selon l'année et l'étape (Progression des apprentissages, voir pda.js),
+// modifiables notion par notion. Une modification tient jusqu'au changement d'année ou d'étape.
+const isPda = () => $('lang-level').value === 'primaire';
+let pdaOver = {};
+try { pdaOver = JSON.parse(localStorage.getItem('ce.pda') || '{}') || {}; } catch { /* ignoré */ }
+const pdaState = (n) => pdaOver[n.id] || pdaDefault(n, Number($('pda-year').value), Number($('pda-step').value));
+const PDA_STATES = { count: 'Compte', grey: 'Gris', ignore: 'Ignorée' };
+function renderPda() {
+  const on = isPda();
+  $('pda').hidden = !on;
+  $('lang-cats-field').hidden = on;
+  $('lang-scoring-row').hidden = on; // au primaire, la cote vient du pourcentage de fautes
+  if (!on) return;
+  const n = PDA_NOTIONS.filter((x) => pdaState(x) === 'count').length, g = PDA_NOTIONS.filter((x) => pdaState(x) === 'grey').length;
+  $('pda-sum').textContent = `${pl(n, 'notion', 'notions')} · ${g} en gris`;
+  $('pda-list').replaceChildren(...Object.entries(CATS).map(([cat, c]) => {
+    const list = PDA_NOTIONS.filter((x) => x.cat === cat);
+    return list.length ? h('div', { class: 'pda-group' }, h('b', { class: `cat ${c.cls}`, textContent: c.label }),
+      ...list.map((x) => h('label', { class: `pda-row st-${pdaState(x)}` }, h('span', { textContent: x.label }),
+        h('select', { onchange: (ev) => { pdaOver[x.id] = ev.target.value; savePda(); renderPda(); } },
+          ...Object.entries(PDA_STATES).map(([v, t]) => h('option', { value: v, textContent: t, selected: pdaState(x) === v })))))) : null;
+  }).filter(Boolean));
+}
+function savePda() { try { localStorage.setItem('ce.pda', JSON.stringify(pdaOver)); } catch { /* ignoré */ } }
+const pdaScoring = () => (isPda() ? {
+  year: Number($('pda-year').value), once: $('pda-once').value === '1',
+  limits: [...document.querySelectorAll('#pda-cotes input')].map((i) => Number(String(i.value).replace(',', '.')) || 0),
+} : null);
 
 function langScoring() {
   const num = (id) => Number(String($(id).value).replace(',', '.'));
@@ -1225,8 +1262,25 @@ function langScoring() {
 
 // Note de langue : total − (points par faute × nombre de fautes), plafonné au retrait maximum.
 // Les fautes à la lecture incertaine sont montrées « à vérifier » mais ne comptent pas dans la note.
-const counted = (errors) => errors.filter((e) => !e.doubtful);
+// Primaire : les fautes d'une notion en apprentissage sont grises (montrées, non comptées), et la cote vient du
+// pourcentage de fautes comptées sur le nombre de mots ; une même faute répétée peut ne compter qu'une fois.
+const counted = (errors) => errors.filter((e) => !e.doubtful && !e.grey);
+const repeated = (r, errors) => {
+  if (!r.pda?.once) return [];
+  const seen = new Set();
+  return counted(errors).filter((e) => { const k = `${e.text}→${e.correction}`.toLowerCase().trim(); if (seen.has(k)) return true; seen.add(k); return false; });
+};
 function langGrade(r) {
+  if (r.pda) {
+    const errors = r.pages.flatMap((p) => p.errors);
+    const dup = repeated(r, errors);
+    const count = counted(errors).length - dup.length;
+    r.words = r.pages.some((p) => p.words == null) ? null : r.pages.reduce((a, p) => a + p.words, 0);
+    r.pct = r.words ? (100 * count) / r.words : null;
+    r.cote = r.pct == null ? null : cote(Math.round(r.pct * 10) / 10, r.pda.limits);
+    r.grade = null; r.total = null; r.dup = dup;
+    return count;
+  }
   const count = r.pages.reduce((a, p) => a + counted(p.errors).length, 0);
   if (!r.scoring) { r.grade = null; r.total = null; return count; }
   r.total = r.scoring.total;
@@ -1235,22 +1289,28 @@ function langGrade(r) {
 }
 
 function categoryChips(errors) {
+  const grey = errors.filter((e) => e.grey).length; // primaire : notions en apprentissage, à part
   return h('div', { class: 'chips' }, Object.entries(CATS).map(([k, c]) => {
-    const n = errors.filter((e) => e.category === k).length;
+    const n = errors.filter((e) => e.category === k && !e.grey).length;
     return n ? h('span', { class: `cat ${c.cls}`, textContent: `${c.label} ${n}` }) : null;
-  }));
+  }), grey ? h('span', { class: 'cat c-grey', textContent: `En gris ${grey}` }) : null);
 }
 
+// Primaire : « 214 mots · 7 fautes comptées · 3,3 % → B ».
+const pdaLine = (r, n) => `${r.words == null ? 'mots non comptés' : pl(r.words, 'mot', 'mots')} · ${pl(n, 'faute comptée', 'fautes comptées')}${r.pct == null ? '' : ` · ${fmt(Math.round(r.pct * 10) / 10)} %`}`;
 function langCard(r) {
   const errors = r.pages.flatMap((p) => p.errors);
-  const n = counted(errors).length;
+  const n = r.pda ? langGrade(r) : counted(errors).length;
+  const grey = errors.filter((e) => e.grey).length;
   const gradeEl = h('span', { class: 'grade' });
-  gradeEl.replaceChildren(r.grade == null ? `${n} faute${n > 1 ? 's' : ''}`
+  gradeEl.replaceChildren(r.pda ? h('span', {}, r.cote || '—', h('small', {}, ` · ${pdaLine(r, n)}`))
+    : r.grade == null ? `${n} faute${n > 1 ? 's' : ''}`
     : h('span', {}, fmt(r.grade), h('small', {}, ` / ${fmt(r.total)} · ${n} faute(s)`)));
   return cardShell(r, [h('span'), gradeEl],
     h('div', { class: 'card-body' },
       r.flags.length ? h('div', { class: 'flags' }, r.flags.map((f) => h('div', { textContent: `⚠ ${f}` }))) : null,
       errors.length ? categoryChips(errors) : h('p', { class: 'muted small', style: 'margin:0', textContent: 'Aucune faute relevée.' }),
+      r.pda && (grey || r.dup?.length) ? h('p', { class: 'muted small', style: 'margin:0', textContent: [grey ? `${pl(grey, 'faute', 'fautes')} en gris (notions en apprentissage, non comptées)` : '', r.dup?.length ? `${pl(r.dup.length, 'faute répétée', 'fautes répétées')} comptée${r.dup.length > 1 ? 's' : ''} une seule fois` : ''].filter(Boolean).join(' · ') }) : null,
       r.rereading ? h('p', { class: 'muted small', style: 'margin:0', textContent: 'Relecture en cours : d’autres fautes peuvent s’ajouter…' }) : null,
       h('div', { class: 'card-foot' },
         h('span', { textContent: copyLabel(r) }),
@@ -1276,7 +1336,8 @@ function openViewer(r) {
 function renderViewer(focus) {
   const r = viewing;
   const count = langGrade(r);
-  $('viewer-title').textContent = `${copyTitle(r) || 'Élève'} · ${count} faute(s)${r.grade != null ? ` · ${fmt(r.grade)} / ${fmt(r.total)}` : ''}`;
+  $('viewer-title').textContent = r.pda ? `${copyTitle(r) || 'Élève'} · ${pdaLine(r, count)}${r.cote ? ` → ${r.cote}` : ''}`
+    : `${copyTitle(r) || 'Élève'} · ${count} faute(s)${r.grade != null ? ` · ${fmt(r.grade)} / ${fmt(r.total)}` : ''}`;
   let n = 0;
   const numbered = r.pages.map((p) => p.errors.map((e) => ({ e, p, n: ++n })));
   const place = (el, [y0, x0, y1, x1]) => { el.style.cssText = `top:${y0 / 10}%;left:${x0 / 10}%;height:${(y1 - y0) / 10}%;width:${(x1 - x0) / 10}%`; return el; };
@@ -1286,7 +1347,7 @@ function renderViewer(focus) {
     const wrap = h('div', { class: `page-wrap ${adding?.stage === 'draw' ? 'adding' : ''}` },
       h('img', { src: p.url, alt: `Page ${pi + 1}`, title: adding ? '' : 'Cliquez pour agrandir ou réduire', draggable: false,
         onclick: () => { if (!adding) $('viewer-pages').classList.toggle('zoom'); } }),
-      numbered[pi].filter(({ e }) => e.box).map(({ e, n: k }) => place(h('div', { class: `hl ${CATS[e.category].cls} ${focus === e ? 'focus' : ''}`,
+      numbered[pi].filter(({ e }) => e.box).map(({ e, n: k }) => place(h('div', { class: `hl ${CATS[e.category].cls} ${e.grey ? 'grey' : ''} ${focus === e ? 'focus' : ''}`,
         title: `${e.text} → ${e.correction}\n${e.explanation}`, onclick: () => { if (!adding) renderViewer(e); } }, h('span', { textContent: String(k) })), e.box)),
       adding?.stage === 'form' && adding.page === p ? place(h('div', { class: 'hl draft' }), adding.box) : null);
     if (adding?.stage === 'draw') drawBox(wrap, p);
@@ -1297,8 +1358,8 @@ function renderViewer(focus) {
     adding?.stage === 'form' ? addErrorForm() : null,
     items.length ? categoryChips(items.map((i) => i.e)) : h('p', { class: 'muted', textContent: 'Aucune faute relevée.' }),
     ...items.map(({ e, p, n: k }) => {
-      const el = h('div', { class: `err ${CATS[e.category].cls} ${focus === e ? 'focus' : ''}`, onclick: () => renderViewer(e) },
-        h('div', { class: 'err-head' }, h('b', { textContent: `${k}. ${CATS[e.category].label}${e.box ? '' : ' (non localisée)'}${e.doubtful ? ' · à vérifier' : ''}` }),
+      const el = h('div', { class: `err ${CATS[e.category].cls} ${e.grey ? 'grey' : ''} ${focus === e ? 'focus' : ''}`, onclick: () => renderViewer(e) },
+        h('div', { class: 'err-head' }, h('b', { textContent: `${k}. ${CATS[e.category].label}${e.box ? '' : ' (non localisée)'}${e.doubtful ? ' · à vérifier' : ''}${e.grey ? ' · en apprentissage, non comptée' : ''}${r.dup?.includes(e) ? ' · répétée, non recomptée' : ''}` }),
           h('button', { class: 'icon-btn', type: 'button', textContent: '×', title: "Ce n'est pas une faute : retirer", onclick: (ev) => {
             ev.stopPropagation();
             p.errors = p.errors.filter((x) => x !== e);
@@ -1306,7 +1367,8 @@ function renderViewer(focus) {
             renderViewer(); renderResults();
           } })),
         h('div', { class: 'fix' }, h('s', { textContent: e.text }), ' → ', h('b', { textContent: e.correction })),
-        h('div', { class: 'muted small', textContent: e.explanation }));
+        h('div', { class: 'muted small', textContent: e.explanation }),
+        e.notion ? h('div', { class: 'faint small', textContent: `Progression des apprentissages : ${PDA_NOTIONS.find((x) => x.id === e.notion)?.label || ''}` }) : null);
       if (focus === e) setTimeout(() => el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 0);
       return el;
     })].filter(Boolean)); // replaceChildren afficherait « null » en texte
@@ -1454,12 +1516,17 @@ function exportCSV() {
   const langRes = state.results.filter((r) => r.kind === 'lang');
   if (langRes.length) {
     const keys = Object.keys(CATS);
-    const rows = [['N° copie', 'Fichier', 'Évaluation', 'Groupe', 'Élève', 'Fautes', ...keys.map((k) => CATS[k].label), 'Note', 'Sur', 'Détail des fautes']];
+    const pda = langRes.some((r) => r.pda);
+    const rows = [['N° copie', 'Fichier', 'Évaluation', 'Groupe', 'Élève', 'Fautes', ...keys.map((k) => CATS[k].label),
+      ...(pda ? ['Mots', '% de fautes', 'Cote'] : ['Note', 'Sur']), 'Détail des fautes']];
     for (const r of [...langRes].sort((x, y) => (x.no ?? 0) - (y.no ?? 0))) {
       const errs = r.pages.flatMap((p) => p.errors);
-      rows.push([r.no ?? '', r.file || '', r.exam, r.group, r.name, counted(errs).length, ...keys.map((k) => counted(errs).filter((e) => e.category === k).length),
-        r.grade == null ? '' : num(r.grade), r.grade == null ? '' : num(r.total),
-        errs.map((e) => `${e.text} → ${e.correction} (${e.explanation})${e.doubtful ? ' [à vérifier, non comptée]' : ''}`).join(' | ')]);
+      const n = langGrade(r);
+      const ok = counted(errs).filter((e) => !r.dup?.includes(e));
+      rows.push([r.no ?? '', r.file || '', r.exam, r.group, r.name, n, ...keys.map((k) => ok.filter((e) => e.category === k).length),
+        ...(pda ? [r.words ?? '', r.pct == null ? '' : num(Math.round(r.pct * 10) / 10), r.cote || '']
+          : [r.grade == null ? '' : num(r.grade), r.grade == null ? '' : num(r.total)]),
+        errs.map((e) => `${e.text} → ${e.correction} (${e.explanation})${e.doubtful ? ' [à vérifier, non comptée]' : ''}${e.grey ? ' [en apprentissage, non comptée]' : ''}${r.dup?.includes(e) ? ' [répétée, non recomptée]' : ''}`).join(' | ')]);
     }
     downloadCSV(rows, lang === 'en' ? '_writing' : '_langue');
   }
@@ -1798,7 +1865,7 @@ window.addEventListener('beforeunload', (e) => {
 // Le corrigé tapé et le nom de l'évaluation ne sont gardés que jusqu'à la fermeture de l'onglet : assez pour corriger
 // plusieurs groupes de suite, sans laisser le corrigé sur un ordinateur partagé. « Terminer la session » les efface aussi.
 // Le regroupement des pages n'est pas retenu : il repart toujours d'un choix neutre.
-const PREF_IDS = ['total', 'per-student', 'whole', 'deep', 'language', 'lang-level', 'lang-total', 'lang-per', 'lang-max', 'anon', 'anon-h', 'anon-all', 'out-lang'];
+const PREF_IDS = ['total', 'per-student', 'whole', 'deep', 'language', 'lang-level', 'pda-year', 'pda-step', 'pda-once', 'lang-total', 'lang-per', 'lang-max', 'anon', 'anon-h', 'anon-all', 'out-lang'];
 const TAB_IDS = ['exam', 'rubric'];
 function savePrefs() {
   const prefs = Object.fromEntries(PREF_IDS.map((id) => [id, $(id).type === 'checkbox' ? $(id).checked : $(id).value]));
@@ -1825,6 +1892,10 @@ $('anon-opts').hidden = !anonymous();
 for (const id of [...PREF_IDS, ...TAB_IDS]) $(id).addEventListener('change', savePrefs);
 ['anon', 'anon-h', 'anon-all'].forEach((id) => $(id).addEventListener('change', () => { $('anon-opts').hidden = !anonymous(); renderPages(); }));
 document.querySelectorAll('#lang-cats input').forEach((i) => i.addEventListener('change', savePrefs));
+['pda-year', 'pda-step'].forEach((id) => $(id).addEventListener('change', () => { pdaOver = {}; savePda(); renderPda(); }));
+$('lang-level').addEventListener('change', renderPda);
+$('pda-reset').addEventListener('click', () => { pdaOver = {}; savePda(); renderPda(); });
+renderPda();
 
 // Affichage simple (par défaut) ou avancé : le mode simple cache les réglages fins (classe « adv »), qui restent appliqués.
 // Si l'un d'eux n'a pas sa valeur par défaut, une ligne le signale : rien ne change en douce (ex. double correction facturée).

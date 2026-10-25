@@ -93,13 +93,42 @@
         <p class="muted small" style="margin:0">L'IA relève les fautes de français sur chaque page et les surligne directement sur la copie, avec la correction et la règle. 1 page de copie = 1 page décomptée.</p>
         <label class="field">Niveau des élèves
           <select id="lang-level">
-            <option value="primaire">Primaire</option>
+            <option value="primaire">Primaire (selon la Progression des apprentissages)</option>
             <option value="secondaire1" selected>Secondaire 1-2</option>
             <option value="secondaire3">Secondaire 3-5</option>
             <option value="cegep">Cégep / adultes</option>
           </select>
         </label>
-        <div class="field adv">Fautes à relever
+        <div id="pda" class="stack pda" hidden>
+          <div class="row3">
+            <label class="field">Année
+              <select id="pda-year"><option value="1">1re année</option><option value="2">2e année</option><option value="3">3e année</option><option value="4" selected>4e année</option><option value="5">5e année</option><option value="6">6e année</option></select>
+            </label>
+            <label class="field">Moment de l'année
+              <select id="pda-step"><option value="1">Étape 1</option><option value="2">Étape 2</option><option value="3">Étape 3 (fin d'année)</option></select>
+            </label>
+            <label class="field">Fautes répétées
+              <select id="pda-once"><option value="1">Une même faute répétée compte une fois</option><option value="0">Chaque faute compte</option></select>
+            </label>
+          </div>
+          <details class="pda-notions">
+            <summary>Fautes qui comptent : <span id="pda-sum"></span> <span class="linklike">voir et modifier</span></summary>
+            <p class="muted small">Pré-rempli selon la Progression des apprentissages du ministère. <b>Compte</b> : notion maîtrisée à cette année (★ ou case bleue). <b>Gris</b> : notion en apprentissage (→), la faute est montrée sans compter. <b>Ignorée</b> : pas encore vue. Les notions de l'année (★) comptent à l'étape 3. Changez ce que vous voulez.</p>
+            <div id="pda-list" class="pda-list"></div>
+            <button id="pda-reset" class="btn small ghost" type="button">Revenir aux réglages de la Progression</button>
+          </details>
+          <div class="field">Cote selon le pourcentage de fautes (fautes comptées ÷ nombre de mots)
+            <div class="pda-cotes" id="pda-cotes">
+              <label>A <small>jusqu'à</small> <input type="text" inputmode="decimal" class="num" value="2"> %</label>
+              <label>B <small>jusqu'à</small> <input type="text" inputmode="decimal" class="num" value="4"> %</label>
+              <label>C <small>jusqu'à</small> <input type="text" inputmode="decimal" class="num" value="6"> %</label>
+              <label>D <small>jusqu'à</small> <input type="text" inputmode="decimal" class="num" value="8"> %</label>
+              <span>E <small>au-delà</small></span>
+            </div>
+            <span class="muted small">Seuils d'exemple : remplacez-les par ceux de votre école.</span>
+          </div>
+        </div>
+        <div class="field adv" id="lang-cats-field">Fautes à relever
           <div class="cats" id="lang-cats">
             <label class="cat c-orth"><input type="checkbox" value="orthographe" checked> Orthographe d'usage</label>
             <label class="cat c-acc"><input type="checkbox" value="accord" checked> Accords</label>
@@ -109,7 +138,7 @@
             <label class="cat c-voc"><input type="checkbox" value="vocabulaire" checked> Vocabulaire</label>
           </div>
         </div>
-        <div class="row3 adv">
+        <div class="row3 adv" id="lang-scoring-row">
           <label class="field">Note sur (facultatif)<input id="lang-total" type="text" inputmode="decimal" class="num" placeholder="Ex. : 10"></label>
           <label class="field">Points retirés par faute<input id="lang-per" type="text" inputmode="decimal" class="num" placeholder="Ex. : 0,5"></label>
           <label class="field">Retrait maximum<input id="lang-max" type="text" inputmode="decimal" class="num" placeholder="Ex. : 10"></label>
