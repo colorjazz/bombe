@@ -1286,6 +1286,10 @@ const PDA_STATES = { count: 'Acquise', grey: 'En apprentissage', ignore: 'Pas en
 function renderPda() {
   const on = isPda();
   $('pda').hidden = !on;
+  // Exemples à l'image d'une classe du primaire (groupe « 4e B » plutôt que « 541 »).
+  const year = Number($('pda-year').value), prim = on && state.kind === 'lang';
+  $('exam').placeholder = tr(prim ? 'Ex. : Écriture — Raconte ta fin de semaine' : 'Ex. : Examen — Révolution tranquille');
+  $('group').placeholder = prim ? `Ex. : ${year}${year === 1 ? 're' : 'e'} B` : tr('Ex. : 541');
   $('lang-cats-field').hidden = on;
   $('lang-scoring-row').hidden = on; // au primaire, la cote vient du pourcentage de fautes
   if (!on) return;
@@ -1542,6 +1546,7 @@ function setKind(kind) {
   document.querySelector('.kind').dataset.active = kind;
   $('content-settings').hidden = kind !== 'content';
   $('lang-settings').hidden = kind !== 'lang';
+  renderPda(); // exemples du primaire seulement en correction de la langue
   $('step1-title').textContent = kind === 'lang' ? 'Paramètres de la correction de la langue' : 'Paramètres de l’évaluation';
   $('empty-text').textContent = kind === 'lang' ? 'Les copies analysées apparaîtront ici, avec les fautes surlignées.'
     : 'Les copies corrigées apparaîtront ici, avec le détail des points par question.';
