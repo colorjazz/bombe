@@ -829,10 +829,10 @@ function renderStats() {
   const rel = withRel.length ? pctText(fmt(withRel.reduce((a, r) => a + r.reliability, 0) / withRel.length)) : '—';
   const stat = (v, l) => h('div', { class: 'stat' }, h('div', { class: 'v', textContent: v }), h('div', { class: 'l', textContent: l }));
   // Fiabilité : seulement en correction approfondie (sinon « — » inquiète sans rien dire).
-  $('stats').replaceChildren(stat(String(graded.length), 'copies'),
+  $('stats').replaceChildren(...[stat(String(graded.length), 'copies'),
     stat(pctText(fmt(avg)), `moyenne (min ${fmt(Math.min(...pct))} – max ${fmt(Math.max(...pct))})`),
     withRel.length ? h('div', { class: 'stat' }, h('div', { class: 'v', textContent: rel }),
-      h('div', { class: 'l' }, 'fiabilité moyenne ', infoButton())) : null, stat(String(flagged), 'à vérifier ⚠'));
+      h('div', { class: 'l' }, 'fiabilité moyenne ', infoButton())) : null, stat(String(flagged), 'à vérifier ⚠')].filter(Boolean)); // replaceChildren afficherait « null »
 }
 
 // Moyenne de la classe par question : repère les questions mal comprises.
