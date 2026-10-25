@@ -1231,15 +1231,15 @@ const isPda = () => $('lang-level').value === 'primaire' && $('out-lang').value 
 let pdaOver = {};
 try { pdaOver = JSON.parse(localStorage.getItem('ce.pda') || '{}') || {}; } catch { /* ignoré */ }
 const pdaState = (n) => pdaOver[n.id] || pdaDefault(n, Number($('pda-year').value), Number($('pda-step').value));
-const PDA_STATES = { count: 'Compte', grey: 'Gris', ignore: 'Ignorée' };
+const PDA_STATES = { count: 'Acquise', grey: 'En apprentissage', ignore: 'Pas encore vue' };
 function renderPda() {
   const on = isPda();
   $('pda').hidden = !on;
   $('lang-cats-field').hidden = on;
   $('lang-scoring-row').hidden = on; // au primaire, la cote vient du pourcentage de fautes
   if (!on) return;
-  const n = PDA_NOTIONS.filter((x) => pdaState(x) === 'count').length, g = PDA_NOTIONS.filter((x) => pdaState(x) === 'grey').length;
-  $('pda-sum').textContent = `${pl(n, 'notion', 'notions')} · ${g} en gris`;
+  const by = (st) => PDA_NOTIONS.filter((x) => pdaState(x) === st).length;
+  $('pda-sum').textContent = `${by('count')} acquise${by('count') > 1 ? 's' : ''} · ${by('grey')} en apprentissage · ${by('ignore')} pas encore vue${by('ignore') > 1 ? 's' : ''}`;
   $('pda-list').replaceChildren(...Object.entries(CATS).map(([cat, c]) => {
     const list = PDA_NOTIONS.filter((x) => x.cat === cat);
     return list.length ? h('div', { class: 'pda-group' }, h('b', { class: `cat ${c.cls}`, textContent: c.label }),
@@ -1293,11 +1293,11 @@ function categoryChips(errors) {
   return h('div', { class: 'chips' }, Object.entries(CATS).map(([k, c]) => {
     const n = errors.filter((e) => e.category === k && !e.grey).length;
     return n ? h('span', { class: `cat ${c.cls}`, textContent: `${c.label} ${n}` }) : null;
-  }), grey ? h('span', { class: 'cat c-grey', textContent: `En gris ${grey}` }) : null);
+  }), grey ? h('span', { class: 'cat c-grey', textContent: `En apprentissage ${grey}` }) : null);
 }
 
 // Primaire : « 214 mots · 7 fautes comptées · 3,3 % → B ».
-const pdaLine = (r, n) => `${r.words == null ? 'mots non comptés' : pl(r.words, 'mot', 'mots')} · ${pl(n, 'faute comptée', 'fautes comptées')}${r.pct == null ? '' : ` · ${fmt(Math.round(r.pct * 10) / 10)} %`}`;
+const pdaLine = (r, n) => `${r.words == null ? 'mots non comptés' : pl(r.words, 'mot', 'mots')} · ${pl(n, 'faute retenue', 'fautes retenues')}${r.pct == null ? '' : ` · ${fmt(Math.round(r.pct * 10) / 10)} %`}`;
 function langCard(r) {
   const errors = r.pages.flatMap((p) => p.errors);
   const n = r.pda ? langGrade(r) : counted(errors).length;
@@ -1310,7 +1310,7 @@ function langCard(r) {
     h('div', { class: 'card-body' },
       r.flags.length ? h('div', { class: 'flags' }, r.flags.map((f) => h('div', { textContent: `⚠ ${f}` }))) : null,
       errors.length ? categoryChips(errors) : h('p', { class: 'muted small', style: 'margin:0', textContent: 'Aucune faute relevée.' }),
-      r.pda && (grey || r.dup?.length) ? h('p', { class: 'muted small', style: 'margin:0', textContent: [grey ? `${pl(grey, 'faute', 'fautes')} en gris (notions en apprentissage, non comptées)` : '', r.dup?.length ? `${pl(r.dup.length, 'faute répétée', 'fautes répétées')} comptée${r.dup.length > 1 ? 's' : ''} une seule fois` : ''].filter(Boolean).join(' · ') }) : null,
+      r.pda && (grey || r.dup?.length) ? h('p', { class: 'muted small', style: 'margin:0', textContent: [grey ? `${pl(grey, 'faute', 'fautes')} en gris : notion en apprentissage, ne compte pas` : '', r.dup?.length ? `${pl(r.dup.length, 'faute répétée', 'fautes répétées')}, retenue${r.dup.length > 1 ? 's' : ''} une seule fois` : ''].filter(Boolean).join(' · ') }) : null,
       r.rereading ? h('p', { class: 'muted small', style: 'margin:0', textContent: 'Relecture en cours : d’autres fautes peuvent s’ajouter…' }) : null,
       h('div', { class: 'card-foot' },
         h('span', { textContent: copyLabel(r) }),
@@ -1359,7 +1359,7 @@ function renderViewer(focus) {
     items.length ? categoryChips(items.map((i) => i.e)) : h('p', { class: 'muted', textContent: 'Aucune faute relevée.' }),
     ...items.map(({ e, p, n: k }) => {
       const el = h('div', { class: `err ${CATS[e.category].cls} ${e.grey ? 'grey' : ''} ${focus === e ? 'focus' : ''}`, onclick: () => renderViewer(e) },
-        h('div', { class: 'err-head' }, h('b', { textContent: `${k}. ${CATS[e.category].label}${e.box ? '' : ' (non localisée)'}${e.doubtful ? ' · à vérifier' : ''}${e.grey ? ' · en apprentissage, non comptée' : ''}${r.dup?.includes(e) ? ' · répétée, non recomptée' : ''}` }),
+        h('div', { class: 'err-head' }, h('b', { textContent: `${k}. ${CATS[e.category].label}${e.box ? '' : ' (non localisée)'}${e.doubtful ? ' · à vérifier' : ''}${e.grey ? ' · notion en apprentissage : ne compte pas' : ''}${r.dup?.includes(e) ? ' · répétée : retenue une seule fois' : ''}` }),
           h('button', { class: 'icon-btn', type: 'button', textContent: '×', title: "Ce n'est pas une faute : retirer", onclick: (ev) => {
             ev.stopPropagation();
             p.errors = p.errors.filter((x) => x !== e);
@@ -1526,7 +1526,7 @@ function exportCSV() {
       rows.push([r.no ?? '', r.file || '', r.exam, r.group, r.name, n, ...keys.map((k) => ok.filter((e) => e.category === k).length),
         ...(pda ? [r.words ?? '', r.pct == null ? '' : num(Math.round(r.pct * 10) / 10), r.cote || '']
           : [r.grade == null ? '' : num(r.grade), r.grade == null ? '' : num(r.total)]),
-        errs.map((e) => `${e.text} → ${e.correction} (${e.explanation})${e.doubtful ? ' [à vérifier, non comptée]' : ''}${e.grey ? ' [en apprentissage, non comptée]' : ''}${r.dup?.includes(e) ? ' [répétée, non recomptée]' : ''}`).join(' | ')]);
+        errs.map((e) => `${e.text} → ${e.correction} (${e.explanation})${e.doubtful ? ' [à vérifier, non comptée]' : ''}${e.grey ? ' [notion en apprentissage : ne compte pas]' : ''}${r.dup?.includes(e) ? ' [répétée : retenue une seule fois]' : ''}`).join(' | ')]);
     }
     downloadCSV(rows, lang === 'en' ? '_writing' : '_langue');
   }
