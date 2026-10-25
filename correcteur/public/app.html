@@ -15,7 +15,7 @@
   <link rel="stylesheet" href="app.css">
   <script type="module" src="app.js"></script>
 </head>
-<body>
+<body class="light">
   <header class="topbar">
     <div class="wrap">
       <a class="brand" href="index.html"><img class="logo" src="logo-96.png" alt="" width="40" height="40"><strong>Brûle la pile</strong></a>
@@ -55,7 +55,7 @@
 
   <!-- Application -->
   <main id="app" class="wrap layout" hidden>
-    <section class="panel stack">
+    <div class="kindbar">
       <div class="kind" role="tablist" data-active="content">
         <span class="kind-pill" aria-hidden="true"></span>
         <button id="kind-content" class="active" type="button" role="tab" aria-selected="true">
@@ -67,12 +67,15 @@
           <span class="kind-long">Correction de la langue</span><span class="kind-short">Langue</span>
         </button>
       </div>
-      <div class="step-head">
-        <h2><span class="step">1</span> <span id="step1-title">Évaluation et copies</span></h2>
+    </div>
+    <section class="panel stack s1">
+      <div class="step-head band">
+        <h2><span class="step">1</span> <span id="step1-title">Paramètres de l’évaluation</span></h2>
         <div class="seg" role="group" aria-label="Affichage des options">
           <button id="ui-simple" type="button" aria-pressed="true">Simple</button><button id="ui-adv" type="button" aria-pressed="false">Avancé</button>
         </div>
       </div>
+      <p class="req-note"><span class="req">*</span> obligatoire</p>
       <p id="adv-note" class="muted small" style="margin:0" hidden>Des réglages avancés sont actifs (<a href="#" id="adv-show">voir</a>).</p>
 
       <div class="row2">
@@ -115,7 +118,7 @@
 
       <div id="content-settings" class="stack">
       <div class="row2">
-        <label class="field">Barème total (points)
+        <label class="field"><span>Barème total (points) <span class="req" aria-hidden="true">*</span></span>
           <input id="total" type="number" min="1" max="1000" step="1" value="" placeholder="ex. 20" inputmode="decimal">
         </label>
         <label class="field adv">Points
@@ -130,8 +133,7 @@
       </label>
       <label class="toggle adv"><input id="language" type="checkbox"> Évaluer aussi l'orthographe et la grammaire</label>
 
-      <p class="section-label">Corrigé ou grille de correction</p>
-      <label class="field">Consignes, réponses attendues, points par question
+      <label class="field"><span>Votre corrigé <span class="muted small">(facultatif, mais fortement conseillé)</span></span>
         <textarea id="rubric" rows="5" placeholder="Astuce : fournir le corrigé (ici ou en PDF/photo ci-dessous) améliore beaucoup la fiabilité de la correction.&#10;&#10;Ex. : Q1 (2 pts) : 1960, début de la Révolution tranquille. Q2 (3 pts) : nommer deux réformes… Accepter les synonymes.&#10;&#10;Vous pouvez aussi demander la forme du rendu : « Commentaire de 2 phrases, au tu, qui commence par un point fort », « Justifications courtes »…"></textarea>
         <span class="muted small adv">Vous pouvez aussi y préciser comment rédiger les résultats : ton, longueur, tutoiement, ce que le commentaire doit souligner.</span>
       </label>
@@ -153,7 +155,10 @@
       </div>
       </div>
 
-      <p class="section-label">Copies des élèves</p>
+    </section>
+
+    <section class="panel stack s2">
+      <div class="band"><h2><span class="step">2</span> <span id="step2-title">Insérer les copies</span> <span class="req" aria-hidden="true">*</span></h2></div>
       <label id="drop" class="drop">
         <input id="files" type="file" accept="image/*,.heic,.heif,application/pdf,.docx,.txt" multiple hidden>
         <span class="ico"><svg class="ic ic-lg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg></span>
@@ -161,9 +166,11 @@
         <span class="muted small">PDF, photos (y compris iPhone), Word (.docx) ou texte · plusieurs fichiers à la fois</span>
       </label>
       <p id="drop-done" class="added" hidden></p>
-      <button id="cam-open" class="btn" type="button" hidden><svg class="ic flame" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c1 3.2 5.5 5.6 5.5 10.5a5.5 5.5 0 0 1-11 0c0-2.3 1.2-4 2.5-5.2.2 1.7 1 2.9 2.2 3.4C10.7 9 11 6 12 3z"/><path d="M12 20a2.3 2.3 0 0 1-2.3-2.3c0-1.4 1.2-2.3 2.3-3.7 1.1 1.4 2.3 2.3 2.3 3.7A2.3 2.3 0 0 1 12 20z"/></svg> Numériser « Brûle la pile »</button>
-      <p id="cam-hint" class="muted small" style="margin:0" hidden>Tournez les pages devant votre téléphone : chaque page est photographiée toute seule. Vous relisez la pile, puis lancez la correction.</p>
-      <label class="toggle"><input id="anon" type="checkbox"><span>Masquer le nom de l'élève avant l'envoi <span class="muted small">— le haut de la 1re page est caché avant l'envoi à l'IA (zone hachurée) ; vous inscrirez les noms vous-même.</span></span></label>
+      <p id="cam-hint" class="muted small adv" style="margin:0" hidden>Tournez les pages devant votre téléphone : chaque page est photographiée toute seule. Vous relisez la pile, puis lancez la correction.</p>
+      <div class="opts">
+  <button id="cam-open" class="btn" type="button" hidden><svg class="ic flame" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c1 3.2 5.5 5.6 5.5 10.5a5.5 5.5 0 0 1-11 0c0-2.3 1.2-4 2.5-5.2.2 1.7 1 2.9 2.2 3.4C10.7 9 11 6 12 3z"/><path d="M12 20a2.3 2.3 0 0 1-2.3-2.3c0-1.4 1.2-2.3 2.3-3.7 1.1 1.4 2.3 2.3 2.3 3.7A2.3 2.3 0 0 1 12 20z"/></svg> Numériser « Brûle la pile »</button>
+        <label class="toggle"><input id="anon" type="checkbox"><span>Masquer le nom de l'élève avant l'envoi <span class="tip" title="Le haut de la 1re page est caché avant l'envoi à l'IA (zone hachurée sur les miniatures) ; vous inscrirez les noms vous-même. Vérifiez qu'aucune réponse ne s'y trouve.">ⓘ</span></span></label>
+      </div>
       <div id="anon-opts" class="mode adv" hidden>
         <span>Bande masquée :</span>
         <select id="anon-h"><option value="0.08">8 % de la page</option><option value="0.14" selected>14 %</option><option value="0.2">20 %</option><option value="0.3">30 %</option></select>
@@ -197,9 +204,9 @@
       <div id="banner"></div>
     </section>
 
-    <section class="panel">
+    <section class="panel s3">
+      <div class="band"><h2><span class="step">3</span> Résultats</h2></div>
       <div class="results-head">
-        <h2><span class="step g">2</span> Résultats</h2>
         <div class="results-tools">
           <input id="search" type="search" placeholder="Rechercher un élève…" style="width:12rem">
           <button id="export" class="btn green" type="button" disabled hidden>Télécharger les notes (Excel)</button>

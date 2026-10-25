@@ -1415,7 +1415,7 @@ function setKind(kind) {
   document.querySelector('.kind').dataset.active = kind;
   $('content-settings').hidden = kind !== 'content';
   $('lang-settings').hidden = kind !== 'lang';
-  $('step1-title').textContent = kind === 'lang' ? 'Correction de la langue' : 'Évaluation et copies';
+  $('step1-title').textContent = kind === 'lang' ? 'Paramètres de la correction de la langue' : 'Paramètres de l’évaluation';
   $('empty-text').textContent = kind === 'lang' ? 'Les copies analysées apparaîtront ici, avec les fautes surlignées.'
     : 'Les copies corrigées apparaîtront ici, avec le détail des points par question.';
   renderSummary();
