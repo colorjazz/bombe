@@ -78,3 +78,4 @@ textarea { resize: vertical; }
 .made-ca .flag { width: 1.5em; height: .75em; border-radius: 2px; }
 .made-ca .flag.qc { height: 1em; }
 @media (max-width: 480px) { .made-ca { font-size: .7rem; margin-left: .4rem; } }
+.banner.warn { background: rgba(245,158,11,.1); border-color: rgba(245,158,11,.4); color: #fde68a; }

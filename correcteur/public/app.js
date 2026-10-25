@@ -413,7 +413,7 @@ async function detectCopies() {
       batch.forEach((p, j) => { p.autoStart = pages[j].startsNew; p.detectedName = pages[j].name; });
     }
     applyMode();
-    banner('info', `${bundles().length} copie(s) détectée(s). Vérifiez les regroupements (noms affichés sur chaque copie) avant de corriger.`);
+    banner('info', `${bundles().length} copie(s) trouvée(s). Vérifiez que chaque copie correspond à un seul élève (cliquez sur une page pour l’agrandir) avant de corriger.`);
   } catch (err) {
     banner('err', `${err.message} Les pages non analysées restent regroupées par fichier.`);
   } finally {
@@ -436,7 +436,13 @@ function renderPages() {
   $('pages-zone').hidden = !state.pages.length;
   const mode = $('mode').value;
   $('per').hidden = mode !== 'fixed';
-  $('mode-hint').hidden = !!mode;
+  // « Une photo ou un fichier par élève » avec un fichier de plusieurs pages : c'est peut-être toute une classe.
+  const multi = mode === 'file' && list.some((b) => b.length > 1);
+  $('mode-hint').hidden = !multi;
+  if (multi) $('mode-hint').textContent = 'Attention : un fichier contient plusieurs pages ; il sera corrigé comme la copie d’un seul élève. S’il contient plusieurs élèves, choisissez « Trouver chaque copie pour moi ».';
+  const nCopies = list.length;
+  $('drop-done').hidden = !state.pages.length;
+  $('drop-done').textContent = `✓ ${nCopies} copie(s) ajoutée(s) (${state.pages.length} page(s)). Vérifiez-les ci-dessous.`;
   if (state.detecting) {
     $('bundles').replaceChildren(h('div', { class: 'analyzing' },
       h('div', { class: 'spinner' }), h('b', { textContent: 'Un instant, nous analysons vos copies…' }),
@@ -444,7 +450,7 @@ function renderPages() {
     renderSummary();
     return;
   }
-  const ready = mode && !(mode === 'fixed' && !(Number($('per').value) >= 1));
+  const ready = !(mode === 'fixed' && !(Number($('per').value) >= 1));
   // Numéros que les copies recevront à la correction (les copies déjà relancées gardent le leur).
   let seq = state.seq || 0;
   const nos = list.map((b) => b[0].no ?? ++seq);
@@ -456,7 +462,7 @@ function renderPages() {
       h('div', { class: 'bundle-head' },
         h('span', {}, `Copie ${nos[bi]}${b[0].detectedName ? ` · ${b[0].detectedName}` : ''} · ${b.length} page${b.length > 1 ? 's' : ''}`),
         h('span', { class: `st ${st?.state === 'error' || tooLong ? 'err' : ''}`, textContent: label }),
-        bi > 0 ? h('button', { class: 'btn ghost merge', type: 'button', textContent: 'fusionner avec la précédente', disabled: state.running,
+        bi > 0 ? h('button', { class: 'btn ghost merge', type: 'button', textContent: 'rattacher à la copie du dessus', disabled: state.running,
           onclick: () => { b[0].startsNew = false; b[0].autoStart = false; renderPages(); } }) : null),
       h('div', { class: 'bundle-pages' }, b.map((p, pi) => [
         pi > 0 ? h('button', { class: 'split', type: 'button', title: 'Séparer : une nouvelle copie commence ici', textContent: '✂', disabled: state.running,
@@ -487,7 +493,7 @@ function renderSummary() {
   const mode = $('mode').value;
   const grouped = mode && !(mode === 'fixed' && !(Number($('per').value) >= 1));
   $('summary').replaceChildren(...(n ? [h('b', { textContent: String(list.length) }), ` ${tr(list.length > 1 ? 'copies' : 'copie')} · `,
-    h('b', { textContent: String(n) }), ` ${tr(n > 1 ? 'pages' : 'page')}`] : [tr('Aucune copie importée')]));
+    h('b', { textContent: String(n) }), ` ${tr(n > 1 ? 'pages' : 'page')}`] : [tr(state.results.length ? '✓ Toutes les copies importées sont corrigées.' : 'Aucune copie importée')]));
   const cost = n * (state.kind === 'content' && $('deep').value === '1' ? 2 : 1);
   $('cost').textContent = n ? `${cost} page(s) seront décomptées` : '';
   const enough = state.pagesLeft == null || state.pagesLeft >= cost;
@@ -497,22 +503,27 @@ function renderSummary() {
   run.disabled = state.running || state.detecting || !n || !grouped || tooLong || !enough || !gridOk || !(Number($('total').value) > 0);
   run.textContent = state.running ? (state.kind === 'lang' ? 'Analyse en cours…' : 'Correction en cours…')
     : state.detecting ? 'Analyse des copies en cours…'
-    : n && !mode ? 'Choisissez comment regrouper les pages'
+    : n && !(Number($('total').value) > 0) ? 'Indiquez le barème total (en points)'
     : n && !grouped ? 'Indiquez le nombre de pages par élève'
     : !enough ? 'Solde insuffisant : rechargez votre compte'
     : n && !gridOk ? `La grille totalise ${fmt(gridSum)} points au lieu de ${fmt(Number($('total').value))}`
     : n ? `${state.kind === 'lang' ? 'Analyser la langue de' : 'Corriger'} ${list.length} copie(s)` : 'Corriger';
   $('export').disabled = $('end').disabled = state.running || !state.results.length;
+  // Pas de gros bouton vert tant qu'il n'y a rien à télécharger.
+  $('export').hidden = $('print-all').hidden = !state.results.length;
   $('print-all').disabled = state.running || !state.results.some((r) => r.kind !== 'lang');
   renderCalib();
 }
 
 function renderRubric() {
   $('rubric-thumbs').replaceChildren(...state.rubricPages.map((p) => h('div', { class: 'thumb' },
-    h('img', { src: p.url, alt: 'Corrigé' }),
+    h('img', { src: p.url, alt: tr('Corrigé') }),
     h('button', { class: 'x', type: 'button', textContent: '×', onclick: () => {
       state.rubricPages = state.rubricPages.filter((x) => x !== p); renderRubric();
     } }))));
+  const n = state.rubricPages.length;
+  $('rubric-done').hidden = !n;
+  $('rubric-done').textContent = `✓ Corrigé ajouté (${n} page(s)). Il n’est pas facturé.`;
 }
 
 // ---------- Grille détaillée ----------
@@ -551,7 +562,7 @@ function renderGrid() {
   $('grid-criteria').replaceChildren(...state.grid.map((c) => h('div', { class: 'crit' },
     h('div', { class: 'crit-top' },
       h('input', { type: 'text', value: c.name, 'aria-label': 'Critère', oninput: (e) => { c.name = e.target.value; } }),
-      h('input', { type: 'text', inputmode: 'decimal', class: 'num', value: fmt(c.max), 'aria-label': 'Points maximum', title: 'Points maximum',
+      h('input', { type: 'text', inputMode: 'decimal', class: 'num', value: fmt(c.max), 'aria-label': 'Points maximum', title: 'Points maximum',
         oninput: (e) => { c.max = toNumber(e.target.value); updateGridTotal(); } })),
     h('textarea', { rows: Math.max(3, c.levels.length + (c.note ? 1 : 0)), value: levelsText(c.levels, c.note),
       oninput: (e) => { Object.assign(c, parseCriterion(e.target.value)); } }),
@@ -653,6 +664,7 @@ async function runAll(only, calibrating = false) {
   $('stop-run').textContent = tr('Arrêter');
   keepAwake(true);
   list.forEach((b) => { state.status[b[0].id] = null; });
+  $('done-msg').hidden = true;
   banner();
   renderPages();
 
@@ -775,6 +787,14 @@ async function runAll(only, calibrating = false) {
   else if (calibrating) banner('ok', `${done} copie(s) corrigée(s) pour le calibrage. Relisez-les et changez les notes qui ne vous conviennent pas (la raison est facultative), puis cliquez sur « Corriger » : vos ajustements guideront le reste de la pile.`);
   else if (!hasKey) banner('info', `${done} copie(s) corrigée(s) sans corrigé : les notes ont tendance à être généreuses. Vérifiez-les, ou ajoutez votre corrigé pour des notes plus justes.`);
   else banner('ok', `${done} copie(s) corrigée(s). Vérifiez en priorité les copies marquées ⚠.`);
+  // Les résultats sont dans l'autre colonne (ou plus bas sur téléphone) : on y emmène l'enseignant, 1re copie ouverte.
+  if (done && !stop) {
+    const first = state.results.find((r) => list.some((b) => b[0].id === r.id));
+    if (first && !state.open.size) { state.open.add(first.id); renderResults(); }
+    $('done-msg').hidden = false;
+    $('done-msg').textContent = `✓ ${done} copie(s) corrigée(s). Cliquez sur une copie pour voir et modifier sa note.`;
+    $('done-msg').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 }
 
 // ---------- Résultats ----------
@@ -868,7 +888,7 @@ function cardShell(r, cells, body) {
     h('input', { class: 'group', type: 'text', value: r.group, placeholder: 'Groupe', 'aria-label': 'Groupe',
       oninput: (e) => { r.group = e.target.value; state.exported = false; } }),
     ...cells,
-    h('button', { class: 'icon-btn chev', type: 'button', textContent: '▾', 'aria-label': 'Détails' }));
+    h('button', { class: 'icon-btn chev', type: 'button', textContent: 'Voir ▾', 'aria-label': 'Détails' }));
   el.append(head, body);
   setOpen(state.open.has(r.id));
   return el;
@@ -1053,7 +1073,7 @@ function card(r) {
           'aria-label': 'Raison du changement de note', oninput: () => { qq.why = why.value; } });
         const showWhy = () => { why.hidden = qq.ai == null || qq.points === qq.ai; };
         showWhy();
-        const input = h('input', { type: 'text', inputmode: 'decimal', class: 'num', value: fmt(qq.points), 'aria-label': 'Points',
+        const input = h('input', { type: 'text', inputMode: 'decimal', class: 'num', value: fmt(qq.points), 'aria-label': 'Points',
           onchange: () => {
             const v = Math.round((toNumber(input.value) || 0) / r.unit) * r.unit;
             qq.points = Math.min(qq.max, Math.max(0, v));
@@ -1073,10 +1093,10 @@ function card(r) {
       h('textarea', { rows: 3, value: r.comment, oninput: (e) => { r.comment = e.target.value; state.exported = false; } })),
     h('div', { class: 'card-foot' },
       h('span', { textContent: copyLabel(r) }),
-      h('div', { style: 'display:flex;gap:.4rem' },
+      h('div', { style: 'display:flex;gap:.4rem;flex-wrap:wrap' },
         r.pageUrls ? h('button', { class: 'btn small', type: 'button', textContent: 'Voir la copie corrigée', onclick: async () => openZoom(await annotatedPages(r), copyTitle(r)) }) : null,
         r.pageUrls ? h('button', { class: 'btn small', type: 'button', textContent: 'Imprimer', title: 'Imprimer la copie corrigée pour l’élève', onclick: () => printBatch([r], { copies: true }) }) : null,
-        h('button', { class: 'btn ghost small', type: 'button', textContent: 'Supprimer', onclick: () => {
+        h('button', { class: 'btn ghost small', type: 'button', style: 'margin-left:1rem', textContent: 'Supprimer', onclick: () => {
           if (!confirm(tr(`Supprimer la correction de ${r.name || 'cet élève'} ?`))) return;
           state.results = state.results.filter((x) => x !== r); renderResults();
         } }))));
@@ -1226,9 +1246,9 @@ function langCard(r) {
       r.rereading ? h('p', { class: 'muted small', style: 'margin:0', textContent: 'Relecture en cours : d’autres fautes peuvent s’ajouter…' }) : null,
       h('div', { class: 'card-foot' },
         h('span', { textContent: copyLabel(r) }),
-        h('div', { style: 'display:flex;gap:.4rem' },
+        h('div', { style: 'display:flex;gap:.4rem;flex-wrap:wrap' },
           h('button', { class: 'btn primary small', type: 'button', textContent: 'Voir la copie annotée', onclick: () => openViewer(r) }),
-          h('button', { class: 'btn ghost small', type: 'button', textContent: 'Supprimer', onclick: () => {
+          h('button', { class: 'btn ghost small', type: 'button', style: 'margin-left:1rem', textContent: 'Supprimer', onclick: () => {
             if (!confirm(tr(`Supprimer l'analyse de ${r.name || 'cet élève'} ?`))) return;
             state.results = state.results.filter((x) => x !== r); renderResults();
           } })))));
@@ -1449,20 +1469,26 @@ function exportCSV() {
     const ok = r.grade != null;
     rows.push([r.no ?? '', r.file || '', r.exam, r.group, r.name, ok ? num(r.grade) : tr('Illisible'), num(r.total), ok ? num(Math.round((r.grade / r.total) * 1000) / 10) : '',
       ...(perQuestion ? shape.map((_, i) => (ok && r.questions[i] ? num(r.questions[i].points) : '')) : []), r.reliability ?? '',
-      r.questions.map((q) => `${q.question} : ${num(q.points)}/${num(q.max)}${q.points < q.max && q.justification ? ` (${q.justification})` : ''}`).join(' | '),
+      r.questions.map((q) => `${q.question}${lang === 'en' ? ':' : ' :'} ${num(q.points)}/${num(q.max)}${q.points < q.max && q.justification ? ` (${q.justification})` : ''}`).join(' | '),
       r.comment, r.flags.join(' ')]);
   }
   downloadCSV(rows, '');
   state.exported = true;
 }
 
+// Une seule fenêtre, dans l'appli (et non trois boîtes du navigateur où un « OK » par réflexe effaçait la clé).
 function endSession() {
-  if (!confirm(tr('Terminer la session et tout effacer (copies, corrigé, résultats) ?'))) return;
-  if (state.results.length && !state.exported && confirm(tr('Télécharger les notes (CSV) avant d’effacer ?'))) exportCSV();
+  const has = state.results.length > 0;
+  $('end-save').hidden = !has;
+  $('end-warn').hidden = !has || state.exported;
+  $('end-key').textContent = state.key || '';
+  $('end-modal').hidden = false;
+}
+function finishSession(forget) {
+  $('end-modal').hidden = true;
   // Ordinateur partagé : la clé mémorisée permettrait au suivant d'utiliser les pages restantes.
-  const forget = confirm(`${tr('Oublier aussi la clé d’accès sur cet ordinateur ? Notez-la d’abord pour utiliser vos pages restantes :')} ${state.key}`);
   Object.assign(state, { results: [], pages: [], rubricPages: [], status: {}, open: new Set(), exported: true, seq: 0, structure: null });
-  $('mode').value = ''; $('per').value = '';
+  $('mode').value = 'file'; $('per').value = ''; state.modeChosen = false;
   ['exam', 'group', 'rubric', 'search'].forEach((id) => { $(id).value = ''; });
   state.grid = null;
   renderRubric(); renderGrid(); renderPages(); renderResults(); savePrefs();
@@ -1632,6 +1658,9 @@ function dropzone(zone, input, onFiles) {
 dropzone($('drop'), $('files'), async (files, progress) => {
   const added = await filesToPages(files, progress);
   state.pages.push(...added);
+  // Regroupement choisi pour l'enseignant (il peut changer ensuite) : des photos ou fichiers d'une page = un élève
+  // chacun ; un fichier de plusieurs pages (PDF du photocopieur) = on trouve où commence chaque copie.
+  if (!state.modeChosen) $('mode').value = state.pages.some((p) => !p.firstOfFile) ? 'auto' : 'file';
   applyMode();
   if ($('mode').value === 'auto') { renderPages(); await detectCopies(); return; }
   renderPages();
@@ -1647,11 +1676,12 @@ dropzone($('rubric-drop'), $('rubric-files'), async (files, progress) => {
 });
 
 $('mode').addEventListener('change', () => {
+  state.modeChosen = true;
   applyMode(); renderPages();
   if ($('mode').value === 'auto') detectCopies();
 });
 $('per').addEventListener('input', () => { applyMode(); renderPages(); });
-$('clear-pages').addEventListener('click', () => { state.pages = []; state.status = {}; renderPages(); });
+$('clear-pages').addEventListener('click', () => { state.pages = []; state.status = {}; state.modeChosen = false; $('mode').value = 'file'; renderPages(); });
 $('total').addEventListener('input', () => { renderSummary(); updateGridTotal(); });
 $('make-grid').addEventListener('click', makeGrid);
 $('kind-content').addEventListener('click', () => setKind('content'));
@@ -1724,6 +1754,11 @@ $('run').addEventListener('click', () => {
 $('search').addEventListener('input', renderResults);
 $('export').addEventListener('click', exportCSV);
 $('end').addEventListener('click', endSession);
+$('end-keep').addEventListener('click', () => finishSession(false));
+$('end-forget').addEventListener('click', () => finishSession(true));
+$('end-export').addEventListener('click', () => { exportCSV(); $('end-warn').hidden = true; });
+$('end-print').addEventListener('click', () => { $('end-modal').hidden = true; $('print-all').click(); });
+document.querySelectorAll('[data-close-end]').forEach((b) => b.addEventListener('click', () => { $('end-modal').hidden = true; }));
 
 $('trial').addEventListener('click', () => startTrial());
 $('trial-anyway').addEventListener('click', () => startTrial(true));

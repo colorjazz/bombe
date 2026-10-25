@@ -23,7 +23,7 @@
         <div class="lang-switch" role="group" aria-label="Langue / Language"><button type="button" data-set-lang="fr">FR</button><button type="button" data-set-lang="en">EN</button></div>
         <a class="btn ghost" href="guide.html" target="_blank" rel="noopener" title="Le guide s'ouvre dans un nouvel onglet : vos résultats restent ici">Guide</a>
         <span id="balance" class="pill" hidden></span>
-        <button id="buy-open" class="btn ghost" type="button" hidden>Recharger</button>
+        <button id="buy-open" class="btn ghost" type="button" hidden>Acheter des pages</button>
         <button id="logout" class="btn ghost" type="button" hidden title="Retirer la clé de cet appareil">Changer de clé</button>
       </div>
     </div>
@@ -116,7 +116,7 @@
       <div id="content-settings" class="stack">
       <div class="row2">
         <label class="field">Barème total (points)
-          <input id="total" type="number" min="1" max="1000" step="1" value="20">
+          <input id="total" type="number" min="1" max="1000" step="1" value="" placeholder="ex. 20" inputmode="decimal">
         </label>
         <label class="field adv">Points
           <select id="whole"><option value="0">Demi-points permis</option><option value="1">Points entiers seulement</option></select>
@@ -139,6 +139,7 @@
         <input id="rubric-files" type="file" accept="image/*,.heic,.heif,application/pdf,.docx,.txt" multiple hidden>
         <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="3" width="8" height="4" rx="1"/><path d="M16 5h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2"/></svg><span>Ajouter le corrigé (PDF ou photos) — <b>non facturé</b></span>
       </label>
+      <p id="rubric-done" class="added" hidden></p>
       <div id="rubric-thumbs" class="thumbs"></div>
       <div class="grid-tools adv">
         <button id="make-grid" class="btn" type="button">Préparer une grille détaillée (gratuit)</button>
@@ -156,12 +157,13 @@
       <label id="drop" class="drop">
         <input id="files" type="file" accept="image/*,.heic,.heif,application/pdf,.docx,.txt" multiple hidden>
         <span class="ico"><svg class="ic ic-lg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg></span>
-        <b>Glissez les copies ici ou cliquez pour parcourir</b>
+        <b class="pc-only">Glissez les copies ici ou cliquez pour choisir les fichiers</b><b class="touch-only">Choisir les photos ou le PDF des copies</b>
         <span class="muted small">PDF, photos (y compris iPhone), Word (.docx) ou texte · plusieurs fichiers à la fois</span>
       </label>
+      <p id="drop-done" class="added" hidden></p>
       <button id="cam-open" class="btn" type="button" hidden><svg class="ic flame" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c1 3.2 5.5 5.6 5.5 10.5a5.5 5.5 0 0 1-11 0c0-2.3 1.2-4 2.5-5.2.2 1.7 1 2.9 2.2 3.4C10.7 9 11 6 12 3z"/><path d="M12 20a2.3 2.3 0 0 1-2.3-2.3c0-1.4 1.2-2.3 2.3-3.7 1.1 1.4 2.3 2.3 2.3 3.7A2.3 2.3 0 0 1 12 20z"/></svg> Numériser « Brûle la pile »</button>
       <p id="cam-hint" class="muted small" style="margin:0" hidden>Tournez les pages devant votre téléphone : chaque page est photographiée toute seule. Vous relisez la pile, puis lancez la correction.</p>
-      <label class="toggle"><input id="anon" type="checkbox"> Masquer le nom de l'élève avant l'envoi <span class="muted small">— le haut de la 1re page de chaque copie (zone hachurée sur les miniatures) n'est pas transmis ; vous inscrirez les noms vous-même. Vérifiez qu'aucune réponse ne s'y trouve.</span></label>
+      <label class="toggle"><input id="anon" type="checkbox"><span>Masquer le nom de l'élève avant l'envoi <span class="muted small">— le haut de la 1re page est caché avant l'envoi à l'IA (zone hachurée) ; vous inscrirez les noms vous-même.</span></span></label>
       <div id="anon-opts" class="mode adv" hidden>
         <span>Bande masquée :</span>
         <select id="anon-h"><option value="0.08">8 % de la page</option><option value="0.14" selected>14 %</option><option value="0.2">20 %</option><option value="0.3">30 %</option></select>
@@ -169,12 +171,11 @@
       </div>
       <div id="pages-zone" class="stack" hidden>
         <div class="mode">
-          <span>Regrouper :</span>
+          <span>Comment sont vos copies ?</span>
           <select id="mode">
-            <option value="" selected>— Choisir —</option>
-            <option value="file">1 fichier = 1 élève</option>
-            <option value="fixed">Nombre fixe de pages par élève</option>
-            <option value="auto">Détection automatique (IA, gratuite)</option>
+            <option value="file">Une photo ou un fichier par élève</option>
+            <option value="auto">Trouver chaque copie pour moi (PDF du photocopieur)</option>
+            <option value="fixed">Le même nombre de pages par élève</option>
           </select>
           <input id="per" type="number" min="1" max="10" value="" placeholder="Pages par élève" hidden aria-label="Pages par élève" style="width:9rem">
           <button id="clear-pages" class="btn ghost small" type="button">Tout retirer</button>
@@ -201,7 +202,7 @@
         <h2><span class="step g">2</span> Résultats</h2>
         <div class="results-tools">
           <input id="search" type="search" placeholder="Rechercher un élève…" style="width:12rem">
-          <button id="export" class="btn green" type="button" disabled>Télécharger les notes (CSV)</button>
+          <button id="export" class="btn green" type="button" disabled hidden>Télécharger les notes (Excel)</button>
           <button id="print-all" class="btn" type="button" disabled>Imprimer…</button>
           <button id="end" class="btn ghost" type="button" disabled>Terminer la session</button>
         </div>
@@ -212,6 +213,7 @@
         <div class="empty-ico"><svg class="ic ic-lg" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M8 13h8M8 17h5"/></svg></div>
         <span id="empty-text">Les copies corrigées apparaîtront ici, avec le détail des points par question.</span>
       </div>
+      <p id="done-msg" class="banner ok small" style="margin:0" hidden></p>
       <div id="cards" class="cards"></div>
       <p class="muted small">Les notes sont des propositions : vérifiez-les, surtout les copies marquées ⚠. Tout est modifiable.<br>
       <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> Aucune copie ni note n'est conservée : téléchargez les notes avant de fermer la page.</p>
@@ -330,13 +332,24 @@
       <div style="display:flex;gap:.5rem;flex-wrap:wrap"><a class="btn" href="guide.html" target="_blank" rel="noopener">Ouvrir le guide complet</a><button id="welcome-ok" class="btn primary" type="button" style="flex:1">Commencer</button></div>
     </div>
   </div>
+  <div id="end-modal" class="modal" hidden>
+    <div class="panel stack" style="max-width:460px">
+      <div style="display:flex;justify-content:space-between;align-items:center"><h2 style="margin:0">Terminer la session</h2><button class="icon-btn" type="button" data-close-end aria-label="Fermer">×</button></div>
+      <p id="end-warn" class="banner warn small" style="margin:0;display:block" hidden>Vos notes ne sont pas encore enregistrées : téléchargez-les ou imprimez-les d'abord, car tout sera effacé.</p>
+      <div id="end-save" style="display:flex;gap:.5rem;flex-wrap:wrap"><button id="end-export" class="btn green" type="button">Télécharger les notes (Excel)</button><button id="end-print" class="btn" type="button">Imprimer…</button></div>
+      <button id="end-keep" class="btn primary block" type="button">Tout effacer et garder ma clé</button>
+      <button id="end-forget" class="btn ghost block" type="button">Tout effacer et retirer ma clé de cet ordinateur</button>
+      <p class="muted small" style="margin:0">Retirer la clé : pour un ordinateur partagé. Elle reste valable ailleurs : notez-la pour utiliser vos pages restantes (<b id="end-key"></b>).</p>
+      <button class="btn ghost small" type="button" data-close-end>Annuler</button>
+    </div>
+  </div>
   <div id="awake" class="modal" hidden>
     <div class="panel stack" style="max-width:420px;text-align:center">
       <div style="font-size:2rem" aria-hidden="true">📱</div>
       <h2 style="margin:0;justify-content:center">Gardez l'écran allumé</h2>
       <p style="margin:0">Pendant la correction, n'éteignez pas l'écran du téléphone et restez sur cette page.</p>
       <p class="muted small" style="margin:0">Si le téléphone se met en veille, la correction s'arrête. Elle reprend toute seule quand vous revenez sur la page.</p>
-      <button id="awake-ok" class="btn primary big block" type="button">Je comprends</button>
+      <button id="awake-ok" class="btn primary big block" type="button">Je comprends, lancer la correction</button>
     </div>
   </div>
   <div id="newkey" class="modal" hidden>

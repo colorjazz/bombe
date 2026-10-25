@@ -275,3 +275,24 @@ button.rel { cursor: pointer; font-family: inherit; }
 .welcome-warn { border-left: 3px solid var(--amber); background: rgba(245,158,11,.07); border-radius: 10px; padding: .6rem .9rem; font-size: .9rem; }
 .welcome-warn ul { margin: .3rem 0 0; padding-left: 1.1rem; color: var(--muted); display: grid; gap: .25rem; }
 .linklike { background: none; border: 0; padding: 0; font: inherit; color: var(--primary-2); text-decoration: underline; cursor: pointer; }
+/* Confirmations d'ajout, là où l'enseignant regarde. */
+.added { margin: 0; color: var(--green); font-size: .85rem; font-weight: 600; }
+/* Texte de la zone de dépôt : glisser sur ordinateur, choisir des photos sur téléphone. */
+.touch-only { display: none; }
+@media (pointer: coarse) { .pc-only { display: none; } .touch-only { display: inline; } }
+.toggle > span { flex: 1; min-width: 0; }
+.card-head .chev { font-size: .78rem; white-space: nowrap; color: var(--primary-2); }
+/* Téléphone : cibles assez grandes pour le pouce, et détail d'une copie sans débordement. */
+@media (pointer: coarse) {
+  .thumb .x, .thumb .rot { width: 30px; height: 30px; line-height: 30px; font-size: 16px; }
+  .toggle input, .cat input { width: 1.35rem; height: 1.35rem; }
+}
+@media (max-width: 560px) {
+  .qtable thead { display: none; }
+  .qtable, .qtable tbody, .qtable tr { display: block; width: 100%; }
+  .qtable tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .2rem .6rem; padding: .5rem 0; border-top: 1px solid var(--line); }
+  .qtable td { border: 0; padding: 0; width: auto !important; }
+  .qtable td.just { grid-column: 1 / -1; overflow-wrap: anywhere; }
+  .card-body, .card-foot { min-width: 0; }
+  .card-foot { flex-wrap: wrap; }
+}

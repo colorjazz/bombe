@@ -32,11 +32,11 @@ FR = dict(
     ('importer', 'Importer les copies', '''
 <ul>
 <li><b>Formats acceptés</b> : PDF (une numérisation de toute la pile convient), photos (JPG, PNG, HEIC d’iPhone…), Word (.docx) et texte (.txt). Plusieurs fichiers à la fois, par glisser-déposer ou en cliquant.</li>
-<li><b>Regroupement des pages</b> : indiquez comment les pages forment les copies :
-  <ul><li><b>1 fichier = 1 élève</b> ;</li>
-  <li><b>Nombre fixe de pages par élève</b> (ex. 2 pages chacun) ;</li>
-  <li><b>Détection automatique</b> : l’IA repère où commence chaque copie (gratuit).</li></ul></li>
-<li><b>Vérifiez le regroupement</b> sur les miniatures : ✂ sépare deux pages, « fusionner » rattache une copie à la précédente, × retire une page. Cliquez sur une miniature pour l’agrandir.</li>
+<li><b>« Comment sont vos copies ? »</b> : l’outil choisit pour vous, et vous pouvez changer :
+  <ul><li><b>Une photo ou un fichier par élève</b> : choisi quand chaque fichier n’a qu’une page ;</li>
+  <li><b>Trouver chaque copie pour moi</b> : choisi pour un PDF de plusieurs pages (photocopieur) ; l’IA repère où commence chaque copie (gratuit) ;</li>
+  <li><b>Le même nombre de pages par élève</b> (ex. 2 pages chacun).</li></ul></li>
+<li><b>Vérifiez les copies</b> sur les miniatures : ✂ sépare deux pages, « rattacher à la copie du dessus » réunit deux copies, × retire une page. Cliquez sur une miniature pour l’agrandir.</li>
 <li><b>Photos prises de côté</b> : elles sont redressées automatiquement ; le bouton ↻ d’une miniature la tourne à la main.</li>
 <li><b>Limite</b> : 10 pages par copie. Au-delà, il s’agit sans doute de plusieurs élèves : utilisez le nombre fixe de pages ou ✂.</li>
 </ul>'''),
@@ -88,10 +88,10 @@ FR = dict(
 </ul>'''),
     ('exporter', 'Exporter et imprimer', '''
 <ul>
-<li><b>Télécharger les notes (CSV)</b> : un fichier qui s’ouvre dans Excel ou se charge dans votre logiciel de notes. Une colonne par question quand toutes les copies ont le même découpage. La correction de la langue a son propre fichier.</li>
+<li><b>Télécharger les notes (Excel)</b> : un fichier (CSV) qui s’ouvre dans Excel ou Google Sheets ou se charge dans votre logiciel de notes. Une colonne par question quand toutes les copies ont le même découpage. La correction de la langue a son propre fichier.</li>
 <li><b>Voir la copie corrigée</b> : la copie annotée comme à la main : ✓ vert sur les bonnes réponses, encadré rouge (et ✗ si aucun point) sur les autres, la note en haut et, dans la marge, les points et une courte note par question, plus le commentaire.</li>
 <li><b>Imprimer…</b> : toutes les copies d’un coup, dans l’ordre de la pile. Au choix : les <b>copies annotées</b>, les <b>fiches de résultats</b> (plusieurs par feuille, à découper) ou <b>les deux</b> (la fiche de chaque élève, puis sa copie). Pour enregistrer en PDF, choisissez « Enregistrer au format PDF » comme imprimante.</li>
-<li><b>Terminer la session</b> efface tout de l’onglet ; l’appli propose d’abord de télécharger le CSV.</li>
+<li><b>Terminer la session</b> ouvre une fenêtre : téléchargez ou imprimez vos notes, puis effacez tout en gardant votre clé, ou en la retirant de l’ordinateur (ordinateur partagé).</li>
 </ul>'''),
     ('confidentialite', 'Confidentialité des élèves', '''
 <ul>
@@ -146,11 +146,11 @@ EN = dict(
     ('importer', 'Importing student work', '''
 <ul>
 <li><b>Accepted formats</b>: PDF (a scan of the whole stack works), photos (JPG, PNG, iPhone HEIC…), Word (.docx) and text (.txt). Several files at once, by drag and drop or by clicking.</li>
-<li><b>Grouping pages</b>: tell the app how pages form papers:
-  <ul><li><b>1 file = 1 student</b>;</li>
-  <li><b>Fixed number of pages per student</b> (e.g. 2 pages each);</li>
-  <li><b>Automatic detection</b>: the AI finds where each paper starts (free).</li></ul></li>
-<li><b>Check the grouping</b> on the thumbnails: ✂ splits two pages, “merge” attaches a paper to the previous one, × removes a page. Click a thumbnail to enlarge it.</li>
+<li><b>“How are your papers organized?”</b>: the app picks for you, and you can change it:
+  <ul><li><b>One photo or file per student</b>: picked when each file has a single page;</li>
+  <li><b>Find each student’s paper for me</b>: picked for a multi-page PDF (photocopier); the AI finds where each paper starts (free);</li>
+  <li><b>Same number of pages for every student</b> (e.g. 2 pages each).</li></ul></li>
+<li><b>Check the papers</b> on the thumbnails: ✂ splits two pages, “join to the paper above” combines two papers, × removes a page. Click a thumbnail to enlarge it.</li>
 <li><b>Sideways photos</b> are straightened automatically; the ↻ button on a thumbnail rotates it by hand.</li>
 <li><b>Limit</b>: 10 pages per paper. Beyond that, it is probably several students: use a fixed number of pages or ✂.</li>
 </ul>'''),
@@ -202,10 +202,10 @@ EN = dict(
 </ul>'''),
     ('exporter', 'Exporting and printing', '''
 <ul>
-<li><b>Download results (CSV)</b>: a file that opens in Excel or imports into your gradebook. One column per question when every paper has the same breakdown. The language check has its own file.</li>
+<li><b>Download marks (Excel)</b>: a file (CSV) that opens in Excel or Google Sheets, or imports into your markbook. One column per question when every paper has the same breakdown. The language check has its own file.</li>
 <li><b>View graded paper</b>: the paper marked up as if by hand: green ✓ on correct answers, red box (and ✗ if no points) on the others, the grade at the top and, in the margin, the points and a short note per question, plus the feedback.</li>
 <li><b>Print…</b>: all papers at once, in stack order. Your choice: the <b>annotated papers</b>, the <b>result sheets</b> (several per page, to cut out) or <b>both</b> (each student’s sheet, then their paper). To save as PDF, choose “Save as PDF” as the printer.</li>
-<li><b>End session</b> clears everything from the tab; the app first offers to download the CSV.</li>
+<li><b>End session</b> opens a window: download or print your marks, then erase everything while keeping your key, or removing it from the computer (shared computer).</li>
 </ul>'''),
     ('confidentialite', 'Student privacy', '''
 <ul>
