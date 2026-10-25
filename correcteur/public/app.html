@@ -60,11 +60,11 @@
         <span class="kind-pill" aria-hidden="true"></span>
         <button id="kind-content" class="active" type="button" role="tab" aria-selected="true">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>
-          <span class="kind-long">Correction de copies</span><span class="kind-short">Copies</span>
+          <span class="kind-long">Correction de copies</span><span class="kind-short">Copies</span><small class="kind-sub">Notes et commentaires selon votre corrigé</small>
         </button>
         <button id="kind-lang" type="button" role="tab" aria-selected="false">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7V5h16v2"/><path d="M9 19h6"/><path d="M12 5v14"/></svg>
-          <span class="kind-long">Correction de la langue</span><span class="kind-short">Langue</span>
+          <span class="kind-long">Correction de la langue</span><span class="kind-short">Langue</span><small class="kind-sub">Fautes d’orthographe et de grammaire surlignées</small>
         </button>
       </div>
     </div>
@@ -144,7 +144,7 @@
         <input id="rubric-files" type="file" accept="image/*,.heic,.heif,application/pdf,.docx,.txt" multiple hidden>
         <span class="ico"><svg class="ic ic-lg" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="3" width="8" height="4" rx="1"/><path d="M16 5h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2"/></svg></span>
         <b class="pc-only">Glissez votre corrigé ici, ou cliquez pour ouvrir le dossier</b><b class="touch-only">Choisir le corrigé (photo ou fichier)</b>
-        <span class="muted small">PDF, photo ou Word · facultatif · non facturé</span>
+        <span class="muted small">PDF, photo, Word ou texte (.txt) · facultatif · non facturé</span>
       </label>
       <p id="rubric-done" class="added" hidden></p>
       <div id="rubric-thumbs" class="thumbs"></div>
@@ -193,13 +193,14 @@
           <button id="clear-pages" class="btn ghost small" type="button">Tout retirer</button>
         </div>
         <p id="mode-hint" class="banner info small" style="margin:0">Indiquez comment les pages sont regroupées : un fichier par élève, un nombre fixe de pages par élève, ou laissez l'IA détecter où commence chaque copie.</p>
-        <p class="muted small" style="margin:0">Vérifiez les regroupements : cliquez sur ✂ pour séparer deux pages, sur « fusionner » pour rattacher une copie à la précédente.</p>
+        <p class="muted small" style="margin:0">Deux élèves dans la même copie ? Le bouton ✂ entre deux pages les sépare. Une copie coupée en deux ? « rattacher à la copie du dessus » la réunit.</p>
         <div id="bundles" class="bundles"></div>
       </div>
 
       <div class="summary"><span id="summary"></span><span id="cost"></span></div>
       <p id="calib-info" class="banner info small" style="margin:0" hidden></p>
       <button id="run" class="btn primary big block" type="button" disabled>Corriger</button>
+      <p class="awake-line muted small">📱 Pendant la correction, gardez l’écran allumé et restez sur cette page.</p>
       <button id="calib-run" class="btn block" type="button" title="Corrigez 3 copies, ajustez leurs notes : la suite de la pile est corrigée comme vous" hidden>🎯 Calibrer d'abord : corriger 3 copies, ajuster, puis le reste</button>
       <div id="progress" class="progress" hidden aria-live="polite">
         <div class="progress-top"><b id="progress-count"></b><span id="progress-eta"></span><button id="stop-run" class="btn ghost small" type="button">Arrêter</button></div>
@@ -215,7 +216,7 @@
         <div class="results-tools">
           <input id="search" type="search" placeholder="Rechercher un élève…" style="width:12rem">
           <button id="export" class="btn green" type="button" disabled hidden>Télécharger les notes (Excel)</button>
-          <button id="print-all" class="btn" type="button" disabled>Imprimer…</button>
+          <button id="print-all" class="btn" type="button" disabled>Imprimer toutes les copies…</button>
           <button id="end" class="btn ghost" type="button" disabled>Terminer la session</button>
         </div>
       </div>
@@ -336,7 +337,7 @@
       <div class="welcome-warn">
         <b>À savoir</b>
         <ul>
-          <li><b>Rien n'est sauvegardé</b>, pour protéger vos élèves : téléchargez le CSV ou imprimez avant de partir.</li>
+          <li><b>Rien n'est sauvegardé</b>, pour protéger vos élèves : téléchargez les notes (Excel) ou imprimez avant de partir.</li>
           <li><b>Ne fermez pas l'onglet et ne rechargez pas la page</b> avant d'avoir exporté.</li>
           <li><b>Sur téléphone</b>, gardez l'écran allumé pendant la correction.</li>
         </ul>
@@ -369,6 +370,14 @@
       <h2 style="margin:0">Votre clé d'accès</h2>
       <div id="newkey-value" class="keybox"></div>
       <p class="muted small" style="margin:0">Notez-la ou copiez-la : elle vous permet d'utiliser vos pages sur un autre appareil et de recharger votre compte.</p>
+      <div class="welcome-warn">
+        <b>Comment ça marche</b>
+        <ul>
+          <li><b>1. Paramètres</b> : le nombre de points, les pages par élève, et votre corrigé (non facturé).</li>
+          <li><b>2. Les copies</b> : un PDF, des photos, ou votre téléphone. Puis « Corriger ».</li>
+          <li><b>3. Les résultats</b> : relisez, ajustez, puis téléchargez ou imprimez. <b>Rien n'est sauvegardé</b> : faites-le avant de fermer la page.</li>
+        </ul>
+      </div>
       <div style="display:flex;gap:.5rem"><button id="newkey-copy" class="btn" type="button">Copier</button><button class="btn primary" type="button" data-close-newkey style="flex:1">C'est noté, commencer</button></div>
     </div>
   </div>

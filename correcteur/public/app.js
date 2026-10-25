@@ -32,6 +32,8 @@ const state = {
 
 const uid = () => crypto.randomUUID();
 const pctText = (n) => (lang === 'en' ? `${n}%` : `${n} %`); // typographie : « 85 % » en français, « 85% » en anglais
+// Accord du nombre : « 1 copie », « 3 copies » (au lieu de « copie(s) »).
+const pl = (n, one, many) => `${n} ${n > 1 ? many : one}`;
 const fmt = (n) => (n == null ? '—' : Number(n).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { maximumFractionDigits: 2 }));
 
 function h(tag, props = {}, ...children) {
@@ -442,7 +444,7 @@ function renderPages() {
   if (multi) $('mode-hint').textContent = 'Attention : un fichier contient plusieurs pages ; il sera corrigé comme la copie d’un seul élève. S’il contient plusieurs élèves, choisissez « Trouver chaque copie pour moi ».';
   const nCopies = list.length;
   $('drop-done').hidden = !state.pages.length;
-  $('drop-done').textContent = `✓ ${nCopies} copie(s) ajoutée(s) (${state.pages.length} page(s)). Vérifiez-les ci-dessous.`;
+  $('drop-done').textContent = `✓ ${pl(nCopies, 'copie ajoutée', 'copies ajoutées')} (${pl(state.pages.length, 'page', 'pages')}). Vérifiez-les ci-dessous.`;
   if (state.detecting) {
     $('bundles').replaceChildren(h('div', { class: 'analyzing' },
       h('div', { class: 'spinner' }), h('b', { textContent: 'Un instant, nous analysons vos copies…' }),
@@ -495,7 +497,7 @@ function renderSummary() {
   $('summary').replaceChildren(...(n ? [h('b', { textContent: String(list.length) }), ` ${tr(list.length > 1 ? 'copies' : 'copie')} · `,
     h('b', { textContent: String(n) }), ` ${tr(n > 1 ? 'pages' : 'page')}`] : [tr(state.results.length ? '✓ Toutes les copies importées sont corrigées.' : 'Aucune copie importée')]));
   const cost = n * (state.kind === 'content' && $('deep').value === '1' ? 2 : 1);
-  $('cost').textContent = n ? `${cost} page(s) seront décomptées` : '';
+  $('cost').textContent = n ? (cost > 1 ? `${cost} pages seront décomptées` : '1 page sera décomptée') : '';
   const enough = state.pagesLeft == null || state.pagesLeft >= cost;
   const run = $('run');
   const gridSum = state.grid ? state.grid.reduce((a, c) => a + (Number(c.max) || 0), 0) : null;
@@ -509,7 +511,7 @@ function renderSummary() {
     : n && !grouped ? 'Indiquez le nombre de pages par élève'
     : !enough ? 'Solde insuffisant : rechargez votre compte'
     : n && !gridOk ? `La grille totalise ${fmt(gridSum)} points au lieu de ${fmt(Number($('total').value))}`
-    : n ? `${state.kind === 'lang' ? 'Analyser la langue de' : 'Corriger'} ${list.length} copie(s)` : 'Corriger';
+    : n ? `${state.kind === 'lang' ? 'Analyser la langue de' : 'Corriger'} ${pl(list.length, 'copie', 'copies')}` : 'Corriger';
   $('export').disabled = $('end').disabled = state.running || !state.results.length;
   // Pas de gros bouton vert tant qu'il n'y a rien à télécharger.
   $('export').hidden = $('print-all').hidden = !state.results.length;
@@ -525,7 +527,7 @@ function renderRubric() {
     } }))));
   const n = state.rubricPages.length;
   $('rubric-done').hidden = !n;
-  $('rubric-done').textContent = `✓ Corrigé ajouté (${n} page(s)). Il n’est pas facturé.`;
+  $('rubric-done').textContent = `✓ Corrigé ajouté (${pl(n, 'page', 'pages')}). Il n’est pas facturé.`;
 }
 
 // ---------- Grille détaillée ----------
@@ -651,7 +653,7 @@ function calibration(examKey) {
 function renderCalib() {
   const n = state.kind === 'content' ? calibration(examKeyNow()).length : 0;
   $('calib-info').hidden = !n;
-  if (n) $('calib-info').textContent = `🎯 Calibrage : ${n} note(s) que vous avez ajustée(s) guideront la correction des prochaines copies.`;
+  if (n) $('calib-info').textContent = `🎯 Calibrage : ${n > 1 ? `${n} notes que vous avez ajustées guideront` : 'la note que vous avez ajustée guidera'} la correction des prochaines copies.`;
   const pending = bundles().length;
   $('calib-run').hidden = state.kind !== 'content' || state.running || !!n || pending <= CALIB_COPIES + 1;
   $('calib-run').disabled = $('run').disabled;
@@ -788,13 +790,13 @@ async function runAll(only, calibrating = false) {
   else if (state.kind === 'lang') banner('ok', `${done} copie(s) analysée(s). Vérifiez en priorité les copies marquées ⚠.`);
   else if (calibrating) banner('ok', `${done} copie(s) corrigée(s) pour le calibrage. Relisez-les et changez les notes qui ne vous conviennent pas (la raison est facultative), puis cliquez sur « Corriger » : vos ajustements guideront le reste de la pile.`);
   else if (!hasKey) banner('info', `${done} copie(s) corrigée(s) sans corrigé : les notes ont tendance à être généreuses. Vérifiez-les, ou ajoutez votre corrigé pour des notes plus justes.`);
-  else banner('ok', `${done} copie(s) corrigée(s). Vérifiez en priorité les copies marquées ⚠.`);
+  else banner('ok', `${pl(done, 'copie corrigée', 'copies corrigées')}. Vérifiez en priorité les copies marquées ⚠.`);
   // Les résultats sont dans l'autre colonne (ou plus bas sur téléphone) : on y emmène l'enseignant, 1re copie ouverte.
   if (done && !stop) {
     const first = state.results.find((r) => list.some((b) => b[0].id === r.id));
     if (first && !state.open.size) { state.open.add(first.id); renderResults(); }
     $('done-msg').hidden = false;
-    $('done-msg').textContent = `✓ ${done} copie(s) corrigée(s). Cliquez sur une copie pour voir et modifier sa note.`;
+    $('done-msg').textContent = `✓ ${pl(done, 'copie corrigée', 'copies corrigées')}. Ouvrez une copie pour voir et modifier sa note. En rose : les questions où des points ont été retirés.`;
     $('done-msg').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 }
@@ -821,10 +823,11 @@ function renderStats() {
   const withRel = graded.filter((r) => r.reliability != null);
   const rel = withRel.length ? pctText(fmt(withRel.reduce((a, r) => a + r.reliability, 0) / withRel.length)) : '—';
   const stat = (v, l) => h('div', { class: 'stat' }, h('div', { class: 'v', textContent: v }), h('div', { class: 'l', textContent: l }));
+  // Fiabilité : seulement en correction approfondie (sinon « — » inquiète sans rien dire).
   $('stats').replaceChildren(stat(String(graded.length), 'copies'),
     stat(pctText(fmt(avg)), `moyenne (min ${fmt(Math.min(...pct))} – max ${fmt(Math.max(...pct))})`),
-    h('div', { class: 'stat' }, h('div', { class: 'v', textContent: rel }),
-      h('div', { class: 'l' }, 'fiabilité moyenne ', infoButton())), stat(String(flagged), 'à vérifier ⚠'));
+    withRel.length ? h('div', { class: 'stat' }, h('div', { class: 'v', textContent: rel }),
+      h('div', { class: 'l' }, 'fiabilité moyenne ', infoButton())) : null, stat(String(flagged), 'à vérifier ⚠'));
 }
 
 // Moyenne de la classe par question : repère les questions mal comprises.
@@ -886,7 +889,7 @@ function cardShell(r, cells, body) {
     setOpen(state.open.has(r.id));
   } },
     h('span', { class: 'no', title: r.flags.length ? 'À vérifier' : '', textContent: `${r.flags.length ? '⚠ ' : ''}${r.no ?? ''}` }),
-    h('input', { class: 'name', type: 'text', value: r.name, placeholder: r.no ? `Nom à compléter (copie ${r.no})` : 'Nom à compléter', 'aria-label': "Nom de l'élève",
+    h('input', { class: 'name', type: 'text', value: r.name, placeholder: r.no ? `✎ Tapez le nom (copie ${r.no})` : '✎ Tapez le nom', 'aria-label': "Nom de l'élève",
       oninput: (e) => { r.name = e.target.value; state.exported = false; } }),
     h('input', { class: 'group', type: 'text', value: r.group, placeholder: 'Groupe', 'aria-label': 'Groupe',
       oninput: (e) => { r.group = e.target.value; state.exported = false; } }),
@@ -1086,6 +1089,8 @@ function card(r) {
             tr.className = rowClass();
             showWhy();
             recompute(r); updateGrade(); renderStats(); renderCalib();
+            const ok = h('span', { class: 'saved', textContent: '✓ Note modifiée' });
+            input.parentElement.querySelector('.saved')?.remove(); input.parentElement.append(ok); setTimeout(() => ok.remove(), 2500);
           } });
         tr.append(h('td', { class: 'q', textContent: qq.question }),
           h('td', { class: 'pts' }, input, h('span', { class: 'muted', textContent: ` / ${fmt(qq.max)}` }), second),
@@ -1098,7 +1103,7 @@ function card(r) {
       h('span', { textContent: copyLabel(r) }),
       h('div', { style: 'display:flex;gap:.4rem;flex-wrap:wrap' },
         r.pageUrls ? h('button', { class: 'btn small', type: 'button', textContent: 'Voir la copie corrigée', onclick: async () => openZoom(await annotatedPages(r), copyTitle(r)) }) : null,
-        r.pageUrls ? h('button', { class: 'btn small', type: 'button', textContent: 'Imprimer', title: 'Imprimer la copie corrigée pour l’élève', onclick: () => printBatch([r], { copies: true }) }) : null,
+        r.pageUrls ? h('button', { class: 'btn small', type: 'button', textContent: 'Imprimer cette copie', title: 'Imprimer la copie corrigée pour l’élève', onclick: () => printBatch([r], { copies: true }) }) : null,
         h('button', { class: 'btn ghost small', type: 'button', style: 'margin-left:1rem', textContent: 'Supprimer', onclick: () => {
           if (!confirm(tr(`Supprimer la correction de ${r.name || 'cet élève'} ?`))) return;
           state.results = state.results.filter((x) => x !== r); renderResults();
@@ -1667,6 +1672,8 @@ dropzone($('drop'), $('files'), async (files, progress) => {
   applyMode();
   if ($('mode').value === 'auto') { renderPages(); await detectCopies(); return; }
   renderPages();
+  // Après la fin de l'import (la zone de dépôt reprend sa taille) : le bouton Corriger vient dans l'écran.
+  if (!state.running) setTimeout(() => $('run').scrollIntoView({ behavior: 'smooth', block: 'center' }), 80);
 });
 dropzone($('rubric-drop'), $('rubric-files'), async (files, progress) => {
   const added = await filesToPages(files, progress);
@@ -1751,15 +1758,7 @@ $('run').addEventListener('click', () => {
     if (!confirm(tr(`${copies} copie(s), ${pages} page(s) : ${cost} page(s) seront décomptées. Lancer la correction ?`))) return;
     camState.review = false;
   }
-  // Téléphone ou tablette : rappel de garder l'écran allumé (un appareil en veille arrête la correction),
-  // une fois par session (jusqu'à la fermeture de l'onglet).
-  let seen = false;
-  try { seen = sessionStorage.getItem('ce.awake') === '1'; } catch { /* ignoré */ }
-  if (!seen && matchMedia('(pointer: coarse)').matches) {
-    $('awake').hidden = false;
-    $('awake-ok').focus();
-    return;
-  }
+  // Téléphone : le rappel « gardez l'écran allumé » est une ligne sous le bouton (une fenêtre de plus agaçait).
   runAll();
 });
 $('search').addEventListener('input', renderResults);
@@ -1786,7 +1785,8 @@ document.querySelectorAll('[data-open-buy]').forEach((b) => b.addEventListener('
 document.querySelectorAll('[data-close-buy]').forEach((b) => b.addEventListener('click', () => { $('buy').hidden = true; }));
 document.querySelectorAll('[data-pack]').forEach((b) => b.addEventListener('click', () => buy(b.dataset.pack)));
 document.querySelectorAll('[data-close-rel]').forEach((b) => b.addEventListener('click', () => { $('rel-help').hidden = true; }));
-document.querySelector('[data-close-newkey]').addEventListener('click', () => { $('newkey').hidden = true; maybeWelcome(); });
+// La fenêtre de la clé contient l'essentiel de l'accueil : pas de 2e fenêtre juste après.
+document.querySelector('[data-close-newkey]').addEventListener('click', () => { $('newkey').hidden = true; try { localStorage.setItem('ce.welcome', '1'); } catch { /* ignoré */ } });
 $('welcome-ok').addEventListener('click', () => { $('welcome').hidden = true; try { localStorage.setItem('ce.welcome', '1'); } catch { /* ignoré */ } });
 $('newkey-copy').addEventListener('click', () => navigator.clipboard?.writeText($('newkey-value').textContent));
 

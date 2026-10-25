@@ -386,3 +386,13 @@ body.light .s1 #rubric-thumbs:empty, body.light .s1 #rubric-done[hidden] { displ
   body.light .s1 #content-settings > .f-rubric { order: 5; }
   body.light .s1 #content-settings > .adv, body.light .s1 #content-settings > .grid-editor { order: 6; }
 }
+
+/* Sous-titres des onglets copies / langue. */
+.kind button { flex-wrap: wrap; row-gap: 0; }
+.kind-sub { flex-basis: 100%; font-size: .72rem; font-weight: 500; color: var(--muted); text-align: center; }
+/* Rappel « écran allumé » : sur téléphone et tablette seulement. */
+.awake-line { display: none; margin: 0; text-align: center; }
+@media (pointer: coarse) { .awake-line { display: block; } }
+.qtable .saved { display: block; font-size: .72rem; color: var(--green); font-weight: 600; margin-top: .2rem; }
+/* Nom de l'élève : un vrai champ à remplir quand il est vide. */
+body.light .card-head input.name:placeholder-shown { border: 1px dashed var(--line-2); background: #fff; }
