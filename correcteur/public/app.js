@@ -500,10 +500,12 @@ function renderSummary() {
   const run = $('run');
   const gridSum = state.grid ? state.grid.reduce((a, c) => a + (Number(c.max) || 0), 0) : null;
   const gridOk = state.kind === 'lang' || gridSum == null || Math.abs(gridSum - Number($('total').value)) < 1e-9;
-  run.disabled = state.running || state.detecting || !n || !grouped || tooLong || !enough || !gridOk || !(Number($('total').value) > 0);
+  run.disabled = state.running || state.detecting || !n || !grouped || tooLong || !enough || !gridOk || !(Number($('total').value) > 0)
+    || (state.kind === 'content' && !(Number($('per-student').value) >= 1));
   run.textContent = state.running ? (state.kind === 'lang' ? 'Analyse en cours…' : 'Correction en cours…')
     : state.detecting ? 'Analyse des copies en cours…'
-    : n && !(Number($('total').value) > 0) ? 'Indiquez le barème total (en points)'
+    : n && !(Number($('total').value) > 0) ? 'Indiquez le nombre de points'
+    : n && state.kind === 'content' && !(Number($('per-student').value) >= 1) ? 'Indiquez le nombre de pages par élève'
     : n && !grouped ? 'Indiquez le nombre de pages par élève'
     : !enough ? 'Solde insuffisant : rechargez votre compte'
     : n && !gridOk ? `La grille totalise ${fmt(gridSum)} points au lieu de ${fmt(Number($('total').value))}`
@@ -1682,6 +1684,14 @@ $('mode').addEventListener('change', () => {
   if ($('mode').value === 'auto') detectCopies();
 });
 $('per').addEventListener('input', () => { applyMode(); renderPages(); });
+// « Pages par élève » (obligatoire, section 1) : fixe le regroupement des copies. Le menu « Comment sont vos copies ? »
+// reste en affichage avancé pour les cas particuliers (nombre de pages variable : « Trouver chaque copie pour moi »).
+function applyPerStudent() {
+  const v = Math.round(Number($('per-student').value));
+  if (v >= 1) { $('mode').value = v === 1 ? 'file' : 'fixed'; $('per').value = v === 1 ? '' : String(v); state.modeChosen = true; }
+  applyMode(); renderPages();
+}
+$('per-student').addEventListener('input', applyPerStudent);
 $('clear-pages').addEventListener('click', () => { state.pages = []; state.status = {}; state.modeChosen = false; $('mode').value = 'file'; renderPages(); });
 $('total').addEventListener('input', () => { renderSummary(); updateGridTotal(); });
 $('make-grid').addEventListener('click', makeGrid);
@@ -1788,7 +1798,7 @@ window.addEventListener('beforeunload', (e) => {
 // Le corrigé tapé et le nom de l'évaluation ne sont gardés que jusqu'à la fermeture de l'onglet : assez pour corriger
 // plusieurs groupes de suite, sans laisser le corrigé sur un ordinateur partagé. « Terminer la session » les efface aussi.
 // Le regroupement des pages n'est pas retenu : il repart toujours d'un choix neutre.
-const PREF_IDS = ['total', 'whole', 'deep', 'language', 'lang-level', 'lang-total', 'lang-per', 'lang-max', 'anon', 'anon-h', 'anon-all', 'out-lang'];
+const PREF_IDS = ['total', 'per-student', 'whole', 'deep', 'language', 'lang-level', 'lang-total', 'lang-per', 'lang-max', 'anon', 'anon-h', 'anon-all', 'out-lang'];
 const TAB_IDS = ['exam', 'rubric'];
 function savePrefs() {
   const prefs = Object.fromEntries(PREF_IDS.map((id) => [id, $(id).type === 'checkbox' ? $(id).checked : $(id).value]));
@@ -1810,6 +1820,7 @@ function loadPrefs() {
 }
 $('out-lang').value = lang; // par défaut la langue du site ; le choix de l'enseignant est ensuite retenu
 loadPrefs();
+if ($('per-student').value) applyPerStudent();
 $('anon-opts').hidden = !anonymous();
 for (const id of [...PREF_IDS, ...TAB_IDS]) $(id).addEventListener('change', savePrefs);
 ['anon', 'anon-h', 'anon-all'].forEach((id) => $(id).addEventListener('change', () => { $('anon-opts').hidden = !anonymous(); renderPages(); }));

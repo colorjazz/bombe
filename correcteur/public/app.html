@@ -78,8 +78,8 @@
       <p class="req-note"><span class="req">*</span> obligatoire</p>
       <p id="adv-note" class="muted small" style="margin:0" hidden>Des réglages avancés sont actifs (<a href="#" id="adv-show">voir</a>).</p>
 
-      <div class="row2">
-        <label class="field">Nom de l'évaluation
+      <div class="row2 f-name">
+        <label class="field"><span>Nom de l'évaluation <span class="muted small">(facultatif)</span></span>
           <input id="exam" type="text" placeholder="Ex. : Examen — Révolution tranquille">
         </label>
         <label class="field adv" title="Utilisé seulement si le groupe n'est pas écrit sur la copie">Groupe par défaut
@@ -117,9 +117,12 @@
       </div>
 
       <div id="content-settings" class="stack">
-      <div class="row2">
-        <label class="field"><span>Barème total (points) <span class="req" aria-hidden="true">*</span></span>
+      <div class="row2 f-total">
+        <label class="field"><span>Nombre de points <span class="req" aria-hidden="true">*</span></span>
           <input id="total" type="number" min="1" max="1000" step="1" value="" placeholder="ex. 20" inputmode="decimal">
+        </label>
+        <label class="field"><span>Pages par élève <span class="req" aria-hidden="true">*</span></span>
+          <input id="per-student" type="number" min="1" max="10" step="1" value="" placeholder="ex. 1" inputmode="numeric">
         </label>
         <label class="field adv">Points
           <select id="whole"><option value="0">Demi-points permis</option><option value="1">Points entiers seulement</option></select>
@@ -133,13 +136,15 @@
       </label>
       <label class="toggle adv"><input id="language" type="checkbox"> Évaluer aussi l'orthographe et la grammaire</label>
 
-      <label class="field"><span>Votre corrigé <span class="muted small">(facultatif, mais fortement conseillé)</span></span>
-        <textarea id="rubric" rows="5" placeholder="Astuce : fournir le corrigé (ici ou en PDF/photo ci-dessous) améliore beaucoup la fiabilité de la correction.&#10;&#10;Ex. : Q1 (2 pts) : 1960, début de la Révolution tranquille. Q2 (3 pts) : nommer deux réformes… Accepter les synonymes.&#10;&#10;Vous pouvez aussi demander la forme du rendu : « Commentaire de 2 phrases, au tu, qui commence par un point fort », « Justifications courtes »…"></textarea>
+      <label class="field f-rubric"><span>Précisions pour la correction <span class="muted small">(facultatif)</span></span>
+        <textarea id="rubric" rows="5" placeholder="Expliquez ou précisez la correction : points par question, réponses acceptées, ce qui vaut des points partiels, ce qu’il ne faut pas pénaliser…&#10;&#10;Vous pouvez aussi taper tout votre corrigé ici."></textarea>
         <span class="muted small adv">Vous pouvez aussi y préciser comment rédiger les résultats : ton, longueur, tutoiement, ce que le commentaire doit souligner.</span>
       </label>
-      <label id="rubric-drop" class="drop compact">
+      <label id="rubric-drop" class="drop f-drop">
         <input id="rubric-files" type="file" accept="image/*,.heic,.heif,application/pdf,.docx,.txt" multiple hidden>
-        <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="3" width="8" height="4" rx="1"/><path d="M16 5h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2"/></svg><span>Ajouter le corrigé (PDF ou photos) — <b>non facturé</b></span>
+        <span class="ico"><svg class="ic ic-lg" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="3" width="8" height="4" rx="1"/><path d="M16 5h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2"/></svg></span>
+        <b class="pc-only">Glissez votre corrigé ici, ou cliquez pour ouvrir le dossier</b><b class="touch-only">Choisir le corrigé (photo ou fichier)</b>
+        <span class="muted small">PDF, photo ou Word · facultatif · non facturé</span>
       </label>
       <p id="rubric-done" class="added" hidden></p>
       <div id="rubric-thumbs" class="thumbs"></div>
@@ -178,13 +183,13 @@
       </div>
       <div id="pages-zone" class="stack" hidden>
         <div class="mode">
-          <span>Comment sont vos copies ?</span>
-          <select id="mode">
+          <span class="adv">Comment sont vos copies ?</span>
+          <select id="mode" class="adv">
             <option value="file">Une photo ou un fichier par élève</option>
             <option value="auto">Trouver chaque copie pour moi (PDF du photocopieur)</option>
             <option value="fixed">Le même nombre de pages par élève</option>
           </select>
-          <input id="per" type="number" min="1" max="10" value="" placeholder="Pages par élève" hidden aria-label="Pages par élève" style="width:9rem">
+          <input id="per" class="adv" type="number" min="1" max="10" value="" placeholder="Pages par élève" hidden aria-label="Pages par élève" style="width:9rem">
           <button id="clear-pages" class="btn ghost small" type="button">Tout retirer</button>
         </div>
         <p id="mode-hint" class="banner info small" style="margin:0">Indiquez comment les pages sont regroupées : un fichier par élève, un nombre fixe de pages par élève, ou laissez l'IA détecter où commence chaque copie.</p>

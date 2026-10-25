@@ -355,3 +355,34 @@ body.light .card-head input.name:hover, body.light .card-head input.name:focus, 
 .kindbar .kind { margin: 0 auto; }
 body.light .layout > .kindbar { width: 100%; }
 body.light .keybox { background: #f3f4f8; color: #1e2433; border-color: var(--line-2); }
+
+/* Section 1 mince : à gauche le nom, les points, les pages par élève et le dépôt du corrigé ; à droite les précisions. */
+body.light .s1 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 1.4rem; row-gap: .85rem; align-content: start; }
+body.light .s1 > * { grid-column: 1 / -1; }
+body.light .s1 #content-settings { display: contents; }
+body.light .s1 #content-settings > * { grid-column: 1 / -1; }
+body.light .s1 .f-name { grid-column: 1; grid-row: 3; }
+body.light .s1 #content-settings > .f-total { grid-column: 1; grid-row: 4; }
+body.light .s1 #content-settings > .f-drop { grid-column: 1; grid-row: 5; }
+body.light .s1 #content-settings > #rubric-done { grid-column: 1; grid-row: 6; }
+body.light .s1 #content-settings > #rubric-thumbs { grid-column: 1; grid-row: 7; }
+body.light .s1 #content-settings > .f-rubric { grid-column: 2; grid-row: 3 / span 5; display: flex; flex-direction: column; }
+body.light .s1 .f-rubric textarea { flex: 1; min-height: 11rem; }
+body.light .s1 .f-name { grid-template-columns: 1fr; }
+body.light .s1 .f-total { grid-template-columns: 1fr 1fr; }
+body.light .s1 .f-drop { padding: 1.1rem; border: 2px dashed #a5acf5; background: #f6f7ff; }
+body.light .s1 .f-drop .ico { color: var(--c); }
+body.light .s1 #rubric-thumbs:empty, body.light .s1 #rubric-done[hidden] { display: none; }
+@media (max-width: 760px) {
+  body.light .s1 { grid-template-columns: 1fr; }
+  body.light .s1 > *, body.light .s1 #content-settings > * { grid-column: 1 !important; grid-row: auto !important; }
+}
+/* Portable et grand écran : section 1 en haut, sections 2 (copies) et 3 (résultats) côte à côte. */
+@media (min-width: 1100px) {
+  body.light .layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 1.3rem; max-width: 1320px; align-items: start; }
+  body.light .layout > .kindbar, body.light .layout > .s1 { grid-column: 1 / -1; }
+}
+@media (max-width: 760px) {
+  body.light .s1 #content-settings > .f-rubric { order: 5; }
+  body.light .s1 #content-settings > .adv, body.light .s1 #content-settings > .grid-editor { order: 6; }
+}
