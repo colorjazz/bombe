@@ -5,7 +5,7 @@
 @media (max-width: 480px) { .row2 { grid-template-columns: 1fr; } }
 .section-label { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--faint); margin: .25rem 0 -.25rem; }
 
-.drop { border: 2px dashed var(--line-2); border-radius: 14px; padding: 1.1rem; text-align: center; cursor: pointer; display: grid; gap: .25rem; justify-items: center; transition: .15s; background: #0d1527; }
+.drop { border: 2px dashed var(--line-2); border-radius: 14px; padding: 1.1rem; text-align: center; cursor: pointer; display: grid; gap: .25rem; justify-items: center; transition: .15s; background: #fff; }
 .drop:hover, .drop.over { border-color: var(--primary); background: rgba(99,102,241,.07); }
 .drop.compact { padding: .7rem; grid-auto-flow: column; justify-content: center; gap: .6rem; font-size: .85rem; }
 .drop .ico { font-size: 1.6rem; }
@@ -16,7 +16,7 @@
 .drop.busy .import-status::before { content: ''; flex: none; width: 1.1rem; height: 1.1rem; border: 2px solid var(--primary-2); border-right-color: transparent; border-radius: 50%; animation: spin .8s linear infinite; }
 
 .thumbs { display: flex; flex-wrap: wrap; gap: .4rem; }
-.thumb { position: relative; width: 84px; height: 112px; border-radius: 8px; overflow: hidden; border: 1px solid var(--line-2); background: #0d1527; }
+.thumb { position: relative; width: 84px; height: 112px; border-radius: 8px; overflow: hidden; border: 1px solid var(--line-2); background: #fff; }
 .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .thumb .x { position: absolute; top: 2px; right: 2px; width: 18px; height: 18px; border-radius: 50%; border: 0; background: rgba(0,0,0,.65); color: #fff; font-size: 12px; line-height: 18px; cursor: pointer; padding: 0; }
 /* bouton pour pivoter une page photographiée de côté */
@@ -81,9 +81,9 @@
 .card-head .no { font-size: .75rem; color: var(--faint); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .card.flag .card-head .no { color: var(--amber); font-weight: 700; }
 .card-head input.name { background: transparent; border-color: transparent; font-weight: 600; font-size: .88rem; padding: .15rem .4rem; border-radius: 8px; }
-.card-head input.name:hover, .card-head input.name:focus { border-color: var(--line-2); background: #0d1527; }
+.card-head input.name:hover, .card-head input.name:focus { border-color: var(--line-2); background: #fff; }
 .card-head input.group { background: transparent; border-color: transparent; font-size: .78rem; color: var(--muted); padding: .15rem .4rem; border-radius: 8px; }
-.card-head input.group:hover, .card-head input.group:focus { border-color: var(--line-2); background: #0d1527; }
+.card-head input.group:hover, .card-head input.group:focus { border-color: var(--line-2); background: #fff; }
 /* Téléphone : nom et note sur la 1re ligne ; groupe et fiabilité en petit dessous. */
 @media (max-width: 480px) {
   .card-head { grid-template-columns: 2rem minmax(0, 1fr) auto auto; grid-template-areas: "no name grade chev" "no group rel ."; gap: 0 .35rem; padding: .25rem .5rem; }
@@ -123,7 +123,7 @@ button.rel { cursor: pointer; font-family: inherit; }
 .gate { max-width: 560px; margin: 3rem auto; display: grid; gap: 1rem; }
 .gate .panel { display: grid; gap: .9rem; }
 .or { text-align: center; color: var(--faint); font-size: .8rem; }
-.keybox { font-family: ui-monospace, Menlo, monospace; font-size: 1.05rem; letter-spacing: .05em; text-align: center; padding: .8rem; border-radius: 12px; background: #0d1527; border: 1px dashed var(--primary); user-select: all; }
+.keybox { font-family: ui-monospace, Menlo, monospace; font-size: 1.05rem; letter-spacing: .05em; text-align: center; padding: .8rem; border-radius: 12px; background: #fff; border: 1px dashed var(--primary); user-select: all; }
 .packs { display: grid; gap: .6rem; }
 .pack { display: flex; justify-content: space-between; align-items: center; gap: .75rem; padding: .8rem 1rem; border: 1px solid var(--line-2); border-radius: 12px; background: var(--panel-2); }
 .pack b { font-size: .95rem; }
@@ -164,7 +164,7 @@ button.rel { cursor: pointer; font-family: inherit; }
 /* Catégories de fautes : une couleur chacune */
 :root { --c-orth: #f43f5e; --c-acc: #f59e0b; --c-conj: #a855f7; --c-ponc: #38bdf8; --c-synt: #10b981; --c-voc: #94a3b8; }
 .cats { display: flex; flex-wrap: wrap; gap: .4rem; }
-.cat { display: inline-flex; align-items: center; gap: .35rem; font-size: .8rem; font-weight: 500; color: var(--text); padding: .3rem .6rem; border-radius: 999px; border: 1px solid var(--line-2); background: #0d1527; cursor: pointer; }
+.cat { display: inline-flex; align-items: center; gap: .35rem; font-size: .8rem; font-weight: 500; color: var(--text); padding: .3rem .6rem; border-radius: 999px; border: 1px solid var(--line-2); background: #fff; cursor: pointer; }
 .cat::before { content: ""; width: .6rem; height: .6rem; border-radius: 50%; background: var(--dot); }
 .c-orth { --dot: var(--c-orth); } .c-acc { --dot: var(--c-acc); } .c-conj { --dot: var(--c-conj); }
 .c-ponc { --dot: var(--c-ponc); } .c-synt { --dot: var(--c-synt); } .c-voc { --dot: var(--c-voc); }

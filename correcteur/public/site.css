@@ -41,7 +41,7 @@ footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; g
 /* Démonstration de la correction de la langue */
 .lang-demo { display: grid; grid-template-columns: 1.1fr 1fr; gap: 1.25rem; align-items: start; }
 @media (max-width: 900px) { .lang-demo { grid-template-columns: 1fr; } }
-.paper { background: #fbfaf6; color: #1f2937; border-radius: 14px; padding: 1.4rem 1.5rem; box-shadow: 0 30px 70px -35px rgba(0,0,0,.8); font: 1.15rem/2.1 "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive;
+.paper { background: #fbfaf6; color: #1f2937; border-radius: 14px; padding: 1.4rem 1.5rem; box-shadow: 0 24px 60px -30px rgba(20,30,60,.35); font: 1.15rem/2.1 "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive;
   background-image: repeating-linear-gradient(transparent 0 calc(2.1em - 1px), rgba(59,130,246,.18) calc(2.1em - 1px) 2.1em); }
 .paper .nm { font-size: .9rem; color: #475569; }
 .mark { position: relative; border: 2px solid var(--dot); background: color-mix(in srgb, var(--dot) 22%, transparent); border-radius: 4px; padding: 0 .1rem; }
@@ -97,3 +97,17 @@ footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; g
   .topbar .nav-x { display: none; }
   .hero-logo { display: none; }
 }
+
+/* Thème clair : sections en alternance blanc / gris pâle, cartes légèrement ombrées. */
+body { background: #fff; }
+.eyebrow { background: #eef0ff; border-color: #c7cbff; color: #3730a3; }
+section.block:nth-of-type(even) { background: var(--bg); box-shadow: 0 0 0 100vmax var(--bg); clip-path: inset(0 -100vmax); }
+.panel { box-shadow: 0 4px 18px rgba(20,30,60,.06); }
+.price.best { border: 2px solid var(--primary); box-shadow: 0 18px 40px -22px rgba(79,70,229,.55); }
+.demo video { box-shadow: 0 30px 70px -30px rgba(20,30,60,.35); }
+.made-ca { background: #fff; }
+footer { background: var(--bg); }
+/* Les 3 étapes reprennent les couleurs des 3 sections de l'appli (violet, orange, vert). */
+#how .grid3 > .feature:nth-child(1) { border-top: 5px solid #4f46e5; }
+#how .grid3 > .feature:nth-child(2) { border-top: 5px solid #e07b00; }
+#how .grid3 > .feature:nth-child(3) { border-top: 5px solid #0f9f6e; }
