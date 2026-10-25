@@ -3,6 +3,9 @@ main = "src/worker.js"
 compatibility_date = "2025-09-01"
 # request.signal : savoir que l'enseignant a perdu la connexion pendant une correction, pour lui rendre ses pages.
 compatibility_flags = ["enable_request_signal"]
+# Garder les variables ajoutées dans le tableau de bord Cloudflare : sans cette ligne, chaque déploiement efface
+# celles de type « Texte » (les secrets chiffrés, eux, restent). Les secrets comme ADMIN_TOKEN doivent être de type « Secret ».
+keep_vars = true
 
 [assets]
 directory = "public"
