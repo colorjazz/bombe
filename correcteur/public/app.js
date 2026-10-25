@@ -502,11 +502,13 @@ function renderSummary() {
   const run = $('run');
   const gridSum = state.grid ? state.grid.reduce((a, c) => a + (Number(c.max) || 0), 0) : null;
   const gridOk = state.kind === 'lang' || gridSum == null || Math.abs(gridSum - Number($('total').value)) < 1e-9;
-  run.disabled = state.running || state.detecting || !n || !grouped || tooLong || !enough || !gridOk || !(Number($('total').value) > 0)
+  // Le nombre de points et les pages par élève ne servent qu'à la correction de copies (champs cachés en mode langue).
+  const needTotal = state.kind === 'content' && !(Number($('total').value) > 0);
+  run.disabled = state.running || state.detecting || !n || !grouped || tooLong || !enough || !gridOk || needTotal
     || (state.kind === 'content' && !(Number($('per-student').value) >= 1));
   run.textContent = state.running ? (state.kind === 'lang' ? 'Analyse en cours…' : 'Correction en cours…')
     : state.detecting ? 'Analyse des copies en cours…'
-    : n && !(Number($('total').value) > 0) ? 'Indiquez le nombre de points'
+    : n && needTotal ? 'Indiquez le nombre de points'
     : n && state.kind === 'content' && !(Number($('per-student').value) >= 1) ? 'Indiquez le nombre de pages par élève'
     : n && !grouped ? 'Indiquez le nombre de pages par élève'
     : !enough ? 'Solde insuffisant : rechargez votre compte'
@@ -796,7 +798,9 @@ async function runAll(only, calibrating = false) {
     const first = state.results.find((r) => list.some((b) => b[0].id === r.id));
     if (first && !state.open.size) { state.open.add(first.id); renderResults(); }
     $('done-msg').hidden = false;
-    $('done-msg').textContent = `✓ ${pl(done, 'copie corrigée', 'copies corrigées')}. Ouvrez une copie pour voir et modifier sa note. En rose : les questions où des points ont été retirés.`;
+    $('done-msg').textContent = state.kind === 'lang'
+      ? `✓ ${pl(done, 'copie analysée', 'copies analysées')}. Ouvrez une copie annotée pour voir les fautes surlignées ; retirez celles qui n'en sont pas, ajoutez celles qui manquent.`
+      : `✓ ${pl(done, 'copie corrigée', 'copies corrigées')}. Ouvrez une copie pour voir et modifier sa note. En rose : les questions où des points ont été retirés.`;
     $('done-msg').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 }
