@@ -100,7 +100,7 @@ const EN = {
   "L'IA relève les fautes de français sur chaque page et les surligne directement sur la copie, avec la correction et la règle. 1 page de copie = 1 page décomptée.":
     'The AI finds language errors on each page and highlights them right on the paper, with the correction and the rule. 1 student page = 1 page used.',
   'Niveau des élèves': 'Student level',
-  'Primaire': 'Elementary', 'Secondaire 1-2': 'Middle school', 'Secondaire 3-5': 'High school', 'Cégep / adultes': 'College / adults',
+  'Primaire': 'Elementary', 'Primaire (selon la Progression des apprentissages)': 'Elementary', 'Secondaire 1-2': 'Middle school', 'Secondaire 3-5': 'High school', 'Cégep / adultes': 'College / adults',
   'Fautes à relever': 'Errors to flag',
   "Orthographe d'usage": 'Spelling', 'Accords': 'Agreement', 'Conjugaison': 'Verb forms', 'Ponctuation': 'Punctuation', 'Syntaxe': 'Sentence structure', 'Vocabulaire': 'Word choice',
   'Orthographe': 'Spelling',

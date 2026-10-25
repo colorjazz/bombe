@@ -72,6 +72,8 @@ FR = dict(
 <li>Onglet <b>Correction de la langue</b> : l’IA relève les fautes sur chaque page et les <b>surligne sur la copie</b>, avec la correction et la règle. 1 page de copie = 1 page décomptée.</li>
 <li>Choisissez le <b>niveau des élèves</b> et les <b>types de fautes</b> à relever : orthographe, accords, conjugaison, ponctuation, syntaxe, vocabulaire.</li>
 <li>Facultatif : une <b>note</b> (note sur, points retirés par faute, retrait maximum).</li>
+<li><b>Primaire</b> : choisissez l’<b>année</b> et l’<b>étape</b>. Seules les fautes prévues à cette année par la <b>Progression des apprentissages</b> comptent ; celles des notions encore en apprentissage sont montrées <b>en gris</b>, sans compter. Les notions de l’année comptent à l’étape 3. Vous pouvez changer chaque notion (« Fautes qui comptent »).</li>
+<li>Au primaire, chaque copie affiche le <b>nombre de mots</b>, les fautes comptées, le <b>pourcentage de fautes</b> et la <b>cote</b> (A à E) selon vos seuils. Une même faute répétée peut ne compter qu’une fois.</li>
 <li>Une seconde lecture se fait ensuite en arrière-plan et peut ajouter des fautes oubliées. Une faute dont la lecture est douteuse est marquée « à vérifier » et n’est pas comptée.</li>
 <li>Dans <b>Voir la copie annotée</b>, vous pouvez supprimer une faute relevée à tort, en ajouter une oubliée, et imprimer la copie surlignée.</li>
 </ul>'''),

@@ -1227,7 +1227,7 @@ const langSettings = () => (isPda() ? {
 
 // Primaire : les fautes qui comptent selon l'année et l'étape (Progression des apprentissages, voir pda.js),
 // modifiables notion par notion. Une modification tient jusqu'au changement d'année ou d'étape.
-const isPda = () => $('lang-level').value === 'primaire';
+const isPda = () => $('lang-level').value === 'primaire' && $('out-lang').value !== 'en'; // la PDA ne vise que le français
 let pdaOver = {};
 try { pdaOver = JSON.parse(localStorage.getItem('ce.pda') || '{}') || {}; } catch { /* ignoré */ }
 const pdaState = (n) => pdaOver[n.id] || pdaDefault(n, Number($('pda-year').value), Number($('pda-step').value));
@@ -1865,7 +1865,7 @@ window.addEventListener('beforeunload', (e) => {
 // Le corrigé tapé et le nom de l'évaluation ne sont gardés que jusqu'à la fermeture de l'onglet : assez pour corriger
 // plusieurs groupes de suite, sans laisser le corrigé sur un ordinateur partagé. « Terminer la session » les efface aussi.
 // Le regroupement des pages n'est pas retenu : il repart toujours d'un choix neutre.
-const PREF_IDS = ['total', 'per-student', 'whole', 'deep', 'language', 'lang-level', 'pda-year', 'pda-step', 'pda-once', 'lang-total', 'lang-per', 'lang-max', 'anon', 'anon-h', 'anon-all', 'out-lang'];
+const PREF_IDS = ['total', 'per-student', 'whole', 'deep', 'language', 'lang-level', 'pda-year', 'pda-step', 'pda-once', 'pda-a', 'pda-b', 'pda-c', 'pda-d', 'lang-total', 'lang-per', 'lang-max', 'anon', 'anon-h', 'anon-all', 'out-lang'];
 const TAB_IDS = ['exam', 'rubric'];
 function savePrefs() {
   const prefs = Object.fromEntries(PREF_IDS.map((id) => [id, $(id).type === 'checkbox' ? $(id).checked : $(id).value]));
@@ -1894,6 +1894,7 @@ for (const id of [...PREF_IDS, ...TAB_IDS]) $(id).addEventListener('change', sav
 document.querySelectorAll('#lang-cats input').forEach((i) => i.addEventListener('change', savePrefs));
 ['pda-year', 'pda-step'].forEach((id) => $(id).addEventListener('change', () => { pdaOver = {}; savePda(); renderPda(); }));
 $('lang-level').addEventListener('change', renderPda);
+$('out-lang').addEventListener('change', renderPda);
 $('pda-reset').addEventListener('click', () => { pdaOver = {}; savePda(); renderPda(); });
 renderPda();
 
