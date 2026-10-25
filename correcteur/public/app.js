@@ -1291,14 +1291,21 @@ function renderPda() {
   if (!on) return;
   const by = (st) => PDA_NOTIONS.filter((x) => pdaState(x) === st).length;
   $('pda-sum').textContent = `${by('count')} acquise${by('count') > 1 ? 's' : ''} · ${by('grey')} en apprentissage · ${by('ignore')} pas encore vue${by('ignore') > 1 ? 's' : ''}`;
+  // Une catégorie par ligne, fermée par défaut : on n'ouvre que celle qu'on veut ajuster.
   $('pda-list').replaceChildren(...Object.entries(CATS).map(([cat, c]) => {
     const list = PDA_NOTIONS.filter((x) => x.cat === cat);
-    return list.length ? h('div', { class: 'pda-group' }, h('b', { class: `cat ${c.cls}`, textContent: c.label }),
+    if (!list.length) return null;
+    const n = (st) => list.filter((x) => pdaState(x) === st).length;
+    return h('details', { class: 'pda-group', open: pdaOpen.has(cat), ontoggle: (ev) => { if (ev.target.open) pdaOpen.add(cat); else pdaOpen.delete(cat); } },
+      h('summary', {}, h('b', { class: `cat ${c.cls}`, textContent: c.label }),
+        h('span', { class: 'pda-counts' }, h('span', { class: 'n-count', textContent: `${n('count')} acquise${n('count') > 1 ? 's' : ''}` }),
+          h('span', { class: 'n-grey', textContent: `${n('grey')} en apprentissage` }), h('span', { class: 'n-ignore', textContent: `${n('ignore')} pas encore vue${n('ignore') > 1 ? 's' : ''}` }))),
       ...list.map((x) => h('label', { class: `pda-row st-${pdaState(x)}` }, h('span', { textContent: x.label }),
         h('select', { onchange: (ev) => { pdaOver[x.id] = ev.target.value; savePda(); renderPda(); } },
-          ...Object.entries(PDA_STATES).map(([v, t]) => h('option', { value: v, textContent: t, selected: pdaState(x) === v })))))) : null;
+          ...Object.entries(PDA_STATES).map(([v, t]) => h('option', { value: v, textContent: t, selected: pdaState(x) === v }))))));
   }).filter(Boolean));
 }
+const pdaOpen = new Set();
 function savePda() { try { localStorage.setItem('ce.pda', JSON.stringify(pdaOver)); } catch { /* ignoré */ } }
 const pdaScoring = () => (isPda() ? {
   year: Number($('pda-year').value), once: $('pda-once').value === '1',
