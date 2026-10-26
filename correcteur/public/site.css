@@ -111,3 +111,15 @@ footer { background: var(--bg); }
 #how .grid3 > .feature:nth-child(1) { border-top: 5px solid #4f46e5; }
 #how .grid3 > .feature:nth-child(2) { border-top: 5px solid #e07b00; }
 #how .grid3 > .feature:nth-child(3) { border-top: 5px solid #0f9f6e; }
+
+/* Section « Au primaire » de l'accueil français */
+.prim-link { margin: -.2rem 0 1rem; font-size: .9rem; font-weight: 600; }
+.prim-link a { display: inline-block; text-decoration: none; padding: .4rem .8rem; border-radius: 999px; background: #fff4e5; color: #8a4b00; border: 1px solid #f5d6a8; }
+.prim-link a:hover { text-decoration: underline; }
+.prim-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 1.6rem; align-items: start; margin-top: 1.2rem; }
+.prim-shot { margin: 0; }
+.prim-shot img { width: 100%; height: auto; display: block; border-radius: 14px; border: 1px solid var(--line); box-shadow: 0 18px 40px -24px rgba(30, 36, 51, .35); }
+.prim-shot figcaption { font-size: .78rem; color: var(--faint); margin-top: .45rem; text-align: center; }
+.prim-points { margin: 0 0 1.1rem; }
+.prim-points li { margin-bottom: .55rem; }
+@media (max-width: 860px) { .prim-grid { grid-template-columns: 1fr; } }

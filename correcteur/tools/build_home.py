@@ -42,7 +42,7 @@ T = {
          ('c-orth', '2. Orthographe', 'seloigne', 's’éloigne', 'Pronom « se » + verbe « éloigner » : apostrophe.'),
          ('c-conj', '3. Conjugaison', 'défenda', 'défendait', 'Imparfait de « défendre » : terminaison -ait.'),
          ('c-ponc', '4. Ponctuation', 'pouvait mais', 'pouvait, mais', 'Virgule devant « mais » qui relie deux propositions.')],
-  lang_points=['Six catégories au choix : orthographe, accords, conjugaison, ponctuation, syntaxe, vocabulaire', 'Note de langue facultative (ex. −0,5 par faute)', 'Copie annotée à imprimer ou à enregistrer en PDF pour l’élève', 'Fonctionne sur l’écriture à la main comme sur les textes tapés'],
+  lang_points=['Au primaire : selon la Progression des apprentissages de l’année, avec le % de fautes et la cote', 'Six catégories au choix : orthographe, accords, conjugaison, ponctuation, syntaxe, vocabulaire', 'Note de langue facultative (ex. −0,5 par faute)', 'Copie annotée à imprimer ou à enregistrer en PDF pour l’élève', 'Fonctionne sur l’écriture à la main comme sur les textes tapés'],
   trust_h='Conçu pour que vous puissiez lui faire confiance', trust_sub="Une IA qui se trompe en silence ne vous fait pas gagner de temps. Brûle la pile vous montre où regarder.",
   trust=[('search', 'Chaque point est justifié', '« Écrit : 1942, attendu : 1955. » Vous voyez pourquoi chaque point a été retiré, et vous le changez si vous n’êtes pas d’accord.'),
          ('scale', 'Correction approfondie', 'Chaque copie peut être corrigée deux fois, indépendamment, par deux modèles d’IA différents, avec un pourcentage de fiabilité. Les questions où les corrections divergent sont surlignées.'),
@@ -57,11 +57,24 @@ T = {
        ("Ça fonctionne avec l'écriture à la main ?", "Oui, avec des numérisations ou des photos nettes. Si un passage est difficile à lire, la copie est marquée à vérifier. Si la photo est illisible, aucune note n'est inventée : la copie est marquée « Illisible » et n'est pas facturée."),
        ("Puis-je cacher le nom des élèves ?", "Oui. Cochez « Masquer le nom de l'élève avant l'envoi » : le haut de la première page de chaque copie est blanchi dans votre navigateur avant l'envoi. Un nom écrit ailleurs n'est pas masqué : un code d'élève reste le plus sûr. Vous voyez toujours la copie complète et inscrivez les noms vous-même."),
        ('Quels formats de copies ?', "PDF numérisés (une ou plusieurs copies par fichier), photos prises au téléphone (y compris les photos d'iPhone), documents Word (.docx) et fichiers texte. Les copies d'une même numérisation sont séparées automatiquement par élève."),
+       ('Ça fonctionne pour le primaire ?', "Oui. Dans « Correction de la langue », choisissez « Primaire », l’année et l’étape : seules les fautes prévues à cette année par la Progression des apprentissages comptent, et vous obtenez le nombre de mots, le pourcentage de fautes et la cote. Vous pouvez aussi corriger avec votre propre grille d’évaluation (critères et niveaux)."),
        ('Quelles matières ?', 'Toutes celles où un corrigé ou une grille permet de juger les réponses : histoire, sciences, mathématiques (réponses et démarches), français, langues, questions à développement court. Plus votre corrigé est précis, plus la correction l’est.'),
        ('Qu’est-ce qu’une « page » ?', 'Une page de copie d’élève (une face numérisée ou une photo). En mode rapide et en correction de la langue, une page de copie compte pour 1 page ; en mode approfondi (double correction et fiabilité), pour 2 pages. Le corrigé n’est pas compté. Une correction qui échoue n’est pas décomptée.'),
        ('Que deviennent les copies de mes élèves ?', 'Nous ne conservons aucune copie, aucune note et aucun nom d’élève. Pour la correction, les copies sont envoyées de façon chiffrée à Google (API Gemini, offre payante) : Google ne s’en sert pas pour entraîner ses modèles et ne les garde que brièvement, pour détecter les abus. Voir notre <a href="confidentialite.html">politique de confidentialité</a>.'),
        ('Dois-je créer un compte ?', 'Non. Vous recevez une clé d’accès qui contient votre solde de pages. Notez-la pour l’utiliser sur un autre appareil ou recharger votre compte.')],
   end_h='Votre prochaine pile de copies, en quelques minutes', end_sub='30 pages gratuites, sans carte de crédit.', end_cta='Essayer maintenant',
+  prim_link='🍎 Au primaire ? Les fautes comptées selon la Progression des apprentissages ↓',
+  prim=dict(
+    h='Au primaire : seules les fautes vues en classe comptent',
+    sub="Choisissez l’année de vos élèves : Brûle la pile surligne les fautes sur le texte manuscrit et ne compte que les notions prévues à cette année par la Progression des apprentissages.",
+    img='primaire-fr.jpg', alt='Texte fictif d’une élève de 3e année, annoté par Brûle la pile : fautes surlignées, cote et pourcentage de fautes',
+    note='Texte fictif d’une élève de 3e année ; annotations produites par Brûle la pile.',
+    points=[('<b>Votre année, votre étape</b>', 'De la 1re à la 6e année. Aux étapes 1 et 2, les notions de l’année sont « en apprentissage » ; à l’étape 3, elles comptent.'),
+            ('<b>Ce qui compte, ce qui ne compte pas</b>', 'Les notions acquises sont surlignées en couleur et comptent. Celles en apprentissage sont montrées en gris pour que l’élève les voie, sans compter.'),
+            ('<b>Le nombre de mots, le % de fautes, la cote</b>', '« 86 mots · 2 fautes retenues · 2,3 % → B », selon les seuils de votre école.'),
+            ('<b>Des explications pour un enfant</b>', '« Il y a plusieurs chiens : on ajoute un s. » Sans mots savants de grammaire.'),
+            ('<b>Vous gardez le dernier mot</b>', 'Chaque notion se règle d’un clic, et chaque faute se retire ou s’ajoute sur la copie.')],
+    cta='Essayer avec les textes de mes élèves'),
   creator_h='Fait par un prof, pour des profs.', creator_p='Je suis enseignant d’histoire au secondaire, au Québec. J’ai créé Brûle la pile pour faire le premier jet de mes propres piles de copies, sans envoyer les copies de mes élèves n’importe où. Je relis toujours chaque copie : l’outil fait le premier passage, je garde le jugement.',
   idea_h='Une idée pour Brûle la pile ?', idea_sub='Proposez une fonctionnalité ou signalez ce qui manque dans votre matière. Je lis chaque suggestion.', idea_ph='Ex. : pouvoir corriger les examens de mathématiques avec la démarche…', idea_mail='Votre courriel (facultatif, pour que je vous réponde)', idea_send='Envoyer mon idée', idea_ok='Merci ! Votre idée est bien reçue.', idea_err='L’envoi n’a pas fonctionné. Réessayez, ou écrivez-nous.', idea_short='Décrivez votre idée en quelques mots.', idea_link='Proposer une idée',
   privacy_href='confidentialite.html', mail='bonjour@brulelapile.ca', site='https://brulelapile.ca', privacy='Confidentialité', terms_href='conditions.html', terms='Conditions', contact='Nous joindre'),
@@ -116,6 +129,20 @@ T = {
   privacy_href='privacy.html', mail='hello@burnthepile.com', site='https://burnthepile.com', privacy='Privacy', terms_href='terms.html', terms='Terms', contact='Contact us'),
 }
 
+# Section « Au primaire » (site français seulement : la Progression des apprentissages est québécoise).
+def prim_section(d):
+    p = d.get('prim')
+    if not p: return ''
+    pts = ''.join(f'<li>{h} : {t}</li>' for h, t in p['points'])
+    return f'''<section class="block prim" id="primaire">
+      <h2>{p['h']}</h2>
+      <p class="sub">{p['sub']}</p>
+      <div class="prim-grid">
+        <figure class="prim-shot"><img src="{p['img']}" alt="{p['alt']}" width="1196" height="548" loading="lazy"><figcaption>{p['note']}</figcaption></figure>
+        <div><ul class="points prim-points">{pts}</ul><a class="btn primary big" href="app.html">{p['cta']}</a></div>
+      </div>
+    </section>'''
+
 def page(L, d):
     other = 'en' if L == 'fr' else 'fr'
     sw = (f'<div class="lang-switch" role="group" aria-label="Langue / Language">'
@@ -153,6 +180,7 @@ def page(L, d):
         <span class="eyebrow">{d['eyebrow']}</span>
         <h1>{d['h1']}</h1>
         <p class="lead">{d['lead']}</p>
+        {f'<p class="prim-link"><a href="#primaire">{d["prim_link"]}</a></p>' if d.get('prim_link') else ''}
         <div class="cta">
           <a class="btn primary big" href="app.html">{d['cta1']}</a>
           <a class="btn ghost big" href="#how">{d['cta2']}</a>
@@ -164,6 +192,8 @@ def page(L, d):
         <figcaption>{d['demo_note']}</figcaption>
       </figure>
     </section>
+
+    {prim_section(d)}
 
     <section class="creator"><div class="creator-card"><span class="creator-mark" aria-hidden="true">✍</span><div><b>{d['creator_h']}</b><p>{d['creator_p']}</p></div></div></section>
 
