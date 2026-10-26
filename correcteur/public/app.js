@@ -1282,19 +1282,26 @@ const isPda = () => $('lang-level').value === 'primaire' && $('out-lang').value 
 let pdaOver = {};
 try { pdaOver = JSON.parse(localStorage.getItem('ce.pda') || '{}') || {}; } catch { /* ignoré */ }
 const pdaState = (n) => pdaOver[n.id] || pdaDefault(n, Number($('pda-year').value), Number($('pda-step').value));
-const PDA_STATES = { count: 'Acquise', grey: 'En apprentissage', ignore: 'Pas encore vue' };
+const L = (fr, en) => (lang === 'en' ? en : fr); // textes du primaire construits ici (l'interface anglaise les affiche en anglais)
+const PDA_STATES = { count: L('Acquise', 'Mastered'), grey: L('En apprentissage', 'Being learned'), ignore: L('Pas encore vue', 'Not yet taught') };
+const notionLabel = (x) => (x ? L(x.label, x.en) : '');
+const plural = (n, fr, frs, en, ens) => `${n} ${n > 1 ? L(frs, ens) : L(fr, en)}`;
 function renderPda() {
   const on = isPda();
   $('pda').hidden = !on;
+  $('pda-en-note').hidden = on || lang === 'en' || $('lang-level').value !== 'primaire'; // site français, copies en anglais
   // Exemples à l'image d'une classe du primaire (groupe « 4e B » plutôt que « 541 »).
-  const year = Number($('pda-year').value), prim = on && state.kind === 'lang';
+  // Primaire (avec ou sans la PDA, qui ne vise que les copies en français) : exemples d'une classe du primaire.
+  const year = Number($('pda-year').value), prim = state.kind === 'lang' && $('lang-level').value === 'primaire';
   $('exam').placeholder = tr(prim ? 'Ex. : Écriture — Raconte ta fin de semaine' : 'Ex. : Examen — Révolution tranquille');
-  $('group').placeholder = prim ? `Ex. : ${year}${year === 1 ? 're' : 'e'} B` : tr('Ex. : 541');
+  $('group').placeholder = !prim ? tr('Ex. : 541') : L(`Ex. : ${year}${year === 1 ? 're' : 'e'} B`, on ? `E.g., Grade ${year}` : 'E.g., Grade 4');
   $('lang-cats-field').hidden = on;
   $('lang-scoring-row').hidden = on; // au primaire, la cote vient du pourcentage de fautes
   if (!on) return;
   const by = (st) => PDA_NOTIONS.filter((x) => pdaState(x) === st).length;
-  $('pda-sum').textContent = `${by('count')} acquise${by('count') > 1 ? 's' : ''} · ${by('grey')} en apprentissage · ${by('ignore')} pas encore vue${by('ignore') > 1 ? 's' : ''}`;
+  const counts = (k) => [plural(k('count'), 'acquise', 'acquises', 'mastered', 'mastered'), `${k('grey')} ${L('en apprentissage', 'being learned')}`,
+    plural(k('ignore'), 'pas encore vue', 'pas encore vues', 'not yet taught', 'not yet taught')];
+  $('pda-sum').textContent = counts(by).join(' · ');
   // Une catégorie par ligne, fermée par défaut : on n'ouvre que celle qu'on veut ajuster.
   $('pda-list').replaceChildren(...Object.entries(CATS).map(([cat, c]) => {
     const list = PDA_NOTIONS.filter((x) => x.cat === cat);
@@ -1302,9 +1309,8 @@ function renderPda() {
     const n = (st) => list.filter((x) => pdaState(x) === st).length;
     return h('details', { class: 'pda-group', open: pdaOpen.has(cat), ontoggle: (ev) => { if (ev.target.open) pdaOpen.add(cat); else pdaOpen.delete(cat); } },
       h('summary', {}, h('b', { class: `cat ${c.cls}`, textContent: c.label }),
-        h('span', { class: 'pda-counts' }, h('span', { class: 'n-count', textContent: `${n('count')} acquise${n('count') > 1 ? 's' : ''}` }),
-          h('span', { class: 'n-grey', textContent: `${n('grey')} en apprentissage` }), h('span', { class: 'n-ignore', textContent: `${n('ignore')} pas encore vue${n('ignore') > 1 ? 's' : ''}` }))),
-      ...list.map((x) => h('label', { class: `pda-row st-${pdaState(x)}` }, h('span', { textContent: x.label }),
+        h('span', { class: 'pda-counts' }, ...counts(n).map((t, i) => h('span', { class: ['n-count', 'n-grey', 'n-ignore'][i], textContent: t })))),
+      ...list.map((x) => h('label', { class: `pda-row st-${pdaState(x)}` }, h('span', { textContent: notionLabel(x) }),
         h('select', { onchange: (ev) => { pdaOver[x.id] = ev.target.value; savePda(); renderPda(); } },
           ...Object.entries(PDA_STATES).map(([v, t]) => h('option', { value: v, textContent: t, selected: pdaState(x) === v }))))));
   }).filter(Boolean));
@@ -1355,11 +1361,11 @@ function categoryChips(errors) {
   return h('div', { class: 'chips' }, Object.entries(CATS).map(([k, c]) => {
     const n = errors.filter((e) => e.category === k && !e.grey).length;
     return n ? h('span', { class: `cat ${c.cls}`, textContent: `${c.label} ${n}` }) : null;
-  }), grey ? h('span', { class: 'cat c-grey', textContent: `En apprentissage ${grey}` }) : null);
+  }), grey ? h('span', { class: 'cat c-grey', textContent: `${L('En apprentissage', 'Being learned')} ${grey}` }) : null);
 }
 
 // Primaire : « 214 mots · 7 fautes comptées · 3,3 % → B ».
-const pdaLine = (r, n) => `${r.words == null ? 'mots non comptés' : pl(r.words, 'mot', 'mots')} · ${pl(n, 'faute retenue', 'fautes retenues')}${r.pct == null ? '' : ` · ${fmt(Math.round(r.pct * 10) / 10)} %`}`;
+const pdaLine = (r, n) => `${r.words == null ? L('mots non comptés', 'words not counted') : plural(r.words, 'mot', 'mots', 'word', 'words')} · ${plural(n, 'faute retenue', 'fautes retenues', 'error counted', 'errors counted')}${r.pct == null ? '' : ` · ${pctText(fmt(Math.round(r.pct * 10) / 10))}`}`;
 function langCard(r) {
   const errors = r.pages.flatMap((p) => p.errors);
   const n = r.pda ? langGrade(r) : counted(errors).length;
@@ -1372,7 +1378,7 @@ function langCard(r) {
     h('div', { class: 'card-body' },
       r.flags.length ? h('div', { class: 'flags' }, r.flags.map((f) => h('div', { textContent: `⚠ ${f}` }))) : null,
       errors.length ? categoryChips(errors) : h('p', { class: 'muted small', style: 'margin:0', textContent: 'Aucune faute relevée.' }),
-      r.pda && (grey || r.dup?.length) ? h('p', { class: 'muted small', style: 'margin:0', textContent: [grey ? `${pl(grey, 'faute', 'fautes')} en gris : notion en apprentissage, ne compte pas` : '', r.dup?.length ? `${pl(r.dup.length, 'faute répétée', 'fautes répétées')}, retenue${r.dup.length > 1 ? 's' : ''} une seule fois` : ''].filter(Boolean).join(' · ') }) : null,
+      r.pda && (grey || r.dup?.length) ? h('p', { class: 'muted small', style: 'margin:0', textContent: [grey ? `${plural(grey, 'faute', 'fautes', 'error', 'errors')} ${L('en gris : notion en apprentissage, ne compte pas', 'in grey: being learned, not counted')}` : '', r.dup?.length ? `${plural(r.dup.length, 'faute répétée, retenue', 'fautes répétées, retenues', 'repeated error, counted', 'repeated errors, counted')} ${L('une seule fois', 'once')}` : ''].filter(Boolean).join(' · ') }) : null,
       r.rereading ? h('p', { class: 'muted small', style: 'margin:0', textContent: 'Relecture en cours : d’autres fautes peuvent s’ajouter…' }) : null,
       h('div', { class: 'card-foot' },
         h('span', { textContent: copyLabel(r) }),
@@ -1421,7 +1427,7 @@ function renderViewer(focus) {
     items.length ? categoryChips(items.map((i) => i.e)) : h('p', { class: 'muted', textContent: 'Aucune faute relevée.' }),
     ...items.map(({ e, p, n: k }) => {
       const el = h('div', { class: `err ${CATS[e.category].cls} ${e.grey ? 'grey' : ''} ${focus === e ? 'focus' : ''}`, onclick: () => renderViewer(e) },
-        h('div', { class: 'err-head' }, h('b', { textContent: `${k}. ${CATS[e.category].label}${e.box ? '' : ' (non localisée)'}${e.doubtful ? ' · à vérifier' : ''}${e.grey ? ' · notion en apprentissage : ne compte pas' : ''}${r.dup?.includes(e) ? ' · répétée : retenue une seule fois' : ''}` }),
+        h('div', { class: 'err-head' }, h('b', { textContent: `${k}. ${CATS[e.category].label}${e.box ? '' : ' (non localisée)'}${e.doubtful ? ' · à vérifier' : ''}${e.grey ? L(' · notion en apprentissage : ne compte pas', ' · being learned: not counted') : ''}${r.dup?.includes(e) ? L(' · répétée : retenue une seule fois', ' · repeated: counted once') : ''}` }),
           h('button', { class: 'icon-btn', type: 'button', textContent: '×', title: "Ce n'est pas une faute : retirer", onclick: (ev) => {
             ev.stopPropagation();
             p.errors = p.errors.filter((x) => x !== e);
@@ -1430,7 +1436,7 @@ function renderViewer(focus) {
           } })),
         h('div', { class: 'fix' }, h('s', { textContent: e.text }), ' → ', h('b', { textContent: e.correction })),
         h('div', { class: 'muted small', textContent: e.explanation }),
-        e.notion ? h('div', { class: 'faint small', textContent: `Progression des apprentissages : ${PDA_NOTIONS.find((x) => x.id === e.notion)?.label || ''}` }) : null);
+        e.notion ? h('div', { class: 'faint small', textContent: `${L('Progression des apprentissages', 'Quebec curriculum')} : ${notionLabel(PDA_NOTIONS.find((x) => x.id === e.notion))}` }) : null);
       if (focus === e) setTimeout(() => el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 0);
       return el;
     })].filter(Boolean)); // replaceChildren afficherait « null » en texte
@@ -1581,7 +1587,7 @@ function exportCSV() {
     const keys = Object.keys(CATS);
     const pda = langRes.some((r) => r.pda);
     const rows = [['N° copie', 'Fichier', 'Évaluation', 'Groupe', 'Élève', 'Fautes', ...keys.map((k) => CATS[k].label),
-      ...(pda ? ['Mots', '% de fautes', 'Cote'] : ['Note', 'Sur']), 'Détail des fautes']];
+      ...(pda ? [L('Mots', 'Words'), L('% de fautes', '% errors'), L('Cote', 'Level')] : ['Note', 'Sur']), 'Détail des fautes']];
     for (const r of [...langRes].sort((x, y) => (x.no ?? 0) - (y.no ?? 0))) {
       const errs = r.pages.flatMap((p) => p.errors);
       const n = langGrade(r);
@@ -1589,7 +1595,7 @@ function exportCSV() {
       rows.push([r.no ?? '', r.file || '', r.exam, r.group, r.name, n, ...keys.map((k) => ok.filter((e) => e.category === k).length),
         ...(pda ? [r.words ?? '', r.pct == null ? '' : num(Math.round(r.pct * 10) / 10), r.cote || '']
           : [r.grade == null ? '' : num(r.grade), r.grade == null ? '' : num(r.total)]),
-        errs.map((e) => `${e.text} → ${e.correction} (${e.explanation})${e.doubtful ? ' [à vérifier, non comptée]' : ''}${e.grey ? ' [notion en apprentissage : ne compte pas]' : ''}${r.dup?.includes(e) ? ' [répétée : retenue une seule fois]' : ''}`).join(' | ')]);
+        errs.map((e) => `${e.text} → ${e.correction} (${e.explanation})${e.doubtful ? ' [à vérifier, non comptée]' : ''}${e.grey ? L(' [notion en apprentissage : ne compte pas]', ' [being learned: not counted]') : ''}${r.dup?.includes(e) ? L(' [répétée : retenue une seule fois]', ' [repeated: counted once]') : ''}`).join(' | ')]);
     }
     downloadCSV(rows, lang === 'en' ? '_writing' : '_langue');
   }
