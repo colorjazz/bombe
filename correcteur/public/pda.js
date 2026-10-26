@@ -43,7 +43,42 @@ export const PDA_NOTIONS = [
   { id: 'c_passe_simple', cat: 'conjugaison', label: 'Passé simple (3e personne)', en: 'Passé simple (3rd person)', years: '....aa' },
 ];
 
-// État par défaut d'une notion pour une année (1-6) et une étape (1-3) : 'count' | 'grey' | 'ignore'.
+// Secondaire : Progression des apprentissages au secondaire (français, MEQ), tableaux « Grammaire de la phrase »
+// (conjugaison p. 116-118, rôles de la ponctuation p. 119-121) et « Orthographe lexicale » (p. 133-134). Une lettre par
+// année, de la 1re à la 5e secondaire (une étoile répétée l'année suivante = déjà maîtrisée : « r »). Le document ne
+// refait pas de tableau pour ce qui est acquis au primaire (accords, orthographe d'usage…) : ces notions comptent dès la
+// 1re secondaire. Le participe passé avec avoir n'est pas dans l'extrait fourni : compté par défaut, à faire valider.
+export const PDA_SEC_NOTIONS = [
+  { id: 's_o_usage', cat: 'orthographe', label: 'Orthographe d’usage (mots courants, homophones, accents)', en: 'Spelling of common words (homophones, accents)', years: 'rrrrr' },
+  { id: 's_o_elision', cat: 'orthographe', label: 'Élision et trait d’union (lorsqu’, puisqu’, ce jour-là, vingt-deux), nombres en lettres, vingt et cent', en: 'Elision and hyphens (lorsqu’, puisqu’, ce jour-là, vingt-deux), numbers in words, vingt and cent', years: '*rrrr' },
+  { id: 's_o_maj_titres', cat: 'orthographe', label: 'Majuscule aux titres d’ouvrages et d’œuvres (Le Petit Prince)', en: 'Capital letters in titles of books and works (Le Petit Prince)', years: '.*rrr' },
+  { id: 's_o_maj_noms', cat: 'orthographe', label: 'Majuscule aux noms d’établissements, d’événements, de médias, de lieux complexes (État / état)', en: 'Capital letters for institutions, events, media, compound place names (État / état)', years: '...*r' },
+  { id: 's_o_euphonie', cat: 'orthographe', label: 'Formes euphoniques : t euphonique (va-t-il), nouvel, bel, cet', en: 'Euphonic forms: euphonic t (va-t-il), nouvel, bel, cet', years: 'a*rrr' },
+  { id: 's_o_tout', cat: 'orthographe', label: '« Tout » adverbe (elle était toute nerveuse)', en: '« Tout » as an adverb (elle était toute nerveuse)', years: '..a*r' },
+  { id: 's_a_gn', cat: 'accord', label: 'Accords dans le groupe du nom (déterminant, nom, adjectif)', en: 'Agreement in the noun group (determiner, noun, adjective)', years: 'rrrrr' },
+  { id: 's_a_verbe', cat: 'accord', label: 'Accord du verbe avec son sujet, même éloigné ou inversé', en: 'Verb agrees with its subject, even distant or inverted', years: 'rrrrr' },
+  { id: 's_a_attribut', cat: 'accord', label: 'Accord de l’attribut et du participe passé avec être', en: 'Agreement of the subject complement and of the past participle with être', years: 'rrrrr' },
+  { id: 's_a_pp_avoir', cat: 'accord', label: 'Participe passé avec avoir (accord avec le complément direct placé avant)', en: 'Past participle with avoir (agrees with a direct object placed before)', years: 'rrrrr' },
+  { id: 's_c_base', cat: 'conjugaison', label: 'Temps vus au primaire (présent, imparfait, futur, conditionnel, passé composé, impératif)', en: 'Tenses learned in elementary (present, imparfait, future, conditional, passé composé, imperative)', years: 'rrrrr' },
+  { id: 's_c_radical', cat: 'conjugaison', label: 'Verbes au radical particulier (sortir, céder, appeler, courir)', en: 'Verbs with a changing stem (sortir, céder, appeler, courir)', years: '*rrrr' },
+  { id: 's_c_passe_simple', cat: 'conjugaison', label: 'Passé simple et passé antérieur', en: 'Passé simple and passé antérieur', years: 'a*rrr' },
+  { id: 's_c_subjonctif', cat: 'conjugaison', label: 'Subjonctif présent et passé', en: 'Present and past subjunctive', years: '.a*rr' },
+  { id: 's_c_auxiliaire', cat: 'conjugaison', label: 'Choix de l’auxiliaire être ou avoir', en: 'Choice of the auxiliary être or avoir', years: 'a*rrr' },
+  { id: 's_c_rares', cat: 'conjugaison', label: 'Verbes irréguliers moins courants (haïr, résoudre, craindre, peindre)', en: 'Less common irregular verbs (haïr, résoudre, craindre, peindre)', years: '..a*r' },
+  { id: 's_p_base', cat: 'ponctuation', label: 'Ponctuation vue au primaire (point, majuscule, virgule d’énumération, complément de phrase en tête)', en: 'Punctuation learned in elementary (period, capital letter, comma in a list, introductory phrase)', years: 'rrrrr' },
+  { id: 's_p_organisateur', cat: 'ponctuation', label: 'Virgule après un organisateur ou un marqueur de relation (Par exemple, De plus, En effet)', en: 'Comma after a connector (Par exemple, De plus, En effet)', years: '*rrrr' },
+  { id: 's_p_coord', cat: 'ponctuation', label: 'Virgule devant un coordonnant (mais, car)', en: 'Comma before a coordinating conjunction (mais, car)', years: '*rrrr' },
+  { id: 's_p_paroles', cat: 'ponctuation', label: 'Paroles rapportées : deux-points, guillemets, incise (dit-elle)', en: 'Reported speech: colon, quotation marks, dialogue tag (dit-elle)', years: 'a*rrr' },
+  { id: 's_p_detache', cat: 'ponctuation', label: 'Virgules qui détachent : complément du nom, explication, mise en relief, mot effacé', en: 'Commas that set off: noun complement, explanation, emphasis, omitted word', years: '..*rr' },
+  { id: 's_p_deux_points', cat: 'ponctuation', label: 'Deux-points entre deux phrases (cause, explication)', en: 'Colon between two sentences (cause, explanation)', years: '..*rr' },
+  { id: 's_p_point_virgule', cat: 'ponctuation', label: 'Point-virgule', en: 'Semicolon', years: '....a' },
+  { id: 's_s_phrase', cat: 'syntaxe', label: 'Construction de la phrase : phrase incomplète, sujet répété, subordonnée mal construite', en: 'Sentence structure: fragment, repeated subject, faulty subordinate clause', years: 'rrrrr' },
+  { id: 's_s_negation', cat: 'syntaxe', label: 'Négation complète et « de » devant un adjectif (de mauvais résultats)', en: 'Full negation and « de » before an adjective (de mauvais résultats)', years: 'rrrrr' },
+  { id: 's_v_mots', cat: 'vocabulaire', label: 'Vocabulaire : mot impropre, anglicisme, registre familier', en: 'Word choice: wrong word, anglicism, informal register', years: 'rrrrr' },
+];
+export const notionsFor = (level) => (level === 'secondaire' ? PDA_SEC_NOTIONS : PDA_NOTIONS);
+
+// État par défaut d'une notion pour une année (1-6 au primaire, 1-5 au secondaire) et une étape (1-3) : 'count' | 'grey' | 'ignore'.
 export function pdaDefault(notion, year, step) {
   const s = notion.years[year - 1];
   if (s === 'r') return 'count';

@@ -567,12 +567,14 @@ const LANG_CATEGORIES_EN = {
 };
 const LEVELS_EN = {
   primaire: 'elementary school student: flag important errors, very simple explanations',
+  secondaire: 'high school student: precise explanations with the rule',
   secondaire1: 'middle school student: simple explanations with the rule',
   secondaire3: 'high school student: precise explanations with the rule',
   cegep: 'college student or adult: high standard, precise explanations',
 };
 const LEVELS = {
   primaire: 'élève du primaire : relève les fautes importantes, explications très simples',
+  secondaire: 'élève du secondaire : explications précises avec la règle',
   secondaire1: 'élève de secondaire 1-2 : explications simples avec la règle',
   secondaire3: 'élève de secondaire 3-5 : explications précises avec la règle',
   cegep: 'étudiant de cégep ou adulte : exigence élevée, explications précises',
@@ -605,13 +607,14 @@ const langSchema = (pda) => (pda ? { ...NATIVE_LANG_SCHEMA, items: { ...NATIVE_L
 function readPda(raw) {
   if (!raw || typeof raw !== 'object') return null;
   const year = Number(raw.year);
+  const level = raw.level === 'secondaire' ? 'secondaire' : 'primaire';
   const notions = (Array.isArray(raw.notions) ? raw.notions : []).slice(0, 80)
     .filter((n) => /^[a-z0-9_]{1,30}$/.test(n?.id) && LANG_CATEGORIES[n.cat] && ['count', 'grey'].includes(n.state))
     .map((n) => ({ id: n.id, cat: n.cat, state: n.state, label: String(n.label || '').slice(0, 160) }));
-  if (!(year >= 1 && year <= 6) || !notions.length) throw new HttpError(400, 'Réglages du primaire invalides');
+  if (!(year >= 1 && year <= (level === 'secondaire' ? 5 : 6)) || !notions.length) throw new HttpError(400, 'Réglages de la Progression invalides');
   // Notions pas encore vues : nommées à l'IA pour qu'elle ne les range pas ailleurs (ex. l'imparfait en « orthographe d'usage »).
   const ignored = (Array.isArray(raw.ignored) ? raw.ignored : []).slice(0, 80).map((t) => String(t || '').slice(0, 160)).filter(Boolean);
-  return { year, notions, ignored };
+  return { level, year, notions, ignored };
 }
 const countWords = (text) => (String(text || '').match(/[\p{L}\p{N}]+(?:-[\p{L}\p{N}]+)*/gu) || []).length; // comme public/pda.js
 
@@ -816,6 +819,7 @@ Renvoie EXCLUSIVEMENT un tableau JSON. Si aucune faute n'est trouvée, renvoie u
 // Primaire : on ne relève que les fautes des notions vues à cette année, selon la Progression des apprentissages.
 // Même consigne de repérage que langSystem (les cadres ont été mesurés avec elle).
 function pdaSystem(pda) {
+  if (pda.level === 'secondaire') return pdaSecSystem(pda);
   const year = `${pda.year}${pda.year === 1 ? 're' : 'e'} année du primaire`;
   return `Tu es une enseignante de français au primaire, au Québec. Voici l'image d'un texte manuscrit (ou dactylographié) écrit par un élève de ${year}.
 Ta mission :
@@ -831,6 +835,26 @@ ${pda.ignored?.length ? `   Notions PAS ENCORE VUES à cette année : ne relève
    Les coordonnées 'box' doivent être un tableau de 4 nombres [ymin, xmin, ymax, xmax] normalisés entre 0 et 1000.
    (ymin = haut, xmin = gauche, ymax = bas, xmax = droite).
 Pour chaque faute, recopie aussi dans « ligne » la ligne manuscrite complète où elle se trouve, exactement telle qu'écrite, indique sa « notion » (l'identifiant ci-dessus) et sa catégorie, et donne une explication très courte et très simple, écrite pour un enfant de ${year} (ex. : « Il y a plusieurs chiens : on ajoute un s. »), sans mots savants de grammaire.
+Renvoie EXCLUSIVEMENT un tableau JSON. Si aucune faute n'est trouvée, renvoie un tableau vide [].`;
+}
+
+// Secondaire : même principe ; tout ce qui est vu au primaire est acquis, et la relecture est systématique, catégorie
+// par catégorie (sans elle, la ponctuation et la syntaxe étaient oubliées sur une vraie copie de secondaire 3-5).
+function pdaSecSystem(pda) {
+  const year = `${pda.year}${pda.year === 1 ? 're' : 'e'} secondaire`;
+  const cats = [...new Set(pda.notions.map((n) => n.cat))];
+  return `Tu es une enseignante de français au secondaire, au Québec. Voici l'image d'un texte manuscrit (ou dactylographié) écrit par un élève de ${year}.
+Ta mission :
+1. Lis le texte attentivement.
+2. Relève UNIQUEMENT les fautes qui relèvent d'une des notions suivantes, attendues en ${year} selon la Progression des apprentissages du ministère :
+${pda.notions.map((n) => `   - ${n.id} : ${n.label}`).join('\n')}
+   Toute faute qui ne relève d'aucune de ces notions doit être IGNORÉE (ne la renvoie pas). Pas de choix de style ; si un mot est illisible, ignore-le.
+${pda.ignored?.length ? `   Notions PAS ENCORE VUES en ${year} : ne relève JAMAIS une faute qui en relève : ${pda.ignored.join(' ; ')}.\n` : ''}${checklist(cats)}
+   Une lettre bien formée n'est jamais une faute. Si une lettre est ambiguë (q ou d, accent douteux, lettre doublée ou non), relève la faute seulement si elle est probable, avec lecture_douteuse = true. Ignore les marques de l'enseignant (crochets, X, soulignés, encre de couleur).
+3. Pour CHAQUE faute trouvée, déduis ses coordonnées (bounding box) sur l'image en encadrant le MOT COMPLET ou l'EXPRESSION COMPLÈTE qui contient la faute.
+   Les coordonnées 'box' doivent être un tableau de 4 nombres [ymin, xmin, ymax, xmax] normalisés entre 0 et 1000.
+   (ymin = haut, xmin = gauche, ymax = bas, xmax = droite).
+Pour chaque faute, recopie aussi dans « ligne » la ligne manuscrite complète où elle se trouve, exactement telle qu'écrite, indique sa « notion » (l'identifiant ci-dessus) et sa catégorie, et donne une explication courte avec la règle, pour un élève de ${year} (ex. : « Après un organisateur en début de phrase, on met une virgule. »).
 Renvoie EXCLUSIVEMENT un tableau JSON. Si aucune faute n'est trouvée, renvoie un tableau vide [].`;
 }
 

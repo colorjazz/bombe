@@ -13,7 +13,7 @@ import { t, tr, trTo, lang, startI18n } from './i18n.js';
 import { refineToInk } from './boxes.js';
 import { looksSideways, rotateDataUrl } from './orient.js';
 import { startCamera } from './camera.js';
-import { PDA_NOTIONS, pdaDefault, cote } from './pda.js';
+import { PDA_NOTIONS, PDA_SEC_NOTIONS, notionsFor, pdaDefault, cote } from './pda.js';
 
 const $ = (id) => document.getElementById(id);
 const state = {
@@ -1270,8 +1270,8 @@ async function pageData(url) {
 
 const langSettings = () => (isPda() ? {
   level: 'primaire', categories: Object.keys(CATS),
-  pda: { year: Number($('pda-year').value), notions: PDA_NOTIONS.map((n) => ({ id: n.id, cat: n.cat, label: n.label, state: pdaState(n) })).filter((n) => n.state !== 'ignore'),
-    ignored: PDA_NOTIONS.filter((n) => pdaState(n) === 'ignore').map((n) => n.label) },
+  pda: { level: $('lang-level').value, year: Number($('pda-year').value), notions: notions().map((n) => ({ id: n.id, cat: n.cat, label: n.label, state: pdaState(n) })).filter((n) => n.state !== 'ignore'),
+    ignored: notions().filter((n) => pdaState(n) === 'ignore').map((n) => n.label) },
 } : {
   level: $('lang-level').value,
   categories: [...document.querySelectorAll('#lang-cats input:checked')].map((i) => i.value),
@@ -1279,7 +1279,19 @@ const langSettings = () => (isPda() ? {
 
 // Primaire : les fautes qui comptent selon l'année et l'étape (Progression des apprentissages, voir pda.js),
 // modifiables notion par notion. Une modification tient jusqu'au changement d'année ou d'étape.
-const isPda = () => $('lang-level').value === 'primaire' && $('out-lang').value !== 'en'; // la PDA ne vise que le français
+// Primaire et secondaire : même fonctionnement, chacun avec les notions de sa Progression des apprentissages (pda.js).
+const pdaLevel = () => ['primaire', 'secondaire'].includes($('lang-level').value);
+const isPda = () => pdaLevel() && $('out-lang').value !== 'en'; // la PDA ne vise que le français
+const notions = () => notionsFor($('lang-level').value);
+// Années proposées selon le niveau : 1re à 6e année au primaire, 1re à 5e secondaire.
+function fillYears() {
+  const sec = $('lang-level').value === 'secondaire', n = sec ? 5 : 6, sel = $('pda-year');
+  if (sel.options.length === n && sel.dataset.level === $('lang-level').value) return;
+  const keep = Math.min(Number(sel.value) || (sec ? 3 : 4), n);
+  sel.replaceChildren(...Array.from({ length: n }, (_, i) => h('option', { value: String(i + 1),
+    textContent: tr(`${i + 1}${i ? 'e' : 're'} ${sec ? 'secondaire' : 'année'}`), selected: i + 1 === keep })));
+  sel.dataset.level = $('lang-level').value;
+}
 let pdaOver = {};
 try { pdaOver = JSON.parse(localStorage.getItem('ce.pda') || '{}') || {}; } catch { /* ignoré */ }
 const pdaState = (n) => pdaOver[n.id] || pdaDefault(n, Number($('pda-year').value), Number($('pda-step').value));
@@ -1288,9 +1300,10 @@ const PDA_STATES = { count: L('Acquise', 'Mastered'), grey: L('En apprentissage'
 const notionLabel = (x) => (x ? L(x.label, x.en) : '');
 const plural = (n, fr, frs, en, ens) => `${n} ${n > 1 ? L(frs, ens) : L(fr, en)}`;
 function renderPda() {
+  fillYears();
   const on = isPda();
   $('pda').hidden = !on;
-  $('pda-en-note').hidden = on || lang === 'en' || $('lang-level').value !== 'primaire'; // site français, copies en anglais
+  $('pda-en-note').hidden = on || lang === 'en' || !pdaLevel(); // site français, copies en anglais
   // Exemples à l'image d'une classe du primaire (groupe « 4e B » plutôt que « 541 »).
   // Primaire (avec ou sans la PDA, qui ne vise que les copies en français) : exemples d'une classe du primaire.
   const year = Number($('pda-year').value), prim = state.kind === 'lang' && $('lang-level').value === 'primaire';
@@ -1299,13 +1312,13 @@ function renderPda() {
   $('lang-cats-field').hidden = on;
   $('lang-scoring-row').hidden = on; // au primaire, la cote vient du pourcentage de fautes
   if (!on) return;
-  const by = (st) => PDA_NOTIONS.filter((x) => pdaState(x) === st).length;
+  const by = (st) => notions().filter((x) => pdaState(x) === st).length;
   const counts = (k) => [plural(k('count'), 'acquise', 'acquises', 'mastered', 'mastered'), `${k('grey')} ${L('en apprentissage', 'being learned')}`,
     plural(k('ignore'), 'pas encore vue', 'pas encore vues', 'not yet taught', 'not yet taught')];
   $('pda-sum').textContent = counts(by).join(' · ');
   // Une catégorie par ligne, fermée par défaut : on n'ouvre que celle qu'on veut ajuster.
   $('pda-list').replaceChildren(...Object.entries(CATS).map(([cat, c]) => {
-    const list = PDA_NOTIONS.filter((x) => x.cat === cat);
+    const list = notions().filter((x) => x.cat === cat);
     if (!list.length) return null;
     const n = (st) => list.filter((x) => pdaState(x) === st).length;
     return h('details', { class: 'pda-group', open: pdaOpen.has(cat), ontoggle: (ev) => { if (ev.target.open) pdaOpen.add(cat); else pdaOpen.delete(cat); } },
@@ -1439,7 +1452,7 @@ function renderViewer(focus) {
           } })),
         h('div', { class: 'fix' }, h('s', { textContent: e.text }), ' → ', h('b', { textContent: e.correction })),
         h('div', { class: 'muted small', textContent: e.explanation }),
-        e.notion ? h('div', { class: 'faint small', textContent: `${L('Progression des apprentissages', 'Quebec curriculum')} : ${notionLabel(PDA_NOTIONS.find((x) => x.id === e.notion))}` }) : null);
+        e.notion ? h('div', { class: 'faint small', textContent: `${L('Progression des apprentissages', 'Quebec curriculum')} : ${notionLabel([...PDA_NOTIONS, ...PDA_SEC_NOTIONS].find((x) => x.id === e.notion))}` }) : null);
       if (focus === e) setTimeout(() => el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 0);
       return el;
     })].filter(Boolean)); // replaceChildren afficherait « null » en texte

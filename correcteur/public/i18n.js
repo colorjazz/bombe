@@ -65,7 +65,7 @@ const EN = {
   'Relisez et ajustez au besoin. Un niveau par ligne, sous la forme « points : description ».': 'Review and adjust as needed. One level per line, as “points: description”.',
   'Critère': 'Criterion', 'Points maximum': 'Maximum points',
   // Primaire (Progression des apprentissages)
-  'Année scolaire': 'Grade', '1re année': 'Grade 1', '2e année': 'Grade 2', '3e année': 'Grade 3', '4e année': 'Grade 4', '5e année': 'Grade 5', '6e année': 'Grade 6',
+  'Année scolaire': 'Grade', 'Secondaire (selon la Progression des apprentissages)': 'High school', '1re secondaire': 'Secondary 1', '2e secondaire': 'Secondary 2', '3e secondaire': 'Secondary 3', '4e secondaire': 'Secondary 4', '5e secondaire': 'Secondary 5', '1re année': 'Grade 1', '2e année': 'Grade 2', '3e année': 'Grade 3', '4e année': 'Grade 4', '5e année': 'Grade 5', '6e année': 'Grade 6',
   'Moment de l\'année': 'Time of year', 'Étape 1': 'Term 1', 'Étape 2': 'Term 2', 'Étape 3 (fin d\'année)': 'Term 3 (end of year)',
   'Fautes répétées': 'Repeated errors', 'Une faute répétée n\'est retenue qu\'une fois': 'A repeated error counts once', 'Chaque faute est retenue': 'Every error counts',
   'Notions :': 'Concepts:', 'voir et modifier': 'view and change',
