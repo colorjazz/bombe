@@ -53,6 +53,12 @@
     .idea { border-top: 1px solid var(--line); padding: .6rem 0; }
     .idea p { margin: .2rem 0 0; white-space: pre-wrap; }
     [hidden] { display: none !important; }
+    .insight h3 { font-size: 1rem; margin: .2rem 0 .5rem; }
+    .pt { display: grid; grid-template-columns: 1.6rem 1fr; gap: .4rem; padding: .55rem 0; border-top: 1px solid var(--line); }
+    .pt .ico { font-size: 1.05rem; line-height: 1.3; }
+    .pt p { margin: 0; }
+    .pt blockquote { margin: .35rem 0 0; padding: .35rem .6rem; border-left: 3px solid var(--line-2); color: var(--muted); font-size: .85rem; white-space: pre-wrap; }
+    .pt ul { margin: .35rem 0 0; padding-left: 1.1rem; font-size: .85rem; color: var(--muted); }
   </style>
 </head>
 <body>
@@ -81,6 +87,14 @@
 
     <section id="tab-overview" class="stack">
       <div id="tiles" class="tiles"><p class="muted">Entrez le mot de passe, puis « Afficher ».</p></div>
+      <section class="panel stack insight">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap">
+          <h2>Bilan et conseils</h2>
+          <button id="insight" class="btn" type="button">✨ Demander un bilan à l'IA</button>
+        </div>
+        <p class="muted small" style="margin:0" id="insight-help">L'IA lit vos chiffres et les idées reçues, puis propose quoi faire cette semaine. Elle ne reçoit ni clé, ni nom, ni courriel.</p>
+        <div id="insight-out"></div>
+      </section>
       <section class="panel stack">
         <h2>Nouveaux essais gratuits, par jour (30 derniers jours)</h2>
         <div id="chart-trials"></div>
@@ -308,6 +322,22 @@
       } catch (e) { $('msg').textContent = e.message; $('msg').className = 'small err'; }
     }
     $('refresh').addEventListener('click', load);
+
+    // Bilan IA : les détails (qui relancer, texte de l'idée citée) viennent de la page, pas de l'IA.
+    const ICONS = { bravo: '🎉', action: '👉', idee: '💡', alerte: '⚠️' };
+    $('insight').addEventListener('click', async () => {
+      const btn = $('insight'); btn.disabled = true; btn.textContent = 'Un instant, l’IA prépare le bilan…';
+      try {
+        if (!data) await load();
+        const r = await call('/api/admin/insight', 'POST', {});
+        const idle = data.keys.filter((k) => k.type === 'gift' && k.used === 0 && k.created_at < Date.now() - 3 * 86400000);
+        $('insight-out').innerHTML = `<h3>${esc(r.titre)}</h3>${r.points.map((p) => `<div class="pt"><span class="ico">${ICONS[p.type]}</span><div><p>${esc(p.texte)}</p>
+          ${p.idee && data.ideas[p.idee - 1] ? `<blockquote>${esc(data.ideas[p.idee - 1].text)}${data.ideas[p.idee - 1].email ? `\n— ${esc(data.ideas[p.idee - 1].email)}` : ''}</blockquote>` : ''}
+          ${p.type === 'action' && /relanc|testeu|essay/i.test(p.texte) && idle.length ? `<ul>${idle.slice(0, 30).map((k) => `<li>${esc(k.note || k.key)} (clé offerte le ${day(k.created_at)})</li>`).join('')}</ul>` : ''}</div></div>`).join('')}
+          <p class="muted small" style="margin:.4rem 0 0">Bilan du ${when(Date.now())}. Ce sont des suggestions : c'est vous qui décidez.</p>`;
+      } catch (e) { $('insight-out').innerHTML = `<p class="err small">${esc(e.message)}</p>`; }
+      btn.disabled = false; btn.textContent = '✨ Demander un nouveau bilan';
+    });
 
     async function make(en) {
       try {

@@ -55,7 +55,7 @@ const ROUTES = {
   'POST /api/trial': trial,
   'POST /api/idea': idea,
   'POST /api/admin/keys': adminCreateKey,
-  'GET /api/admin/keys': adminListKeys, 'GET /api/admin/stats': adminStats,
+  'GET /api/admin/keys': adminListKeys, 'GET /api/admin/stats': adminStats, 'POST /api/admin/insight': adminInsight,
   'POST /api/checkout': checkout,
   'GET /api/claim': claim,
   'POST /api/stripe-webhook': stripeWebhook,
@@ -199,6 +199,10 @@ async function adminListKeys(request, env) {
 // Pages données = essai + offertes + achetées ; pages utilisées = données − restantes.
 async function adminStats(request, env) {
   await requireAdmin(request, env);
+  return json(await statsData(env));
+}
+
+async function statsData(env) {
   const since = Date.now() - 90 * DAY_MS;
   const [keys, sales, usage, ideas] = await env.DB.batch([
     env.DB.prepare(`SELECT k.key, k.pages AS left, k.is_trial AS trial, k.email, k.created_at, g.pages AS gift, g.note,
@@ -217,7 +221,50 @@ async function adminStats(request, env) {
     const given = Math.max((k.gift || 0) + (k.bought || 0) + (k.trial || k.converted ? trialPages : 0), k.left);
     return { ...k, type: k.gift ? 'gift' : k.bought ? 'bought' : k.trial ? 'trial' : 'other', given, used: given - k.left };
   });
-  return json({ keys: list, sales: sales.results, usage: usage.results, ideas: ideas.results, trialPages, since });
+  return { keys: list, sales: sales.results, usage: usage.results, ideas: ideas.results, trialPages, since };
+}
+
+// Bilan IA, à la demande (bouton de la page admin) : l'IA ne reçoit que des chiffres agrégés et le texte des idées,
+// jamais de clé, de nom ni de courriel. La page affiche elle-même qui relancer et quelle idée est citée.
+const INSIGHT_SCHEMA = { type: 'json_schema', json_schema: { name: 'bilan', schema: { type: 'object', required: ['titre', 'points'], properties: {
+  titre: { type: 'string' },
+  points: { type: 'array', items: { type: 'object', required: ['type', 'texte'], properties: {
+    type: { type: 'string', enum: ['bravo', 'action', 'idee', 'alerte'] }, texte: { type: 'string' }, idee: { type: 'integer' } } } },
+} } } };
+async function adminInsight(request, env) {
+  await requireAdmin(request, env);
+  const d = await statsData(env);
+  const now = Date.now(), DAY = DAY_MS;
+  const inDays = (t, a, b) => t > now - b * DAY && t <= now - a * DAY;
+  const by = (t) => d.keys.filter((k) => k.type === t);
+  const sumUsage = (a, b) => d.usage.filter((u) => inDays(u.created_at, a, b)).reduce((x, u) => x + u.pages, 0);
+  const facts = {
+    aujourdhui: new Date(now).toISOString().slice(0, 10),
+    essais: { total: by('trial').length, utilises: by('trial').filter((k) => k.used > 0).length,
+      crees_7_derniers_jours: by('trial').filter((k) => inDays(k.created_at, 0, 7)).length, crees_7_jours_precedents: by('trial').filter((k) => inDays(k.created_at, 7, 14)).length },
+    cles_offertes: { total: by('gift').length, utilisees: by('gift').filter((k) => k.used > 0).length,
+      jamais_utilisees_depuis_3_jours: by('gift').filter((k) => k.used === 0 && k.created_at < now - 3 * DAY).length },
+    achats: { total: d.sales.length, '7_derniers_jours': d.sales.filter((x) => inDays(x.created_at, 0, 7)).length,
+      revenus_dollars: d.sales.reduce((x, s) => x + (s.amount ?? ({ 200: 1400, 500: 2900, 1800: 7900 }[s.pages] || 0)), 0) / 100,
+      essais_convertis: d.sales.filter((x) => x.from_trial).length },
+    pages_utilisees: { '7_derniers_jours': sumUsage(0, 7), '7_jours_precedents': sumUsage(7, 14),
+      langue: d.usage.filter((u) => u.kind === 'langue').reduce((x, u) => x + u.pages, 0), copies: d.usage.filter((u) => u.kind === 'copies').reduce((x, u) => x + u.pages, 0) },
+  };
+  const ideas = d.ideas.slice(0, 30).map((i, n) => `#${n + 1} (${new Date(i.created_at).toISOString().slice(0, 10)}) : ${String(i.text).slice(0, 500)}`).join('\n');
+  const system = [
+    "Tu conseilles le fondateur de « Brûle la pile », une petite appli web québécoise de correction de copies par IA pour les enseignants (lancée en octobre 2026, vendue en forfaits de pages, essai gratuit de 30 pages, clés offertes à des profs testeurs). Il est lui-même enseignant et fait tout seul.",
+    "À partir des chiffres et des idées reçues, fais un bilan court et utile : 3 à 6 points, chacun d'une ou deux phrases, en tutoyant, concrets et honnêtes (encourage quand c'est mérité, dis-le franchement quand ça stagne).",
+    "Types : « bravo » (un progrès réel, chiffre à l'appui), « action » (une chose précise à faire cette semaine : relancer les testeurs qui n'ont pas essayé, publier dans les groupes de profs, écrire aux conseillers pédagogiques…), « idee » (une idée reçue qui vaut la peine d'y réfléchir : mets son numéro dans « idee » et dis pourquoi), « alerte » (un problème à surveiller).",
+    "Pas de jargon, pas de promesses chiffrées inventées ; appuie-toi seulement sur les données fournies. Le calendrier scolaire québécois compte (fins d'étape en novembre, février et juin). Titre : une phrase qui résume la période.",
+  ].join('\n');
+  let raw;
+  try { raw = await aiChat(env, system, `CHIFFRES :\n${JSON.stringify(facts, null, 1)}\n\nIDÉES REÇUES :\n${ideas || '(aucune)'}`, INSIGHT_SCHEMA, { temperature: 0.4 }); } catch (err) {
+    console.error('Bilan impossible :', err.message);
+    throw new HttpError(502, 'Le bilan n\'a pas pu être préparé. Réessayez.');
+  }
+  const points = (raw.points || []).slice(0, 8).map((p) => ({ type: ['bravo', 'action', 'idee', 'alerte'].includes(p.type) ? p.type : 'action',
+    texte: String(p.texte || '').slice(0, 600), idee: Number.isInteger(p.idee) && p.idee >= 1 && p.idee <= d.ideas.length ? p.idee : null }));
+  return json({ titre: String(raw.titre || '').slice(0, 200), points, facts });
 }
 
 async function trial(request, env) {
