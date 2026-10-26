@@ -73,6 +73,7 @@ const EN = {
   'Acquise': 'Mastered', 'En apprentissage': 'Being learned', 'Pas encore vue': 'Not yet taught',
   ': soulignée, compte.': ': underlined, counts.', ': en gris, ne compte pas.': ': in grey, does not count.', ': pas soulignée.': ': not underlined.',
   'Remettre les réglages du ministère': 'Restore the ministry settings',
+  'Pour l\'orthographe et la grammaire': 'For spelling and grammar', ', choisissez plutôt l\'onglet « Correction de la langue » (au primaire : selon la Progression des apprentissages).': ', choose the “Language check” tab instead (in elementary: based on the Quebec curriculum).',
   'La Progression des apprentissages s\'applique aux copies en français. Ici, la langue des copies est l\'anglais (mode Avancé → « Langue des copies »).': 'The Quebec curriculum settings apply to papers in French. Here, the papers’ language is English (Advanced mode → “Language of papers”).',
   'Cote selon le pourcentage de fautes (fautes retenues ÷ nombre de mots)': 'Level by error rate (errors counted ÷ number of words)',
   'jusqu\'à': 'up to', 'au-delà': 'above', 'Seuils d\'exemple : remplacez-les par ceux de votre école.': 'Example thresholds: replace them with your school\'s.',

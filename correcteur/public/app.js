@@ -1270,7 +1270,8 @@ async function pageData(url) {
 
 const langSettings = () => (isPda() ? {
   level: 'primaire', categories: Object.keys(CATS),
-  pda: { year: Number($('pda-year').value), notions: PDA_NOTIONS.map((n) => ({ id: n.id, cat: n.cat, label: n.label, state: pdaState(n) })).filter((n) => n.state !== 'ignore') },
+  pda: { year: Number($('pda-year').value), notions: PDA_NOTIONS.map((n) => ({ id: n.id, cat: n.cat, label: n.label, state: pdaState(n) })).filter((n) => n.state !== 'ignore'),
+    ignored: PDA_NOTIONS.filter((n) => pdaState(n) === 'ignore').map((n) => n.label) },
 } : {
   level: $('lang-level').value,
   categories: [...document.querySelectorAll('#lang-cats input:checked')].map((i) => i.value),
@@ -1371,13 +1372,15 @@ function langCard(r) {
   const n = r.pda ? langGrade(r) : counted(errors).length;
   const grey = errors.filter((e) => e.grey).length;
   const gradeEl = h('span', { class: 'grade' });
-  gradeEl.replaceChildren(r.pda ? h('span', {}, r.cote || '—', h('small', {}, ` · ${pdaLine(r, n)}`))
+  // Ligne courte (le nom de l'élève doit rester lisible) ; le nombre de mots est dans le détail de la copie.
+  gradeEl.replaceChildren(r.pda ? h('span', {}, r.cote || '—', h('small', {}, ` · ${r.pct == null ? '' : `${pctText(fmt(Math.round(r.pct * 10) / 10))} · `}${plural(n, 'faute retenue', 'fautes retenues', 'error', 'errors')}`))
     : r.grade == null ? `${n} faute${n > 1 ? 's' : ''}`
     : h('span', {}, fmt(r.grade), h('small', {}, ` / ${fmt(r.total)} · ${n} faute(s)`)));
   return cardShell(r, [h('span'), gradeEl],
     h('div', { class: 'card-body' },
       r.flags.length ? h('div', { class: 'flags' }, r.flags.map((f) => h('div', { textContent: `⚠ ${f}` }))) : null,
       errors.length ? categoryChips(errors) : h('p', { class: 'muted small', style: 'margin:0', textContent: 'Aucune faute relevée.' }),
+      r.pda ? h('p', { class: 'small', style: 'margin:0', textContent: pdaLine(r, n) }) : null,
       r.pda && (grey || r.dup?.length) ? h('p', { class: 'muted small', style: 'margin:0', textContent: [grey ? `${plural(grey, 'faute', 'fautes', 'error', 'errors')} ${L('en gris : notion en apprentissage, ne compte pas', 'in grey: being learned, not counted')}` : '', r.dup?.length ? `${plural(r.dup.length, 'faute répétée, retenue', 'fautes répétées, retenues', 'repeated error, counted', 'repeated errors, counted')} ${L('une seule fois', 'once')}` : ''].filter(Boolean).join(' · ') }) : null,
       r.rereading ? h('p', { class: 'muted small', style: 'margin:0', textContent: 'Relecture en cours : d’autres fautes peuvent s’ajouter…' }) : null,
       h('div', { class: 'card-foot' },
@@ -1545,6 +1548,7 @@ async function printViewer() {
 function setKind(kind) {
   if (state.running) return;
   state.kind = kind;
+  try { localStorage.setItem('ce.kind', kind); } catch { /* ignoré */ } // une prof du primaire retrouve l'onglet de la langue
   $('kind-content').classList.toggle('active', kind === 'content');
   $('kind-lang').classList.toggle('active', kind === 'lang');
   $('kind-content').setAttribute('aria-selected', String(kind === 'content'));
@@ -1943,7 +1947,7 @@ window.addEventListener('beforeunload', (e) => {
 // Le corrigé tapé et le nom de l'évaluation ne sont gardés que jusqu'à la fermeture de l'onglet : assez pour corriger
 // plusieurs groupes de suite, sans laisser le corrigé sur un ordinateur partagé. « Terminer la session » les efface aussi.
 // Le regroupement des pages n'est pas retenu : il repart toujours d'un choix neutre.
-const PREF_IDS = ['total', 'per-student', 'whole', 'deep', 'language', 'lang-level', 'pda-year', 'pda-step', 'pda-once', 'pda-a', 'pda-b', 'pda-c', 'pda-d', 'lang-total', 'lang-per', 'lang-max', 'anon', 'anon-h', 'anon-all', 'out-lang'];
+const PREF_IDS = ['total', 'per-student', 'whole', 'deep', 'language', 'lang-level', 'pda-year', 'pda-once', 'pda-a', 'pda-b', 'pda-c', 'pda-d', 'lang-total', 'lang-per', 'lang-max', 'anon', 'anon-h', 'anon-all', 'out-lang'];
 const TAB_IDS = ['exam', 'rubric'];
 function savePrefs() {
   const prefs = Object.fromEntries(PREF_IDS.map((id) => [id, $(id).type === 'checkbox' ? $(id).checked : $(id).value]));
@@ -1964,6 +1968,9 @@ function loadPrefs() {
   if (Array.isArray(prefs.cats)) document.querySelectorAll('#lang-cats input').forEach((i) => { i.checked = prefs.cats.includes(i.value); });
 }
 $('out-lang').value = lang; // par défaut la langue du site ; le choix de l'enseignant est ensuite retenu
+// Étape selon la date (calendrier scolaire du Québec) : 1re jusqu'à la mi-novembre, 2e jusqu'à février, 3e ensuite.
+// Elle n'est pas mémorisée (absente de PREF_IDS) : elle avance d'elle-même avec l'année scolaire.
+{ const d = new Date(), m = d.getMonth() + 1; $('pda-step').value = m >= 8 && (m < 11 || (m === 11 && d.getDate() <= 15)) ? '1' : m >= 11 || m <= 2 ? '2' : '3'; }
 loadPrefs();
 if ($('per-student').value) applyPerStudent();
 $('anon-opts').hidden = !anonymous();
@@ -2002,6 +2009,7 @@ setUiMode(savedUi === 'adv');
 // ---------- Démarrage ----------
 
 applyMethod();
+try { if (localStorage.getItem('ce.kind') === 'lang') setKind('lang'); } catch { /* ignoré */ }
 startI18n();
 const saved = new URLSearchParams(location.search).get('key') || store.get();
 if (new URLSearchParams(location.search).has('key')) history.replaceState(null, '', location.pathname);

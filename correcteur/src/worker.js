@@ -609,7 +609,9 @@ function readPda(raw) {
     .filter((n) => /^[a-z0-9_]{1,30}$/.test(n?.id) && LANG_CATEGORIES[n.cat] && ['count', 'grey'].includes(n.state))
     .map((n) => ({ id: n.id, cat: n.cat, state: n.state, label: String(n.label || '').slice(0, 160) }));
   if (!(year >= 1 && year <= 6) || !notions.length) throw new HttpError(400, 'Réglages du primaire invalides');
-  return { year, notions };
+  // Notions pas encore vues : nommées à l'IA pour qu'elle ne les range pas ailleurs (ex. l'imparfait en « orthographe d'usage »).
+  const ignored = (Array.isArray(raw.ignored) ? raw.ignored : []).slice(0, 80).map((t) => String(t || '').slice(0, 160)).filter(Boolean);
+  return { year, notions, ignored };
 }
 const countWords = (text) => (String(text || '').match(/[\p{L}\p{N}]+(?:-[\p{L}\p{N}]+)*/gu) || []).length; // comme public/pda.js
 
@@ -798,8 +800,9 @@ Ta mission :
 2. Relève UNIQUEMENT les fautes qui relèvent d'une des notions suivantes, prévues à cette année par la Progression des apprentissages du ministère :
 ${pda.notions.map((n) => `   - ${n.id} : ${n.label}`).join('\n')}
    Si une faute relève de plusieurs notions, choisis toujours la plus simple, celle qu'on apprend le plus tôt (ex. : « les poisson » → accord du déterminant avec le nom, pas l'accord dans tout le groupe du nom).
-   Pour « o_mots », ne relève que des mots courants qu'un élève de ${year} doit savoir écrire ; un mot rare ou difficile mal écrit n'est pas une faute à son âge.
+   Pour « o_mots » (orthographe d'usage) : relève TOUT mot courant mal orthographié (lettre manquante, en trop ou inversée, accent oublié, mot écrit au son, trait d'union oublié : « dor » → « dort », « glassé » → « glacée », « au dessus » → « au-dessus », « a » → « à »). C'est la faute la plus importante à repérer au primaire : relis chaque mot un par un. Ignore seulement un mot rare ou savant qu'un élève de ${year} n'a pas à connaître.
    Toute faute qui ne relève d'aucune de ces notions doit être IGNORÉE (ne la renvoie pas). Pas de choix de style ; si un mot est illisible, ignore-le.
+${pda.ignored?.length ? `   Notions PAS ENCORE VUES à cette année : ne relève JAMAIS une faute qui en relève, même dans « o_mots » : ${pda.ignored.join(' ; ')}.\n` : ''}
    Une lettre bien formée n'est jamais une faute. Si une lettre est ambiguë (q ou d, accent douteux, lettre doublée ou non), relève la faute seulement si elle est probable, avec lecture_douteuse = true. Ignore les marques de l'enseignant (crochets, X, soulignés, encre de couleur).
 3. Pour CHAQUE faute trouvée, déduis ses coordonnées (bounding box) sur l'image en encadrant le MOT COMPLET ou l'EXPRESSION COMPLÈTE qui contient la faute.
    Les coordonnées 'box' doivent être un tableau de 4 nombres [ymin, xmin, ymax, xmax] normalisés entre 0 et 1000.
