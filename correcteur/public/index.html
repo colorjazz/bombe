@@ -29,15 +29,16 @@
         <img class="hero-logo" src="logo.png" alt="Brûle la pile" width="132" height="132">
         <span class="eyebrow">Fait par un prof, pour des profs · Primaire, secondaire et cégep</span>
         <h1>Brûle la pile fait <em>le premier jet</em>. Vous avez le dernier mot.</h1>
-        <p class="lead">Photographiez ou numérisez les copies, même manuscrites, et ajoutez votre corrigé : chaque question reçoit une note proposée et son explication, et les fautes sont surlignées sur la copie. Vous relisez, ajustez et exportez.</p>
-        <p class="prim-link"><a href="#primaire">🍎 Au primaire ? Les fautes comptées selon la Progression des apprentissages ↓</a></p>
+        <p class="lead" id="lead">Photographiez ou numérisez les copies, même manuscrites, et ajoutez votre corrigé : chaque question reçoit une note proposée et son explication, et les fautes sont surlignées sur la copie. Vous relisez, ajustez et exportez.</p>
+        <div class="lvl-pick" role="group" aria-label="Vous enseignez au :"><span>Vous enseignez au :</span><div class="lvl-btns"><button type="button" data-niveau="primaire" aria-pressed="false">Primaire</button><button type="button" data-niveau="secondaire" aria-pressed="false">Secondaire</button><button type="button" data-niveau="cegep" aria-pressed="false">Cégep</button></div></div>
         <div class="cta">
           <a class="btn primary big" href="app.html">Essayer avec 30 pages gratuites</a>
           <a class="btn ghost big" href="#how">Voir comment ça marche</a>
         </div>
         <p class="muted small">Sans compte · Sans carte de crédit · Aucune copie conservée · Pensé pour la Loi 25</p>
       </div>
-      <figure class="demo">
+      <figure class="demo demo-prim" hidden><img src="primaire-fr.jpg" alt="Texte fictif d’une élève de 3e année, annoté par Brûle la pile : fautes surlignées, cote et pourcentage de fautes" width="1196" height="548"><figcaption>Texte fictif d’une élève de 3e année ; annotations produites par Brûle la pile.</figcaption></figure>
+      <figure class="demo demo-main">
         <video id="demo" autoplay muted loop playsinline preload="metadata" poster="demo-fr.jpg" aria-label="Démonstration : une copie manuscrite corrigée par Brûle la pile, avec la note et l’explication de chaque question"><source src="demo-fr.webm" type="video/webm"><source src="demo-fr.mp4" type="video/mp4"></video>
         <figcaption>Copie fictive ; notes, marques et explications produites par Brûle la pile.</figcaption>
       </figure>
@@ -116,6 +117,30 @@
     </section>
   </main>
   <footer><div class="wrap"><span>© 2026 Brûle la pile</span><span><a href="guide.html">Guide</a> · <a href="#idees">Proposer une idée</a> · <a href="confidentialite.html">Confidentialité</a> · <a href="conditions.html">Conditions</a> · <a href="mailto:bonjour@brulelapile.ca">Nous joindre</a></span></div></footer>
+<script>
+// Niveau d'enseignement choisi à l'entrée (primaire, secondaire, cégep) : il adapte le texte d'accueil et l'exemple, et
+// l'appli s'ouvre déjà réglée (app.html?niveau=…). Retenu sur cet appareil ; aussi par lien direct (/primaire, ?niveau=).
+(() => {
+  const LEADS = {"primaire": "Photographiez les textes de vos élèves, même manuscrits : Brûle la pile surligne les fautes selon la Progression des apprentissages de leur année, calcule le pourcentage de fautes et propose la cote. Vous relisez et gardez le dernier mot.", "secondaire": "Photographiez ou numérisez les copies, même manuscrites : chaque question reçoit une note proposée selon votre corrigé ou votre grille, et les fautes sont surlignées selon la Progression des apprentissages du secondaire. Vous relisez, ajustez et exportez.", "cegep": "Dissertations, analyses, examens à développement : Brûle la pile applique votre grille critère par critère, justifie chaque note et surligne les fautes de français. Vous relisez, ajustez et exportez."};
+  const pick = (n, save) => {
+    if (!LEADS[n]) return;
+    document.body.dataset.niveau = n;
+    document.querySelectorAll('.lvl-btns button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.niveau === n)));
+    document.getElementById('lead').textContent = LEADS[n];
+    document.querySelectorAll('a[href^="app.html"]').forEach((a) => {
+      const [base, hash] = a.getAttribute('href').split('#');
+      a.setAttribute('href', `${base.split('?')[0]}?niveau=${n}${hash ? `#${hash}` : ''}`);
+    });
+    const prim = document.querySelector('.demo-prim'), main = document.querySelector('.demo-main'), sec = document.getElementById('primaire');
+    if (prim) { prim.hidden = n !== 'primaire'; main.hidden = n === 'primaire'; }
+    if (sec) sec.hidden = n !== 'primaire';
+    if (save) try { localStorage.setItem('ce.niveau', n); } catch {}
+  };
+  document.querySelectorAll('.lvl-btns button').forEach((b) => b.addEventListener('click', () => pick(b.dataset.niveau, true)));
+  let n = new URLSearchParams(location.search).get('niveau');
+  if (n) pick(n, true); else { try { n = localStorage.getItem('ce.niveau'); } catch {} if (n) pick(n, false); }
+})();
+</script>
 <script>
 // Mouvement réduit demandé : la démo ne joue pas toute seule ; on peut la lancer au besoin.
 if (matchMedia('(prefers-reduced-motion: reduce)').matches) { const v = document.getElementById('demo'); v.removeAttribute('autoplay'); v.pause(); v.controls = true; }

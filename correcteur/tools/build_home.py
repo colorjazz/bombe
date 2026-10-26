@@ -63,7 +63,10 @@ T = {
        ('Que deviennent les copies de mes élèves ?', 'Nous ne conservons aucune copie, aucune note et aucun nom d’élève. Pour la correction, les copies sont envoyées de façon chiffrée à Google (API Gemini, offre payante) : Google ne s’en sert pas pour entraîner ses modèles et ne les garde que brièvement, pour détecter les abus. Voir notre <a href="confidentialite.html">politique de confidentialité</a>.'),
        ('Dois-je créer un compte ?', 'Non. Vous recevez une clé d’accès qui contient votre solde de pages. Notez-la pour l’utiliser sur un autre appareil ou recharger votre compte.')],
   end_h='Votre prochaine pile de copies, en quelques minutes', end_sub='30 pages gratuites, sans carte de crédit.', end_cta='Essayer maintenant',
-  prim_link='🍎 Au primaire ? Les fautes comptées selon la Progression des apprentissages ↓',
+  lvl_q='Vous enseignez au :', lvls=[('primaire', 'Primaire'), ('secondaire', 'Secondaire'), ('cegep', 'Cégep')],
+  lead_by={'primaire': "Photographiez les textes de vos élèves, même manuscrits : Brûle la pile surligne les fautes selon la Progression des apprentissages de leur année, calcule le pourcentage de fautes et propose la cote. Vous relisez et gardez le dernier mot.",
+           'secondaire': "Photographiez ou numérisez les copies, même manuscrites : chaque question reçoit une note proposée selon votre corrigé ou votre grille, et les fautes sont surlignées selon la Progression des apprentissages du secondaire. Vous relisez, ajustez et exportez.",
+           'cegep': "Dissertations, analyses, examens à développement : Brûle la pile applique votre grille critère par critère, justifie chaque note et surligne les fautes de français. Vous relisez, ajustez et exportez."},
   prim=dict(
     h='Au primaire : seules les fautes vues en classe comptent',
     sub="Choisissez l’année de vos élèves : Brûle la pile surligne les fautes sur le texte manuscrit et ne compte que les notions prévues à cette année par la Progression des apprentissages.",
@@ -86,6 +89,10 @@ T = {
   og_desc='Burn the Pile suggests marks and feedback and highlights language errors. You have the final say. 30 free pages.',
   made='Made in Canada', flag=CA_FLAG, nav_prices='Pricing', nav_guide='Guide', guide_href='guide-en.html', nav_key='I already have a key', nav_try='Try for free', anchor_prices='pricing',
   eyebrow='Made by a teacher, for teachers · Elementary, high school, CEGEP and college',
+  lvl_q='You teach:', lvls=[('primaire', 'Elementary'), ('secondaire', 'High school'), ('cegep', 'College')],
+  lead_by={'primaire': 'Photograph your students’ writing, even handwritten: Burn the Pile highlights the errors with explanations a child understands, counts the words and the error rate. You review and keep the final say.',
+           'secondaire': 'Photograph or scan the papers, even handwritten: every question gets a suggested mark based on your answer key or rubric, and errors are highlighted on the paper. You review, adjust and export.',
+           'cegep': 'Essays, analyses, long-answer exams: Burn the Pile applies your rubric criterion by criterion, justifies every mark and highlights writing errors. You review, adjust and export.'},
   h1='Burn the Pile does <em>the first pass</em>. You make the call.',
   lead='Photograph or scan the papers, even handwritten, and add your answer key: every question gets a suggested mark and its explanation, and errors are highlighted on the paper. You review, adjust and export.',
   cta1='Try it with 30 free pages', cta2='See how it works',
@@ -179,15 +186,16 @@ def page(L, d):
         <img class="hero-logo" src="logo.png" alt="{d['brand']}" width="132" height="132">
         <span class="eyebrow">{d['eyebrow']}</span>
         <h1>{d['h1']}</h1>
-        <p class="lead">{d['lead']}</p>
-        {f'<p class="prim-link"><a href="#primaire">{d["prim_link"]}</a></p>' if d.get('prim_link') else ''}
+        <p class="lead" id="lead">{d['lead']}</p>
+        <div class="lvl-pick" role="group" aria-label="{d['lvl_q']}"><span>{d['lvl_q']}</span><div class="lvl-btns">{''.join(f'<button type="button" data-niveau="{k}" aria-pressed="false">{t}</button>' for k, t in d['lvls'])}</div></div>
         <div class="cta">
           <a class="btn primary big" href="app.html">{d['cta1']}</a>
           <a class="btn ghost big" href="#how">{d['cta2']}</a>
         </div>
         <p class="muted small">{d['reassure']}</p>
       </div>
-      <figure class="demo">
+      {f'<figure class="demo demo-prim" hidden><img src="{d["prim"]["img"]}" alt="{d["prim"]["alt"]}" width="1196" height="548"><figcaption>{d["prim"]["note"]}</figcaption></figure>' if d.get('prim') else ''}
+      <figure class="demo demo-main">
         <video id="demo" autoplay muted loop playsinline preload="metadata" poster="{d['demo']}.jpg" aria-label="{d['demo_label']}"><source src="{d['demo']}.webm" type="video/webm"><source src="{d['demo']}.mp4" type="video/mp4"></video>
         <figcaption>{d['demo_note']}</figcaption>
       </figure>
@@ -259,6 +267,30 @@ def page(L, d):
     </section>
   </main>
   <footer><div class="wrap"><span>© 2026 {d['brand']}</span><span><a href="{d['guide_href']}">{d['nav_guide']}</a> · <a href="#idees">{d['idea_link']}</a> · <a href="{d['privacy_href']}">{d['privacy']}</a> · <a href="{d['terms_href']}">{d['terms']}</a> · <a href="mailto:{d['mail']}">{d['contact']}</a></span></div></footer>
+<script>
+// Niveau d'enseignement choisi à l'entrée (primaire, secondaire, cégep) : il adapte le texte d'accueil et l'exemple, et
+// l'appli s'ouvre déjà réglée (app.html?niveau=…). Retenu sur cet appareil ; aussi par lien direct (/primaire, ?niveau=).
+(() => {{
+  const LEADS = {json.dumps(d['lead_by'], ensure_ascii=False)};
+  const pick = (n, save) => {{
+    if (!LEADS[n]) return;
+    document.body.dataset.niveau = n;
+    document.querySelectorAll('.lvl-btns button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.niveau === n)));
+    document.getElementById('lead').textContent = LEADS[n];
+    document.querySelectorAll('a[href^="app.html"]').forEach((a) => {{
+      const [base, hash] = a.getAttribute('href').split('#');
+      a.setAttribute('href', `${{base.split('?')[0]}}?niveau=${{n}}${{hash ? `#${{hash}}` : ''}}`);
+    }});
+    const prim = document.querySelector('.demo-prim'), main = document.querySelector('.demo-main'), sec = document.getElementById('primaire');
+    if (prim) {{ prim.hidden = n !== 'primaire'; main.hidden = n === 'primaire'; }}
+    if (sec) sec.hidden = n !== 'primaire';
+    if (save) try {{ localStorage.setItem('ce.niveau', n); }} catch {{}}
+  }};
+  document.querySelectorAll('.lvl-btns button').forEach((b) => b.addEventListener('click', () => pick(b.dataset.niveau, true)));
+  let n = new URLSearchParams(location.search).get('niveau');
+  if (n) pick(n, true); else {{ try {{ n = localStorage.getItem('ce.niveau'); }} catch {{}} if (n) pick(n, false); }}
+}})();
+</script>
 <script>
 // Mouvement réduit demandé : la démo ne joue pas toute seule ; on peut la lancer au besoin.
 if (matchMedia('(prefers-reduced-motion: reduce)').matches) {{ const v = document.getElementById('demo'); v.removeAttribute('autoplay'); v.pause(); v.controls = true; }}

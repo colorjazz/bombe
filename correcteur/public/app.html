@@ -55,6 +55,10 @@
 
   <!-- Application -->
   <main id="app" class="wrap layout" hidden>
+    <div class="levelbar" role="group" aria-label="Vous enseignez au">
+      <span>Vous enseignez au :</span>
+      <div class="lvl-seg"><button type="button" data-niveau="primaire">Primaire</button><button type="button" data-niveau="secondaire">Secondaire</button><button type="button" data-niveau="cegep">Cégep</button></div>
+    </div>
     <div class="kindbar">
       <div class="kind" role="tablist" data-active="content">
         <span class="kind-pill" aria-hidden="true"></span>
@@ -91,7 +95,7 @@
       </label>
       <div id="lang-settings" class="stack" hidden>
         <p class="muted small" style="margin:0">L'IA relève les fautes de français sur chaque page et les surligne directement sur la copie, avec la correction et la règle. 1 page de copie = 1 page décomptée.</p>
-        <label class="field">Niveau des élèves
+        <label class="field" hidden>Niveau des élèves <!-- réglé par « Vous enseignez au » en haut de l'appli -->
           <select id="lang-level">
             <option value="primaire">Primaire (selon la Progression des apprentissages)</option>
             <option value="secondaire" selected>Secondaire (selon la Progression des apprentissages)</option>

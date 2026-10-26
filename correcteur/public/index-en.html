@@ -29,15 +29,16 @@
         <img class="hero-logo" src="logo.png" alt="Burn the Pile" width="132" height="132">
         <span class="eyebrow">Made by a teacher, for teachers · Elementary, high school, CEGEP and college</span>
         <h1>Burn the Pile does <em>the first pass</em>. You make the call.</h1>
-        <p class="lead">Photograph or scan the papers, even handwritten, and add your answer key: every question gets a suggested mark and its explanation, and errors are highlighted on the paper. You review, adjust and export.</p>
-        
+        <p class="lead" id="lead">Photograph or scan the papers, even handwritten, and add your answer key: every question gets a suggested mark and its explanation, and errors are highlighted on the paper. You review, adjust and export.</p>
+        <div class="lvl-pick" role="group" aria-label="You teach:"><span>You teach:</span><div class="lvl-btns"><button type="button" data-niveau="primaire" aria-pressed="false">Elementary</button><button type="button" data-niveau="secondaire" aria-pressed="false">High school</button><button type="button" data-niveau="cegep" aria-pressed="false">College</button></div></div>
         <div class="cta">
           <a class="btn primary big" href="app.html">Try it with 30 free pages</a>
           <a class="btn ghost big" href="#how">See how it works</a>
         </div>
         <p class="muted small">No account · No credit card · No student work stored · Privacy-first</p>
       </div>
-      <figure class="demo">
+      
+      <figure class="demo demo-main">
         <video id="demo" autoplay muted loop playsinline preload="metadata" poster="demo-en.jpg" aria-label="Demo: a handwritten paper marked by Burn the Pile, with the mark and explanation for each question"><source src="demo-en.webm" type="video/webm"><source src="demo-en.mp4" type="video/mp4"></video>
         <figcaption>Fictional paper; marks, notes and explanations produced by Burn the Pile.</figcaption>
       </figure>
@@ -109,6 +110,30 @@
     </section>
   </main>
   <footer><div class="wrap"><span>© 2026 Burn the Pile</span><span><a href="guide-en.html">Guide</a> · <a href="#idees">Suggest an idea</a> · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a> · <a href="mailto:hello@burnthepile.com">Contact us</a></span></div></footer>
+<script>
+// Niveau d'enseignement choisi à l'entrée (primaire, secondaire, cégep) : il adapte le texte d'accueil et l'exemple, et
+// l'appli s'ouvre déjà réglée (app.html?niveau=…). Retenu sur cet appareil ; aussi par lien direct (/primaire, ?niveau=).
+(() => {
+  const LEADS = {"primaire": "Photograph your students’ writing, even handwritten: Burn the Pile highlights the errors with explanations a child understands, counts the words and the error rate. You review and keep the final say.", "secondaire": "Photograph or scan the papers, even handwritten: every question gets a suggested mark based on your answer key or rubric, and errors are highlighted on the paper. You review, adjust and export.", "cegep": "Essays, analyses, long-answer exams: Burn the Pile applies your rubric criterion by criterion, justifies every mark and highlights writing errors. You review, adjust and export."};
+  const pick = (n, save) => {
+    if (!LEADS[n]) return;
+    document.body.dataset.niveau = n;
+    document.querySelectorAll('.lvl-btns button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.niveau === n)));
+    document.getElementById('lead').textContent = LEADS[n];
+    document.querySelectorAll('a[href^="app.html"]').forEach((a) => {
+      const [base, hash] = a.getAttribute('href').split('#');
+      a.setAttribute('href', `${base.split('?')[0]}?niveau=${n}${hash ? `#${hash}` : ''}`);
+    });
+    const prim = document.querySelector('.demo-prim'), main = document.querySelector('.demo-main'), sec = document.getElementById('primaire');
+    if (prim) { prim.hidden = n !== 'primaire'; main.hidden = n === 'primaire'; }
+    if (sec) sec.hidden = n !== 'primaire';
+    if (save) try { localStorage.setItem('ce.niveau', n); } catch {}
+  };
+  document.querySelectorAll('.lvl-btns button').forEach((b) => b.addEventListener('click', () => pick(b.dataset.niveau, true)));
+  let n = new URLSearchParams(location.search).get('niveau');
+  if (n) pick(n, true); else { try { n = localStorage.getItem('ce.niveau'); } catch {} if (n) pick(n, false); }
+})();
+</script>
 <script>
 // Mouvement réduit demandé : la démo ne joue pas toute seule ; on peut la lancer au besoin.
 if (matchMedia('(prefers-reduced-motion: reduce)').matches) { const v = document.getElementById('demo'); v.removeAttribute('autoplay'); v.pause(); v.controls = true; }

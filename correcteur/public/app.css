@@ -459,3 +459,10 @@ body.light .card-head input.name:placeholder-shown { border: 1px dashed var(--li
   .pda-row select { width: 100%; }
   .pda-group > summary::after { margin-left: 0; }
 }
+
+/* « Vous enseignez au » : niveau d'enseignement, en haut de l'appli */
+.levelbar { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: .4rem .7rem; font-size: .88rem; font-weight: 600; color: var(--muted); }
+.lvl-seg { display: inline-flex; background: #fff; border: 1px solid var(--line-2); border-radius: 999px; padding: 3px; gap: 2px; }
+.lvl-seg button { font: inherit; font-size: .85rem; font-weight: 700; border: 0; background: none; color: var(--muted); padding: .35rem .9rem; border-radius: 999px; cursor: pointer; }
+.lvl-seg button[aria-pressed="true"] { background: var(--primary); color: #fff; }
+body.light .layout > .levelbar { grid-column: 1 / -1; }

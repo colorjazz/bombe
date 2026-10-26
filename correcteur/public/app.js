@@ -1306,9 +1306,10 @@ function renderPda() {
   $('pda-en-note').hidden = on || lang === 'en' || !pdaLevel(); // site français, copies en anglais
   // Exemples à l'image d'une classe du primaire (groupe « 4e B » plutôt que « 541 »).
   // Primaire (avec ou sans la PDA, qui ne vise que les copies en français) : exemples d'une classe du primaire.
-  const year = Number($('pda-year').value), prim = state.kind === 'lang' && $('lang-level').value === 'primaire';
-  $('exam').placeholder = tr(prim ? 'Ex. : Écriture — Raconte ta fin de semaine' : 'Ex. : Examen — Révolution tranquille');
-  $('group').placeholder = !prim ? tr('Ex. : 541') : L(`Ex. : ${year}${year === 1 ? 're' : 'e'} B`, on ? `E.g., Grade ${year}` : 'E.g., Grade 4');
+  // Exemples à l'image du niveau d'enseignement (« Vous enseignez au »), dans les deux onglets.
+  const year = Number($('pda-year').value), lvl = $('lang-level').value, prim = lvl === 'primaire';
+  $('exam').placeholder = tr(prim ? 'Ex. : Écriture — Raconte ta fin de semaine' : lvl === 'cegep' ? 'Ex. : Dissertation critique — Philosophie' : 'Ex. : Examen — Révolution tranquille');
+  $('group').placeholder = lvl === 'cegep' ? tr('Ex. : Groupe 01') : !prim ? tr('Ex. : 541') : L(`Ex. : ${year}${year === 1 ? 're' : 'e'} B`, on ? `E.g., Grade ${year}` : 'E.g., Grade 4');
   $('lang-cats-field').hidden = on;
   $('lang-scoring-row').hidden = on; // au primaire, la cote vient du pourcentage de fautes
   if (!on) return;
@@ -2023,6 +2024,26 @@ setUiMode(savedUi === 'adv');
 
 applyMethod();
 try { if (localStorage.getItem('ce.kind') === 'lang') setKind('lang'); } catch { /* ignoré */ }
+
+// Niveau d'enseignement (« Vous enseignez au ») : choisi sur l'accueil (app.html?niveau=…) ou ici, retenu sur l'appareil.
+// Il règle le niveau de la correction de la langue ; au primaire, l'appli s'ouvre sur la correction de la langue.
+function setNiveau(n, fromChoice) {
+  if (!['primaire', 'secondaire', 'cegep'].includes(n)) return;
+  try { localStorage.setItem('ce.niveau', n); } catch { /* ignoré */ }
+  document.querySelectorAll('.lvl-seg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.niveau === n)));
+  $('lang-level').value = n;
+  if (fromChoice && n === 'primaire') setKind('lang');
+  savePrefs(); renderPda(); renderSummary();
+}
+document.querySelectorAll('.lvl-seg button').forEach((b) => b.addEventListener('click', () => setNiveau(b.dataset.niveau, true)));
+{
+  const asked = new URLSearchParams(location.search).get('niveau');
+  let known = null;
+  try { known = localStorage.getItem('ce.niveau'); } catch { /* ignoré */ }
+  if (asked && asked !== known) setNiveau(asked, true); // arrivée depuis l'accueil avec un niveau : réglages de ce niveau
+  else setNiveau(known || $('lang-level').value, false);
+  if (asked) { const q = new URLSearchParams(location.search); q.delete('niveau'); history.replaceState(null, '', location.pathname + (q.size ? `?${q}` : '') + location.hash); } // la clé (?key=) reste
+}
 startI18n();
 const saved = new URLSearchParams(location.search).get('key') || store.get();
 if (new URLSearchParams(location.search).has('key')) history.replaceState(null, '', location.pathname);
