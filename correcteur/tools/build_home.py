@@ -22,7 +22,7 @@ T = {
   desc="Photographiez ou numérisez vos copies, même manuscrites : Brûle la pile propose une note et une explication pour chaque question, et surligne les fautes. Vous avez le dernier mot. 30 pages gratuites, sans compte.",
   og_title='Brûle la pile fait le premier jet. Vous avez le dernier mot.',
   og_desc="Brûle la pile propose la note et la rétroaction, et surligne les fautes de français. Vous gardez le dernier mot. 30 pages gratuites.",
-  made='Fait au Québec', flag=QC_FLAG, nav_prices='Tarifs', nav_guide='Guide', guide_href='guide.html', nav_key='J’ai déjà une clé', nav_try='Essayer gratuitement', anchor_prices='tarifs',
+  made='Fait au Québec', flag=QC_FLAG, nav_prices='Tarifs', nav_guide='Guide', guide_href='guide.html', nav_key='J’ai déjà une clé', nav_key_short='J’ai une clé', key_line='Vous avez déjà une clé d’accès ? Entrez-la ici →', nav_try='Essayer gratuitement', nav_try_short='Essayer', anchor_prices='tarifs',
   eyebrow='Fait par un prof, pour des profs · Primaire, secondaire et cégep',
   h1='Brûle la pile fait <em>le premier jet</em>. Vous avez le dernier mot.',
   lead="Photographiez ou numérisez les copies, même manuscrites, et ajoutez votre corrigé : chaque question reçoit une note proposée et son explication, et les fautes sont surlignées sur la copie. Vous relisez, ajustez et exportez.",
@@ -87,7 +87,7 @@ T = {
   desc='Photograph or scan student work, even handwritten: Burn the Pile suggests a mark and an explanation for every question and highlights errors. You make the call. 30 free pages, no account.',
   og_title='Burn the Pile does the first pass. You make the call.',
   og_desc='Burn the Pile suggests marks and feedback and highlights language errors. You have the final say. 30 free pages.',
-  made='Made in Canada', flag=CA_FLAG, nav_prices='Pricing', nav_guide='Guide', guide_href='guide-en.html', nav_key='I already have a key', nav_try='Try for free', anchor_prices='pricing',
+  made='Made in Canada', flag=CA_FLAG, nav_prices='Pricing', nav_guide='Guide', guide_href='guide-en.html', nav_key='I already have a key', nav_key_short='I have a key', key_line='Already have an access key? Enter it here →', nav_try='Try for free', nav_try_short='Try it', anchor_prices='pricing',
   eyebrow='Made by a teacher, for teachers · Elementary, high school, CEGEP and college',
   lvl_q='You teach:', lvls=[('primaire', 'Elementary'), ('secondaire', 'High school'), ('cegep', 'College')],
   lead_by={'primaire': 'Photograph your students’ writing, even handwritten: Burn the Pile highlights the errors with explanations a child understands, counts the words and the error rate. You review and keep the final say.',
@@ -179,7 +179,7 @@ def page(L, d):
   <meta property="og:url" content="{d['site']}/">
 </head>
 <body>
-  <header class="topbar"><div class="wrap"><a class="brand" href="{d['file']}"><img class="logo" src="logo-96.png" alt="" width="40" height="40"><strong>{d['brand']}</strong></a><span id="made-ca" class="made-ca" hidden>{d['flag']}{d['made']}</span><div class="top-actions">{sw}<a class="btn ghost nav-x" href="#{d['anchor_prices']}">{d['nav_prices']}</a><a class="btn ghost nav-x" href="{d['guide_href']}">{d['nav_guide']}</a><a class="btn ghost nav-x" href="app.html#cle">{d['nav_key']}</a><a class="btn primary" href="app.html">{d['nav_try']}</a></div></div></header>
+  <header class="topbar"><div class="wrap"><a class="brand" href="{d['file']}"><img class="logo" src="logo-96.png" alt="" width="40" height="40"><strong>{d['brand']}</strong></a><span id="made-ca" class="made-ca" hidden>{d['flag']}{d['made']}</span><div class="top-actions">{sw}<a class="btn ghost nav-x" href="#{d['anchor_prices']}">{d['nav_prices']}</a><a class="btn ghost nav-x" href="{d['guide_href']}">{d['nav_guide']}</a><a class="btn ghost nav-key" href="app.html#cle"><span class="k-long">{d['nav_key']}</span><span class="k-short">{d['nav_key_short']}</span></a><a class="btn primary nav-key" href="app.html"><span class="k-long">{d['nav_try']}</span><span class="k-short">{d['nav_try_short']}</span></a></div></div></header>
   <main class="wrap">
     <section class="hero">
       <div>
@@ -192,6 +192,7 @@ def page(L, d):
           <a class="btn primary big" href="app.html">{d['cta1']}</a>
           <a class="btn ghost big" href="#how">{d['cta2']}</a>
         </div>
+        <p class="key-line"><a href="app.html#cle">{d['key_line']}</a></p>
         <p class="muted small">{d['reassure']}</p>
       </div>
       {f'<figure class="demo demo-prim" hidden><img src="{d["prim"]["img"]}" alt="{d["prim"]["alt"]}" width="1196" height="548"><figcaption>{d["prim"]["note"]}</figcaption></figure>' if d.get('prim') else ''}

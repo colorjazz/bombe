@@ -130,3 +130,21 @@ footer { background: var(--bg); }
 .lvl-btns button[aria-pressed="true"] { background: var(--primary); border-color: var(--primary); color: #fff; }
 .demo-prim img { width: 100%; height: auto; display: block; border-radius: 16px; border: 1px solid var(--line); box-shadow: 0 18px 40px -24px rgba(30, 36, 51, .35); }
 .demo-prim figcaption { font-size: .78rem; color: var(--faint); margin-top: .45rem; text-align: center; }
+
+/* « J'ai une clé » : toujours visible, libellé court sur téléphone ; lien sous le bouton d'essai */
+.nav-key .k-short { display: none; }
+@media (max-width: 720px) {
+  .nav-key .k-long { display: none; }
+  .nav-key .k-short { display: inline; }
+  .topbar .nav-key { padding: .55rem .75rem; font-size: .85rem; }
+}
+.key-line { margin: .7rem 0 .2rem; font-size: .92rem; font-weight: 600; }
+.key-line a { text-decoration: none; }
+.key-line a:hover { text-decoration: underline; }
+/* Téléphone : « Fait au Québec » réduit à son drapeau, pour que l'en-tête tienne sur une ligne. */
+@media (max-width: 640px) {
+  .made-ca { font-size: 0; gap: 0; padding: .3rem .45rem; margin-left: .4rem; }
+  .made-ca .flag { width: 22px; height: 11px; }
+  .made-ca .flag.qc { width: 21px; height: 14px; }
+}
+@media (max-width: 430px) { .made-ca { display: none !important; } } /* téléphone étroit : la place va aux boutons « J'ai une clé » et « Essayer » */
