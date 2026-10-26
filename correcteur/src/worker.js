@@ -624,7 +624,7 @@ const inlineImage = (dataUrl) => {
 // ensuite à /api/language-reread une relecture qui connaît cette liste et cherche seulement les fautes oubliées
 // (repérage ≈ 73 % en une lecture, ≈ 88 % avec la relecture ; deux lectures indépendantes en parallèle : ≈ 75 %).
 const REREAD = {
-  fr: (list) => `\n\nRELECTURE : une première lecture a déjà relevé ces fautes :\n${list}\nRelis maintenant la copie mot à mot et relève UNIQUEMENT les fautes OUBLIÉES, en particulier : accord du verbe avec un sujet éloigné ou inversé, accord du participe passé, accord dans le groupe du nom, négation incomplète (« ne » absent), majuscules (noms propres, début de phrase), homophones. Ne répète aucune faute de la liste. Mêmes règles : aucune faute sur une lettre bien formée. Si tu n'en trouves pas d'autre, renvoie [].`,
+  fr: (list) => `\n\nRELECTURE : une première lecture a déjà relevé ces fautes :\n${list}\nRelis maintenant la copie mot à mot et relève UNIQUEMENT les fautes OUBLIÉES, en particulier : accord du verbe avec un sujet éloigné ou inversé, accord du participe passé, accord dans le groupe du nom, négation incomplète (« ne » absent), majuscules (noms propres, début de phrase), homophones, lettres manquantes, virgules oubliées après un organisateur ou un complément en début de phrase, phrases incomplètes ou sujet répété (seulement pour les catégories demandées). Ne répète aucune faute de la liste. Mêmes règles : aucune faute sur une lettre bien formée. Si tu n'en trouves pas d'autre, renvoie [].`,
   en: (list) => `\n\nSECOND READING: a first reading already found these errors:\n${list}\nNow reread the paper word by word and report ONLY the MISSED errors, especially: subject-verb agreement with a distant or inverted subject, pronoun agreement, capitalization (proper nouns, sentence start), homophones. Do not repeat any error from the list. Same rules: a well-formed letter is never an error. If you find no other error, return [].`,
 };
 const REREAD_MS = 30 * 60 * 1000; // la relecture d'une page analysée reste possible 30 minutes (gratuite : déjà décomptée)
@@ -765,6 +765,27 @@ function cleanBox(box, maxHeight = 400) {
   return y1 > y0 && x1 > x0 && y1 - y0 <= maxHeight ? [y0, x0, y1, x1] : null;
 }
 
+// Vérification systématique, catégorie par catégorie : sans elle, l'IA relevait surtout les accords et oubliait la
+// ponctuation, les phrases mal construites et les lettres manquantes (copie réelle de secondaire 3-5 : 0 sur 5).
+const CHECKS = {
+  orthographe: "orthographe : chaque mot, lettre par lettre (lettre manquante ou en trop : « moin » → « moins » ; accents ; homophones comme a/à, ou/où, ce/se, leur/leurs ; majuscule des noms propres)",
+  accord: 'accords : déterminant, nom et adjectif ; verbe avec son sujet, même éloigné ; participe passé ; adjectif attribut',
+  conjugaison: 'conjugaison : terminaisons, auxiliaires, infinitif ou participe (-er / -é)',
+  ponctuation: "ponctuation : virgule après un complément de phrase ou un organisateur placé en début de phrase (« Par exemple, », « En effet, », « Lorsque…, ») ; virgule devant « mais » ; point à la fin de chaque phrase et majuscule au début de la suivante",
+  syntaxe: "syntaxe : phrase sans verbe principal (phrase incomplète) ; sujet repris inutilement par un pronom (« un élève qui termine tard il risque » → « un élève qui termine tard risque ») ; « des » devant un adjectif suivi du nom (« des mauvais résultats » → « de mauvais résultats ») ; préposition fautive ; négation incomplète",
+  vocabulaire: 'vocabulaire : mot impropre, anglicisme, registre familier',
+};
+const CHECKS_EN = {
+  orthographe: 'spelling: every word, letter by letter (missing or extra letters, homophones such as their/there, its/it’s, capital letters for proper nouns)',
+  accord: 'agreement: subject-verb (even with a distant subject), pronoun-antecedent, singular/plural',
+  conjugaison: 'verb forms: endings, tenses, irregular past forms',
+  ponctuation: 'punctuation: comma after an introductory word or phrase, comma before a coordinating conjunction joining two clauses, end punctuation and capital letter at the start of each sentence',
+  syntaxe: 'sentence structure: fragments without a main verb, run-on sentences and comma splices, repeated subjects, wrong prepositions',
+  vocabulaire: 'word choice: wrong word, informal register',
+};
+const checklist = (cats) => `   Relis la copie phrase par phrase, puis mot par mot, et vérifie systématiquement chaque catégorie demandée :\n${cats.map((c) => `   - ${CHECKS[c]} ;`).join('\n')}\n   Pour une faute qui touche une phrase entière (phrase incomplète, sujet répété, virgule manquante), encadre les mots où elle se voit le mieux et donne la phrase corrigée.`;
+const checklistEn = (cats) => `   Read the paper sentence by sentence, then word by word, and systematically check each requested category:\n${cats.map((c) => `   - ${CHECKS_EN[c]};`).join('\n')}\n   For an error that affects a whole sentence (fragment, repeated subject, missing comma), box the words where it shows best and give the corrected wording.`;
+
 // Consigne calquée sur la version Gemini de l'enseignant, dont le surlignage est précis.
 function langSystem(request, body, cats, pda) {
   if (pda) return pdaSystem(pda);
@@ -773,6 +794,7 @@ function langSystem(request, body, cats, pda) {
 Your task:
 1. Read the text carefully.
 2. Identify ONLY these errors: ${cats.map((c) => LANG_CATEGORIES_EN[c]).join('; ')}. No style preferences; if a word is illegible, ignore it.
+${checklistEn(cats)}
    A well-formed letter is never an error. If a letter is ambiguous, flag the error only if it is likely, with lecture_douteuse = true. Ignore the teacher's marks (brackets, X, underlining, colored ink).
 3. For EACH error found, give its coordinates (bounding box) on the image, surrounding the COMPLETE WORD or COMPLETE EXPRESSION containing the error.
    The 'box' coordinates must be an array of 4 numbers [ymin, xmin, ymax, xmax] normalized between 0 and 1000.
@@ -782,6 +804,7 @@ Return ONLY a JSON array. If no error is found, return an empty array [].` : `Tu
 Ta mission :
 1. Lis le texte attentivement.
 2. Identifie UNIQUEMENT ces fautes : ${cats.map((c) => LANG_CATEGORIES[c]).join(' ; ')}. Pas de choix de style ; si un mot est illisible, ignore-le.
+${checklist(cats)}
    Une lettre bien formée n'est jamais une faute. Si une lettre est ambiguë (q ou d, accent douteux, lettre doublée ou non), relève la faute seulement si elle est probable, avec lecture_douteuse = true. Ignore les marques de l'enseignant (crochets, X, soulignés, encre de couleur).
 3. Pour CHAQUE faute trouvée, déduis ses coordonnées (bounding box) sur l'image en encadrant le MOT COMPLET ou l'EXPRESSION COMPLÈTE qui contient la faute.
    Les coordonnées 'box' doivent être un tableau de 4 nombres [ymin, xmin, ymax, xmax] normalisés entre 0 et 1000.
