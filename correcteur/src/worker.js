@@ -36,8 +36,8 @@ export default {
       return json({ error: 'Erreur interne, réessayez dans un instant.' }, 500);
     }
   },
-  // Toutes les heures : efface les empreintes d'IP de plus de 24 h (promesse de la politique de confidentialité)
-  // et les clés d'essai de plus de 90 jours.
+  // Toutes les heures : efface les empreintes d'IP de plus de 24 h (promesse de la politique de confidentialité),
+  // les clés d'essai de plus de 90 jours et le journal d'utilisation de plus de 12 mois.
   async scheduled(event, env) {
     await ensureSchema(env);
     const now = Date.now();
@@ -45,6 +45,7 @@ export default {
       env.DB.prepare('DELETE FROM trials WHERE created_at < ?').bind(now - DAY_MS),
       env.DB.prepare('DELETE FROM access_keys WHERE is_trial = 1 AND created_at < ?').bind(now - 90 * DAY_MS),
       env.DB.prepare('UPDATE ideas SET ip_hash = NULL WHERE ip_hash IS NOT NULL AND created_at < ?').bind(now - DAY_MS),
+      env.DB.prepare('DELETE FROM usage WHERE created_at < ?').bind(now - 365 * DAY_MS),
     ]);
   },
 };
@@ -54,7 +55,7 @@ const ROUTES = {
   'POST /api/trial': trial,
   'POST /api/idea': idea,
   'POST /api/admin/keys': adminCreateKey,
-  'GET /api/admin/keys': adminListKeys,
+  'GET /api/admin/keys': adminListKeys, 'GET /api/admin/stats': adminStats,
   'POST /api/checkout': checkout,
   'GET /api/claim': claim,
   'POST /api/stripe-webhook': stripeWebhook,
@@ -81,6 +82,13 @@ const DB_SCHEMA = [
   `CREATE INDEX IF NOT EXISTS trials_ip ON trials (ip_hash, created_at)`,
   `CREATE TABLE IF NOT EXISTS gifts (key TEXT PRIMARY KEY, pages INTEGER NOT NULL, note TEXT, created_at INTEGER NOT NULL)`,
   `CREATE TABLE IF NOT EXISTS ideas (text TEXT NOT NULL, email TEXT, lang TEXT, ip_hash TEXT, created_at INTEGER NOT NULL)`,
+  // Journal d'utilisation (statistiques du fondateur) : clé, pages, type et heure, jamais de copie ni de nom. Gardé 12 mois.
+  // Un remboursement de pages s'inscrit en négatif.
+  `CREATE TABLE IF NOT EXISTS usage (key TEXT NOT NULL, pages INTEGER NOT NULL, kind TEXT NOT NULL, created_at INTEGER NOT NULL)`,
+  `CREATE INDEX IF NOT EXISTS usage_time ON usage (created_at)`,
+  `CREATE INDEX IF NOT EXISTS usage_key ON usage (key, created_at)`,
+  // Détail des ventes : montant payé (après code promo) et clé d'essai convertie en achat.
+  `CREATE TABLE IF NOT EXISTS sales (session_id TEXT PRIMARY KEY, amount INTEGER, from_trial INTEGER NOT NULL DEFAULT 0)`,
 ];
 let schemaReady;
 function ensureSchema(env) {
@@ -187,6 +195,31 @@ async function adminListKeys(request, env) {
   return json({ keys: results });
 }
 
+// Statistiques du fondateur : toutes les clés (essai, offertes, achetées), achats, utilisation des 90 derniers jours, idées.
+// Pages données = essai + offertes + achetées ; pages utilisées = données − restantes.
+async function adminStats(request, env) {
+  await requireAdmin(request, env);
+  const since = Date.now() - 90 * DAY_MS;
+  const [keys, sales, usage, ideas] = await env.DB.batch([
+    env.DB.prepare(`SELECT k.key, k.pages AS left, k.is_trial AS trial, k.email, k.created_at, g.pages AS gift, g.note,
+        (SELECT SUM(p.pages) FROM payments p WHERE p.key = k.key AND p.session_id NOT LIKE 'cs_test_%') AS bought,
+        (SELECT MAX(s.from_trial) FROM payments p JOIN sales s ON s.session_id = p.session_id WHERE p.key = k.key) AS converted,
+        (SELECT MAX(u.created_at) FROM usage u WHERE u.key = k.key AND u.pages > 0) AS last_used
+      FROM access_keys k LEFT JOIN gifts g ON g.key = k.key ORDER BY k.created_at DESC LIMIT 3000`),
+    env.DB.prepare(`SELECT p.key, p.pages, p.created_at, s.amount, s.from_trial FROM payments p LEFT JOIN sales s ON s.session_id = p.session_id
+      WHERE p.session_id NOT LIKE 'cs_test_%' ORDER BY p.created_at DESC LIMIT 1000`),
+    env.DB.prepare('SELECT pages, kind, created_at FROM usage WHERE created_at > ? ORDER BY created_at LIMIT 50000').bind(since),
+    env.DB.prepare('SELECT text, email, lang, created_at FROM ideas ORDER BY created_at DESC LIMIT 500'),
+  ]);
+  const trialPages = Number(env.TRIAL_PAGES) || 30;
+  const list = keys.results.map((k) => {
+    // Une clé d'essai achetée avant le suivi des conversions a perdu sa marque « essai » : les pages restantes le trahissent.
+    const given = Math.max((k.gift || 0) + (k.bought || 0) + (k.trial || k.converted ? trialPages : 0), k.left);
+    return { ...k, type: k.gift ? 'gift' : k.bought ? 'bought' : k.trial ? 'trial' : 'other', given, used: given - k.left };
+  });
+  return json({ keys: list, sales: sales.results, usage: usage.results, ideas: ideas.results, trialPages, since });
+}
+
 async function trial(request, env) {
   const ip = request.headers.get('CF-Connecting-IP') || 'inconnue';
   const ipHash = await sha256(`${env.IP_SALT || ''}:${ip}`);
@@ -287,6 +320,9 @@ async function creditSession(env, session) {
   const inserted = await env.DB.prepare('INSERT OR IGNORE INTO payments (session_id, key, pages, created_at) VALUES (?, ?, ?, ?)')
     .bind(session.id, key, pages, now).run();
   if (inserted.meta.changes) {
+    const before = await env.DB.prepare('SELECT is_trial FROM access_keys WHERE key = ?').bind(key).first();
+    await env.DB.prepare('INSERT OR IGNORE INTO sales (session_id, amount, from_trial) VALUES (?, ?, ?)')
+      .bind(session.id, Number.isFinite(session.amount_total) ? session.amount_total : null, before?.is_trial ? 1 : 0).run();
     await env.DB.prepare(`INSERT INTO access_keys (key, pages, email, is_trial, created_at) VALUES (?, ?, ?, 0, ?)
       ON CONFLICT(key) DO UPDATE SET pages = pages + excluded.pages, is_trial = 0, email = COALESCE(excluded.email, email)`)
       .bind(key, pages, session.customer_details?.email || null, now).run();
@@ -738,18 +774,23 @@ async function transcribe(env, dataUrl) {
 // Pages réservées pour une copie. Si l'enseignant perd la connexion pendant la correction (écran éteint, réseau
 // coupé), il ne reçoit jamais le résultat : les pages réservées lui sont rendues (le remboursement continue après
 // la coupure grâce à waitUntil). Un remboursement ne rend jamais plus que ce qui a été réservé.
-async function reserve(env, key, n, request, ctx) {
+async function reserve(env, key, n, request, ctx, kind) {
   const reserved = await env.DB.prepare('UPDATE access_keys SET pages = pages - ? WHERE key = ? AND pages >= ?').bind(n, key, n).run();
   if (!reserved.meta.changes) {
     await getKey(env, key); // 401 si la clé n'existe pas
     throw new HttpError(402, 'Solde de pages insuffisant. Rechargez votre compte pour continuer.');
   }
+  // Journal d'utilisation : une statistique, jamais un obstacle à la correction.
+  const log = (pages) => env.DB.prepare('INSERT INTO usage (key, pages, kind, created_at) VALUES (?, ?, ?, ?)').bind(key, pages, kind, Date.now()).run()
+    .catch((e) => console.error('Journal d\'utilisation :', e.message));
+  await log(n);
   let back = 0;
   const refund = async (k) => {
     k = Math.min(k, n - back);
     if (k <= 0) return;
     back += k;
     await env.DB.prepare('UPDATE access_keys SET pages = pages + ? WHERE key = ?').bind(k, key).run();
+    await log(-k);
   };
   const onAbort = () => { const p = refund(n).catch((e) => console.error('Remboursement impossible :', e.message)); ctx?.waitUntil(p); };
   request.signal?.addEventListener?.('abort', onAbort);
@@ -765,7 +806,7 @@ async function language(request, env, url, ctx) {
   if (!cats.length) throw new HttpError(400, 'Choisissez au moins un type de faute');
 
   const n = body.pages.length; // 1 page de copie = 1 page décomptée
-  const pay = await reserve(env, key, n, request, ctx);
+  const pay = await reserve(env, key, n, request, ctx, 'langue');
   try {
     return await analyzeLanguagePages(request, env, key, body, cats, n, pay);
   } catch (err) {
@@ -1079,7 +1120,7 @@ async function grade(request, env, url, ctx) {
   const deep = body.deep !== false;
   const perPage = deep ? 2 : 1;
   const n = body.pages.length * perPage;
-  const pay = await reserve(env, key, n, request, ctx);
+  const pay = await reserve(env, key, n, request, ctx, 'copies');
   const refund = pay.refund;
   // Toute erreur imprévue après la réservation (bogue, IA qui plante) rend les pages pas encore remboursées.
   try {

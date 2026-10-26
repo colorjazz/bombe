@@ -4,78 +4,314 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
-  <title>Brûle la pile — Clés offertes</title>
+  <title>Brûle la pile — Administration</title>
   <link rel="icon" href="favicon.ico" sizes="any">
   <link rel="stylesheet" href="styles.css">
   <style>
-    main { max-width: 760px; margin: 1.5rem auto 3rem; display: grid; gap: 1.2rem; }
-    .panel h1 { font-size: 1.25rem; margin: 0 0 .3rem; }
+    main { max-width: 1060px; margin: 1.2rem auto 3rem; display: grid; gap: 1rem; }
+    .panel h1 { font-size: 1.2rem; margin: 0 0 .3rem; }
+    .panel h2 { font-size: 1rem; margin: 0; }
     .row { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; }
     @media (max-width: 560px) { .row { grid-template-columns: 1fr; } }
+    .login { display: flex; flex-wrap: wrap; gap: .6rem 1rem; align-items: end; }
+    .login .field { flex: 1 1 260px; }
+    .tabs { display: flex; gap: .3rem; flex-wrap: wrap; border-bottom: 1px solid var(--line); }
+    .tabs button { font: inherit; font-size: .9rem; font-weight: 600; background: none; border: 0; border-bottom: 3px solid transparent; padding: .55rem .8rem; color: var(--muted); cursor: pointer; }
+    .tabs button[aria-selected="true"] { color: var(--primary); border-bottom-color: var(--primary); }
     .key { font: 700 1.25rem ui-monospace, Menlo, monospace; letter-spacing: .05em; text-align: center; padding: .8rem; border-radius: 12px; background: #f3f4f8; border: 1px dashed var(--primary); user-select: all; }
     textarea.msg { min-height: 7.5rem; font-size: .85rem; }
-    table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+    .tablewrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: .84rem; }
     th, td { text-align: left; padding: .45rem .4rem; border-top: 1px solid var(--line); vertical-align: top; }
-    th { font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: var(--faint); }
+    th { font-size: .7rem; text-transform: uppercase; letter-spacing: .05em; color: var(--faint); white-space: nowrap; }
+    th[data-sort] { cursor: pointer; } th[data-sort]:hover { color: var(--text); }
     td.k { font-family: ui-monospace, Menlo, monospace; white-space: nowrap; }
+    td.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
     .err { color: var(--red); } .ok { color: var(--green); }
+    .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: .7rem; }
+    .tile { border: 1px solid var(--line); border-radius: 12px; padding: .75rem .9rem; background: #fff; }
+    .tile .v { font-size: 1.6rem; font-weight: 700; color: var(--text); line-height: 1.1; font-variant-numeric: tabular-nums; }
+    .tile .l { font-size: .8rem; color: var(--muted); margin-top: .2rem; }
+    .tile .s { font-size: .75rem; color: var(--faint); margin-top: .15rem; }
+    .type { display: inline-block; font-size: .72rem; font-weight: 600; padding: .05rem .45rem; border-radius: 999px; background: #f0f1f5; color: var(--muted); white-space: nowrap; }
+    .type.trial { background: #eef2ff; color: #4338ca; } .type.gift { background: #fff4e5; color: #9a5b00; } .type.bought { background: #e3f6ee; color: #0b7a55; }
+    .chart { position: relative; }
+    .bars { display: flex; align-items: flex-end; gap: 2px; height: 160px; border-bottom: 1px solid var(--line-2); padding-top: 1.2rem; }
+    .bar { flex: 1; position: relative; height: 100%; display: flex; align-items: flex-end; cursor: default; }
+    .bar i { display: block; width: 100%; background: var(--primary); border-radius: 4px 4px 0 0; min-height: 0; }
+    .bar.zero i { background: transparent; }
+    .bar:hover i { filter: brightness(1.15); }
+    .bar:hover { background: rgba(79,70,229,.06); }
+    .axis { display: flex; gap: 2px; font-size: .68rem; color: var(--faint); margin-top: .3rem; }
+    .axis span { flex: 1; text-align: center; white-space: nowrap; overflow: hidden; }
+    .tip { position: absolute; pointer-events: none; background: #1e2433; color: #fff; font-size: .78rem; padding: .3rem .5rem; border-radius: 6px; white-space: nowrap; transform: translate(-50%, -100%); z-index: 5; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 760px) { .grid2 { grid-template-columns: 1fr; } }
+    details.data summary { cursor: pointer; font-size: .8rem; color: var(--muted); margin-top: .4rem; }
+    .filters { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+    .filters select, .filters input { width: auto; padding: .35rem .5rem; font-size: .85rem; }
+    .idea { border-top: 1px solid var(--line); padding: .6rem 0; }
+    .idea p { margin: .2rem 0 0; white-space: pre-wrap; }
+    [hidden] { display: none !important; }
   </style>
 </head>
 <body>
   <header class="topbar"><div class="wrap"><a class="brand" href="index.html"><img class="logo" src="logo-96.png" alt="" width="40" height="40"><strong>Brûle la pile</strong></a><span class="muted small">Administration</span></div></header>
   <main class="wrap">
-    <!-- Page réservée au fondateur : crée des clés d'accès offertes (profs testeurs) et montre leur utilisation. -->
+    <!-- Page réservée au fondateur : statistiques, clés offertes (profs testeurs) et idées reçues. -->
     <section class="panel stack">
-      <h1>Offrir une clé d'accès</h1>
-      <p class="muted small" style="margin:0">Pour un prof testeur : il reçoit un lien qui l'ouvre directement dans l'appli, sans passer par le paiement.</p>
-      <label class="field">Mot de passe administrateur
-        <input id="token" type="password" autocomplete="current-password">
-      </label>
-      <label class="toggle"><input id="remember" type="checkbox"> Retenir le mot de passe sur cet appareil</label>
-      <div class="row">
-        <label class="field">Nombre de pages
-          <input id="pages" type="number" min="1" max="5000" value="200" inputmode="numeric">
+      <div class="login">
+        <label class="field">Mot de passe administrateur
+          <input id="token" type="password" autocomplete="current-password">
         </label>
-        <label class="field">Pour qui ? (facultatif)
-          <input id="note" type="text" maxlength="200" placeholder="Ex. : Marie Tremblay, groupe Facebook">
-        </label>
-      </div>
-      <div class="row">
-        <button id="make-fr" class="btn primary" type="button">Créer une clé (message en français)</button>
-        <button id="make-en" class="btn" type="button">Créer une clé (message en anglais)</button>
+        <label class="toggle"><input id="remember" type="checkbox"> Retenir sur cet appareil</label>
+        <button id="refresh" class="btn primary" type="button">Afficher / actualiser</button>
       </div>
       <p id="msg" class="small" style="margin:0"></p>
-      <div id="result" class="stack" hidden>
-        <div id="key" class="key"></div>
-        <label class="field">Message à envoyer au prof
-          <textarea id="text" class="msg" readonly></textarea>
-        </label>
-        <button id="copy" class="btn green" type="button">Copier le message</button>
-      </div>
     </section>
-    <section class="panel stack">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem"><h1 style="margin:0">Clés offertes</h1><button id="refresh" class="btn small" type="button">Actualiser</button></div>
-      <p class="muted small" style="margin:0">Pages utilisées = pages offertes − pages restantes. 0 utilisée : le prof n'a pas encore essayé, c'est le moment de lui écrire.</p>
-      <div style="overflow-x:auto"><table><thead><tr><th>Date</th><th>Pour qui</th><th>Clé</th><th>Utilisées</th></tr></thead><tbody id="list"><tr><td colspan="4" class="muted">Entrez le mot de passe, puis « Actualiser ».</td></tr></tbody></table></div>
+
+    <nav class="tabs" role="tablist">
+      <button type="button" role="tab" data-tab="overview" aria-selected="true">Vue d'ensemble</button>
+      <button type="button" role="tab" data-tab="gifts" aria-selected="false">Clés offertes</button>
+      <button type="button" role="tab" data-tab="keys" aria-selected="false">Toutes les clés</button>
+      <button type="button" role="tab" data-tab="usage" aria-selected="false">Utilisation</button>
+      <button type="button" role="tab" data-tab="sales" aria-selected="false">Achats</button>
+      <button type="button" role="tab" data-tab="ideas" aria-selected="false">Idées <span id="ideas-n" class="muted"></span></button>
+    </nav>
+
+    <section id="tab-overview" class="stack">
+      <div id="tiles" class="tiles"><p class="muted">Entrez le mot de passe, puis « Afficher ».</p></div>
+      <section class="panel stack">
+        <h2>Nouveaux essais gratuits, par jour (30 derniers jours)</h2>
+        <div id="chart-trials"></div>
+      </section>
+    </section>
+
+    <section id="tab-gifts" class="stack" hidden>
+      <section class="panel stack">
+        <h1>Offrir une clé d'accès</h1>
+        <p class="muted small" style="margin:0">Pour un prof testeur : il reçoit un lien qui l'ouvre directement dans l'appli, sans passer par le paiement.</p>
+        <div class="row">
+          <label class="field">Nombre de pages
+            <input id="pages" type="number" min="1" max="5000" value="200" inputmode="numeric">
+          </label>
+          <label class="field">Pour qui ? (facultatif)
+            <input id="note" type="text" maxlength="200" placeholder="Ex. : Marie Tremblay, groupe Facebook">
+          </label>
+        </div>
+        <div class="row">
+          <button id="make-fr" class="btn primary" type="button">Créer une clé (message en français)</button>
+          <button id="make-en" class="btn" type="button">Créer une clé (message en anglais)</button>
+        </div>
+        <div id="result" class="stack" hidden>
+          <div id="key" class="key"></div>
+          <label class="field">Message à envoyer au prof
+            <textarea id="text" class="msg" readonly></textarea>
+          </label>
+          <button id="copy" class="btn green" type="button">Copier le message</button>
+        </div>
+      </section>
+      <section class="panel stack">
+        <h2>Clés offertes</h2>
+        <p class="muted small" style="margin:0">0 utilisée : le prof n'a pas encore essayé, c'est le moment de lui écrire.</p>
+        <div class="tablewrap"><table><thead><tr><th>Créée</th><th>Pour qui</th><th>Clé</th><th>Utilisées</th><th>Dernière utilisation</th></tr></thead><tbody id="gift-list"></tbody></table></div>
+      </section>
+    </section>
+
+    <section id="tab-keys" class="panel stack" hidden>
+      <div class="filters">
+        <h2 style="margin-right:auto">Toutes les clés</h2>
+        <select id="f-type" aria-label="Type de clé"><option value="">Tous les types</option><option value="trial">Essai gratuit</option><option value="gift">Offerte</option><option value="bought">Achetée</option></select>
+        <select id="f-used" aria-label="Utilisation"><option value="">Utilisées ou non</option><option value="1">Utilisées</option><option value="0">Jamais utilisées</option></select>
+        <input id="f-q" type="search" placeholder="Chercher (clé, nom, courriel)" aria-label="Chercher">
+      </div>
+      <p id="keys-sum" class="muted small" style="margin:0"></p>
+      <div class="tablewrap"><table><thead><tr>
+        <th data-sort="created_at">Créée</th><th data-sort="type">Type</th><th>Clé</th><th>Pour qui / courriel</th>
+        <th data-sort="given" class="n">Données</th><th data-sort="used" class="n">Utilisées</th><th data-sort="left" class="n">Restantes</th><th data-sort="last_used">Dernière utilisation</th>
+      </tr></thead><tbody id="key-list"></tbody></table></div>
+      <p class="muted small" style="margin:0">Les clés d'essai sont effacées après 90 jours (politique de confidentialité). « Dernière utilisation » : connue depuis l'ajout du journal d'utilisation.</p>
+    </section>
+
+    <section id="tab-usage" class="stack" hidden>
+      <div id="usage-tiles" class="tiles"></div>
+      <section class="panel stack">
+        <h2>Pages utilisées par jour (30 derniers jours)</h2>
+        <div id="chart-days"></div>
+      </section>
+      <div class="grid2">
+        <section class="panel stack">
+          <h2>Par heure de la journée (heure du Québec)</h2>
+          <div id="chart-hours"></div>
+        </section>
+        <section class="panel stack">
+          <h2>Par jour de la semaine</h2>
+          <div id="chart-weekdays"></div>
+        </section>
+      </div>
+      <p class="muted small" style="margin:0">Le journal d'utilisation commence à son ajout : les corrections plus anciennes n'ont pas d'heure. Pages nettes (remboursements déduits), 90 derniers jours.</p>
+    </section>
+
+    <section id="tab-sales" class="panel stack" hidden>
+      <h2>Achats</h2>
+      <div class="tablewrap"><table><thead><tr><th>Date</th><th>Clé</th><th class="n">Pages</th><th class="n">Payé</th><th>Venait d'un essai</th></tr></thead><tbody id="sale-list"></tbody></table></div>
+      <p class="muted small" style="margin:0">« Payé » : montant réel après code promo, connu depuis l'ajout du suivi ; avant, prix du forfait (≈). Les achats en mode test Stripe sont exclus.</p>
+    </section>
+
+    <section id="tab-ideas" class="panel stack" hidden>
+      <h2>Idées reçues (« Proposez une fonctionnalité »)</h2>
+      <div id="idea-list"></div>
     </section>
   </main>
   <script>
     const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const TZ = 'America/Toronto'; // heure du Québec
+    const nf = (n) => Number(n || 0).toLocaleString('fr-CA');
+    const money = (cents) => (cents / 100).toLocaleString('fr-CA', { style: 'currency', currency: 'CAD' });
+    const day = (t) => (t > 1.5e12 ? new Date(t).toLocaleDateString('fr-CA', { timeZone: TZ }) : '—'); // vieilles clés de test sans date
+    const when = (t) => (t ? new Date(t).toLocaleString('fr-CA', { timeZone: TZ, dateStyle: 'short', timeStyle: 'short' }) : '—');
+    const TYPES = { trial: 'Essai gratuit', gift: 'Offerte', bought: 'Achetée', other: 'Autre' };
+    const PACK_PRICE = { 200: 1400, 500: 2900, 1800: 7900 }; // prix réguliers, si le montant payé n'est pas connu
+    let data = null;
+
     try { const t = localStorage.getItem('ce.admin'); if (t) { $('token').value = t; $('remember').checked = true; } } catch {}
-    const call = async (method, body) => {
+    const call = async (path, method = 'GET', body) => {
       const token = $('token').value.trim();
       if (!token) throw new Error('Entrez le mot de passe administrateur.');
       try { if ($('remember').checked) localStorage.setItem('ce.admin', token); else localStorage.removeItem('ce.admin'); } catch {}
-      const res = await fetch('/api/admin/keys', { method, headers: { Authorization: `Bearer ${token}`, ...(body ? { 'Content-Type': 'application/json' } : {}) }, body: body ? JSON.stringify(body) : undefined });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || `Erreur ${res.status}`);
-      return data;
+      const res = await fetch(path, { method, headers: { Authorization: `Bearer ${token}`, ...(body ? { 'Content-Type': 'application/json' } : {}) }, body: body ? JSON.stringify(body) : undefined });
+      const out = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(out.error || `Erreur ${res.status}`);
+      return out;
     };
-    const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-    async function make(en) {
+
+    // Onglets
+    const showTab = (name) => {
+      document.querySelectorAll('.tabs button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === name)));
+      document.querySelectorAll('main > section[id^="tab-"]').forEach((s) => { s.hidden = s.id !== `tab-${name}`; });
+      try { sessionStorage.setItem('ce.adminTab', name); } catch {}
+    };
+    document.querySelectorAll('.tabs button').forEach((b) => b.addEventListener('click', () => showTab(b.dataset.tab)));
+    try { const t = sessionStorage.getItem('ce.adminTab'); if (t && $(`tab-${t}`)) showTab(t); } catch {}
+
+    // Graphique en barres, une seule série : survol = valeur exacte ; tableau des données en dessous.
+    function bars(el, rows, { unit = 'pages', every = 1 } = {}) {
+      const max = Math.max(1, ...rows.map((r) => r.v));
+      el.innerHTML = `<div class="chart"><div class="bars">${rows.map((r, i) => `<div class="bar ${r.v ? '' : 'zero'}" data-i="${i}"><i style="height:${(r.v / max) * 100}%"></i></div>`).join('')}</div>
+        <div class="axis">${rows.map((r, i) => `<span>${i % every === 0 ? esc(r.short ?? r.label) : ''}</span>`).join('')}</div></div>
+        <details class="data"><summary>Voir les données</summary><div class="tablewrap"><table><tbody>${rows.filter((r) => r.v).map((r) => `<tr><td>${esc(r.label)}</td><td class="n">${nf(r.v)} ${unit}</td></tr>`).join('') || '<tr><td class="muted">Aucune donnée</td></tr>'}</tbody></table></div></details>`;
+      const chart = el.querySelector('.chart');
+      let tip = null;
+      chart.addEventListener('mousemove', (e) => {
+        const bar = e.target.closest('.bar');
+        if (!bar) { tip?.remove(); tip = null; return; }
+        const r = rows[bar.dataset.i];
+        tip ||= chart.appendChild(Object.assign(document.createElement('div'), { className: 'tip' }));
+        tip.textContent = `${r.label} : ${nf(r.v)} ${unit}`;
+        const box = chart.getBoundingClientRect(), b = bar.getBoundingClientRect();
+        tip.style.left = `${b.left - box.left + b.width / 2}px`; tip.style.top = `${Math.max(0, b.top - box.top + b.height * (1 - r.v / max) + 12)}px`;
+      });
+      chart.addEventListener('mouseleave', () => { tip?.remove(); tip = null; });
+    }
+    const lastDays = (n) => Array.from({ length: n }, (_, i) => day(Date.now() - (n - 1 - i) * 86400000));
+
+    function tile(v, l, s) { return `<div class="tile"><div class="v">${v}</div><div class="l">${l}</div>${s ? `<div class="s">${s}</div>` : ''}</div>`; }
+
+    function renderOverview() {
+      const k = data.keys, by = (t) => k.filter((x) => x.type === t);
+      const trials = by('trial'), gifts = by('gift'), bought = by('bought');
+      const usedTrials = trials.filter((x) => x.used > 0);
+      const paid = data.sales.reduce((a, s) => a + (s.amount ?? PACK_PRICE[s.pages] ?? 0), 0);
+      const estimated = data.sales.some((s) => s.amount == null);
+      const conv = data.sales.filter((s) => s.from_trial).length;
+      const pagesUsed = k.reduce((a, x) => a + Math.max(0, x.used), 0);
+      const week = data.usage.filter((u) => u.created_at > Date.now() - 7 * 86400000).reduce((a, u) => a + u.pages, 0);
+      $('tiles').innerHTML = [
+        tile(nf(trials.length), 'essais gratuits', `${nf(usedTrials.length)} utilisés (${trials.length ? Math.round((100 * usedTrials.length) / trials.length) : 0} %) · ${nf(usedTrials.reduce((a, x) => a + x.used, 0))} pages`),
+        tile(nf(gifts.length), 'clés offertes', `${nf(gifts.filter((x) => x.used > 0).length)} utilisées · ${nf(gifts.reduce((a, x) => a + x.used, 0))} pages`),
+        tile(nf(data.sales.length), 'achats', `${nf(bought.length)} clé(s) acheteuse(s)`),
+        tile(`${estimated ? '≈ ' : ''}${money(paid)}`, 'revenus', estimated ? 'certains montants estimés au prix du forfait' : 'montants réels, après codes promo'),
+        tile(nf(conv), 'essais convertis en achat', 'suivi depuis l’ajout des statistiques'),
+        tile(nf(pagesUsed), 'pages utilisées (total)', `${nf(week)} ces 7 derniers jours`),
+      ].join('');
+      const days = lastDays(30), count = Object.fromEntries(days.map((d) => [d, 0]));
+      for (const x of k) if ((x.type === 'trial' || x.converted) && count[day(x.created_at)] != null) count[day(x.created_at)]++;
+      bars($('chart-trials'), days.map((d) => ({ label: d, short: d.slice(8), v: count[d] })), { unit: 'essai(s)', every: 3 });
+    }
+
+    function renderGifts() {
+      const g = data.keys.filter((x) => x.type === 'gift');
+      $('gift-list').innerHTML = g.length ? g.map((x) => `<tr><td>${day(x.created_at)}</td><td>${esc(x.note) || '<span class="muted">—</span>'}</td><td class="k">${esc(x.key)}</td><td class="n">${nf(x.used)} / ${nf(x.given)}</td><td>${when(x.last_used)}</td></tr>`).join('')
+        : '<tr><td colspan="5" class="muted">Aucune clé offerte pour l’instant.</td></tr>';
+    }
+
+    let sortBy = 'created_at', sortDir = -1;
+    function renderKeys() {
+      const t = $('f-type').value, u = $('f-used').value, q = $('f-q').value.trim().toLowerCase();
+      const rows = data.keys.filter((x) => (!t || x.type === t) && (!u || (u === '1') === (x.used > 0))
+        && (!q || `${x.key} ${x.note || ''} ${x.email || ''}`.toLowerCase().includes(q)))
+        .sort((a, b) => ((a[sortBy] ?? -1) > (b[sortBy] ?? -1) ? 1 : (a[sortBy] ?? -1) < (b[sortBy] ?? -1) ? -1 : 0) * sortDir);
+      $('keys-sum').textContent = `${nf(rows.length)} clé(s) · ${nf(rows.reduce((a, x) => a + x.used, 0))} pages utilisées sur ${nf(rows.reduce((a, x) => a + x.given, 0))} données`;
+      $('key-list').innerHTML = rows.slice(0, 1000).map((x) => `<tr><td>${day(x.created_at)}</td><td><span class="type ${x.type}">${TYPES[x.type]}${x.converted ? ' → achat' : ''}</span></td>
+        <td class="k">${esc(x.key)}</td><td>${esc(x.note || x.email || '') || '<span class="muted">—</span>'}</td>
+        <td class="n">${nf(x.given)}</td><td class="n">${nf(x.used)}</td><td class="n">${nf(x.left)}</td><td>${when(x.last_used)}</td></tr>`).join('')
+        || '<tr><td colspan="8" class="muted">Aucune clé.</td></tr>';
+    }
+    document.querySelectorAll('th[data-sort]').forEach((th) => th.addEventListener('click', () => {
+      sortDir = sortBy === th.dataset.sort ? -sortDir : -1; sortBy = th.dataset.sort; renderKeys();
+    }));
+    ['f-type', 'f-used', 'f-q'].forEach((id) => $(id).addEventListener('input', () => data && renderKeys()));
+
+    function renderUsage() {
+      const u = data.usage;
+      const net = (list) => list.reduce((a, x) => a + x.pages, 0);
+      const copies = net(u.filter((x) => x.kind === 'copies')), langue = net(u.filter((x) => x.kind === 'langue'));
+      const sessions = u.filter((x) => x.pages > 0).length;
+      const HOUR = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, hour: 'numeric', hourCycle: 'h23' });
+      const hourOf = (t) => Number(HOUR.formatToParts(t).find((x) => x.type === 'hour').value) % 24;
+      const wdOf = (t) => new Intl.DateTimeFormat('en-CA', { timeZone: TZ, weekday: 'short' }).format(t);
+      $('usage-tiles').innerHTML = [
+        tile(nf(net(u)), 'pages utilisées (90 jours)', `${nf(sessions)} corrections lancées`),
+        tile(nf(copies), 'correction de copies', u.length ? `${Math.round((100 * copies) / Math.max(1, copies + langue))} % des pages` : ''),
+        tile(nf(langue), 'correction de la langue', u.length ? `${Math.round((100 * langue) / Math.max(1, copies + langue))} % des pages` : ''),
+      ].join('');
+      const days = lastDays(30), perDay = Object.fromEntries(days.map((d) => [d, 0]));
+      const hours = Array(24).fill(0), WD = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], perWd = Array(7).fill(0);
+      for (const x of u) {
+        const d = day(x.created_at); if (perDay[d] != null) perDay[d] += x.pages;
+        hours[hourOf(x.created_at)] += x.pages; perWd[WD.indexOf(wdOf(x.created_at))] += x.pages;
+      }
+      bars($('chart-days'), days.map((d) => ({ label: d, short: d.slice(8), v: Math.max(0, perDay[d]) })), { every: 3 });
+      bars($('chart-hours'), hours.map((v, h) => ({ label: `${h} h`, short: `${h}`, v: Math.max(0, v) })), { every: 3 });
+      bars($('chart-weekdays'), ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'].map((l, i) => ({ label: l, short: l.slice(0, 3), v: Math.max(0, perWd[i]) })));
+    }
+
+    function renderSales() {
+      $('sale-list').innerHTML = data.sales.map((s) => `<tr><td>${when(s.created_at)}</td><td class="k">${esc(s.key)}</td><td class="n">${nf(s.pages)}</td>
+        <td class="n">${s.amount != null ? money(s.amount) : PACK_PRICE[s.pages] != null ? `≈ ${money(PACK_PRICE[s.pages])}` : '—'}</td><td>${s.amount == null ? '<span class="muted">?</span>' : s.from_trial ? 'Oui' : 'Non'}</td></tr>`).join('')
+        || '<tr><td colspan="5" class="muted">Aucun achat pour l’instant.</td></tr>';
+    }
+
+    function renderIdeas() {
+      $('ideas-n').textContent = data.ideas.length ? `(${data.ideas.length})` : '';
+      $('idea-list').innerHTML = data.ideas.map((i) => `<div class="idea"><span class="muted small">${when(i.created_at)} · ${i.lang === 'en' ? 'anglais' : 'français'}${i.email ? ` · <a href="mailto:${esc(i.email)}">${esc(i.email)}</a>` : ''}</span><p>${esc(i.text)}</p></div>`).join('')
+        || '<p class="muted">Aucune idée reçue pour l’instant.</p>';
+    }
+
+    async function load() {
       $('msg').textContent = ''; $('msg').className = 'small';
       try {
-        const { key, pages } = await call('POST', { pages: Number($('pages').value), note: $('note').value });
+        data = await call('/api/admin/stats');
+        renderOverview(); renderGifts(); renderKeys(); renderUsage(); renderSales(); renderIdeas();
+        $('msg').textContent = `✓ À jour (${when(Date.now())})`; $('msg').className = 'small ok';
+      } catch (e) { $('msg').textContent = e.message; $('msg').className = 'small err'; }
+    }
+    $('refresh').addEventListener('click', load);
+
+    async function make(en) {
+      try {
+        const { key, pages } = await call('/api/admin/keys', 'POST', { pages: Number($('pages').value), note: $('note').value });
         const site = en ? 'https://burnthepile.com' : 'https://brulelapile.ca';
         const link = `${site}/app.html?key=${key}`;
         $('key').textContent = key;
@@ -83,21 +319,13 @@
           ? `Thanks for testing Burn the Pile! 🙏 Here is your access key, with ${pages} free pages: ${key}\n\nTap this link to start right away: ${link}\n\nKeep this message: the key also works on your phone or another computer. Let me know what you think after your first pile!`
           : `Merci de tester Brûle la pile ! 🙏 Voici ta clé d'accès, avec ${pages} pages gratuites : ${key}\n\nClique sur ce lien pour commencer tout de suite : ${link}\n\nGarde ce message : la clé fonctionne aussi sur ton téléphone ou un autre ordinateur. Dis-moi ce que tu en penses après ta première pile !`;
         $('result').hidden = false; $('note').value = '';
-        list();
-      } catch (e) { $('msg').textContent = e.message; $('msg').className = 'small err'; }
-    }
-    async function list() {
-      try {
-        const { keys } = await call('GET');
-        $('list').innerHTML = keys.length ? keys.map((k) => `<tr><td>${new Date(k.created_at).toLocaleDateString('fr-CA')}</td><td>${esc(k.note) || '<span class="muted">—</span>'}</td><td class="k">${esc(k.key)}</td><td>${k.left == null ? '—' : `${k.given - k.left} / ${k.given}`}</td></tr>`).join('')
-          : '<tr><td colspan="4" class="muted">Aucune clé offerte pour l’instant.</td></tr>';
-      } catch (e) { $('list').innerHTML = `<tr><td colspan="4" class="err">${esc(e.message)}</td></tr>`; }
+        load();
+      } catch (e) { $('msg').textContent = e.message; $('msg').className = 'small err'; window.scrollTo({ top: 0, behavior: 'smooth' }); }
     }
     $('make-fr').addEventListener('click', () => make(false));
     $('make-en').addEventListener('click', () => make(true));
-    $('refresh').addEventListener('click', list);
-    $('copy').addEventListener('click', async () => { try { await navigator.clipboard.writeText($('text').value); $('msg').textContent = '✓ Message copié : collez-le dans Messenger.'; $('msg').className = 'small ok'; } catch { $('text').select(); } });
-    if ($('token').value) list();
+    $('copy').addEventListener('click', async () => { try { await navigator.clipboard.writeText($('text').value); $('copy').textContent = '✓ Copié : collez-le dans Messenger'; setTimeout(() => { $('copy').textContent = 'Copier le message'; }, 2500); } catch { $('text').select(); } });
+    if ($('token').value) load();
   </script>
 </body>
 </html>
