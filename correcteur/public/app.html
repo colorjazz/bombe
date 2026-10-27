@@ -112,7 +112,7 @@
               <select id="pda-step"><option value="1">Étape 1</option><option value="2">Étape 2</option><option value="3">Étape 3 (fin d'année)</option></select>
             </label>
             <label class="field">Fautes répétées
-              <select id="pda-once"><option value="1">Une faute répétée n'est retenue qu'une fois</option><option value="0">Chaque faute est retenue</option></select>
+              <select id="pda-once"><option value="1">Retenues une seule fois</option><option value="0">Retenues chaque fois</option></select>
             </label>
           </div>
           <details class="pda-notions">
@@ -193,6 +193,7 @@
       </div>
       <div id="grid-editor" class="grid-editor" hidden>
         <div class="grid-head"><b>Grille détaillée</b><span id="grid-total" class="small"></span>
+          <button id="grid-fold" class="btn ghost small" type="button">Replier ▴</button>
           <button id="grid-remove" class="btn ghost small" type="button">Retirer la grille</button></div>
         <p class="muted small" style="margin:0" id="grid-help">Relisez et ajustez au besoin : la même grille s'applique à toutes les copies.</p>
         <div id="grid-criteria" class="stack"></div>
@@ -254,7 +255,7 @@
       <div class="results-head">
         <div class="results-tools">
           <input id="search" type="search" placeholder="Rechercher un élève…" style="width:12rem">
-          <button id="export" class="btn green" type="button" disabled hidden>Télécharger les notes (Excel)</button>
+          <button id="export" class="btn green" type="button" disabled hidden>Télécharger les notes (tableur CSV)</button>
           <button id="print-all" class="btn" type="button" disabled>Imprimer toutes les copies…</button>
           <button id="end" class="btn ghost" type="button" disabled>Terminer la session</button>
         </div>
@@ -381,7 +382,7 @@
       <div class="welcome-warn">
         <b>À savoir</b>
         <ul>
-          <li><b>Rien n'est sauvegardé</b>, pour protéger vos élèves : téléchargez les notes (Excel) ou imprimez avant de partir.</li>
+          <li><b>Rien n'est sauvegardé</b>, pour protéger vos élèves : téléchargez les notes (tableur) ou imprimez avant de partir.</li>
           <li><b>Ne fermez pas l'onglet et ne rechargez pas la page</b> avant d'avoir exporté.</li>
           <li><b>Sur téléphone</b>, gardez l'écran allumé pendant la correction.</li>
         </ul>
@@ -393,7 +394,7 @@
     <div class="panel stack" style="max-width:460px">
       <div style="display:flex;justify-content:space-between;align-items:center"><h2 style="margin:0">Terminer la session</h2><button class="icon-btn" type="button" data-close-end aria-label="Fermer">×</button></div>
       <p id="end-warn" class="banner warn small" style="margin:0;display:block" hidden>Vos notes ne sont pas encore enregistrées : téléchargez-les ou imprimez-les d'abord, car tout sera effacé.</p>
-      <div id="end-save" style="display:flex;gap:.5rem;flex-wrap:wrap"><button id="end-export" class="btn green" type="button">Télécharger les notes (Excel)</button><button id="end-print" class="btn" type="button">Imprimer…</button></div>
+      <div id="end-save" style="display:flex;gap:.5rem;flex-wrap:wrap"><button id="end-export" class="btn green" type="button">Télécharger les notes (tableur CSV)</button><button id="end-print" class="btn" type="button">Imprimer…</button></div>
       <button id="end-keep" class="btn primary block" type="button">Tout effacer et garder ma clé</button>
       <button id="end-forget" class="btn ghost block" type="button">Tout effacer et retirer ma clé de cet ordinateur</button>
       <p class="muted small" style="margin:0">Retirer la clé : pour un ordinateur partagé. Elle reste valable ailleurs : notez-la pour utiliser vos pages restantes (<b id="end-key"></b>).</p>

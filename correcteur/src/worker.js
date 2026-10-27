@@ -453,7 +453,7 @@ function buildPrompt(o) {
     o.english ? `\n${ENGLISH_OUTPUT}` : '',
     o.rubric ? `\nCONSIGNES DE L'ENSEIGNANT (prioritaires) :\n"""\n${o.rubric}\n"""\nSi ces consignes précisent la forme du rendu (ton, longueur ou style des justifications et du commentaire, tutoiement, points forts à souligner…), respecte-les, sans changer le format JSON demandé.` : '',
     o.grid ? `\nGRILLE DÉTAILLÉE VALIDÉE PAR L'ENSEIGNANT (à appliquer strictement) :
-Pour chaque critère, lis les descriptions de niveaux, choisis celle qui correspond le mieux à la copie et attribue exactement les points de ce niveau, sur les points maximum du critère indiqués ci-dessous ; écris son étiquette dans « niveau ». Juge chaque critère indépendamment, sans te rabattre sur le niveau du milieu : une copie qui répond à la description du niveau le plus élevé reçoit ce niveau. Dans la justification, indique le niveau retenu et ce qui, dans la copie, le justifie.
+Pour chaque critère, lis les descriptions de niveaux, choisis celle qui correspond le mieux à la copie et attribue exactement les points de ce niveau (si le niveau donne une plage de points, choisis une valeur dans cette plage selon la qualité de la copie), sur les points maximum du critère indiqués ci-dessous ; écris son étiquette dans « niveau ». Juge chaque critère indépendamment, sans te rabattre sur le niveau du milieu : une copie qui répond à la description du niveau le plus élevé reçoit ce niveau. Dans la justification, indique le niveau retenu et ce qui, dans la copie, le justifie.
 ${gridText(o.grid)}` : '',
   ].join('\n');
 }
@@ -662,7 +662,20 @@ function langErrors(fautes, cats, pda) {
     line: String(f.ligne || '').slice(0, 400), // recopier la ligne fait partie de la consigne avec laquelle les cadres ont été mesurés
     doubtful: !!f.lecture_douteuse, // lecture incertaine : affichée « à vérifier », non comptée dans la note
     ...(pda ? { notion: f.notion, grey: notion(f).state === 'grey' } : {}),
-  }));
+  })).filter((e, i, all) => !all.slice(0, i).some((o) => sameError(o, e)));
+}
+
+// Même faute relevée deux fois par l'IA (même mot, même correction, au même endroit) : une seule est gardée.
+// Une faute vraiment répétée ailleurs dans le texte (autre cadre, autre ligne) reste.
+function sameError(a, b) {
+  const n = (t) => String(t || '').trim().toLowerCase().normalize('NFC');
+  if (n(a.text) !== n(b.text) || n(a.correction) !== n(b.correction)) return false;
+  if (a.box && b.box) {
+    const [t, l, bo, r] = [Math.max(a.box[0], b.box[0]), Math.max(a.box[1], b.box[1]), Math.min(a.box[2], b.box[2]), Math.min(a.box[3], b.box[3])];
+    const inter = Math.max(0, bo - t) * Math.max(0, r - l), area = (x) => (x[2] - x[0]) * (x[3] - x[1]);
+    return inter > 0.5 * Math.min(area(a.box), area(b.box));
+  }
+  return !!a.line && n(a.line) === n(b.line);
 }
 
 // Vérification à la loupe (gratuite) : chaque mot relevé, recadré et agrandi, est recopié lettre par lettre sans correction.
@@ -970,13 +983,22 @@ async function rewriteComment(request, env) {
   // Versions déjà proposées pour CETTE copie : sans elles, chaque clic redonnait le même commentaire.
   const before = (Array.isArray(body.previous) ? body.previous : []).slice(-5).map((t) => String(t || '').trim().slice(0, 800)).filter(Boolean);
   const mark = (q) => (letters && q.level ? `niveau ${q.level}` : `${fr(q.points)} / ${fr(q.max)}`);
+  const first = String(body.firstName || '').replace(/[^\p{L}' -]/gu, '').trim().slice(0, 30);
+  const age = { primaire: en ? 'an elementary-school child (6 to 12 years old)' : 'un enfant du primaire (6 à 12 ans)',
+    secondaire: en ? 'a high-school student (12 to 17 years old)' : 'un élève du secondaire (12 à 17 ans)',
+    cegep: en ? 'a college student (17 years old and up)' : 'un étudiant du cégep (17 ans et plus)' }[body.niveau];
+  // Ton : la réécriture perdait le prénom, la chaleur et employait des mots trop difficiles (« rébarbative » à 13 ans).
+  const tone = en
+    ? `Keep a warm, encouraging tone, as a teacher who believes in the student${age ? `. The reader is ${age}: use simple, everyday words they understand, no jargon or rare words` : ''}.${first ? ` Address the student by first name (${first}) once, naturally.` : ''}`
+    : `Garde un ton chaleureux et encourageant, celui d'un enseignant qui croit en l'élève${age ? `. Le lecteur est ${age} : emploie des mots simples et courants qu'il comprend, sans jargon ni mots rares` : ''}.${first ? ` Interpelle l'élève par son prénom (${first}) une fois, naturellement.` : ''}`;
   const system = [
     "Tu es un enseignant qui rédige le commentaire final d'une copie d'élève, à partir de la correction qu'il vient de valider.",
     en ? `Rédige EN ANGLAIS, 2 à 4 phrases adressées à l'élève (« you »), concrètes et constructives : une réussite, l'erreur principale, une piste de progrès. ${COMMENT_VARIETY.en}`
       : `Rédige 2 à 4 phrases adressées à l'élève (tutoiement), concrètes et constructives : une réussite, l'erreur principale, une piste de progrès. ${COMMENT_VARIETY.fr}`,
     "Les notes et les niveaux ci-dessous sont ceux de l'enseignant : ils priment sur les justifications. Un critère réussi ne doit pas être présenté comme une faiblesse.",
     letters ? 'Ne mentionne aucun point ni aucune note chiffrée : seulement les niveaux, au besoin.' : '',
-    "N'écris jamais le nom de l'élève.",
+    tone,
+    first ? "N'écris jamais son nom de famille." : "N'écris jamais le nom de l'élève.",
   ].filter(Boolean).join('\n');
   const content = `CORRECTION VALIDÉE${body.grade != null ? ` (${letters && body.letter ? `cote ${String(body.letter).slice(0, 20)}` : `${fr(Number(body.grade))} / ${fr(Number(body.total))}`})` : ''} :
 ${qs.map((q, i) => `${i + 1}. ${q.question} — ${mark(q)}${q.answer ? ` — réponse de l'élève : « ${q.answer} »` : ''}${q.why ? ` — justification : ${q.why}` : ''}`).join('\n')}${avoid.length ? avoidText(avoid) : ''}${before.length ? `
@@ -1003,7 +1025,8 @@ function readGrid(raw) {
   return raw.map((c) => {
     const max = Number(c.max);
     const levels = (Array.isArray(c.levels) ? c.levels : []).slice(0, 10)
-      .map((l) => ({ points: Number(l.points), description: String(l.description || '').slice(0, 600), label: String(l.label || '').slice(0, 40) }))
+      .map((l) => ({ points: Number(l.points), description: String(l.description || '').slice(0, 600), label: String(l.label || '').slice(0, 40),
+        ...(l.min != null && Number(l.min) >= 0 && Number(l.min) < Number(l.points) ? { min: Number(l.min) } : {}) }))
       .filter((l) => Number.isFinite(l.points) && l.points >= 0 && l.points <= max);
     if (!c.name || !(max > 0)) throw new HttpError(400, 'Grille invalide');
     return { name: String(c.name).slice(0, 200), max, levels, note: String(c.note || '').slice(0, 600) };
@@ -1035,14 +1058,14 @@ function readStructure(raw) {
 
 function gridText(grid) {
   return grid.map((c, i) => [`${i + 1}. ${c.name} (sur ${fr(c.max)} points)`,
-    ...[...c.levels].sort((x, y) => y.points - x.points).map((l) => `   - ${l.label ? `Niveau ${l.label}, ` : ''}${fr(l.points)} pt : ${l.description}`),
+    ...[...c.levels].sort((x, y) => y.points - x.points).map((l) => `   - ${l.label ? `Niveau ${l.label}, ` : ''}${l.min != null ? `de ${fr(l.min)} à ${fr(l.points)}` : fr(l.points)} pt : ${l.description}`),
     ...(c.note ? [`   Remarque de l'enseignant : ${c.note}`] : [])].join('\n')).join('\n');
 }
 
 // Ramène les points de chaque critère au niveau de la grille le plus proche : c'est ce qui stabilise les notes.
 // Le niveau nommé par l'IA prime (« B ») ; sinon ses points, ramenés à l'échelle du critère (une IA qui note sur 4 ou
 // sur 100 un critère de 10 retombait toujours sur le même niveau du milieu : « toujours C »).
-function snapToGrid(result, grid) {
+function snapToGrid(result, grid, unit = 0.5) {
   if (result.questions.length !== grid.length) return;
   const norm = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
   result.questions.forEach((q, i) => {
@@ -1051,7 +1074,11 @@ function snapToGrid(result, grid) {
     const named = q.level && (grid[i].levels.find((l) => l.label && norm(l.label) === norm(q.level))
       || grid[i].levels.find((l) => l.label && (norm(q.level).startsWith(norm(l.label)) || norm(l.label).startsWith(norm(q.level)))));
     const raw = q.rawMax > 0 && Math.abs(q.rawMax - grid[i].max) > 1e-9 ? (q.raw * grid[i].max) / q.rawMax : q.raw;
-    q.points = named ? named.points : allowed.reduce((best, v) => (Math.abs(v - raw) < Math.abs(best - raw) ? v : best), allowed[0]);
+    // Niveau en plage (« A : 18 à 20 ») : les points choisis dans la plage sont gardés.
+    const inRange = (l) => l.min != null && raw >= l.min - 1e-9 && raw <= l.points + 1e-9;
+    const fit = (l) => (inRange(l) ? Math.min(l.points, Math.max(l.min, Math.round(raw / unit) * unit)) : l.points);
+    const ranged = grid[i].levels.find(inRange);
+    q.points = named ? fit(named) : ranged ? fit(ranged) : allowed.reduce((best, v) => (Math.abs(v - raw) < Math.abs(best - raw) ? v : best), allowed[0]);
     q.max = grid[i].max;
     q.question = grid[i].name;
   });
@@ -1065,8 +1092,9 @@ const GRID_SCHEMA = {
     name: 'grille',
     schema: {
       type: 'object',
-      required: ['criteres'],
+      required: ['criteres', 'points_ecrits'],
       properties: {
+        points_ecrits: { type: 'boolean' },
         criteres: {
           type: 'array',
           items: {
@@ -1077,7 +1105,7 @@ const GRID_SCHEMA = {
               points_max: { type: 'number' },
               niveaux: {
                 type: 'array',
-                items: { type: 'object', required: ['points', 'description'], properties: { etiquette: { type: 'string' }, points: { type: 'number' }, description: { type: 'string' } } },
+                items: { type: 'object', required: ['points', 'description'], properties: { etiquette: { type: 'string' }, points: { type: 'number' }, points_min: { type: 'number' }, description: { type: 'string' } } },
               },
             },
           },
@@ -1101,11 +1129,12 @@ async function rubric(request, env) {
   const system = copy ? [
     "Tu es conseiller pédagogique. Voici la grille d'évaluation d'un enseignant (image ou texte). Recopie-la FIDÈLEMENT, sans rien inventer ni reformuler :",
     "- chaque critère de la grille, dans l'ordre, avec son nom exact et ses points maximum (sa pondération) ;",
-    "- pour chaque critère, tous ses niveaux du plus élevé au plus bas : « etiquette » = l'étiquette courte du niveau, sans pourcentage ni points (« A » et non « A (100 %) » ; aussi 5, 4, 3 ; « Marquée », « Assurée »… ; vide s'il n'y en a pas), « points » = les points de ce niveau, « description » = le texte exact du niveau (corrige seulement les coquilles évidentes).",
+    "- pour chaque critère, tous ses niveaux du plus élevé au plus bas : « etiquette » = l'étiquette courte du niveau, sans pourcentage ni points (« A » et non « A (100 %) » ; aussi 5, 4, 3 ; « Marquée », « Assurée »… ; vide s'il n'y en a pas), « points » = les points de ce niveau (pour une plage comme « 18-20 », « points » = 20 et « points_min » = 18 ; sans plage, pas de « points_min »), « description » = le texte exact du niveau (corrige seulement les coquilles évidentes).",
     "- Si la grille donne une échelle commune à tous les critères (ex. une légende A à E), répète-la pour chaque critère, avec les points correspondants.",
     "- Si la grille comporte une table de conversion des niveaux ou des cotes en points ou en pourcentages (ex. : « Excellent = 100 %, Très bien = 85 %… », « A = 10 pts »), applique-la à chaque critère : elle prime sur tout le reste.",
     "- Si un niveau n'a pas de points écrits, calcule-les à partir des points maximum du critère : le plus haut niveau = 100 %, puis 80 %, 60 %, 40 %, 20 % (0 pour un niveau qui signifie « absent » ou « non fait »). Si un critère n'a pas de points maximum, mets 10.",
     `- Les points doivent être des multiples de ${fr(unit)}.`,
+    "- « points_ecrits » = vrai seulement si les niveaux eux-mêmes sont des points écrits dans la grille (ex. « 18-20 », « 15-17 », « 4 pts » dans chaque case ou en tête de colonne) ; faux si les niveaux sont des cotes ou des échelons (A à E, Excellent, Marquée…), même avec une pondération par critère, un total ou une table de conversion en pourcentages.",
     "Ne recopie ni le nom de l'élève, ni les notes ou cochages éventuels : seulement la grille vierge. Garde la langue de la grille.",
   ].join('\n') : [
     "Tu es conseiller pédagogique. À partir des consignes et du corrigé d'un enseignant, rédige une grille d'évaluation critériée.",
@@ -1129,13 +1158,14 @@ async function rubric(request, env) {
   const grid = (raw.criteres || []).map((c) => {
     const max = Math.max(unit, snap(c.points_max));
     const levels = (c.niveaux || []).map((l) => ({ points: Math.min(max, Math.max(0, snap(l.points))), description: String(l.description || '').trim(),
+      ...(copy && l.points_min != null && snap(l.points_min) >= 0 && snap(l.points_min) < snap(l.points) ? { min: snap(l.points_min) } : {}),
       // « A (100 %) » → « A » : les points sont déjà dans « points »
       label: String(l.etiquette || '').replace(/\s*[([][^)\]]*(?:%|pts?|points?)[^)\]]*[)\]]\s*$/i, '').trim().slice(0, 40) }))
       .sort((x, y) => y.points - x.points);
     return { name: String(c.nom || 'Critère').trim(), max, levels };
   });
   if (!grid.length) throw new HttpError(502, "L'IA n'a pas pu préparer de grille à partir de ces consignes. Précisez les critères et réessayez.");
-  return json({ grid });
+  return json({ grid, pointsWritten: copy ? !!raw.points_ecrits : true });
 }
 
 // Fiabilité : accord des deux corrections question par question (écarts de points rapportés au barème),
@@ -1326,7 +1356,7 @@ ${list.map((q, i) => `${i + 1}. ${q.name} (sur ${fr(q.max)} points)`).join('\n')
 
     const b = deep && a.questions.length && !a.illegible
       ? await (early || attempt(impose(a.questions.map((q) => ({ name: q.question, max: q.max }))) + SECOND_LOOK, secondOpts)) : null;
-    if (grid) { snapToGrid(a, grid); if (b) snapToGrid(b, grid); }
+    if (grid) { snapToGrid(a, grid, unit); if (b) snapToGrid(b, grid, unit); }
     const flags = [];
     if (a.manipulation) flags.push(`Tentative de manipulation de l'IA détectée et ignorée : « ${a.manipulation} »`);
     if (a.illegible) {

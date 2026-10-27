@@ -569,10 +569,17 @@ function renderGrid() {
     : byGrid() ? (state.grid ? 'Relire ma grille' : 'Lire ma grille')
     : state.grid ? 'Régénérer la grille' : 'Préparer une grille détaillée (gratuit)';
   if (!state.grid) { renderSummary(); return; }
+  // Grille vérifiée : repliable (elle reste appliquée), et repliée d'office au lancement de la correction.
+  $('grid-fold').textContent = tr(state.gridFolded ? 'Afficher la grille ▾' : 'Replier ▴');
+  $('grid-help').hidden = $('grid-criteria').hidden = !!state.gridFolded;
   const row = (c, l) => h('div', { class: 'lvl' },
     h('input', { type: 'text', class: 'lvl-label', value: l.label || '', placeholder: '—', 'aria-label': 'Niveau', title: 'Niveau (A, B, 4…)', oninput: (e) => { l.label = e.target.value.trim(); } }),
-    h('input', { type: 'text', inputMode: 'decimal', class: 'num', value: fmt(l.points), 'aria-label': 'Points du niveau', title: 'Points',
-      onchange: (e) => { l.points = Math.max(0, Math.min(c.max, toNumber(e.target.value) || 0)); e.target.value = fmt(l.points); } }),
+    h('input', { type: 'text', class: 'num', value: ptsText(l), 'aria-label': 'Points du niveau', title: 'Points (ou une plage : 18-20)',
+      onchange: (e) => {
+        const [a, b] = e.target.value.split(/\s*(?:[-–]|à|to)\s*/).map((x) => Math.max(0, Math.min(c.max, toNumber(x) || 0)));
+        if (b != null && b > a) { l.min = a; l.points = b; } else { delete l.min; l.points = a; }
+        e.target.value = ptsText(l);
+      } }),
     h('textarea', { rows: 2, value: l.description, 'aria-label': 'Description du niveau', oninput: (e) => { l.description = e.target.value; } }),
     h('button', { class: 'icon-btn', type: 'button', textContent: '×', title: 'Retirer ce niveau', onclick: () => { c.levels = c.levels.filter((x) => x !== l); renderGrid(); } }));
   $('grid-criteria').replaceChildren(conversionBox(), ...state.grid.map((c, i) => h('div', { class: 'crit' },
@@ -591,13 +598,24 @@ function renderGrid() {
 // Rendu des résultats avec une grille : par lettres (le niveau de chaque critère, et une cote globale) ou par points.
 // Les points restent calculés en coulisse (conversion de la grille) : ils donnent la cote globale.
 const labelled = (grid) => !!grid?.some((c) => c.levels.some((l) => l.label));
-let renderPref = null;
-try { renderPref = localStorage.getItem('ce.render'); } catch { /* ignoré */ }
-const renderMode = () => (labelled(state.grid) ? renderPref || 'letters' : 'points');
+// Par défaut, le rendu suit la grille : une grille écrite en points s'affiche en points, une grille de cotes en lettres.
+// Le choix de l'enseignant est retenu pour ce type de grille.
+const renderKey = () => `ce.render.${state.gridPoints ? 'p' : 'l'}`;
+const renderMode = () => {
+  if (!labelled(state.grid)) return 'points';
+  let pref = null;
+  try { pref = localStorage.getItem(renderKey()); } catch { /* ignoré */ }
+  return pref || (state.gridPoints ? 'points' : 'letters');
+};
 const byLetters = (r) => r.render === 'letters' && labelled(r.grid);
 // Niveau d'un critère : celui de la grille dont les points sont les plus proches.
+// Niveau en plage (« A : 18 à 20 ») : celui qui contient les points.
+const inLevel = (l, pts) => (l.min != null ? pts >= l.min - 1e-9 && pts <= l.points + 1e-9 : Math.abs(l.points - pts) < 1e-9);
+const ptsText = (l) => (l.min != null ? `${fmt(l.min)}–${fmt(l.points)}` : fmt(l.points));
 function levelOf(r, i, points) {
   const lv = r.grid?.[i]?.levels?.filter((l) => l.label) || [];
+  const hit = lv.find((l) => inLevel(l, points));
+  if (hit) return hit.label;
   return lv.length ? lv.reduce((a, l) => (Math.abs(l.points - points) < Math.abs(a.points - points) ? l : a)).label : fmt(points);
 }
 // Cote globale : le niveau dont le pourcentage (table de conversion de la grille) est le plus proche du total obtenu.
@@ -627,12 +645,16 @@ function conversionBox() {
   };
   const unit = $('whole').value === '1' ? 1 : 0.5;
   const apply = (label, pct) => {
-    for (const c of state.grid) for (const l of c.levels) if (l.label === label) l.points = Math.min(c.max, Math.max(0, Math.round((c.max * pct) / 100 / unit) * unit));
+    for (const c of state.grid) for (const l of c.levels) if (l.label === label) {
+      const top = Math.min(c.max, Math.max(0, Math.round((c.max * pct) / 100 / unit) * unit));
+      if (l.min != null) l.min = Math.min(top, Math.round(((l.min * top) / (l.points || 1)) / unit) * unit); // la plage suit
+      l.points = top;
+    }
     setTimeout(renderGrid, 0); // après la fin de l'événement : redessiner pendant « change » casse le champ qui perd le focus
   };
   const ex = state.grid.find((c) => c.max > 0);
   const mode = renderMode();
-  const pick = (m) => { renderPref = m; try { localStorage.setItem('ce.render', m); } catch { /* ignoré */ } renderGrid(); };
+  const pick = (m) => { try { localStorage.setItem(renderKey(), m); } catch { /* ignoré */ } renderGrid(); };
   return h('div', { class: 'conv' },
     h('div', { class: 'render-row' }, h('b', { textContent: 'Résultats affichés' }),
       h('div', { class: 'seg' }, h('button', { type: 'button', textContent: 'Par lettres', 'aria-pressed': String(mode === 'letters'), onclick: () => pick('letters') }),
@@ -656,12 +678,14 @@ async function makeGrid() {
   btn.textContent = copy ? 'Un instant, lecture de la grille…' : 'Un instant, l’IA prépare la grille…';
   renderSummary();
   try {
-    const { grid } = await api('/api/rubric', { method: 'POST', body: {
+    const { grid, pointsWritten } = await api('/api/rubric', { method: 'POST', body: {
       rubric: $('rubric').value.trim(), rubricPages: state.rubricPages.map((p) => p.url), copy,
       total: copy ? undefined : Number($('total').value), wholePoints: $('whole').value === '1',
     } });
     state.grid = grid.map((c) => ({ ...c, name: cleanText(c.name), levels: c.levels.map((l) => ({ ...l, label: cleanText(l.label || ''), description: cleanText(l.description) })) }));
     state.gridFromCopy = copy;
+    state.gridFolded = false;
+    state.gridPoints = pointsWritten !== false;
     banner('info', copy ? 'Grille lue : vérifiez qu’elle est identique à la vôtre et corrigez au besoin. Elle sera appliquée à toutes les copies.'
       : 'Grille préparée : relisez-la et ajustez au besoin. Elle sera appliquée à toutes les copies.');
     if (copy) setTimeout(() => $('grid-editor').scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
@@ -769,6 +793,7 @@ async function runAll(only, calibrating = false) {
   const list = only || bundles();
   if (!list.length) return;
   state.running = true;
+  if (state.grid && byGrid() && !state.gridFolded) { state.gridFolded = true; renderGrid(); }
   state.stopping = false;
   $('stop-run').disabled = false;
   $('stop-run').textContent = tr('Arrêter');
@@ -906,6 +931,8 @@ async function runAll(only, calibrating = false) {
     $('done-msg').hidden = false;
     $('done-msg').textContent = state.kind === 'lang'
       ? `✓ ${pl(done, 'copie analysée', 'copies analysées')}. Ouvrez une copie annotée pour voir les fautes surlignées ; retirez celles qui n'en sont pas, ajoutez celles qui manquent.`
+      : byGrid() && renderMode() === 'letters' ? `✓ ${pl(done, 'copie corrigée', 'copies corrigées')}. Ouvrez une copie pour voir et modifier ses niveaux. En rose : les critères sous le niveau le plus élevé.`
+      : byGrid() ? `✓ ${pl(done, 'copie corrigée', 'copies corrigées')}. Ouvrez une copie pour voir et modifier ses niveaux. En rose : les critères où des points ont été retirés.`
       : `✓ ${pl(done, 'copie corrigée', 'copies corrigées')}. Ouvrez une copie pour voir et modifier sa note. En rose : les questions où des points ont été retirés.`;
     $('done-msg').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
@@ -933,9 +960,17 @@ function renderStats() {
   const withRel = graded.filter((r) => r.reliability != null);
   const rel = withRel.length ? pctText(fmt(withRel.reduce((a, r) => a + r.reliability, 0) / withRel.length)) : '—';
   const stat = (v, l) => h('div', { class: 'stat' }, h('div', { class: 'v', textContent: v }), h('div', { class: 'l', textContent: l }));
+  // Rendu par lettres : la répartition des cotes plutôt qu'une moyenne en pourcentage.
+  const letters = graded.every(byLetters);
+  const spread = () => {
+    const n = new Map();
+    for (const r of graded) { const g = globalLetter(r); n.set(g, (n.get(g) || 0) + 1); }
+    const order = graded[0].grid.flatMap((c) => c.levels.map((l) => l.label)).filter((l, k, a) => l && a.indexOf(l) === k);
+    return [...n].sort((x, y) => order.indexOf(x[0]) - order.indexOf(y[0])).map(([g, k]) => `${g} : ${k}`).join(' · ');
+  };
   // Fiabilité : seulement en correction approfondie (sinon « — » inquiète sans rien dire).
   $('stats').replaceChildren(...[stat(String(graded.length), 'copies'),
-    stat(pctText(fmt(avg)), `moyenne (min ${fmt(Math.min(...pct))} – max ${fmt(Math.max(...pct))})`),
+    letters ? h('div', { class: 'stat' }, h('div', { class: 'v spread', textContent: spread() }), h('div', { class: 'l', textContent: 'cotes de la classe' })) : stat(pctText(fmt(avg)), `moyenne (min ${fmt(Math.min(...pct))} – max ${fmt(Math.max(...pct))})`),
     withRel.length ? h('div', { class: 'stat' }, h('div', { class: 'v', textContent: rel }),
       h('div', { class: 'l' }, 'fiabilité moyenne ', infoButton())) : null, stat(String(flagged), 'à vérifier ⚠')].filter(Boolean)); // replaceChildren afficherait « null »
 }
@@ -948,7 +983,7 @@ function questionAverages(graded) {
   const rows = new Map();
   for (const r of graded) r.questions.forEach((q, i) => {
     const k = same ? i : `${q.question}/${q.max}`;
-    if (!rows.has(k)) rows.set(k, { label: same ? shape[i].question : q.question, max: q.max, sum: 0, n: 0 });
+    if (!rows.has(k)) rows.set(k, { label: same ? shape[i].question : q.question, max: q.max, sum: 0, n: 0, i });
     const row = rows.get(k); row.sum += q.points; row.n++;
   });
   return [...rows.values()].filter((q) => q.max > 0).map((q) => ({ ...q, avg: q.sum / q.n, pct: (q.sum / q.n / q.max) * 100 }));
@@ -959,12 +994,15 @@ function renderQuestionStats(graded) {
   $('qstats').hidden = list.length < 2;
   if (list.length < 2) return;
   const weakest = list.reduce((a, b) => (b.pct < a.pct ? b : a));
-  $('qstats').querySelector('summary').replaceChildren(h('b', {}, graded.every((r) => r.grid) ? 'Moyenne par critère' : 'Moyenne par question'),
-    h('span', { class: 'muted' }, ` · la plus faible : ${weakest.label} (${pctText(fmt(Math.round(weakest.pct)))})`));
+  // Rendu par lettres : le niveau moyen de la classe à chaque critère, sans points ni pourcentage.
+  const letters = graded.every(byLetters);
+  const value = (q) => (letters ? levelOf(graded[0], q.i, q.avg) : pctText(fmt(Math.round(q.pct))));
+  $('qstats').querySelector('summary').replaceChildren(h('b', {}, letters ? 'Niveau moyen par critère' : graded.every((r) => r.grid) ? 'Moyenne par critère' : 'Moyenne par question'),
+    h('span', { class: 'muted' }, ` · ${letters ? 'le plus faible' : 'la plus faible'} : ${weakest.label} (${value(weakest)})`));
   $('qstats-rows').replaceChildren(...list.map((q) => h('div', { class: 'qrow' },
     h('span', { class: 'ql', title: q.label, textContent: q.label }),
     h('span', { class: 'qbar' }, h('i', { class: q.pct < 60 ? 'lo' : q.pct < 75 ? 'mid' : 'hi', style: `width:${Math.round(q.pct)}%` })),
-    h('span', { class: 'qv', textContent: `${fmt(Math.round(q.avg * 10) / 10)} / ${fmt(q.max)} · ${pctText(fmt(Math.round(q.pct)))}` }))));
+    h('span', { class: 'qv', textContent: letters ? value(q) : `${fmt(Math.round(q.avg * 10) / 10)} / ${fmt(q.max)} · ${pctText(fmt(Math.round(q.pct)))}` }))));
 }
 
 function renderResults() {
@@ -973,6 +1011,7 @@ function renderResults() {
   const shown = mine.filter((r) => !q || `${r.name} ${r.group} ${r.exam} ${r.file}`.toLowerCase().includes(q))
     .sort((x, y) => (x.no ?? 0) - (y.no ?? 0)); // même ordre que la pile de copies
   $('empty').hidden = !!mine.length;
+  document.body.classList.toggle('has-results', !!mine.length); // résultats plus larges sur ordinateur
   $('cards').replaceChildren(...shown.map((r) => (r.kind === 'lang' ? langCard(r) : card(r))));
   renderStats();
   renderSummary();
@@ -1034,7 +1073,11 @@ function wrapText(ctx, text, width) {
 // forPrint : image réduite et gardée en mémoire comme fichier (blob) — imprimer 150 copies d'un coup reste léger.
 async function annotatedPages(r, { forPrint = false } = {}) {
   const out = [];
-  const general = r.questions.map((q, i) => ({ q, i })).filter(({ q }) => !q.box || !(q.page >= 1 && q.page <= r.pageUrls.length));
+  // Avec une grille, les critères jugent l'ensemble de la copie : ils sont listés dans l'ordre de la grille, sous la note,
+  // plutôt qu'accrochés çà et là sur la page (« Q3 » avant « Q1 »).
+  const byCrit = !!r.grid;
+  const general = r.questions.map((q, i) => ({ q, i })).filter(({ q }) => byCrit || !q.box || !(q.page >= 1 && q.page <= r.pageUrls.length));
+  const generalPage = byCrit ? 0 : r.pageUrls.length - 1;
   for (let pi = 0; pi < r.pageUrls.length; pi++) {
     const img = await loadImage(r.pageUrls[pi]);
     const W = img.width, M = Math.round(W * 0.34), pad = Math.round(M * 0.07), u = W / 1000;
@@ -1044,7 +1087,7 @@ async function annotatedPages(r, { forPrint = false } = {}) {
     const items = [];
     let y = pad;
     if (pi === 0) { items.push({ kind: 'grade', y }); y += big * 2.6; }
-    const here = r.questions.map((q, i) => ({ q, i })).filter(({ q }) => q.box && q.page === pi + 1).sort((a, b) => a.q.box[0] - b.q.box[0]);
+    const here = byCrit ? [] : r.questions.map((q, i) => ({ q, i })).filter(({ q }) => q.box && q.page === pi + 1).sort((a, b) => a.q.box[0] - b.q.box[0]);
     for (const { q, i } of here) {
       y = Math.max(y, q.box[0] * img.height);
       probe.font = `${mid}px sans-serif`;
@@ -1052,13 +1095,17 @@ async function annotatedPages(r, { forPrint = false } = {}) {
       items.push({ kind: 'note', q, i, y, lines });
       y += mid * 1.3 + lines.length * mid * 1.2 + mid;
     }
-    if (pi === r.pageUrls.length - 1) {
+    if (pi === generalPage) {
       for (const { q, i } of general) {
         probe.font = `${small}px sans-serif`;
         const lines = wrapText(probe, (edited(q) ? trTo(r.lang || lang, 'Note ajustée par l’enseignant.') : q.margin || q.justification), M - 2 * pad);
-        items.push({ kind: 'general', q, i, y, lines });
-        y += mid * 1.3 + lines.length * small * 1.2 + mid * 0.6;
+        probe.font = `bold ${mid}px sans-serif`;
+        const headLines = wrapText(probe, `${byCrit ? q.question : qLabel(q, i)} · ${qMarkText(r, q, i)}`, M - 2 * pad);
+        items.push({ kind: 'general', q, i, y, lines, headLines });
+        y += mid * 1.3 * headLines.length + lines.length * small * 1.2 + mid * 0.6;
       }
+    }
+    if (pi === r.pageUrls.length - 1) {
       if (r.comment) {
         probe.font = `italic ${small}px sans-serif`;
         const lines = wrapText(probe, r.comment, M - 2 * pad);
@@ -1086,7 +1133,7 @@ async function annotatedPages(r, { forPrint = false } = {}) {
         continue;
       }
       const { q, i } = it;
-      const head = `${qLabel(q, i)} · ${qMarkText(r, q, i)}`;
+      const head = `${byCrit ? q.question : qLabel(q, i)} · ${qMarkText(r, q, i)}`;
       if (it.kind === 'note') {
         const [t, l, b, rr] = q.box;
         // Marque au bout de la réponse : ✓ vert (tous les points) ou ✗ rouge (aucun point) ; la réponse encadrée en rouge
@@ -1114,10 +1161,11 @@ async function annotatedPages(r, { forPrint = false } = {}) {
         ctx.beginPath(); ctx.moveTo(...from); ctx.lineTo(x - pad * 0.4, it.y + mid * 0.6); ctx.stroke(); ctx.globalAlpha = 1;
       }
       ctx.font = `bold ${mid}px sans-serif`;
-      ctx.fillText(head, x, it.y);
+      const heads = it.headLines || [head];
+      heads.forEach((l, k) => ctx.fillText(l, x, it.y + k * mid * 1.3));
       ctx.font = `${it.kind === 'note' ? mid : small}px sans-serif`;
       const lh = (it.kind === 'note' ? mid : small) * 1.2;
-      it.lines.forEach((l, k) => ctx.fillText(l, x, it.y + mid * 1.3 + k * lh));
+      it.lines.forEach((l, k) => ctx.fillText(l, x, it.y + mid * 1.3 * heads.length + k * lh));
     }
     if (!forPrint) { out.push(c.toDataURL('image/jpeg', 0.85)); continue; }
     const k = Math.min(1, 1700 / c.width);
@@ -1133,10 +1181,10 @@ async function annotatedPages(r, { forPrint = false } = {}) {
 // Fiches seules : plusieurs par feuille, à découper ; avec les copies : chaque élève commence une nouvelle feuille.
 const escHtml = (t) => String(t ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 function resultSheet(r) {
-  const rows = r.questions.map((q, i) => `<tr><td class="q">${escHtml(qLabel(q, i))}</td><td>${escHtml(q.question)}</td><td class="p">${escHtml(qMarkText(r, q, i)).replace(/ \/ /, '&nbsp;/&nbsp;')}</td><td>${escHtml(edited(q) ? trTo(r.lang || lang, 'Note ajustée par l’enseignant.') : byLetters(r) ? noPoints(q.justification) : q.justification)}</td></tr>`).join('');
+  const rows = r.questions.map((q, i) => `<tr><td class="q">${escHtml(r.grid ? String(i + 1) : qLabel(q, i))}</td><td>${escHtml(q.question)}</td><td class="p">${escHtml(qMarkText(r, q, i)).replace(/ \/ /, '&nbsp;/&nbsp;')}</td><td>${escHtml(edited(q) ? trTo(r.lang || lang, 'Note ajustée par l’enseignant.') : byLetters(r) ? noPoints(q.justification) : q.justification)}</td></tr>`).join('');
   return `<div class="head"><div><b>${escHtml(r.name || trTo(r.lang || lang, 'Nom à compléter'))}</b>${r.group ? ` · ${escHtml(r.group)}` : ''}${r.exam ? `<br><small>${escHtml(r.exam)}</small>` : ''}</div>
     <div class="grade">${escHtml(markText(r) ?? trTo(r.lang || lang, 'Illisible'))}</div></div>
-    <table><thead><tr><th></th><th>${trTo(r.lang || lang, 'Question')}</th><th>${trTo(r.lang || lang, byLetters(r) ? 'Niveau' : 'Points')}</th><th>${trTo(r.lang || lang, 'Justification')}</th></tr></thead><tbody>${rows}</tbody></table>
+    <table><thead><tr><th></th><th>${trTo(r.lang || lang, r.grid ? 'Critère' : 'Question')}</th><th>${trTo(r.lang || lang, byLetters(r) ? 'Niveau' : 'Points')}</th><th>${trTo(r.lang || lang, 'Justification')}</th></tr></thead><tbody>${rows}</tbody></table>
     ${r.comment ? `<p class="comment">${escHtml(r.comment)}</p>` : ''}`;
 }
 async function printBatch(list, { copies = true, results = false } = {}) {
@@ -1185,14 +1233,16 @@ async function rewrite(r, box, btn) {
       lang: r.lang || lang, letters, letter: letters && r.grade != null ? globalLetter(r) : undefined, grade: r.grade, total: r.total,
       questions: r.questions.map((q, i) => ({ question: q.question, answer: q.answer, justification: letters ? noPoints(q.justification) : q.justification,
         points: q.points, max: q.max, level: letters ? levelOf(r, i, q.points) : undefined })),
-      avoid: openings(r.examKey, r), previous: [...(r.versions || []), box.value].filter(Boolean).slice(-5) } });
+      avoid: openings(r.examKey, r), previous: [...(r.versions || []), box.value].filter(Boolean).slice(-5),
+      // Prénom seulement (le nom de famille ne sert pas), et l'ordre d'enseignement : le vocabulaire suit l'âge.
+      firstName: anonymous() ? undefined : String(r.name || '').trim().split(/\s+/)[0] || undefined, niveau: $('lang-level').value } });
     if (comment) { r.versions = [...(r.versions || []), box.value].filter(Boolean).slice(-5); r.comment = comment; box.value = comment; state.exported = false; }
   } catch (err) { banner('err', err.message); }
   btn.disabled = false; btn.textContent = label;
 }
 
 function card(r) {
-  const commentBox = h('textarea', { rows: 3, value: r.comment, oninput: (e) => { r.comment = e.target.value; state.exported = false; } });
+  const commentBox = h('textarea', { rows: 6, class: 'comment-box', value: r.comment, oninput: (e) => { r.comment = e.target.value; state.exported = false; } });
   const gradeEl = h('span', { class: 'grade' });
   const updateGrade = () => { gradeEl.replaceChildren(...(r.grade == null ? [tr('Illisible')] : byLetters(r) ? [globalLetter(r)] : [fmt(r.grade), h('small', {}, ` / ${fmt(r.total)}`)])); };
   updateGrade();
@@ -1240,9 +1290,9 @@ function card(r) {
         const letters = byLetters(r); // rendu par lettres : le niveau seulement, sans points
         const level = levels ? h('select', { class: 'lvl-pick', 'aria-label': 'Niveau', onchange: (e) => {
           input.value = fmt(Number(e.target.value)); input.dispatchEvent(new Event('change')); } },
-        ...levels.map((l) => h('option', { value: String(l.points), textContent: letters ? l.label || fmt(l.points) : `${l.label || fmt(l.points)}${l.label ? ` · ${fmt(l.points)} pts` : ' pts'}`, selected: l.points === qq.points })),
-        levels.some((l) => l.points === qq.points) ? null : h('option', { value: String(qq.points), textContent: `Autre · ${fmt(qq.points)} pts`, selected: true })) : null;
-        if (level) input.addEventListener('change', () => { level.value = String(qq.points); });
+        ...levels.map((l) => h('option', { value: String(l.points), textContent: letters ? l.label || ptsText(l) : `${l.label || ptsText(l)}${l.label ? ` · ${ptsText(l)} pts` : ' pts'}`, selected: l === levels.find((x) => inLevel(x, qq.points)) })),
+        levels.some((l) => inLevel(l, qq.points)) ? null : h('option', { value: String(qq.points), textContent: `Autre · ${fmt(qq.points)} pts`, selected: true })) : null;
+        if (level) input.addEventListener('change', () => { level.value = String(levels.find((l) => inLevel(l, qq.points))?.points ?? qq.points); });
         row.append(h('td', { class: 'q', textContent: qq.question }),
           h('td', { class: 'pts' }, level, letters && level ? null : [input, h('span', { class: 'muted', textContent: ` / ${fmt(qq.max)}` })], second),
           h('td', { class: 'just' }, changed, justText, why));
@@ -1492,10 +1542,13 @@ function langCard(r) {
   const grey = errors.filter((e) => e.grey).length;
   const gradeEl = h('span', { class: 'grade' });
   // Ligne courte (le nom de l'élève doit rester lisible) ; le nombre de mots est dans le détail de la copie.
-  gradeEl.replaceChildren(r.pda ? h('span', {}, r.cote || '—', h('small', {}, ` · ${r.pct == null ? '' : `${pctText(fmt(Math.round(r.pct * 10) / 10))} · `}${plural(n, 'faute retenue', 'fautes retenues', 'error', 'errors')}`))
+  const detail = r.pda ? `${r.pct == null ? '' : `${pctText(fmt(Math.round(r.pct * 10) / 10))} · `}${plural(n, 'faute retenue', 'fautes retenues', 'error', 'errors')}`
+    : r.grade == null ? '' : `${n} faute(s)`;
+  gradeEl.replaceChildren(r.pda ? h('span', {}, r.cote || '—', h('small', {}, ` · ${detail}`))
     : r.grade == null ? `${n} faute${n > 1 ? 's' : ''}`
-    : h('span', {}, fmt(r.grade), h('small', {}, ` / ${fmt(r.total)} · ${n} faute(s)`)));
-  return cardShell(r, [h('span'), gradeEl],
+    : h('span', {}, fmt(r.grade), h('small', {}, ` / ${fmt(r.total)} · ${detail}`)));
+  // Sur téléphone, le détail passe sous le nom (sinon « Rosalie Gagné » devenait « Rosa »).
+  return cardShell(r, [h('span', { class: 'detail', textContent: detail }), gradeEl],
     h('div', { class: 'card-body' },
       r.flags.length ? h('div', { class: 'flags' }, r.flags.map((f) => h('div', { textContent: `⚠ ${f}` }))) : null,
       errors.length ? categoryChips(errors) : h('p', { class: 'muted small', style: 'margin:0', textContent: 'Aucune faute relevée.' }),
@@ -1515,9 +1568,12 @@ function langCard(r) {
 // Visionneuse : la copie avec les fautes surlignées, et la liste des fautes (supprimables si l'IA s'est trompée).
 let viewing = null;
 let adding = null; // ajout d'une faute oubliée : { stage: 'draw' } puis { stage: 'form', page, box }
+// Dernière faute retirée de la copie ouverte : « Annuler » la remet à sa place.
+let removed = null;
 function openViewer(r) {
   viewing = r;
   adding = null;
+  removed = null;
   $('viewer-pages').classList.remove('zoom');
   $('viewer').hidden = false;
   renderViewer();
@@ -1545,6 +1601,13 @@ function renderViewer(focus) {
   }));
   const items = numbered.flat();
   $('viewer-list').replaceChildren(...[
+    removed?.r === r ? h('div', { class: 'undo-bar' }, h('span', { textContent: `${tr('Faute retirée')} : « ${removed.e.text} »` }),
+      h('button', { class: 'btn small', type: 'button', textContent: tr('↶ Remettre'), onclick: () => {
+        const { p, e, at } = removed;
+        p.errors.splice(Math.min(at, p.errors.length), 0, e);
+        removed = null; state.exported = false;
+        renderViewer(e); renderResults();
+      } })) : null,
     adding?.stage === 'form' ? addErrorForm() : null,
     items.length ? categoryChips(items.map((i) => i.e)) : h('p', { class: 'muted', textContent: 'Aucune faute relevée.' }),
     ...items.map(({ e, p, n: k }) => {
@@ -1552,6 +1615,7 @@ function renderViewer(focus) {
         h('div', { class: 'err-head' }, h('b', { textContent: `${k}. ${CATS[e.category].label}${e.box ? '' : ' (non localisée)'}${e.doubtful ? ' · à vérifier' : ''}${e.grey ? L(' · notion en apprentissage : ne compte pas', ' · being learned: not counted') : ''}${r.dup?.includes(e) ? L(' · répétée : retenue une seule fois', ' · repeated: counted once') : ''}` }),
           h('button', { class: 'icon-btn', type: 'button', textContent: '×', title: "Ce n'est pas une faute : retirer", onclick: (ev) => {
             ev.stopPropagation();
+            removed = { r, p, e, at: p.errors.indexOf(e) };
             p.errors = p.errors.filter((x) => x !== e);
             state.exported = false;
             renderViewer(); renderResults();
@@ -1736,7 +1800,7 @@ function exportCSV() {
   // Avec une grille : une colonne de points et une colonne de niveau par critère, nommées d'après la grille.
   const grid = perQuestion ? sorted.find((r) => r.grid)?.grid : null;
   const labelled = grid && grid.some((c) => c.levels.some((l) => l.label));
-  const levelOf = (r, i, pts = r.questions[i]?.points) => r.grid?.[i]?.levels.find((l) => l.points === pts)?.label || '';
+  const levelOf = (r, i, pts = r.questions[i]?.points) => r.grid?.[i]?.levels.find((l) => inLevel(l, pts))?.label || '';
   const numbered = (q, i) => (/^\s*\d/.test(q.question) ? q.question : `${i + 1}. ${q.question}`); // « 1. Hypothèse » est déjà numéroté
   const qHeads = !perQuestion ? [] : grid ? shape.flatMap((q, i) => [`${numbered(q, i)} (/${num(q.max)})`, ...(labelled ? [`${numbered(q, i)} : niveau`] : [])])
     : shape.map((q, i) => `Q${i + 1} (/${num(q.max)})`);
@@ -2001,7 +2065,8 @@ document.addEventListener('keydown', (e) => {
 });
 $('zoom-close').addEventListener('click', () => { $('zoom').hidden = true; });
 document.querySelectorAll('[data-close-viewer]').forEach((b) => b.addEventListener('click', () => { $('viewer').hidden = true; viewing = null; }));
-$('grid-remove').addEventListener('click', () => { state.grid = null; renderGrid(); });
+$('grid-remove').addEventListener('click', () => { state.grid = null; state.gridFolded = false; renderGrid(); });
+$('grid-fold').addEventListener('click', () => { state.gridFolded = !state.gridFolded; renderGrid(); });
 $('deep').addEventListener('change', renderSummary);
 // Arrêter : plus aucune nouvelle copie ne part. Celles déjà envoyées se terminent (leurs pages sont déjà décomptées,
 // autant recevoir leur résultat) ; les autres restent dans la liste, sans rien décompter.
