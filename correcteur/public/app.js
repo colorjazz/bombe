@@ -584,6 +584,31 @@ function renderGrid() {
   updateGridTotal();
 }
 
+// Rendu des résultats avec une grille : par lettres (le niveau de chaque critère, et une cote globale) ou par points.
+// Les points restent calculés en coulisse (conversion de la grille) : ils donnent la cote globale.
+const labelled = (grid) => !!grid?.some((c) => c.levels.some((l) => l.label));
+let renderPref = null;
+try { renderPref = localStorage.getItem('ce.render'); } catch { /* ignoré */ }
+const renderMode = () => (labelled(state.grid) ? renderPref || 'letters' : 'points');
+const byLetters = (r) => r.render === 'letters' && labelled(r.grid);
+// Niveau d'un critère : celui de la grille dont les points sont les plus proches.
+function levelOf(r, i, points) {
+  const lv = r.grid?.[i]?.levels?.filter((l) => l.label) || [];
+  return lv.length ? lv.reduce((a, l) => (Math.abs(l.points - points) < Math.abs(a.points - points) ? l : a)).label : fmt(points);
+}
+// Cote globale : le niveau dont le pourcentage (table de conversion de la grille) est le plus proche du total obtenu.
+function globalLetter(r) {
+  const pct = (100 * r.grade) / r.total, table = new Map();
+  r.grid.forEach((c) => c.levels.forEach((l) => { if (l.label && c.max > 0) (table.get(l.label) || table.set(l.label, []).get(l.label)).push((100 * l.points) / c.max); }));
+  let best = null;
+  for (const [label, v] of table) { const m = v.reduce((a, x) => a + x, 0) / v.length; if (!best || Math.abs(m - pct) < Math.abs(best.m - pct)) best = { label, m }; }
+  return best?.label ?? fmt(r.grade);
+}
+// Rendu par lettres : les points cités par l'IA dans la justification (« Niveau C retenu (12/20) ») sont retirés.
+const noPoints = (t) => String(t || '').replace(/\s*\((?:\d+(?:[.,]\d+)?\s*(?:\/\s*\d+(?:[.,]\d+)?|pts?|points?))\)/gi, '');
+const markText = (r) => (r.grade == null ? null : byLetters(r) ? globalLetter(r) : `${fmt(r.grade)} / ${fmt(r.total)}`);
+const qMarkText = (r, q, i) => (byLetters(r) ? levelOf(r, i, q.points) : `${fmt(q.points)} / ${fmt(q.max)}`);
+
 // Conversion des niveaux en points, commune à toute la grille : « Acceptable (C) = 60 % » donne 6 sur un critère de 10 et
 // 12 sur un critère de 20. Les grilles d'école ont leur propre table (souvent non linéaire) ; la changer ici évite de
 // corriger les points niveau par niveau dans chaque critère. Le pourcentage affiché est déduit des points actuels.
@@ -601,7 +626,12 @@ function conversionBox() {
     setTimeout(renderGrid, 0); // après la fin de l'événement : redessiner pendant « change » casse le champ qui perd le focus
   };
   const ex = state.grid.find((c) => c.max > 0);
+  const mode = renderMode();
+  const pick = (m) => { renderPref = m; try { localStorage.setItem('ce.render', m); } catch { /* ignoré */ } renderGrid(); };
   return h('div', { class: 'conv' },
+    h('div', { class: 'render-row' }, h('b', { textContent: 'Résultats affichés' }),
+      h('div', { class: 'seg' }, h('button', { type: 'button', textContent: 'Par lettres', 'aria-pressed': String(mode === 'letters'), onclick: () => pick('letters') }),
+        h('button', { type: 'button', textContent: 'Par points', 'aria-pressed': String(mode === 'points'), onclick: () => pick('points') }))),
     h('b', { textContent: 'Conversion des niveaux en points (pour tous les critères)' }),
     h('div', { class: 'conv-rows' }, ...labels.map((label) => h('label', { class: 'conv-row' }, h('b', { textContent: label }),
       h('input', { type: 'text', inputMode: 'decimal', class: 'num', value: fmt(pctOf(label)), 'aria-label': `${label} : pourcentage des points du critère`,
@@ -825,6 +855,7 @@ async function runAll(only, calibrating = false) {
         // `ai` : la note proposée, pour repérer celles que l'enseignant change (calibrage).
         unit: settings.wholePoints ? 1 : 0.5, questions: r.questions.map((q) => ({ ...q, ai: r.illegible ? null : q.points })), examKey, lang: settings.outLang,
         grid: settings.grid && settings.grid.length === r.questions.length ? structuredClone(settings.grid) : null, // niveaux par critère
+        render: settings.grid ? renderMode() : 'points',
         comment: r.comment, pageCount: b.length, illegible: !!r.illegible,
         flags: hasKey || r.illegible ? r.flags : [...r.flags, 'Corrigée sans corrigé : vérifiez que la note n’est pas trop généreuse.'],
       });
@@ -1041,7 +1072,7 @@ async function annotatedPages(r, { forPrint = false } = {}) {
       ctx.fillStyle = RED; ctx.strokeStyle = RED; ctx.textBaseline = 'top';
       if (it.kind === 'grade') {
         ctx.font = `bold ${big * 1.6}px sans-serif`;
-        ctx.fillText(r.grade == null ? trTo(r.lang || lang, 'Illisible') : `${fmt(r.grade)} / ${fmt(r.total)}`, x, it.y);
+        ctx.fillText(markText(r) ?? trTo(r.lang || lang, 'Illisible'), x, it.y);
         continue;
       }
       if (it.kind === 'comment') {
@@ -1050,7 +1081,7 @@ async function annotatedPages(r, { forPrint = false } = {}) {
         continue;
       }
       const { q, i } = it;
-      const head = `${qLabel(q, i)} · ${fmt(q.points)} / ${fmt(q.max)}`;
+      const head = `${qLabel(q, i)} · ${qMarkText(r, q, i)}`;
       if (it.kind === 'note') {
         const [t, l, b, rr] = q.box;
         // Marque au bout de la réponse : ✓ vert (tous les points) ou ✗ rouge (aucun point) ; la réponse encadrée en rouge
@@ -1097,10 +1128,10 @@ async function annotatedPages(r, { forPrint = false } = {}) {
 // Fiches seules : plusieurs par feuille, à découper ; avec les copies : chaque élève commence une nouvelle feuille.
 const escHtml = (t) => String(t ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 function resultSheet(r) {
-  const rows = r.questions.map((q, i) => `<tr><td class="q">${escHtml(qLabel(q, i))}</td><td>${escHtml(q.question)}</td><td class="p">${fmt(q.points)}&nbsp;/&nbsp;${fmt(q.max)}</td><td>${escHtml(q.justification)}</td></tr>`).join('');
+  const rows = r.questions.map((q, i) => `<tr><td class="q">${escHtml(qLabel(q, i))}</td><td>${escHtml(q.question)}</td><td class="p">${escHtml(qMarkText(r, q, i)).replace(/ \/ /, '&nbsp;/&nbsp;')}</td><td>${escHtml(byLetters(r) ? noPoints(q.justification) : q.justification)}</td></tr>`).join('');
   return `<div class="head"><div><b>${escHtml(r.name || trTo(r.lang || lang, 'Nom à compléter'))}</b>${r.group ? ` · ${escHtml(r.group)}` : ''}${r.exam ? `<br><small>${escHtml(r.exam)}</small>` : ''}</div>
-    <div class="grade">${r.grade == null ? trTo(r.lang || lang, 'Illisible') : `${fmt(r.grade)} / ${fmt(r.total)}`}</div></div>
-    <table><thead><tr><th></th><th>${trTo(r.lang || lang, 'Question')}</th><th>${trTo(r.lang || lang, 'Points')}</th><th>${trTo(r.lang || lang, 'Justification')}</th></tr></thead><tbody>${rows}</tbody></table>
+    <div class="grade">${escHtml(markText(r) ?? trTo(r.lang || lang, 'Illisible'))}</div></div>
+    <table><thead><tr><th></th><th>${trTo(r.lang || lang, 'Question')}</th><th>${trTo(r.lang || lang, byLetters(r) ? 'Niveau' : 'Points')}</th><th>${trTo(r.lang || lang, 'Justification')}</th></tr></thead><tbody>${rows}</tbody></table>
     ${r.comment ? `<p class="comment">${escHtml(r.comment)}</p>` : ''}`;
 }
 async function printBatch(list, { copies = true, results = false } = {}) {
@@ -1134,7 +1165,7 @@ async function printBatch(list, { copies = true, results = false } = {}) {
 
 function card(r) {
   const gradeEl = h('span', { class: 'grade' });
-  const updateGrade = () => { gradeEl.replaceChildren(...(r.grade == null ? [tr('Illisible')] : [fmt(r.grade), h('small', {}, ` / ${fmt(r.total)}`)])); };
+  const updateGrade = () => { gradeEl.replaceChildren(...(r.grade == null ? [tr('Illisible')] : byLetters(r) ? [globalLetter(r)] : [fmt(r.grade), h('small', {}, ` / ${fmt(r.total)}`)])); };
   updateGrade();
 
   const body = h('div', { class: 'card-body' },
@@ -1168,14 +1199,15 @@ function card(r) {
           } });
         // Avec une grille : on choisit un niveau (A, B…), qui donne ses points ; les points restent modifiables.
         const levels = r.grid?.[qi]?.levels?.length ? [...r.grid[qi].levels].sort((x, y) => y.points - x.points) : null;
+        const letters = byLetters(r); // rendu par lettres : le niveau seulement, sans points
         const level = levels ? h('select', { class: 'lvl-pick', 'aria-label': 'Niveau', onchange: (e) => {
           input.value = fmt(Number(e.target.value)); input.dispatchEvent(new Event('change')); } },
-        ...levels.map((l) => h('option', { value: String(l.points), textContent: `${l.label || fmt(l.points)}${l.label ? ` · ${fmt(l.points)} pts` : ' pts'}`, selected: l.points === qq.points })),
+        ...levels.map((l) => h('option', { value: String(l.points), textContent: letters ? l.label || fmt(l.points) : `${l.label || fmt(l.points)}${l.label ? ` · ${fmt(l.points)} pts` : ' pts'}`, selected: l.points === qq.points })),
         levels.some((l) => l.points === qq.points) ? null : h('option', { value: String(qq.points), textContent: `Autre · ${fmt(qq.points)} pts`, selected: true })) : null;
         if (level) input.addEventListener('change', () => { level.value = String(qq.points); });
         tr.append(h('td', { class: 'q', textContent: qq.question }),
-          h('td', { class: 'pts' }, level, input, h('span', { class: 'muted', textContent: ` / ${fmt(qq.max)}` }), second),
-          h('td', { class: 'just' }, qq.justification, why));
+          h('td', { class: 'pts' }, level, letters && level ? null : [input, h('span', { class: 'muted', textContent: ` / ${fmt(qq.max)}` })], second),
+          h('td', { class: 'just' }, letters ? noPoints(qq.justification) : qq.justification, why));
         return tr;
       }))),
     h('label', { class: 'field comment' }, 'Commentaire pour l\'élève',
@@ -1657,6 +1689,20 @@ function exportCSV() {
   const numbered = (q, i) => (/^\s*\d/.test(q.question) ? q.question : `${i + 1}. ${q.question}`); // « 1. Hypothèse » est déjà numéroté
   const qHeads = !perQuestion ? [] : grid ? shape.flatMap((q, i) => [`${numbered(q, i)} (/${num(q.max)})`, ...(labelled ? [`${numbered(q, i)} : niveau`] : [])])
     : shape.map((q, i) => `Q${i + 1} (/${num(q.max)})`);
+  // Rendu par lettres (grille) : la cote globale et le niveau de chaque critère, sans points.
+  if (grid && labelled && sorted.every((r) => r.illegible || byLetters(r))) {
+    const rowsL = [['N° copie', 'Fichier', 'Évaluation', 'Groupe', 'Élève', 'Cote', ...shape.map((q, i) => numbered(q, i)), 'Détail par critère', 'Commentaire', 'À vérifier']];
+    for (const r of sorted) {
+      const ok = r.grade != null;
+      rowsL.push([r.no ?? '', r.file || '', r.exam, r.group, r.name, ok ? globalLetter(r) : tr('Illisible'),
+        ...shape.map((_, i) => (ok && r.questions[i] ? levelOf(r, i, r.questions[i].points) : '')),
+        r.questions.map((q, i) => `${q.question}${lang === 'en' ? ':' : ' :'} ${levelOf(r, i, q.points)}${q.justification ? ` (${noPoints(q.justification)})` : ''}`).join(' | '),
+        r.comment, r.flags.join(' ')]);
+    }
+    downloadCSV(rowsL, '');
+    state.exported = true;
+    return;
+  }
   const rows = [['N° copie', 'Fichier', 'Évaluation', 'Groupe', 'Élève', 'Note', 'Sur', 'Pourcentage', ...qHeads, 'Fiabilité (%)', 'Détail par question', 'Commentaire', 'À vérifier']];
   for (const r of sorted) {
     const ok = r.grade != null;
