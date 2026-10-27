@@ -571,7 +571,7 @@ function renderGrid() {
       onchange: (e) => { l.points = Math.max(0, Math.min(c.max, toNumber(e.target.value) || 0)); e.target.value = fmt(l.points); } }),
     h('textarea', { rows: 2, value: l.description, 'aria-label': 'Description du niveau', oninput: (e) => { l.description = e.target.value; } }),
     h('button', { class: 'icon-btn', type: 'button', textContent: '×', title: 'Retirer ce niveau', onclick: () => { c.levels = c.levels.filter((x) => x !== l); renderGrid(); } }));
-  $('grid-criteria').replaceChildren(...state.grid.map((c, i) => h('div', { class: 'crit' },
+  $('grid-criteria').replaceChildren(conversionBox(), ...state.grid.map((c, i) => h('div', { class: 'crit' },
     h('div', { class: 'crit-top' },
       h('span', { class: 'crit-no', textContent: String(i + 1) }),
       h('input', { type: 'text', value: c.name, 'aria-label': 'Critère', oninput: (e) => { c.name = e.target.value; } }),
@@ -582,6 +582,31 @@ function renderGrid() {
     h('button', { class: 'btn ghost small', type: 'button', textContent: '+ Ajouter un niveau', onclick: () => { c.levels.push({ label: '', points: 0, description: '' }); renderGrid(); } }),
     c.note ? h('div', { class: 'muted small', textContent: `Remarque transmise à l'IA : ${c.note}` }) : null)));
   updateGridTotal();
+}
+
+// Conversion des niveaux en points, commune à toute la grille : « Acceptable (C) = 60 % » donne 6 sur un critère de 10 et
+// 12 sur un critère de 20. Les grilles d'école ont leur propre table (souvent non linéaire) ; la changer ici évite de
+// corriger les points niveau par niveau dans chaque critère. Le pourcentage affiché est déduit des points actuels.
+function conversionBox() {
+  const labels = [];
+  for (const c of state.grid) for (const l of c.levels) if (l.label && !labels.includes(l.label)) labels.push(l.label);
+  if (labels.length < 2) return null;
+  const pctOf = (label) => {
+    const v = state.grid.flatMap((c) => c.levels.filter((l) => l.label === label && c.max > 0).map((l) => (100 * l.points) / c.max)).sort((x, y) => x - y);
+    return v.length ? Math.round(v[Math.floor(v.length / 2)] * 10) / 10 : 0;
+  };
+  const unit = $('whole').value === '1' ? 1 : 0.5;
+  const apply = (label, pct) => {
+    for (const c of state.grid) for (const l of c.levels) if (l.label === label) l.points = Math.min(c.max, Math.max(0, Math.round((c.max * pct) / 100 / unit) * unit));
+    setTimeout(renderGrid, 0); // après la fin de l'événement : redessiner pendant « change » casse le champ qui perd le focus
+  };
+  const ex = state.grid.find((c) => c.max > 0);
+  return h('div', { class: 'conv' },
+    h('b', { textContent: 'Conversion des niveaux en points (pour tous les critères)' }),
+    h('div', { class: 'conv-rows' }, ...labels.map((label) => h('label', { class: 'conv-row' }, h('b', { textContent: label }),
+      h('input', { type: 'text', inputMode: 'decimal', class: 'num', value: fmt(pctOf(label)), 'aria-label': `${label} : pourcentage des points du critère`,
+        onchange: (e) => apply(label, Math.max(0, Math.min(100, toNumber(e.target.value) || 0))) }), '%'))),
+    h('span', { class: 'muted small', textContent: `Entrez la table de votre grille : le pourcentage des points du critère pour chaque niveau.${ex ? ` Ex. : sur ${fmt(ex.max)} points, ${labels[0]} = ${fmt(ex.levels.find((l) => l.label === labels[0])?.points ?? ex.max)}.` : ''}` }));
 }
 
 // « Avec une grille » : l'IA recopie la grille de l'enseignant telle quelle (critères, niveaux, points).

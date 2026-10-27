@@ -291,6 +291,8 @@ button.rel { cursor: pointer; font-family: inherit; }
   .qtable tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .2rem .6rem; padding: .5rem 0; border-top: 1px solid var(--line); }
   .qtable td { border: 0; padding: 0; width: auto !important; }
   .qtable td.just { grid-column: 1 / -1; overflow-wrap: anywhere; }
+  .qtable td.q { grid-column: 1 / -1; } /* le nom du critère sur toute la largeur, le niveau et les points dessous */
+  .qtable td.pts { justify-content: flex-start; }
   .card-body, .card-foot { min-width: 0; }
   .card-foot { flex-wrap: wrap; }
 }
@@ -466,3 +468,10 @@ body.light .card-head input.name:placeholder-shown { border: 1px dashed var(--li
 .lvl-seg button { font: inherit; font-size: .85rem; font-weight: 700; border: 0; background: none; color: var(--muted); padding: .35rem .9rem; border-radius: 999px; cursor: pointer; }
 .lvl-seg button[aria-pressed="true"] { background: var(--primary); color: #fff; }
 body.light .layout > .levelbar { grid-column: 1 / -1; }
+
+/* Grille : conversion des niveaux en points, commune à tous les critères */
+.conv { border: 1px solid var(--line); border-radius: 10px; padding: .6rem .7rem; background: #fff; display: grid; gap: .45rem; }
+.conv-rows { display: flex; flex-wrap: wrap; gap: .4rem .9rem; }
+.conv-row { display: inline-flex; align-items: center; gap: .35rem; font-size: .85rem; }
+.conv-row b { min-width: 2rem; }
+.conv-row input { width: 4.2rem; padding: .3rem .4rem; text-align: center; }

@@ -1043,6 +1043,7 @@ async function rubric(request, env) {
     "- chaque critère de la grille, dans l'ordre, avec son nom exact et ses points maximum (sa pondération) ;",
     "- pour chaque critère, tous ses niveaux du plus élevé au plus bas : « etiquette » = l'étiquette courte du niveau, sans pourcentage ni points (« A » et non « A (100 %) » ; aussi 5, 4, 3 ; « Marquée », « Assurée »… ; vide s'il n'y en a pas), « points » = les points de ce niveau, « description » = le texte exact du niveau (corrige seulement les coquilles évidentes).",
     "- Si la grille donne une échelle commune à tous les critères (ex. une légende A à E), répète-la pour chaque critère, avec les points correspondants.",
+    "- Si la grille comporte une table de conversion des niveaux ou des cotes en points ou en pourcentages (ex. : « Excellent = 100 %, Très bien = 85 %… », « A = 10 pts »), applique-la à chaque critère : elle prime sur tout le reste.",
     "- Si un niveau n'a pas de points écrits, calcule-les à partir des points maximum du critère : le plus haut niveau = 100 %, puis 80 %, 60 %, 40 %, 20 % (0 pour un niveau qui signifie « absent » ou « non fait »). Si un critère n'a pas de points maximum, mets 10.",
     `- Les points doivent être des multiples de ${fr(unit)}.`,
     "Ne recopie ni le nom de l'élève, ni les notes ou cochages éventuels : seulement la grille vierge. Garde la langue de la grille.",
