@@ -841,7 +841,7 @@ async function runAll(only, calibrating = false) {
         reread(res);
       } else {
       const pages = await Promise.all(b.map((p, i) => (masked(i) ? maskTop(p.url) : p.url)));
-      const r = await withRetry(() => api('/api/grade', { method: 'POST', body: { ...settings, pages, structure: state.structure?.list } }), waiting);
+      const r = await withRetry(() => api('/api/grade', { method: 'POST', body: { ...settings, pages, structure: state.structure?.list, avoid: openings(examKey) } }), waiting);
       // 1re copie bien corrigée avec un corrigé : ses questions servent de modèle pour les suivantes. Elles sont
       // découpées pareil, et les deux corrections du mode approfondi partent en même temps (deux fois plus rapide).
       // Seulement si les points maximum totalisent le barème : une question oubliée ne se propage pas.
@@ -1163,7 +1163,31 @@ async function printBatch(list, { copies = true, results = false } = {}) {
   w.document.close();
 }
 
+// Début des commentaires déjà rédigés pour cette évaluation, sans le nom des élèves : l'IA évite de les répéter.
+function openings(examKey, except) {
+  return state.results.filter((x) => x !== except && x.kind !== 'lang' && x.examKey === examKey && x.comment).slice(0, 8).map((x) => {
+    const names = String(x.name || '').toLowerCase().split(/\s+/).filter((w) => w.length > 1);
+    return x.comment.split(/\s+/).filter((w) => !names.includes(w.toLowerCase().replace(/[^\p{L}-]/gu, ''))).slice(0, 9).join(' ');
+  });
+}
+
+// « Réécrire le commentaire » (gratuit) : refait le commentaire selon les notes et les niveaux validés par l'enseignant.
+async function rewrite(r, box, btn) {
+  btn.disabled = true; const label = btn.textContent; btn.textContent = 'Un instant…';
+  try {
+    const letters = byLetters(r);
+    const { comment } = await api('/api/comment', { method: 'POST', body: {
+      lang: r.lang || lang, letters, letter: letters && r.grade != null ? globalLetter(r) : undefined, grade: r.grade, total: r.total,
+      questions: r.questions.map((q, i) => ({ question: q.question, answer: q.answer, justification: letters ? noPoints(q.justification) : q.justification,
+        points: q.points, max: q.max, level: letters ? levelOf(r, i, q.points) : undefined })),
+      avoid: openings(r.examKey, r) } });
+    if (comment) { r.comment = comment; box.value = comment; state.exported = false; }
+  } catch (err) { banner('err', err.message); }
+  btn.disabled = false; btn.textContent = label;
+}
+
 function card(r) {
+  const commentBox = h('textarea', { rows: 3, value: r.comment, oninput: (e) => { r.comment = e.target.value; state.exported = false; } });
   const gradeEl = h('span', { class: 'grade' });
   const updateGrade = () => { gradeEl.replaceChildren(...(r.grade == null ? [tr('Illisible')] : byLetters(r) ? [globalLetter(r)] : [fmt(r.grade), h('small', {}, ` / ${fmt(r.total)}`)])); };
   updateGrade();
@@ -1211,7 +1235,9 @@ function card(r) {
         return tr;
       }))),
     h('label', { class: 'field comment' }, 'Commentaire pour l\'élève',
-      h('textarea', { rows: 3, value: r.comment, oninput: (e) => { r.comment = e.target.value; state.exported = false; } })),
+      commentBox),
+    h('button', { class: 'btn ghost small rewrite', type: 'button', textContent: '↻ Réécrire le commentaire', title: 'Selon vos notes et vos niveaux (gratuit)',
+      onclick: (e) => rewrite(r, commentBox, e.currentTarget) }),
     h('div', { class: 'card-foot' },
       h('span', { textContent: copyLabel(r) }),
       h('div', { style: 'display:flex;gap:.4rem;flex-wrap:wrap' },

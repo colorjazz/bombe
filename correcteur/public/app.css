@@ -477,3 +477,4 @@ body.light .layout > .levelbar { grid-column: 1 / -1; }
 .conv-row input { width: 4.2rem; padding: .3rem .4rem; text-align: center; }
 .render-row { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .8rem; padding-bottom: .45rem; border-bottom: 1px solid var(--line); }
 .render-row .seg button { padding: .35rem .8rem; font-size: .82rem; }
+.card-body .rewrite { justify-self: start; margin-top: -.3rem; }
