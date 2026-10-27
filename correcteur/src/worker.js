@@ -451,7 +451,7 @@ function buildPrompt(o) {
     o.english ? `\n${ENGLISH_OUTPUT}` : '',
     o.rubric ? `\nCONSIGNES DE L'ENSEIGNANT (prioritaires) :\n"""\n${o.rubric}\n"""\nSi ces consignes précisent la forme du rendu (ton, longueur ou style des justifications et du commentaire, tutoiement, points forts à souligner…), respecte-les, sans changer le format JSON demandé.` : '',
     o.grid ? `\nGRILLE DÉTAILLÉE VALIDÉE PAR L'ENSEIGNANT (à appliquer strictement) :
-Pour chaque critère, lis les descriptions de niveaux, choisis celle qui correspond le mieux à la copie et attribue exactement les points de ce niveau. Dans la justification, indique le niveau retenu et ce qui, dans la copie, le justifie.
+Pour chaque critère, lis les descriptions de niveaux, choisis celle qui correspond le mieux à la copie et attribue exactement les points de ce niveau, sur les points maximum du critère indiqués ci-dessous ; écris son étiquette dans « niveau ». Juge chaque critère indépendamment, sans te rabattre sur le niveau du milieu : une copie qui répond à la description du niveau le plus élevé reçoit ce niveau. Dans la justification, indique le niveau retenu et ce qui, dans la copie, le justifie.
 ${gridText(o.grid)}` : '',
   ].join('\n');
 }
@@ -476,6 +476,7 @@ const SCHEMA = {
               question: { type: 'string' },
               points_obtenus: { type: 'number' },
               points_max: { type: 'number' },
+              niveau: { type: 'string', description: "Avec une grille : l'étiquette exacte du niveau retenu pour ce critère (ex. « B », « Acceptable (C) ») ; sinon chaîne vide." },
               justification: { type: 'string' },
               reponse: { type: 'string' },
             },
@@ -986,12 +987,18 @@ function gridText(grid) {
 }
 
 // Ramène les points de chaque critère au niveau de la grille le plus proche : c'est ce qui stabilise les notes.
+// Le niveau nommé par l'IA prime (« B ») ; sinon ses points, ramenés à l'échelle du critère (une IA qui note sur 4 ou
+// sur 100 un critère de 10 retombait toujours sur le même niveau du milieu : « toujours C »).
 function snapToGrid(result, grid) {
   if (result.questions.length !== grid.length) return;
+  const norm = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
   result.questions.forEach((q, i) => {
     const allowed = grid[i].levels.map((l) => l.points);
     if (!allowed.length) return;
-    q.points = allowed.reduce((best, v) => (Math.abs(v - q.raw) < Math.abs(best - q.raw) ? v : best), allowed[0]);
+    const named = q.level && (grid[i].levels.find((l) => l.label && norm(l.label) === norm(q.level))
+      || grid[i].levels.find((l) => l.label && (norm(q.level).startsWith(norm(l.label)) || norm(l.label).startsWith(norm(q.level)))));
+    const raw = q.rawMax > 0 && Math.abs(q.rawMax - grid[i].max) > 1e-9 ? (q.raw * grid[i].max) / q.rawMax : q.raw;
+    q.points = named ? named.points : allowed.reduce((best, v) => (Math.abs(v - raw) < Math.abs(best - raw) ? v : best), allowed[0]);
     q.max = grid[i].max;
     q.question = grid[i].name;
   });
@@ -1125,6 +1132,7 @@ function normalize(raw, total, unit) {
       question: String(q.question || 'Question').trim(),
       points: Math.min(max, Math.max(0, snap(q.points_obtenus))),
       raw: Number(q.points_obtenus) || 0, // valeur brute, pour l'ajustement au niveau de grille le plus proche
+      rawMax: Number(q.points_max) || 0, level: String(q.niveau || '').trim(),
       max,
       justification: String(q.justification || '').trim(),
       answer: String(q.reponse || '').trim().slice(0, 300), // sert d'exemple au calibrage si l'enseignant change la note
