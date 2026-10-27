@@ -63,6 +63,7 @@ const ROUTES = {
   'POST /api/split': split,
   'POST /api/orient': orient,
   'POST /api/rubric': rubric,
+  'POST /api/comment': rewriteComment,
   'POST /api/language': language,
   'POST /api/language-reread': languageReread,
   'POST /api/language-verify': languageVerify,
@@ -443,8 +444,9 @@ function buildPrompt(o) {
     "INCERTITUDE : mets « incertain » à true si une partie importante est illisible, si la copie semble incomplète ou hors sujet, ou si tu hésites sérieusement sur la note.",
     "NIVEAUX : si tu mentionnes un niveau de rendement ou une cote (ex. « Level 3 », « niveau 2 », « B »), il doit correspondre au pourcentage réellement obtenu selon l'échelle fournie par l'enseignant (en Ontario : niveau 4 = 80-100 %, niveau 3 = 70-79 %, niveau 2 = 60-69 %, niveau 1 = 50-59 %, R = moins de 50 %). Sans échelle claire, ne mentionne pas de niveau.",
     o.english
-      ? "COMMENTAIRE : 2 à 4 phrases EN ANGLAIS adressées à l'élève (« you »), concrètes et constructives : une réussite, l'erreur principale, une piste de progrès."
-      : "COMMENTAIRE : 2 à 4 phrases adressées à l'élève (tutoiement), concrètes et constructives : une réussite, l'erreur principale, une piste de progrès.",
+      ? `COMMENTAIRE : 2 à 4 phrases EN ANGLAIS adressées à l'élève (« you »), concrètes et constructives : une réussite, l'erreur principale, une piste de progrès. ${COMMENT_VARIETY.en}`
+      : `COMMENTAIRE : 2 à 4 phrases adressées à l'élève (tutoiement), concrètes et constructives : une réussite, l'erreur principale, une piste de progrès. ${COMMENT_VARIETY.fr}`,
+    o.avoid?.length ? avoidText(o.avoid) : '',
     "RÉPONSE : pour chaque question, « reponse » résume fidèlement ce que l'élève a répondu, en 25 mots au plus, sans son nom (chaîne vide s'il n'a rien répondu).",
     o.annotate ? ANNOTATION_RULE : '',
     o.calibration?.length ? calibrationText(o.calibration) : '',
@@ -455,6 +457,17 @@ Pour chaque critère, lis les descriptions de niveaux, choisis celle qui corresp
 ${gridText(o.grid)}` : '',
   ].join('\n');
 }
+
+// Rétroaction propre à chaque copie : retour d'une enseignante, « les commentaires sont toujours les mêmes ». L'IA cite un
+// élément de cette copie et reçoit le début des commentaires déjà écrits dans la pile (sans nom), pour ne pas les répéter.
+const COMMENT_VARIETY = {
+  fr: "Le commentaire doit être propre à CETTE copie : cite au moins un élément précis que l'élève a écrit (un mot, une idée, un exemple, une donnée) et dis concrètement quoi améliorer. Évite les formules toutes faites (« Bravo pour ce beau travail », « Tu as bien compris… », « Attention cependant… ») et varie la façon de commencer.",
+  en: 'The comment must be specific to THIS paper: quote at least one precise thing the student wrote (a word, an idea, an example, a figure) and say concretely what to improve. Avoid stock phrases (“Great job”, “You understood well…”, “Be careful though…”) and vary how you start.',
+};
+function readAvoid(raw) {
+  return (Array.isArray(raw) ? raw : []).slice(0, 12).map((t) => String(t || '').replace(/\s+/g, ' ').trim().slice(0, 120)).filter(Boolean);
+}
+const avoidText = (list) => `\nCOMMENTAIRES DÉJÀ RÉDIGÉS pour d'autres élèves de cette pile (début seulement) : ne reprends ni ces débuts de phrase ni leurs formules.\n${list.map((t) => `- « ${t}… »`).join('\n')}`;
 
 const SCHEMA = {
   type: 'json_schema',
@@ -941,6 +954,40 @@ async function analyzeLanguagePages(request, env, key, body, cats, n, pay) {
   return json({ name, group, pages, failedPages: failed, pagesLeft: left?.pages ?? 0 });
 }
 
+// Réécrire le commentaire (gratuit) : après que l'enseignant a changé des notes ou des niveaux, l'IA refait le commentaire
+// à partir de la correction validée (questions, notes, justifications, résumé des réponses). Elle ne revoit pas la copie.
+async function rewriteComment(request, env) {
+  await getKey(env, bearer(request));
+  const body = await readJson(request);
+  const en = String(body.lang || '').startsWith('en');
+  const letters = !!body.letters;
+  const qs = (Array.isArray(body.questions) ? body.questions : []).slice(0, 40).map((q) => ({
+    question: String(q?.question || '').slice(0, 200), answer: String(q?.answer || '').slice(0, 300), why: String(q?.justification || '').slice(0, 500),
+    level: String(q?.level || '').slice(0, 40), points: Number(q?.points), max: Number(q?.max),
+  })).filter((q) => q.question);
+  if (!qs.length) throw new HttpError(400, 'Correction vide');
+  const avoid = readAvoid(body.avoid);
+  const mark = (q) => (letters && q.level ? `niveau ${q.level}` : `${fr(q.points)} / ${fr(q.max)}`);
+  const system = [
+    "Tu es un enseignant qui rédige le commentaire final d'une copie d'élève, à partir de la correction qu'il vient de valider.",
+    en ? `Rédige EN ANGLAIS, 2 à 4 phrases adressées à l'élève (« you »), concrètes et constructives : une réussite, l'erreur principale, une piste de progrès. ${COMMENT_VARIETY.en}`
+      : `Rédige 2 à 4 phrases adressées à l'élève (tutoiement), concrètes et constructives : une réussite, l'erreur principale, une piste de progrès. ${COMMENT_VARIETY.fr}`,
+    "Les notes et les niveaux ci-dessous sont ceux de l'enseignant : ils priment sur les justifications. Un critère réussi ne doit pas être présenté comme une faiblesse.",
+    letters ? 'Ne mentionne aucun point ni aucune note chiffrée : seulement les niveaux, au besoin.' : '',
+    "N'écris jamais le nom de l'élève.",
+  ].filter(Boolean).join('\n');
+  const content = `CORRECTION VALIDÉE${body.grade != null ? ` (${letters && body.letter ? `cote ${String(body.letter).slice(0, 20)}` : `${fr(Number(body.grade))} / ${fr(Number(body.total))}`})` : ''} :
+${qs.map((q, i) => `${i + 1}. ${q.question} — ${mark(q)}${q.answer ? ` — réponse de l'élève : « ${q.answer} »` : ''}${q.why ? ` — justification : ${q.why}` : ''}`).join('\n')}${avoid.length ? avoidText(avoid) : ''}`;
+  let raw;
+  try {
+    raw = await aiChat(env, system, content, { type: 'json_schema', json_schema: { name: 'commentaire', schema: { type: 'object', required: ['commentaire'], properties: { commentaire: { type: 'string' } } } } }, { temperature: 0.7 });
+  } catch (err) {
+    console.error('Commentaire impossible :', err.message);
+    throw new HttpError(502, 'Le commentaire n\'a pas pu être réécrit. Réessayez.');
+  }
+  return json({ comment: String(raw.commentaire || '').trim().slice(0, 1500) });
+}
+
 // ---------- Grille détaillée ----------
 
 // Grille envoyée par l'appli : [{ name, max, levels: [{ points, description }] }]. Renvoie null si absente.
@@ -1236,7 +1283,7 @@ async function grade(request, env, url, ctx) {
     const prompt = buildPrompt({ exam: String(body.exam || '').slice(0, 200), total, wholePoints: !!body.wholePoints,
       checkLanguage: !!body.checkLanguage, rubric: String(body.rubric || '').slice(0, 8000), grid, english: isEnglish(request),
       hasKey: !!(String(body.rubric || '').trim() || (body.rubricPages || []).length || grid), anonymous: !!body.anonymous, annotate: !!body.annotate,
-      calibration: readCalibration(body.calibration) });
+      calibration: readCalibration(body.calibration), avoid: readAvoid(body.avoid) });
 
     // Double correction : la 1re fixe le découpage en questions, la 2e corrige indépendamment
     // les mêmes questions (intitulés et points maximum, sans les notes de la 1re).
