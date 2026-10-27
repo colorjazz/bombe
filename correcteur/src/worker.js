@@ -967,6 +967,8 @@ async function rewriteComment(request, env) {
   })).filter((q) => q.question);
   if (!qs.length) throw new HttpError(400, 'Correction vide');
   const avoid = readAvoid(body.avoid);
+  // Versions déjà proposées pour CETTE copie : sans elles, chaque clic redonnait le même commentaire.
+  const before = (Array.isArray(body.previous) ? body.previous : []).slice(-5).map((t) => String(t || '').trim().slice(0, 800)).filter(Boolean);
   const mark = (q) => (letters && q.level ? `niveau ${q.level}` : `${fr(q.points)} / ${fr(q.max)}`);
   const system = [
     "Tu es un enseignant qui rédige le commentaire final d'une copie d'élève, à partir de la correction qu'il vient de valider.",
@@ -977,10 +979,14 @@ async function rewriteComment(request, env) {
     "N'écris jamais le nom de l'élève.",
   ].filter(Boolean).join('\n');
   const content = `CORRECTION VALIDÉE${body.grade != null ? ` (${letters && body.letter ? `cote ${String(body.letter).slice(0, 20)}` : `${fr(Number(body.grade))} / ${fr(Number(body.total))}`})` : ''} :
-${qs.map((q, i) => `${i + 1}. ${q.question} — ${mark(q)}${q.answer ? ` — réponse de l'élève : « ${q.answer} »` : ''}${q.why ? ` — justification : ${q.why}` : ''}`).join('\n')}${avoid.length ? avoidText(avoid) : ''}`;
+${qs.map((q, i) => `${i + 1}. ${q.question} — ${mark(q)}${q.answer ? ` — réponse de l'élève : « ${q.answer} »` : ''}${q.why ? ` — justification : ${q.why}` : ''}`).join('\n')}${avoid.length ? avoidText(avoid) : ''}${before.length ? `
+
+VERSIONS DÉJÀ PROPOSÉES POUR CETTE COPIE (l'enseignant en veut une autre) :
+${before.map((t, i) => `${i + 1}. « ${t} »`).join('\n')}
+Écris une version VRAIMENT différente : souligne une autre réussite, aborde la faiblesse sous un autre angle, propose une autre piste concrète et commence autrement. Ne reprends aucune phrase de ces versions.` : ''}`;
   let raw;
   try {
-    raw = await aiChat(env, system, content, { type: 'json_schema', json_schema: { name: 'commentaire', schema: { type: 'object', required: ['commentaire'], properties: { commentaire: { type: 'string' } } } } }, { temperature: 0.7 });
+    raw = await aiChat(env, system, content, { type: 'json_schema', json_schema: { name: 'commentaire', schema: { type: 'object', required: ['commentaire'], properties: { commentaire: { type: 'string' } } } } }, { temperature: 0.9 });
   } catch (err) {
     console.error('Commentaire impossible :', err.message);
     throw new HttpError(502, 'Le commentaire n\'a pas pu être réécrit. Réessayez.');

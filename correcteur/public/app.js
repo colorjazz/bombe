@@ -1180,8 +1180,8 @@ async function rewrite(r, box, btn) {
       lang: r.lang || lang, letters, letter: letters && r.grade != null ? globalLetter(r) : undefined, grade: r.grade, total: r.total,
       questions: r.questions.map((q, i) => ({ question: q.question, answer: q.answer, justification: letters ? noPoints(q.justification) : q.justification,
         points: q.points, max: q.max, level: letters ? levelOf(r, i, q.points) : undefined })),
-      avoid: openings(r.examKey, r) } });
-    if (comment) { r.comment = comment; box.value = comment; state.exported = false; }
+      avoid: openings(r.examKey, r), previous: [...(r.versions || []), box.value].filter(Boolean).slice(-5) } });
+    if (comment) { r.versions = [...(r.versions || []), box.value].filter(Boolean).slice(-5); r.comment = comment; box.value = comment; state.exported = false; }
   } catch (err) { banner('err', err.message); }
   btn.disabled = false; btn.textContent = label;
 }
