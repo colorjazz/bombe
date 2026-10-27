@@ -104,6 +104,8 @@ function showGate(msg = '') {
 function maybeWelcome() {
   let seen = false;
   try { seen = localStorage.getItem('ce.welcome') === '1'; } catch { /* ignoré */ }
+  const langFirst = state.kind === 'lang'; // primaire : la fenêtre parle de la correction de la langue, pas d'un corrigé
+  $('welcome-lang').hidden = !langFirst; $('welcome-copies').hidden = langFirst;
   if (!seen && $('newkey').hidden && !$('app').hidden) $('welcome').hidden = false;
 }
 // Le navigateur se souvient qu'un essai y a été pris (sans garder la clé : sur un ordinateur partagé, le collègue
@@ -505,13 +507,15 @@ function renderSummary() {
   const gridOk = state.kind === 'lang' || gridSum == null || Math.abs(gridSum - Number($('total').value)) < 1e-9;
   // Le nombre de points et les pages par élève ne servent qu'à la correction de copies (champs cachés en mode langue).
   const needGrid = byGrid() && !state.grid; // avec une grille : la grille lue fixe le total
+  const needYear = state.kind === 'lang' && isPda() && !$('pda-year').value;
   const needTotal = state.kind === 'content' && !needGrid && !(Number($('total').value) > 0);
-  run.disabled = state.running || state.detecting || !n || !grouped || tooLong || !enough || !gridOk || needTotal || needGrid || state.reading
+  run.disabled = state.running || state.detecting || !n || !grouped || tooLong || !enough || !gridOk || needTotal || needGrid || needYear || state.reading
     || (state.kind === 'content' && !(Number($('per-student').value) >= 1));
   run.textContent = state.running ? (state.kind === 'lang' ? 'Analyse en cours…' : 'Correction en cours…')
     : state.detecting ? 'Analyse des copies en cours…'
     : n && state.reading ? 'Lecture de la grille…'
     : n && needGrid ? 'Ajoutez votre grille (section 1)'
+    : n && needYear ? 'Choisissez l’année de vos élèves (section 1)'
     : n && needTotal ? 'Indiquez le nombre de points'
     : n && state.kind === 'content' && !(Number($('per-student').value) >= 1) ? 'Indiquez le nombre de pages par élève'
     : n && !grouped ? 'Indiquez le nombre de pages par élève'
@@ -606,6 +610,7 @@ function globalLetter(r) {
 }
 // Rendu par lettres : les points cités par l'IA dans la justification (« Niveau C retenu (12/20) ») sont retirés.
 const noPoints = (t) => String(t || '').replace(/\s*\((?:\d+(?:[.,]\d+)?\s*(?:\/\s*\d+(?:[.,]\d+)?|pts?|points?))\)/gi, '');
+const edited = (q) => q.ai != null && q.points !== q.ai; // note changée par l'enseignant
 const markText = (r) => (r.grade == null ? null : byLetters(r) ? globalLetter(r) : `${fmt(r.grade)} / ${fmt(r.total)}`);
 const qMarkText = (r, q, i) => (byLetters(r) ? levelOf(r, i, q.points) : `${fmt(q.points)} / ${fmt(q.max)}`);
 
@@ -1043,14 +1048,14 @@ async function annotatedPages(r, { forPrint = false } = {}) {
     for (const { q, i } of here) {
       y = Math.max(y, q.box[0] * img.height);
       probe.font = `${mid}px sans-serif`;
-      const lines = wrapText(probe, q.margin || q.justification, M - 2 * pad);
+      const lines = wrapText(probe, (edited(q) ? trTo(r.lang || lang, 'Note ajustée par l’enseignant.') : q.margin || q.justification), M - 2 * pad);
       items.push({ kind: 'note', q, i, y, lines });
       y += mid * 1.3 + lines.length * mid * 1.2 + mid;
     }
     if (pi === r.pageUrls.length - 1) {
       for (const { q, i } of general) {
         probe.font = `${small}px sans-serif`;
-        const lines = wrapText(probe, q.margin || q.justification, M - 2 * pad);
+        const lines = wrapText(probe, (edited(q) ? trTo(r.lang || lang, 'Note ajustée par l’enseignant.') : q.margin || q.justification), M - 2 * pad);
         items.push({ kind: 'general', q, i, y, lines });
         y += mid * 1.3 + lines.length * small * 1.2 + mid * 0.6;
       }
@@ -1128,7 +1133,7 @@ async function annotatedPages(r, { forPrint = false } = {}) {
 // Fiches seules : plusieurs par feuille, à découper ; avec les copies : chaque élève commence une nouvelle feuille.
 const escHtml = (t) => String(t ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 function resultSheet(r) {
-  const rows = r.questions.map((q, i) => `<tr><td class="q">${escHtml(qLabel(q, i))}</td><td>${escHtml(q.question)}</td><td class="p">${escHtml(qMarkText(r, q, i)).replace(/ \/ /, '&nbsp;/&nbsp;')}</td><td>${escHtml(byLetters(r) ? noPoints(q.justification) : q.justification)}</td></tr>`).join('');
+  const rows = r.questions.map((q, i) => `<tr><td class="q">${escHtml(qLabel(q, i))}</td><td>${escHtml(q.question)}</td><td class="p">${escHtml(qMarkText(r, q, i)).replace(/ \/ /, '&nbsp;/&nbsp;')}</td><td>${escHtml(edited(q) ? trTo(r.lang || lang, 'Note ajustée par l’enseignant.') : byLetters(r) ? noPoints(q.justification) : q.justification)}</td></tr>`).join('');
   return `<div class="head"><div><b>${escHtml(r.name || trTo(r.lang || lang, 'Nom à compléter'))}</b>${r.group ? ` · ${escHtml(r.group)}` : ''}${r.exam ? `<br><small>${escHtml(r.exam)}</small>` : ''}</div>
     <div class="grade">${escHtml(markText(r) ?? trTo(r.lang || lang, 'Illisible'))}</div></div>
     <table><thead><tr><th></th><th>${trTo(r.lang || lang, 'Question')}</th><th>${trTo(r.lang || lang, byLetters(r) ? 'Niveau' : 'Points')}</th><th>${trTo(r.lang || lang, 'Justification')}</th></tr></thead><tbody>${rows}</tbody></table>
@@ -1198,7 +1203,7 @@ function card(r) {
       h('thead', {}, h('tr', {}, h('th', { textContent: r.grid ? 'Critère' : 'Question' }), h('th', { textContent: r.grid ? 'Niveau' : 'Points' }), h('th', { textContent: 'Justification' }))),
       h('tbody', {}, r.questions.map((qq, qi) => {
         const rowClass = () => [qq.points < qq.max ? 'lost' : '', qq.second != null ? 'disputed' : ''].join(' ');
-        const tr = h('tr', { class: rowClass() });
+        const row = h('tr', { class: rowClass() });
         const second = qq.second != null
           ? h('div', { class: 'second', textContent: qq.first != null
             ? `⚖ Corrections : ${fmt(qq.first)} et ${fmt(qq.second)} → moyenne retenue`
@@ -1206,8 +1211,17 @@ function card(r) {
         // Note changée : une raison facultative, qui aide le calibrage des copies suivantes.
         const why = h('input', { type: 'text', class: 'why', value: qq.why || '', maxlength: 300, placeholder: 'Pourquoi ? (facultatif, guide les prochaines copies)',
           'aria-label': 'Raison du changement de note', oninput: () => { qq.why = why.value; } });
-        const showWhy = () => { why.hidden = qq.ai == null || qq.points === qq.ai; };
-        showWhy();
+        // Note changée par l'enseignant : sa note d'abord, la justification de l'IA devient « proposition initiale »
+        // (sinon « Niveau C retenu » restait affiché à côté d'un B, jusque dans l'export).
+        const changed = h('div', { class: 'changed' }), justText = h('span');
+        const showWhy = () => {
+          const edited = qq.ai != null && qq.points !== qq.ai;
+          why.hidden = !edited;
+          changed.hidden = !edited;
+          if (edited) changed.textContent = `✎ ${tr('Votre choix')} : ${byLetters(r) ? levelOf(r, qi, qq.points) : `${fmt(qq.points)} / ${fmt(qq.max)}`} (${tr('proposé')} : ${byLetters(r) ? levelOf(r, qi, qq.ai) : fmt(qq.ai)})`;
+          justText.className = edited ? 'initial' : '';
+          justText.textContent = `${edited ? `${tr('Proposition initiale')} : ` : ''}${byLetters(r) ? noPoints(qq.justification) : qq.justification}`;
+        };
         const input = h('input', { type: 'text', inputMode: 'decimal', class: 'num', value: fmt(qq.points), 'aria-label': 'Points',
           onchange: () => {
             const v = Math.round((toNumber(input.value) || 0) / r.unit) * r.unit;
@@ -1215,11 +1229,11 @@ function card(r) {
             input.value = fmt(qq.points);
             qq.second = null; // l'enseignant a tranché
             second?.remove();
-            tr.className = rowClass();
+            row.className = rowClass();
             showWhy();
             recompute(r); updateGrade(); renderStats(); renderCalib();
             const ok = h('span', { class: 'saved', textContent: '✓ Note modifiée' });
-            input.parentElement.querySelector('.saved')?.remove(); input.parentElement.append(ok); setTimeout(() => ok.remove(), 2500);
+            const cell = row.querySelector('td.pts'); cell?.querySelector('.saved')?.remove(); cell?.append(ok); setTimeout(() => ok.remove(), 2500);
           } });
         // Avec une grille : on choisit un niveau (A, B…), qui donne ses points ; les points restent modifiables.
         const levels = r.grid?.[qi]?.levels?.length ? [...r.grid[qi].levels].sort((x, y) => y.points - x.points) : null;
@@ -1229,10 +1243,11 @@ function card(r) {
         ...levels.map((l) => h('option', { value: String(l.points), textContent: letters ? l.label || fmt(l.points) : `${l.label || fmt(l.points)}${l.label ? ` · ${fmt(l.points)} pts` : ' pts'}`, selected: l.points === qq.points })),
         levels.some((l) => l.points === qq.points) ? null : h('option', { value: String(qq.points), textContent: `Autre · ${fmt(qq.points)} pts`, selected: true })) : null;
         if (level) input.addEventListener('change', () => { level.value = String(qq.points); });
-        tr.append(h('td', { class: 'q', textContent: qq.question }),
+        row.append(h('td', { class: 'q', textContent: qq.question }),
           h('td', { class: 'pts' }, level, letters && level ? null : [input, h('span', { class: 'muted', textContent: ` / ${fmt(qq.max)}` })], second),
-          h('td', { class: 'just' }, letters ? noPoints(qq.justification) : qq.justification, why));
-        return tr;
+          h('td', { class: 'just' }, changed, justText, why));
+        showWhy();
+        return row;
       }))),
     h('label', { class: 'field comment' }, 'Commentaire pour l\'élève',
       commentBox),
@@ -1367,12 +1382,18 @@ const pdaLevel = () => ['primaire', 'secondaire'].includes($('lang-level').value
 const isPda = () => pdaLevel() && $('out-lang').value !== 'en'; // la PDA ne vise que le français
 const notions = () => notionsFor($('lang-level').value);
 // Années proposées selon le niveau : 1re à 6e année au primaire, 1re à 5e secondaire.
+// Tant que l'enseignante n'a pas choisi son année, aucune n'est présélectionnée : une « 4e année » par défaut donnait
+// en silence les notions d'une autre année (test d'utilisabilité, enseignante de 3e).
+let yearSet = false;
+try { yearSet = localStorage.getItem('ce.yearSet') === '1'; } catch { /* ignoré */ }
 function fillYears() {
   const sec = $('lang-level').value === 'secondaire', n = sec ? 5 : 6, sel = $('pda-year');
-  if (sel.options.length === n && sel.dataset.level === $('lang-level').value) return;
-  const keep = Math.min(Number(sel.value) || (sec ? 3 : 4), n);
-  sel.replaceChildren(...Array.from({ length: n }, (_, i) => h('option', { value: String(i + 1),
-    textContent: tr(`${i + 1}${i ? 'e' : 're'} ${sec ? 'secondaire' : 'année'}`), selected: i + 1 === keep })));
+  const want = n + (yearSet ? 0 : 1);
+  if (sel.options.length === want && sel.dataset.level === $('lang-level').value) return;
+  const keep = yearSet ? Math.min(Number(sel.value) || (sec ? 3 : 4), n) : 0;
+  sel.replaceChildren(...(yearSet ? [] : [h('option', { value: '', textContent: tr('— Choisissez l’année —'), selected: true })]),
+    ...Array.from({ length: n }, (_, i) => h('option', { value: String(i + 1),
+      textContent: tr(`${i + 1}${i ? 'e' : 're'} ${sec ? 'secondaire' : 'année'}`), selected: i + 1 === keep })));
   sel.dataset.level = $('lang-level').value;
 }
 let pdaOver = {};
@@ -1399,7 +1420,7 @@ function renderPda() {
   const by = (st) => notions().filter((x) => pdaState(x) === st).length;
   const counts = (k) => [plural(k('count'), 'acquise', 'acquises', 'mastered', 'mastered'), `${k('grey')} ${L('en apprentissage', 'being learned')}`,
     plural(k('ignore'), 'pas encore vue', 'pas encore vues', 'not yet taught', 'not yet taught')];
-  $('pda-sum').textContent = counts(by).join(' · ');
+  $('pda-sum').textContent = $('pda-year').value ? counts(by).join(' · ') : tr('choisissez d’abord l’année');
   // Une catégorie par ligne, fermée par défaut : on n'ouvre que celle qu'on veut ajuster.
   $('pda-list').replaceChildren(...Object.entries(CATS).map(([cat, c]) => {
     const list = notions().filter((x) => x.cat === cat);
@@ -1463,6 +1484,7 @@ function categoryChips(errors) {
 }
 
 // Primaire : « 214 mots · 7 fautes comptées · 3,3 % → B ».
+const greyCount = (r) => r.pages.reduce((a, p) => a + p.errors.filter((e) => e.grey).length, 0);
 const pdaLine = (r, n) => `${r.words == null ? L('mots non comptés', 'words not counted') : plural(r.words, 'mot', 'mots', 'word', 'words')} · ${plural(n, 'faute retenue', 'fautes retenues', 'error counted', 'errors counted')}${r.pct == null ? '' : ` · ${pctText(fmt(Math.round(r.pct * 10) / 10))}`}`;
 function langCard(r) {
   const errors = r.pages.flatMap((p) => p.errors);
@@ -1609,10 +1631,13 @@ async function printViewer() {
     ctx.drawImage(img, 0, 0);
     for (const e of p.errors) {
       const k = ++n;
-      list.push(`<li><b style="color:${CATS[e.category].color}">${k}. ${esc(tr(CATS[e.category].label))}</b> — <s>${esc(e.text)}</s> → <b>${esc(e.correction)}</b><br><small>${esc(e.explanation)}</small></li>`);
+      // Primaire : une faute « en apprentissage » est imprimée en gris, avec « ne compte pas », comme à l'écran.
+      const color = e.grey ? '#9ca3af' : CATS[e.category].color;
+      list.push(`<li${e.grey ? ' style="color:#6b7280"' : ''}><b style="color:${color}">${k}. ${esc(tr(CATS[e.category].label))}${e.grey ? ` · ${esc(L('en apprentissage, ne compte pas', 'being learned, not counted'))}` : ''}</b> — <s>${esc(e.text)}</s> → <b>${esc(e.correction)}</b><br><small>${esc(e.explanation)}</small></li>`);
       if (!e.box) continue;
       const [y0, x0, y1, x1] = e.box.map((v) => v / 1000);
-      ctx.strokeStyle = ctx.fillStyle = CATS[e.category].color;
+      ctx.strokeStyle = ctx.fillStyle = color;
+      ctx.setLineDash(e.grey ? [8, 6] : []);
       ctx.lineWidth = Math.max(2, c.width / 500);
       ctx.globalAlpha = 0.22; ctx.fillRect(x0 * c.width, y0 * c.height, (x1 - x0) * c.width, (y1 - y0) * c.height);
       ctx.globalAlpha = 1; ctx.strokeRect(x0 * c.width, y0 * c.height, (x1 - x0) * c.width, (y1 - y0) * c.height);
@@ -1631,7 +1656,7 @@ async function printViewer() {
     img{display:block;max-width:100%;max-height:205mm;margin:0 auto 6px;object-fit:contain}
     ol{list-style:none;padding:0;margin:0;column-count:2;column-gap:14px}li{break-inside:avoid;margin:0 0 4px}
     @media screen{body{margin:16px;width:740px}.sheet{border-bottom:1px dashed #bbb;padding-bottom:12px;margin-bottom:12px}}</style></head><body>
-    <h1>${esc(copyTitle(r) || tr('Élève'))}${r.group ? ` · ${esc(r.group)}` : ''} — ${tr(`${n} faute(s)`)}${r.grade != null ? ` · ${fmt(r.grade)} / ${fmt(r.total)}` : ''}</h1>
+    <h1>${esc(copyTitle(r) || tr('Élève'))}${r.group ? ` · ${esc(r.group)}` : ''} — ${r.pda ? `${esc(pdaLine(r, langGrade(r)))}${r.cote ? ` → ${r.cote}` : ''}${greyCount(r) ? ` (+${greyCount(r)} ${esc(L('en apprentissage', 'being learned'))})` : ''}` : tr(`${n} faute(s)`)}${r.grade != null ? ` · ${fmt(r.grade)} / ${fmt(r.total)}` : ''}</h1>
     ${sheets.join('')}
     <script>window.onload=()=>{
       // Chaque page de copie tient sur une feuille : on réduit l'image tant que la feuille déborde (lettre, marges de 10 mm).
@@ -1711,7 +1736,7 @@ function exportCSV() {
   // Avec une grille : une colonne de points et une colonne de niveau par critère, nommées d'après la grille.
   const grid = perQuestion ? sorted.find((r) => r.grid)?.grid : null;
   const labelled = grid && grid.some((c) => c.levels.some((l) => l.label));
-  const levelOf = (r, i) => r.grid?.[i]?.levels.find((l) => l.points === r.questions[i]?.points)?.label || '';
+  const levelOf = (r, i, pts = r.questions[i]?.points) => r.grid?.[i]?.levels.find((l) => l.points === pts)?.label || '';
   const numbered = (q, i) => (/^\s*\d/.test(q.question) ? q.question : `${i + 1}. ${q.question}`); // « 1. Hypothèse » est déjà numéroté
   const qHeads = !perQuestion ? [] : grid ? shape.flatMap((q, i) => [`${numbered(q, i)} (/${num(q.max)})`, ...(labelled ? [`${numbered(q, i)} : niveau`] : [])])
     : shape.map((q, i) => `Q${i + 1} (/${num(q.max)})`);
@@ -1722,7 +1747,7 @@ function exportCSV() {
       const ok = r.grade != null;
       rowsL.push([r.no ?? '', r.file || '', r.exam, r.group, r.name, ok ? globalLetter(r) : tr('Illisible'),
         ...shape.map((_, i) => (ok && r.questions[i] ? levelOf(r, i, r.questions[i].points) : '')),
-        r.questions.map((q, i) => `${q.question}${lang === 'en' ? ':' : ' :'} ${levelOf(r, i, q.points)}${q.justification ? ` (${noPoints(q.justification)})` : ''}`).join(' | '),
+        r.questions.map((q, i) => `${q.question}${lang === 'en' ? ':' : ' :'} ${levelOf(r, i, q.points)}${edited(q) ? ` (${tr('modifié par l’enseignant')} ; ${tr('proposé')} : ${levelOf(r, i, q.ai)})` : q.justification ? ` (${noPoints(q.justification)})` : ''}`).join(' | '),
         r.comment, r.flags.join(' ')]);
     }
     downloadCSV(rowsL, '');
@@ -1734,7 +1759,7 @@ function exportCSV() {
     const ok = r.grade != null;
     rows.push([r.no ?? '', r.file || '', r.exam, r.group, r.name, ok ? num(r.grade) : tr('Illisible'), num(r.total), ok ? num(Math.round((r.grade / r.total) * 1000) / 10) : '',
       ...(perQuestion ? shape.flatMap((_, i) => [ok && r.questions[i] ? num(r.questions[i].points) : '', ...(labelled ? [ok ? levelOf(r, i) : ''] : [])]) : []), r.reliability ?? '',
-      r.questions.map((q) => `${q.question}${lang === 'en' ? ':' : ' :'} ${num(q.points)}/${num(q.max)}${q.points < q.max && q.justification ? ` (${q.justification})` : ''}`).join(' | '),
+      r.questions.map((q) => `${q.question}${lang === 'en' ? ':' : ' :'} ${num(q.points)}/${num(q.max)}${edited(q) ? ` (${tr('modifié par l’enseignant')} ; ${tr('proposé')} : ${num(q.ai)})` : q.points < q.max && q.justification ? ` (${q.justification})` : ''}`).join(' | '),
       r.comment, r.flags.join(' ')]);
   }
   downloadCSV(rows, '');
@@ -2088,7 +2113,12 @@ $('anon-opts').hidden = !anonymous();
 for (const id of [...PREF_IDS, ...TAB_IDS]) $(id).addEventListener('change', savePrefs);
 ['anon', 'anon-h', 'anon-all'].forEach((id) => $(id).addEventListener('change', () => { $('anon-opts').hidden = !anonymous(); renderPages(); }));
 document.querySelectorAll('#lang-cats input').forEach((i) => i.addEventListener('change', savePrefs));
-['pda-year', 'pda-step'].forEach((id) => $(id).addEventListener('change', () => { pdaOver = {}; savePda(); renderPda(); }));
+['pda-year', 'pda-step'].forEach((id) => $(id).addEventListener('change', () => { pdaOver = {}; savePda(); renderPda(); renderSummary(); }));
+$('pda-year').addEventListener('change', () => {
+  if (!$('pda-year').value || yearSet) return;
+  yearSet = true; try { localStorage.setItem('ce.yearSet', '1'); } catch { /* ignoré */ }
+  const v = $('pda-year').value; fillYears(); $('pda-year').value = v; savePrefs(); renderPda();
+});
 $('lang-level').addEventListener('change', renderPda);
 $('out-lang').addEventListener('change', renderPda);
 $('pda-reset').addEventListener('click', () => { pdaOver = {}; savePda(); renderPda(); });
@@ -2137,7 +2167,8 @@ document.querySelectorAll('.lvl-seg button').forEach((b) => b.addEventListener('
   const asked = new URLSearchParams(location.search).get('niveau');
   let known = null;
   try { known = localStorage.getItem('ce.niveau'); } catch { /* ignoré */ }
-  if (asked && asked !== known) setNiveau(asked, true); // arrivée depuis l'accueil avec un niveau : réglages de ce niveau
+  // Arrivée depuis l'accueil avec un niveau (?niveau=…) : réglages de ce niveau, même si l'accueil l'a déjà mémorisé.
+  if (asked) setNiveau(asked, true);
   else setNiveau(known || $('lang-level').value, false);
   if (asked) { const q = new URLSearchParams(location.search); q.delete('niveau'); history.replaceState(null, '', location.pathname + (q.size ? `?${q}` : '') + location.hash); } // la clé (?key=) reste
 }

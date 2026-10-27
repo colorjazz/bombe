@@ -478,3 +478,6 @@ body.light .layout > .levelbar { grid-column: 1 / -1; }
 .render-row { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .8rem; padding-bottom: .45rem; border-bottom: 1px solid var(--line); }
 .render-row .seg button { padding: .35rem .8rem; font-size: .82rem; }
 .card-body .rewrite { justify-self: start; margin-top: -.3rem; }
+.qtable .changed { font-weight: 700; color: var(--primary); margin-bottom: .2rem; }
+.qtable .changed[hidden] { display: none; }
+.qtable .initial { color: var(--faint); font-style: italic; }
