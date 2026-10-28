@@ -63,7 +63,7 @@ function banner(type, text) {
 async function api(path, { method = 'GET', body, auth = true } = {}) {
   const res = await fetch(path, {
     method,
-    headers: { 'X-Lang': $('out-lang').value || lang, ...(body ? { 'Content-Type': 'application/json' } : {}), ...(auth && state.key ? { Authorization: `Bearer ${state.key}` } : {}) },
+    headers: { 'X-Lang': $('out-lang').value || lang, ...(state.qc && $('qc').checked ? { 'X-Region': 'qc' } : {}), ...(body ? { 'Content-Type': 'application/json' } : {}), ...(auth && state.key ? { Authorization: `Bearer ${state.key}` } : {}) },
     body: body ? JSON.stringify(body) : undefined,
   });
   const data = await res.json().catch(() => ({}));
@@ -87,6 +87,7 @@ async function useKey(key) {
   const data = await api('/api/balance');
   store.set(state.key);
   setBalance(data.pages);
+  state.qc = !!data.qc; $('qc-field').hidden = !state.qc; // option offerte seulement si le serveur a la clé Vertex
   $('gate').hidden = true;
   $('app').hidden = false;
   $('buy-open').hidden = $('logout').hidden = false;
@@ -2212,7 +2213,7 @@ window.addEventListener('beforeunload', (e) => {
 // Le corrigé tapé et le nom de l'évaluation ne sont gardés que jusqu'à la fermeture de l'onglet : assez pour corriger
 // plusieurs groupes de suite, sans laisser le corrigé sur un ordinateur partagé. « Terminer la session » les efface aussi.
 // Le regroupement des pages n'est pas retenu : il repart toujours d'un choix neutre.
-const PREF_IDS = ['total', 'per-student', 'whole', 'deep', 'language', 'lang-level', 'pda-year', 'pda-once', 'pda-a', 'pda-b', 'pda-c', 'pda-d', 'lang-total', 'lang-per', 'lang-max', 'anon', 'anon-h', 'anon-all', 'out-lang'];
+const PREF_IDS = ['total', 'per-student', 'whole', 'deep', 'language', 'lang-level', 'pda-year', 'pda-once', 'pda-a', 'pda-b', 'pda-c', 'pda-d', 'lang-total', 'lang-per', 'lang-max', 'anon', 'anon-h', 'anon-all', 'out-lang', 'qc'];
 const TAB_IDS = ['exam', 'rubric'];
 function savePrefs() {
   const prefs = Object.fromEntries(PREF_IDS.map((id) => [id, $(id).type === 'checkbox' ? $(id).checked : $(id).value]));

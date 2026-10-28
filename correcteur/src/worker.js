@@ -28,8 +28,17 @@ export default {
       await ensureSchema(env);
       const route = ROUTES[`${request.method} ${url.pathname}`];
       if (!route) return json({ error: 'Introuvable' }, 404);
+      // Option « Traiter les copies au Québec » (en-tête X-Region: qc) : Vertex AI à Montréal pour cette requête.
+      // Jamais de repli ailleurs : sans la clé Vertex, la requête est refusée.
+      if (request.headers.get('X-Region') === 'qc') {
+        if (!env.VERTEX_SA_KEY) return json({ error: "Le traitement au Québec n'est pas offert pour l'instant : décochez l'option dans les réglages avancés." }, 503);
+        env = Object.assign(Object.create(env), { AI_PROVIDER: 'vertex' }); // les liaisons (DB, ASSETS) restent accessibles
+      }
       return await route(request, env, url, ctx);
     } catch (err) {
+      if (err instanceof HttpError && err.status === 502 && request.headers.get('X-Region') === 'qc') {
+        return json({ error: `${err.message} Le traitement au Québec (Montréal) n'a pas répondu : aucune copie n'a été envoyée ailleurs. Réessayez, ou décochez l'option dans les réglages avancés.` }, 502);
+      }
       if (err instanceof HttpError) return json({ error: err.message }, err.status);
       // On ne journalise que le message : jamais le contenu des copies.
       console.error('Erreur interne :', err?.message);
@@ -143,7 +152,7 @@ async function getKey(env, key) {
 
 async function balance(request, env) {
   const row = await getKey(env, bearer(request));
-  return json({ pages: row.pages, trial: !!row.is_trial });
+  return json({ pages: row.pages, trial: !!row.is_trial, qc: !!env.VERTEX_SA_KEY }); // qc : option « au Québec » offerte
 }
 
 // « Proposez une fonctionnalité » (page d'accueil) : le texte, et le courriel si la personne veut une réponse.
@@ -226,7 +235,7 @@ async function adminAiCheck(request, env) {
   const current = vertexOn(env) ? { provider: 'vertex', location: env.VERTEX_LOCATION || VERTEX_LOCATION, model: vertexModel(env) }
     : { provider: 'gemini', model: env.AI_MODEL, langModel: env.LANG_MODEL };
   return json({ current: { ...current, ...(await probe(env)) },
-    vertex: env.VERTEX_SA_KEY && !vertexOn(env) ? { location: env.VERTEX_LOCATION || VERTEX_LOCATION, model: vertexModel(env), ...(await probe({ ...env, AI_PROVIDER: 'vertex' })) } : null,
+    vertex: env.VERTEX_SA_KEY && !vertexOn(env) ? { location: env.VERTEX_LOCATION || VERTEX_LOCATION, model: vertexModel(env), ...(await probe(Object.assign(Object.create(env), { AI_PROVIDER: 'vertex' }))) } : null,
     vertexKey: !!env.VERTEX_SA_KEY });
 }
 

@@ -38,7 +38,7 @@ Ensuite, dans Cloudflare, rattachez votre nom de domaine au Worker (Workers → 
 
 ### Traitement à Montréal (Vertex AI), facultatif
 
-Par défaut, les copies vont à l'API Gemini, sans garantie de pays. Pour qu'elles soient traitées à Montréal :
+Par défaut, les copies vont à l'API Gemini (gemini-3.7-flash pour la langue), sans garantie de pays. Pour offrir aux enseignants le traitement à Montréal (gemini-3.5-flash, surlignages un peu moins précis : 75 % de cadres exacts contre 84 % sur 9 vraies copies) :
 
 1. Google Cloud (projet avec facturation active), Cloud Shell :
    ```
@@ -51,7 +51,9 @@ Par défaut, les copies vont à l'API Gemini, sans garantie de pays. Pour qu'ell
 2. Cloudflare → Settings → Variables and Secrets : secret `VERTEX_SA_KEY` = tout le contenu de `cle.json`
    (puis supprimer `cle.json` dans Cloud Shell : `rm cle.json`).
 3. Page admin → Vue d'ensemble → Fournisseur d'IA → « Vérifier » : Vertex AI à Montréal doit afficher ✓ deux fois.
-4. Cloudflare : variable `AI_PROVIDER` = `vertex` (texte). Retour à l'API Gemini : supprimer la variable.
+4. L'appli propose alors, dans ses réglages avancés, « Traiter les copies au Québec (Montréal) », décochée par défaut.
+   Cochée, chaque requête part avec l'en-tête `X-Region: qc` et passe par Vertex AI, sans jamais de repli ailleurs.
+   (Variable `AI_PROVIDER` = `vertex` : tout le site passe par Montréal, même sans l'option.)
 
 Variables facultatives : `VERTEX_LOCATION` (défaut `northamerica-northeast1`, Montréal), `VERTEX_MODEL`
 (défaut `gemini-3.5-flash`, le seul modèle Gemini 3 offert à Montréal le 28 octobre 2026), `VERTEX_PROJECT`
