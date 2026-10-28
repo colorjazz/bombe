@@ -17,28 +17,31 @@
   <header class="topbar"><div class="wrap"><a class="brand" href="index-en.html"><img class="logo" src="logo-96.png" alt="" width="40" height="40"><strong>Burn the Pile</strong></a><div class="top-actions"><div class="lang-switch" role="group" aria-label="Langue / Language"><a href="confidentialite.html" data-set-lang="fr">FR</a><a href="privacy.html" data-set-lang="en">EN</a></div><a class="btn ghost" href="index-en.html#pricing">Pricing</a><a class="btn primary" href="app.html">Try for free</a></div></div></header>
   <main class="wrap legal">
     <h1>Privacy policy</h1>
-    <p class="small">Last updated: October 18, 2026. Person in charge of protecting personal information: Christopher Plante, Montreal (Quebec), <a href="mailto:hello@burnthepile.com">hello@burnthepile.com</a>.</p>
+    <p class="small">Last updated: October 28, 2026. Person in charge of protecting personal information: Christopher Plante, Montreal (Quebec), <a href="mailto:hello@burnthepile.com">hello@burnthepile.com</a>.</p>
 
     <h2>In short</h2>
     <ul>
       <li>We keep <strong>no student work, no grades and no student names</strong>.</li>
       <li>Papers pass through our server without being stored, then are sent to our artificial intelligence provider (Google) solely for the services you request: grading, language checks, automatic splitting of papers in one scan and straightening photos taken sideways.</li>
-      <li>You can <strong>hide the student’s name before sending</strong>: the top of each paper’s first page (or of every page, as you choose; adjustable height, shown on the thumbnails) is then blanked in your browser before anything is sent; to straighten a photo taken sideways, only the centre of the page is sent, whether or not the option is ticked. A name written elsewhere on the paper (later pages, margins) is not hidden: a student code remains the safest option.</li>
+      <li>The <strong>student’s name is hidden before sending</strong>, by default: the “Name:” line is found in your browser, without sending anything, then blanked before anything is sent (on the first page, or on every page as you choose; shown on the thumbnails). If it is not found, the top of the page is blanked instead (adjustable height). You can turn this option off; to straighten a photo taken sideways, only the centre of the page is sent, whether or not the option is ticked. A name written elsewhere on the paper (later pages, margins) is not hidden: a student code remains the safest option.</li>
+      <li>As an option (“Process papers in Quebec”, in the advanced settings), papers are processed by Google Cloud in its <strong>Montreal</strong> region instead of the Gemini API.</li>
       <li>We keep only your access key, its page balance, a log of its use (date, time and number of pages, with no papers or names) and, if you buy a pack, the payment email and the amount paid. If you suggest an idea (home page), we keep your text and, if you provide it, your email so we can reply; write to us to have them deleted.</li>
     </ul>
 
     <h2>Student work and results</h2>
     <p>The pages you import are prepared in your browser (converted to images, resized, name hidden if you chose to), then sent over an encrypted connection (HTTPS) to our server, which forwards them to Google (Gemini API) for grading. Our server processes the papers in memory only: it does not store them and does not write their content to any log. Results are returned to your browser and stay in your tab until you end the session or close the page.</p>
     <p>We use the paid tier of the Gemini API. Under <a href="https://ai.google.dev/gemini-api/terms" rel="noopener">its terms</a>, Google does not use this data to improve its products or train its models; it may be kept for a limited time solely to detect abuse. At Google, images are readable while they are processed: encryption protects them in transit, not from being read by the grading service.</p>
+    <p><strong>“Process papers in Quebec” option.</strong> If you tick it, our server sends the papers to Google Cloud’s Vertex AI service in its Montreal region (northamerica-northeast1), and never anywhere else: if that service does not answer, marking stops. Under <a href="https://cloud.google.com/vertex-ai/generative-ai/docs/data-governance" rel="noopener">its data commitments</a>, Google does not use this data to train its models. Papers also pass through our server at Cloudflare (see below), without being stored.</p>
     <p>Grades and comments produced by the AI are <strong>suggestions</strong>: the teacher reviews and edits them before using them. We make no decision about any student.</p>
 
     <h2>Students and schools</h2>
-    <p>Papers may contain information about students, often minors. Teachers use the service on behalf of their school and under its rules. To limit what is sent, we recommend hiding the name (an option in the app) or using a student number instead of a name, and leaving out sensitive information that is not needed for grading. The school informs students and parents about the use of artificial intelligence tools according to its own policies (for example, under MFIPPA in Ontario).</p>
+    <p>Papers may contain information about students, often minors. Teachers use the service on behalf of their school and under its rules. To limit what is sent, we recommend hiding the name (an option in the app) or using a student number instead of a name, and leaving out sensitive information that is not needed for grading. The school informs students and parents about the use of artificial intelligence tools according to its own policies (for example, under MFIPPA in Ontario). A <a href="consent.html">template consent letter for parents</a> is available.</p>
     <p>Schools and school boards that want a data processing agreement or the summary of our privacy impact assessment can write to <a href="mailto:hello@burnthepile.com">hello@burnthepile.com</a>.</p>
 
     <h2>Our providers and where data is processed</h2>
     <ul>
-      <li><strong>Google LLC</strong> (Gemini API): grading. Processed in the United States and other countries where Google operates data centres.</li>
+      <li><strong>Google LLC</strong> (Gemini API): grading, by default. Processed in the United States and other countries where Google operates data centres.</li>
+      <li><strong>Google LLC</strong> (Google Cloud, Vertex AI): grading, only with the “Process papers in Quebec” option. Processed in the Montreal region (Quebec).</li>
       <li><strong>Cloudflare, Inc.</strong>: hosting of the site and server, access-key database, technical logs. Global network; company based in the United States.</li>
       <li><strong>Stripe</strong>: payments. We never see your card.</li>
       <li><strong>Google Fonts</strong>: the site’s fonts; your browser sends your IP address when it downloads them.</li>
@@ -63,6 +66,6 @@
     <h2>Your rights</h2>
     <p>You can ask to access, correct or delete information about you, or withdraw your consent, by writing to <a href="mailto:hello@burnthepile.com">hello@burnthepile.com</a>. We reply within 30 days. You can also file a complaint with Quebec’s <a href="https://www.cai.gouv.qc.ca" rel="noopener">Commission d’accès à l’information</a> or, outside Quebec, with the <a href="https://www.priv.gc.ca" rel="noopener">Office of the Privacy Commissioner of Canada</a>.</p>
   </main>
-  <footer><div class="wrap"><span>© 2026 Burn the Pile</span><span><a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a> · <a href="mailto:hello@burnthepile.com">Contact us</a></span></div></footer>
+  <footer><div class="wrap"><span>© 2026 Burn the Pile</span><span><a href="privacy.html">Privacy</a> · <a href="consent.html">Parent letter</a> · <a href="terms.html">Terms</a> · <a href="mailto:hello@burnthepile.com">Contact us</a></span></div></footer>
 </body>
 </html>

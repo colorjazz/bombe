@@ -12,7 +12,7 @@ FR = dict(
   search='Rechercher dans le guide (ex. : CSV, téléphone, nom)…', none='Aucune section ne correspond à votre recherche.', toc='Sommaire',
   nav_prices='Tarifs', anchor_prices='tarifs', nav_try='Essayer gratuitement', switch_label='Langue / Language',
   cta_title='Prêt à essayer ?', cta_text='30 pages gratuites, sans carte de crédit et sans compte.',
-  privacy_href='confidentialite.html', privacy='Confidentialité', terms_href='conditions.html', terms='Conditions', mail='bonjour@brulelapile.ca', contact='Nous écrire',
+  privacy_href='confidentialite.html', privacy='Confidentialité', consent_href='consentement.html', consent='Lettre aux parents', terms_href='conditions.html', terms='Conditions', mail='bonjour@brulelapile.ca', contact='Nous écrire',
   sections=[
     ('demarrer', 'Démarrer en 3 étapes', '''
 <ol>
@@ -96,7 +96,9 @@ FR = dict(
     ('confidentialite', 'Confidentialité des élèves', '''
 <ul>
 <li><b>Aucune copie, note ou nom d’élève n’est conservé</b> sur nos serveurs. Les copies sont transmises, sans être enregistrées, à notre fournisseur d’IA (Google, offre payante : pas d’entraînement des modèles sur vos données).</li>
-<li><b>Masquer le nom de l’élève</b> : le haut de la première page de chaque copie est blanchi dans votre navigateur avant l’envoi (hauteur réglable, et sur toutes les pages au besoin). Vous inscrivez les noms vous-même. Un code d’élève reste la solution la plus sûre.</li>
+<li><b>Le nom de l’élève est masqué</b>, par défaut : la ligne « Nom : » est repérée dans votre navigateur et blanchie avant l’envoi (si elle n’est pas trouvée, le haut de la page est blanchi : hachures orange sur la miniature). La ligne du nom s’affiche dans chaque fiche, sur votre appareil seulement, pour que vous tapiez le nom. Un code d’élève reste la solution la plus sûre.</li>
+<li><b>Traiter les copies au Québec</b> (réglages avancés) : les copies sont lues dans le centre de données de Google à Montréal. Les surlignages y sont un peu moins précis.</li>
+<li><b>Les parents</b> : un <a href="consentement.html">modèle de lettre de consentement</a> est prêt à remplir et à imprimer. Demandez d’abord l’accord de votre direction.</li>
 <li>Détails et documents pour les établissements : voir la <a href="confidentialite.html">politique de confidentialité</a>.</li>
 </ul>'''),
     ('limites', 'Limites importantes à connaître', '''
@@ -126,7 +128,7 @@ EN = dict(
   search='Search the guide (e.g. CSV, phone, name)…', none='No section matches your search.', toc='Contents',
   nav_prices='Pricing', anchor_prices='pricing', nav_try='Try for free', switch_label='Langue / Language',
   cta_title='Ready to try it?', cta_text='30 free pages, no credit card, no account.',
-  privacy_href='privacy.html', privacy='Privacy', terms_href='terms.html', terms='Terms', mail='hello@burnthepile.com', contact='Contact us',
+  privacy_href='privacy.html', privacy='Privacy', consent_href='consent.html', consent='Parent letter', terms_href='terms.html', terms='Terms', mail='hello@burnthepile.com', contact='Contact us',
   sections=[
     ('demarrer', 'Get started in 3 steps', '''
 <ol>
@@ -208,7 +210,9 @@ EN = dict(
     ('confidentialite', 'Student privacy', '''
 <ul>
 <li><b>No student paper, grade or name is stored</b> on our servers. Papers are passed, without being saved, to our AI provider (Google, paid tier: your data is not used to train its models).</li>
-<li><b>Hide the student’s name</b>: the top of each paper’s first page is blanked in your browser before sending (adjustable height, and on every page if needed). You enter the names yourself. A student code remains the safest option.</li>
+<li><b>The student’s name is hidden</b>, by default: the “Name:” line is found in your browser and blanked before sending (if it is not found, the top of the page is blanked: orange hatching on the thumbnail). The name line shows on each result card, on your device only, so you can type the name. A student code remains the safest option.</li>
+<li><b>Process papers in Quebec</b> (advanced settings): papers are read in Google’s data centre in Montreal. Highlights are a little less precise there.</li>
+<li><b>Parents</b>: a <a href="consent.html">template consent letter</a> is ready to fill in and print. Check with your principal first.</li>
 <li>Details and documents for schools: see the <a href="privacy.html">privacy policy</a>.</li>
 </ul>'''),
     ('limites', 'Important limits to know', '''
@@ -278,7 +282,7 @@ def page(d):
       </div>
     </div>
   </main>
-  <footer><div class="wrap"><span>© 2026 {d['brand']}</span><span><a href="{d['privacy_href']}">{d['privacy']}</a> · <a href="{d['terms_href']}">{d['terms']}</a> · <a href="mailto:{d['mail']}">{d['contact']}</a></span></div></footer>
+  <footer><div class="wrap"><span>© 2026 {d['brand']}</span><span><a href="{d['privacy_href']}">{d['privacy']}</a> · <a href="{d['consent_href']}">{d['consent']}</a> · <a href="{d['terms_href']}">{d['terms']}</a> · <a href="mailto:{d['mail']}">{d['contact']}</a></span></div></footer>
   {SCRIPT}
 </body>
 </html>

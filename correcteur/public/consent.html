@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en-CA" data-lang="en" data-alt="consentement.html">
+<head>
+  <meta charset="UTF-8">
+  <script src="lang.js"></script>
+  <link rel="icon" href="favicon.png" type="image/png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="site.css">
+  <title>Parent consent letter — Burn the Pile</title>
+  <meta name="description" content="Template consent letter for parents before marking with Burn the Pile: fill in, print or download.">
+</head>
+<body>
+  <header class="topbar"><div class="wrap"><a class="brand" href="index-en.html"><img class="logo" src="logo-96.png" alt="" width="40" height="40"><strong>Burn the Pile</strong></a><div class="top-actions"><div class="lang-switch" role="group" aria-label="Langue / Language"><a href="consentement.html" data-set-lang="fr">FR</a><a href="consent.html" data-set-lang="en">EN</a></div><a class="btn ghost" href="index-en.html#pricing">Pricing</a><a class="btn primary" href="app.html">Try for free</a></div></div></header>
+  <main class="wrap legal consent">
+    <div class="no-print">
+      <h1>Parent consent letter</h1>
+      <p>A template to send before marking with Burn the Pile. Click the passages highlighted in yellow to replace them with your information, then print, download for Word or copy the text.</p>
+      <ul>
+        <li><strong>Ask your principal or school board first.</strong> Most school boards decide which AI tools may be used with student work. Parent consent adds to that approval; it does not replace it.</li>
+        <li>Mark by hand the papers of students whose parents decline or do not reply, and keep the signed slips for the whole school year.</li>
+        <li>Keep the “Hide the student’s name before sending” option on, and ask students to write their name only on the “Name:” line.</li>
+      </ul>
+      <fieldset class="consent-mode">
+        <legend>Where are your papers processed?</legend>
+        <label><input type="radio" name="mode" value="gemini" checked> The app’s default setting</label>
+        <label><input type="radio" name="mode" value="qc"> “Process papers in Quebec (Montreal)” option ticked</label>
+      </fieldset>
+      <div class="consent-actions">
+        <button class="btn primary" type="button" id="print">Print</button>
+        <button class="btn" type="button" id="word">Download for Word</button>
+        <button class="btn" type="button" id="copy">Copy the text</button>
+      </div>
+    </div>
+
+    <article id="letter" class="letter">
+      <p><span class="fill" contenteditable="true">[School name]</span><br><span class="fill" contenteditable="true">[Date]</span></p>
+      <p><strong>Re: use of a marking assistance tool</strong></p>
+      <p>Dear parents,</p>
+      <p>This year, I would like to use Burn the Pile, a marking assistance tool, for some of your child’s work in <span class="fill" contenteditable="true">[subject]</span>. Before I do, I am asking for your consent.</p>
+      <h3>How it works</h3>
+      <ul>
+        <li>I take a photo of your child’s paper with my phone or computer.</li>
+        <li>Before anything is sent, your child’s name is hidden directly on my device: the tool does not know whose paper it is.</li>
+        <li data-mode="gemini">The paper is then read by an artificial intelligence (Gemini, by Google), which suggests errors to correct, a mark and a comment. Google’s servers may be located outside Canada.</li>
+        <li data-mode="qc" hidden>The paper is then read by an artificial intelligence (Gemini, by Google), in Google’s data centre in Montreal (Quebec, Canada), which suggests errors to correct, a mark and a comment.</li>
+        <li>Burn the Pile does not keep the paper after marking.</li>
+      </ul>
+      <h3>What does not change</h3>
+      <ul>
+        <li>I am the one who assesses your child. I review every suggestion and decide on the final mark.</li>
+        <li>The paper remains your child’s work, and your child keeps ownership of it.</li>
+        <li>This use was approved by <span class="fill" contenteditable="true">[the principal / the school board]</span> on <span class="fill" contenteditable="true">[date]</span>.</li>
+      </ul>
+      <h3>Your choice</h3>
+      <p>Your consent is free and voluntary. If you decline, I will mark your child’s work the usual way, with no consequence for your child. You can change your mind at any time by letting me know in writing.</p>
+      <p>Please fill in and return the slip below by <span class="fill" contenteditable="true">[date]</span>. For any question, email me at <span class="fill" contenteditable="true">[email address]</span> or call me at <span class="fill" contenteditable="true">[phone number]</span>.</p>
+      <p><span class="fill" contenteditable="true">[Your name]</span><br><span class="fill" contenteditable="true">[Subject and class]</span></p>
+
+      <div class="coupon">
+        <p class="cut">✂ - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -</p>
+        <p><strong>Reply slip</strong> — return to <span class="fill" contenteditable="true">[your name]</span> by <span class="fill" contenteditable="true">[date]</span></p>
+        <p>Student’s name: ______________________________ Class: __________</p>
+        <p>☐ I agree that my child’s papers may be marked with the help of Burn the Pile, with my child’s name hidden before sending.</p>
+        <p>☐ I decline. My child’s papers will be marked the usual way.</p>
+        <p>Parent or guardian’s name: ______________________________</p>
+        <p>Signature: ______________________________ Date: ______________</p>
+        <p class="small">I can withdraw my consent at any time by letting the teacher know in writing.</p>
+      </div>
+    </article>
+  </main>
+  <footer class="no-print"><div class="wrap"><span>© 2026 Burn the Pile</span><span><a href="privacy.html">Privacy</a> · <a href="consent.html">Parent letter</a> · <a href="terms.html">Terms</a> · <a href="mailto:hello@burnthepile.com">Contact us</a></span></div></footer>
+  <script src="consent.js" data-file="consent-letter-burn-the-pile.doc" data-copied="✓ Text copied"></script>
+</body>
+</html>

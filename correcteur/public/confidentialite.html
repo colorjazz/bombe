@@ -17,28 +17,31 @@
   <header class="topbar"><div class="wrap"><a class="brand" href="index.html"><img class="logo" src="logo-96.png" alt="" width="40" height="40"><strong>Brûle la pile</strong></a><div class="top-actions"><div class="lang-switch" role="group" aria-label="Langue / Language"><a href="confidentialite.html" data-set-lang="fr">FR</a><a href="privacy.html" data-set-lang="en">EN</a></div><a class="btn ghost" href="index.html#tarifs">Tarifs</a><a class="btn primary" href="app.html">Essayer gratuitement</a></div></div></header>
   <main class="wrap legal">
     <h1>Politique de confidentialité</h1>
-    <p class="small">Dernière mise à jour : 18 octobre 2026. Responsable de la protection des renseignements personnels : Christopher Plante, Montréal (Québec), <a href="mailto:bonjour@brulelapile.ca">bonjour@brulelapile.ca</a>.</p>
+    <p class="small">Dernière mise à jour : 28 octobre 2026. Responsable de la protection des renseignements personnels : Christopher Plante, Montréal (Québec), <a href="mailto:bonjour@brulelapile.ca">bonjour@brulelapile.ca</a>.</p>
 
     <h2>En bref</h2>
     <ul>
       <li>Nous ne conservons <strong>aucune copie d'élève, aucune note, aucun nom d'élève</strong>.</li>
       <li>Les copies passent par notre serveur, sans y être enregistrées, puis sont transmises à notre fournisseur d'intelligence artificielle (Google) uniquement pour les services demandés : correction, correction de la langue, séparation automatique des copies d'une même numérisation et redressement des photos prises de côté.</li>
-      <li>Vous pouvez <strong>masquer le nom de l'élève avant l'envoi</strong> : le haut de la première page de chaque copie (ou de toutes les pages, au choix ; hauteur réglable, zone visible sur les miniatures) est alors blanchi dans votre navigateur avant tout envoi ; pour redresser une photo prise de côté, seule la partie centrale de la page est envoyée, que l'option soit cochée ou non. Un nom écrit ailleurs sur la copie (pages suivantes, marge) n'est pas masqué : un code d'élève reste la solution la plus sûre.</li>
+      <li>Le <strong>nom de l'élève est masqué avant l'envoi</strong>, par défaut : la ligne « Nom : » est repérée dans votre navigateur, sans rien envoyer, puis blanchie avant tout envoi (sur la première page, ou sur toutes les pages au choix ; zone visible sur les miniatures). Si elle n'est pas trouvée, c'est le haut de la page qui est blanchi (hauteur réglable). Vous pouvez désactiver cette option ; pour redresser une photo prise de côté, seule la partie centrale de la page est envoyée, que l'option soit cochée ou non. Un nom écrit ailleurs sur la copie (pages suivantes, marge) n'est pas masqué : un code d'élève reste la solution la plus sûre.</li>
+      <li>En option (« Traiter les copies au Québec », dans les réglages avancés), les copies sont traitées par Google Cloud dans sa région de <strong>Montréal</strong>, au lieu de l'API Gemini.</li>
       <li>Nous conservons seulement votre clé d'accès, son solde de pages, un journal de son utilisation (date, heure et nombre de pages, sans aucune copie ni nom) et, si vous achetez un pack, le courriel de paiement et le montant payé. Si vous nous proposez une idée (page d'accueil), nous conservons votre texte et, si vous le donnez, votre courriel, pour vous répondre ; écrivez-nous pour les faire effacer.</li>
     </ul>
 
     <h2>Copies et résultats</h2>
     <p>Les pages que vous importez sont préparées dans votre navigateur (conversion en images, réduction de taille, masquage du nom si vous l'avez choisi), puis envoyées par une connexion chiffrée (HTTPS) à notre serveur, qui les transmet à Google (API Gemini) pour la correction. Notre serveur traite les copies en mémoire seulement : il ne les enregistre pas et n'inscrit leur contenu dans aucun journal. Les résultats sont renvoyés à votre navigateur et restent dans votre onglet jusqu'à ce que vous terminiez la session ou fermiez la page.</p>
     <p>Nous utilisons l'offre payante de l'API Gemini. Selon <a href="https://ai.google.dev/gemini-api/terms" rel="noopener">ses conditions</a>, Google n'utilise pas ces données pour améliorer ses produits ni entraîner ses modèles ; elles peuvent être conservées pour une durée limitée aux seules fins de détection d'abus. Chez Google, les images sont lisibles pendant leur traitement : le chiffrement protège leur transport, pas leur lecture par le service de correction.</p>
+    <p><strong>Option « Traiter les copies au Québec ».</strong> Si vous la cochez, notre serveur transmet les copies au service Vertex AI de Google Cloud, dans sa région de Montréal (northamerica-northeast1), et jamais ailleurs : si ce service ne répond pas, la correction s'arrête. Selon <a href="https://cloud.google.com/vertex-ai/generative-ai/docs/data-governance" rel="noopener">ses engagements sur les données</a>, Google n'utilise pas ces données pour entraîner ses modèles. Les copies passent aussi par notre serveur chez Cloudflare (voir plus bas), sans y être enregistrées.</p>
     <p>Les notes et les commentaires produits par l'IA sont des <strong>propositions</strong> : l'enseignant les vérifie et les modifie avant de s'en servir. Nous ne prenons aucune décision au sujet d'un élève.</p>
 
     <h2>Élèves et établissements</h2>
-    <p>Les copies peuvent contenir des renseignements sur des élèves, souvent mineurs. L'enseignant utilise le service au nom de son établissement et selon ses règles. Pour réduire les renseignements transmis, nous recommandons de masquer le nom (option de l'application) ou d'utiliser un code d'élève plutôt qu'un nom, et de ne pas inclure de renseignements sensibles non nécessaires à la correction. L'établissement informe les élèves et les parents de l'usage d'outils d'intelligence artificielle selon ses propres politiques.</p>
+    <p>Les copies peuvent contenir des renseignements sur des élèves, souvent mineurs. L'enseignant utilise le service au nom de son établissement et selon ses règles. Pour réduire les renseignements transmis, nous recommandons de masquer le nom (option de l'application) ou d'utiliser un code d'élève plutôt qu'un nom, et de ne pas inclure de renseignements sensibles non nécessaires à la correction. L'établissement informe les élèves et les parents de l'usage d'outils d'intelligence artificielle selon ses propres politiques. Un <a href="consentement.html">modèle de lettre de consentement pour les parents</a> est offert.</p>
     <p>Les établissements qui souhaitent une entente de traitement des renseignements personnels ou le résumé de notre évaluation des facteurs relatifs à la vie privée peuvent nous écrire à <a href="mailto:bonjour@brulelapile.ca">bonjour@brulelapile.ca</a>.</p>
 
     <h2>Nos fournisseurs et lieux de traitement</h2>
     <ul>
-      <li><strong>Google LLC</strong> (API Gemini) : correction des copies. Traitement aux États-Unis et dans d'autres pays où Google exploite ses centres de données.</li>
+      <li><strong>Google LLC</strong> (API Gemini) : correction des copies, par défaut. Traitement aux États-Unis et dans d'autres pays où Google exploite ses centres de données.</li>
+      <li><strong>Google LLC</strong> (Google Cloud, Vertex AI) : correction des copies, seulement avec l'option « Traiter les copies au Québec ». Traitement dans la région de Montréal (Québec).</li>
       <li><strong>Cloudflare, Inc.</strong> : hébergement du site et du serveur, base de données des clés d'accès, journaux techniques. Réseau mondial ; entreprise établie aux États-Unis.</li>
       <li><strong>Stripe</strong> : paiements. Nous ne voyons jamais votre carte.</li>
       <li><strong>Google Fonts</strong> : polices de caractères du site ; votre navigateur transmet votre adresse IP lorsqu'il les télécharge.</li>
@@ -63,6 +66,6 @@
     <h2>Vos droits</h2>
     <p>Vous pouvez demander l'accès, la rectification ou la suppression des renseignements vous concernant, ou retirer votre consentement, en écrivant à <a href="mailto:bonjour@brulelapile.ca">bonjour@brulelapile.ca</a>. Nous répondons dans un délai de 30 jours. Vous pouvez aussi porter plainte auprès de la <a href="https://www.cai.gouv.qc.ca" rel="noopener">Commission d'accès à l'information du Québec</a>.</p>
   </main>
-  <footer><div class="wrap"><span>© 2026 Brûle la pile</span><span><a href="confidentialite.html">Confidentialité</a> · <a href="conditions.html">Conditions</a> · <a href="mailto:bonjour@brulelapile.ca">Nous joindre</a></span></div></footer>
+  <footer><div class="wrap"><span>© 2026 Brûle la pile</span><span><a href="confidentialite.html">Confidentialité</a> · <a href="consentement.html">Lettre aux parents</a> · <a href="conditions.html">Conditions</a> · <a href="mailto:bonjour@brulelapile.ca">Nous joindre</a></span></div></footer>
 </body>
 </html>

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="fr-CA" data-lang="fr" data-alt="consent.html">
+<head>
+  <meta charset="UTF-8">
+  <script src="lang.js"></script>
+  <link rel="icon" href="favicon.png" type="image/png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="site.css">
+  <title>Lettre de consentement aux parents — Brûle la pile</title>
+  <meta name="description" content="Modèle de lettre de consentement aux parents pour la correction avec Brûle la pile : à remplir, imprimer ou télécharger.">
+</head>
+<body>
+  <header class="topbar"><div class="wrap"><a class="brand" href="index.html"><img class="logo" src="logo-96.png" alt="" width="40" height="40"><strong>Brûle la pile</strong></a><div class="top-actions"><div class="lang-switch" role="group" aria-label="Langue / Language"><a href="consentement.html" data-set-lang="fr">FR</a><a href="consent.html" data-set-lang="en">EN</a></div><a class="btn ghost" href="index.html#tarifs">Tarifs</a><a class="btn primary" href="app.html">Essayer gratuitement</a></div></div></header>
+  <main class="wrap legal consent">
+    <div class="no-print">
+      <h1>Lettre de consentement aux parents</h1>
+      <p>Un modèle prêt à envoyer avant de corriger avec Brûle la pile. Cliquez sur les passages surlignés en jaune pour les remplacer par vos informations, puis imprimez, téléchargez pour Word ou copiez le texte.</p>
+      <ul>
+        <li><strong>Demandez d'abord l'accord de votre direction.</strong> Le <a href="https://cdn-contenu.quebec.ca/cdn-contenu/education/Numerique/guide-utilisation-pedagogique-ethique-legale-IAG.pdf" rel="noopener">guide du ministère sur l'IA générative</a> (2026, section 1.2) recommande que l'outil d'évaluation soit autorisé par l'organisme scolaire. Le consentement des parents complète cette autorisation ; il ne la remplace pas.</li>
+        <li>Corrigez à la main les copies des élèves dont les parents refusent ou ne répondent pas, et gardez les coupons signés toute l'année.</li>
+        <li>Laissez activée l'option « Masquer le nom de l'élève avant l'envoi », et demandez aux élèves d'écrire leur nom seulement sur la ligne « Nom : ».</li>
+      </ul>
+      <fieldset class="consent-mode">
+        <legend>Où vos copies sont-elles traitées ?</legend>
+        <label><input type="radio" name="mode" value="gemini" checked> Réglage par défaut de l'appli</label>
+        <label><input type="radio" name="mode" value="qc"> Option « Traiter les copies au Québec (Montréal) » cochée</label>
+      </fieldset>
+      <div class="consent-actions">
+        <button class="btn primary" type="button" id="print">Imprimer</button>
+        <button class="btn" type="button" id="word">Télécharger pour Word</button>
+        <button class="btn" type="button" id="copy">Copier le texte</button>
+      </div>
+    </div>
+
+    <article id="letter" class="letter">
+      <p><span class="fill" contenteditable="true">[Nom de l'école]</span><br><span class="fill" contenteditable="true">[Date]</span></p>
+      <p><strong>Objet : utilisation d'un outil d'aide à la correction</strong></p>
+      <p>Chers parents,</p>
+      <p>Cette année, j'aimerais utiliser Brûle la pile, un outil d'aide à la correction, pour certaines productions de votre enfant en <span class="fill" contenteditable="true">[matière]</span>. Avant de le faire, je vous demande votre accord.</p>
+      <h3>Comment ça fonctionne</h3>
+      <ul>
+        <li>Je photographie la copie de votre enfant avec mon téléphone ou mon ordinateur.</li>
+        <li>Avant tout envoi, le nom de votre enfant est caché directement sur mon appareil : l'outil ne sait pas à qui appartient la copie.</li>
+        <li data-mode="gemini">La copie est ensuite lue par une intelligence artificielle (Gemini, de Google), qui me propose des fautes à corriger, une note et un commentaire. Les serveurs de Google peuvent se trouver à l'extérieur du Québec.</li>
+        <li data-mode="qc" hidden>La copie est ensuite lue par une intelligence artificielle (Gemini, de Google), dans le centre de données de Google à Montréal, qui me propose des fautes à corriger, une note et un commentaire.</li>
+        <li>Brûle la pile ne conserve pas la copie après la correction.</li>
+      </ul>
+      <h3>Ce qui ne change pas</h3>
+      <ul>
+        <li>C'est moi qui évalue votre enfant. Je relis chaque proposition et je décide de la note finale.</li>
+        <li>La copie reste l'œuvre de votre enfant, qui en garde la propriété.</li>
+        <li>Cette utilisation a été approuvée par <span class="fill" contenteditable="true">[la direction de l'école / le centre de services scolaire]</span> le <span class="fill" contenteditable="true">[date]</span>.</li>
+      </ul>
+      <h3>Votre choix</h3>
+      <p>Votre accord est libre et volontaire. Si vous refusez, je corrigerai les travaux de votre enfant de la façon habituelle, sans aucune conséquence pour lui ou pour elle. Vous pouvez changer d'avis à tout moment en me prévenant par écrit.</p>
+      <p>Merci de remplir et de retourner le coupon ci-dessous d'ici le <span class="fill" contenteditable="true">[date]</span>. Pour toute question, écrivez-moi à <span class="fill" contenteditable="true">[adresse courriel]</span> ou appelez-moi au <span class="fill" contenteditable="true">[numéro de téléphone]</span>.</p>
+      <p><span class="fill" contenteditable="true">[Votre nom]</span><br><span class="fill" contenteditable="true">[Matière et groupe]</span></p>
+
+      <div class="coupon">
+        <p class="cut">✂ - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -</p>
+        <p><strong>Coupon-réponse</strong> — à retourner à <span class="fill" contenteditable="true">[votre nom]</span> d'ici le <span class="fill" contenteditable="true">[date]</span></p>
+        <p>Nom de l'élève : ______________________________ Groupe : __________</p>
+        <p>☐ J'accepte que les copies de mon enfant soient corrigées avec l'aide de Brûle la pile, son nom étant caché avant l'envoi.</p>
+        <p>☐ Je refuse. Les copies de mon enfant seront corrigées de la façon habituelle.</p>
+        <p>Nom du parent ou du tuteur : ______________________________</p>
+        <p>Signature : ______________________________ Date : ______________</p>
+        <p class="small">Je peux retirer mon accord à tout moment en avisant l'enseignant par écrit.</p>
+      </div>
+    </article>
+  </main>
+  <footer class="no-print"><div class="wrap"><span>© 2026 Brûle la pile</span><span><a href="confidentialite.html">Confidentialité</a> · <a href="consentement.html">Lettre aux parents</a> · <a href="conditions.html">Conditions</a> · <a href="mailto:bonjour@brulelapile.ca">Nous joindre</a></span></div></footer>
+  <script src="consent.js" data-file="lettre-consentement-brule-la-pile.doc" data-copied="✓ Texte copié"></script>
+</body>
+</html>

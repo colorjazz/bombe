@@ -2244,6 +2244,7 @@ $('out-lang').value = lang; // par défaut la langue du site ; le choix de l'ens
 loadPrefs();
 if ($('per-student').value) applyPerStudent();
 $('anon-opts').hidden = !anonymous();
+$('consent-link').href = lang === 'en' ? 'consent.html' : 'consentement.html';
 for (const id of [...PREF_IDS, ...TAB_IDS]) $(id).addEventListener('change', savePrefs);
 ['anon', 'anon-h', 'anon-all'].forEach((id) => $(id).addEventListener('change', () => { $('anon-opts').hidden = !anonymous(); renderPages(); }));
 document.querySelectorAll('#lang-cats input').forEach((i) => i.addEventListener('change', savePrefs));

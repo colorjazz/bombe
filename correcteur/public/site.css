@@ -148,3 +148,24 @@ footer { background: var(--bg); }
   .made-ca .flag.qc { width: 21px; height: 14px; }
 }
 @media (max-width: 430px) { .made-ca { display: none !important; } } /* téléphone étroit : la place va aux boutons « J'ai une clé » et « Essayer » */
+
+/* Lettre de consentement : passages à remplir surlignés, lettre en « feuille » imprimable. */
+.consent .consent-mode { border: 1px solid var(--line, #e6e8ef); border-radius: 12px; padding: .7rem 1rem; margin: 1rem 0; display: grid; gap: .4rem; }
+.consent .consent-mode legend { font-weight: 700; padding: 0 .3rem; }
+.consent .consent-actions { display: flex; gap: .6rem; flex-wrap: wrap; margin: 1rem 0 1.6rem; }
+.letter { background: #fff; color: #1d1a2e; border: 1px solid var(--line, #e6e8ef); border-radius: 12px; padding: 2rem 2.2rem; box-shadow: 0 10px 30px rgba(20, 26, 45, .07); }
+.letter p, .letter li { color: #1d1a2e; }
+.letter h3 { font-size: 1rem; margin: 1.2rem 0 .3rem; }
+.letter .fill { background: #fff3a8; border-radius: 4px; padding: 0 .15em; outline: none; cursor: text; }
+.letter .fill:focus { box-shadow: 0 0 0 2px #e8590c; }
+.letter .fill.done { background: transparent; }
+.letter .coupon { margin-top: 2rem; break-inside: avoid; page-break-inside: avoid; }
+.letter .cut { color: #8b93a5; letter-spacing: .05em; overflow: hidden; white-space: nowrap; }
+@media (max-width: 560px) { .letter { padding: 1.2rem 1rem; } }
+@media print {
+  .no-print, .topbar { display: none !important; }
+  body { background: #fff; }
+  .legal { padding: 0; max-width: none; }
+  .letter { border: 0; box-shadow: none; padding: 0; font-size: 11pt; }
+  .letter .fill { background: transparent; }
+}
