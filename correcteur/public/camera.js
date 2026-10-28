@@ -4,9 +4,11 @@
 
 const SMALL = 160;          // largeur de l'image réduite analysée
 const STABLE_MS = 250;      // durée d'immobilité avant la prise (la netteté est vérifiée en plus)
-const MOVE = 4.5;           // écart moyen (0-255) entre deux images réduites au-delà duquel ça bouge (une main qui tient le téléphone tremble un peu)
-const SAME_PAGE = 9;        // écart moyen sous lequel la feuille est celle déjà photographiée (une autre feuille : 15 et plus)
-const COOLDOWN_MS = 500;    // pause après une prise (la même feuille n'est de toute façon pas reprise)
+const MOVE = 4.5;           // écart moyen minimal (0-255) entre deux images réduites pour dire que ça bouge ;
+                            // relevé tout seul si le capteur et la main tremblent davantage (voir noise)
+const TURN = 16;            // écart avec la dernière photo qui prouve qu'on a tourné la page (main, feuille qui glisse : 25 et plus)
+const COOLDOWN_MS = 400;    // pause après une prise
+const FOCUS_MAX_MS = 1200;  // au-delà, la photo part même si la mise au point hésite encore
 
 function lumOf(ctx, w, h) {
   const d = ctx.getImageData(0, 0, w, h).data;
@@ -15,10 +17,14 @@ function lumOf(ctx, w, h) {
   return out;
 }
 
+// Écart moyen entre deux images, à luminosité égale : l'exposition automatique qui s'ajuste (une feuille blanche
+// éblouit la caméra) n'est ni un mouvement ni une nouvelle feuille.
+const meanOf = (a) => { let s = 0; for (let i = 0; i < a.length; i++) s += a[i]; return s / a.length || 1; };
 const meanDiff = (a, b) => {
   if (!a || !b || a.length !== b.length) return 255;
+  const k = meanOf(a) / meanOf(b);
   let s = 0;
-  for (let i = 0; i < a.length; i++) s += Math.abs(a[i] - b[i]);
+  for (let i = 0; i < a.length; i++) s += Math.abs(a[i] - b[i] * k);
   return s / a.length;
 };
 
@@ -83,7 +89,11 @@ export async function startCamera(video, { onCapture, onStatus }) {
 
   const small = document.createElement('canvas'), work = document.createElement('canvas');
   // En pause au départ : rien n'est photographié (la table, la main…) avant que l'enseignant touche « Démarrer ».
-  let armed = false, prev = null, lastShot = null, stableSince = 0, coolUntil = 0, bestSharp = 0, stopped = false, timer = 0;
+  // turned : la page a été tournée depuis la dernière photo. On ne compare plus la feuille à la précédente : deux
+  // copies au même gabarit (feuille lignée, même en-tête) se ressemblent trop et la 2e n'était jamais prise.
+  let armed = false, prev = null, lastShot = null, turned = true, stableSince = 0, coolUntil = 0, stopped = false, timer = 0;
+  const diffs = []; // derniers écarts entre images : le bruit de fond (capteur, main qui tremble)
+  let focus = []; // netteté mesurée depuis que la feuille est immobile
 
   const shoot = (box) => {
     const vw = video.videoWidth, vh = video.videoHeight;
@@ -97,6 +107,7 @@ export async function startCamera(video, { onCapture, onStatus }) {
     if (audio) beep(audio);
     navigator.vibrate?.(80);
     coolUntil = performance.now() + COOLDOWN_MS;
+    turned = false; focus = [];
     onCapture(c);
   };
 
@@ -111,19 +122,29 @@ export async function startCamera(video, { onCapture, onStatus }) {
     g.drawImage(video, 0, 0, w, h);
     const lum = lumOf(g, w, h);
     const now = performance.now();
-    const moving = meanDiff(lum, prev) > MOVE;
+    const d = meanDiff(lum, prev);
     prev = lum;
-    if (moving) stableSince = now;
-    if (now < coolUntil) return;
+    if (d < 255) { diffs.push(d); if (diffs.length > 25) diffs.shift(); }
+    const noise = diffs.length >= 8 ? [...diffs].sort((a, b) => a - b)[Math.floor(diffs.length * 0.2)] : 0;
+    const moving = d > Math.max(MOVE, Math.min(12, noise * 2.2));
+    if (moving) { stableSince = now; focus = []; }
     const page = pageOf(lum, w, h);
+    if (!turned && (!page || page.cover < 0.3 || meanDiff(lum, lastShot) > TURN)) turned = true;
+    if (now < coolUntil) return;
     if (!page || page.cover < 0.3) { onStatus('Placez une feuille dans le cadre', 'wait', null); return; }
     if (page.ink < 0.002) { onStatus('Feuille vide ?', 'wait', page); return; } // à 160 px, l'écriture ne couvre que 0,5 à 2 % de la feuille
     if (!armed) { onStatus('En pause : placez la première feuille, puis touchez « Démarrer »', 'wait', page); return; }
-    if (lastShot && meanDiff(lum, lastShot) < SAME_PAGE) { onStatus('✓ Photographiée — tournez la page', 'done', page); return; }
+    if (!turned) { onStatus('✓ Photographiée — tournez la page', 'done', page); return; }
     if (moving || now - stableSince < STABLE_MS) { onStatus('Tenez immobile…', 'hold', page); return; }
+    // Mise au point : la photo part dès que la netteté cesse de s'améliorer (l'autofocus a trouvé), sans viser
+    // la netteté d'une feuille précédente (une page peu écrite est moins « nette » sans être floue).
     const sharp = sharpness(video, page, work);
-    if (sharp < Math.max(20, bestSharp * 0.45)) { onStatus('Image floue : tenez le téléphone immobile', 'hold', page); return; }
-    bestSharp = Math.max(bestSharp * 0.9, sharp);
+    focus.push(sharp);
+    const best = Math.max(...focus);
+    const settled = focus.length >= 3 && sharp >= best * 0.85;
+    if (sharp < 8 || !(settled || (now - stableSince > FOCUS_MAX_MS && sharp >= best * 0.6))) {
+      onStatus('Mise au point…', 'hold', page); return;
+    }
     lastShot = lum;
     shoot(page);
     onStatus('✓ Photographiée — tournez la page', 'done', page);

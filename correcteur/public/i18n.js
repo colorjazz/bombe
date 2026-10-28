@@ -277,7 +277,7 @@ const EN = {
   'Zone masquée : non envoyée': 'Hidden area: not sent',
   'Numériser « Brûle la pile »': 'Scan with your phone', 'Tournez les pages devant votre téléphone : chaque page est photographiée toute seule. Vous relisez la pile, puis lancez la correction.': 'Turn the pages in front of your phone: each page is photographed automatically. Review the stack, then start grading.', 'Démarrage de la caméra…': 'Starting the camera…',
   'Placez une feuille dans le cadre': 'Place a page in the frame', 'Feuille vide ?': 'Blank page?', 'Tenez immobile…': 'Hold still…',
-  '✓ Photographiée — tournez la page': '✓ Captured — turn the page', 'Image floue : tenez le téléphone immobile': 'Blurry: hold the phone still',
+  '✓ Photographiée — tournez la page': '✓ Captured — turn the page', 'Image floue : tenez le téléphone immobile': 'Blurry: hold the phone still', 'Mise au point…': 'Focusing…',
   'Pages par élève': 'Pages per student', 'Corriger pendant la prise de vue': 'Grade while capturing', 'Annuler la dernière': 'Undo last',
   'Relecture en cours : d’autres fautes peuvent s’ajouter…': 'Second reading in progress: more errors may be added…',
   'Vous pouvez aussi y préciser comment rédiger les résultats : ton, longueur, tutoiement, ce que le commentaire doit souligner.': 'You can also say how results should be written: tone, length, what the comment should highlight.',
