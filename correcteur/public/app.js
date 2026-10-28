@@ -159,6 +159,7 @@ const LIBS = {
   heic: '/vendor/heic2any-0.0.4.min.js',
   mammoth: '/vendor/mammoth-1.8.0.browser.min.js',
   html2canvas: '/vendor/html2canvas-1.4.1.min.js',
+  tesseract: '/vendor/tesseract-5.1.1/tesseract.min.js',
 };
 const loaded = {};
 function loadLib(name) {
@@ -363,20 +364,65 @@ function applyMode() {
 const maskFrac = () => Number($('anon-h').value) || 0.14;
 const masked = (i) => anonymous() && (i === 0 || $('anon-all').checked);
 const anonymous = () => $('anon').checked;
-function maskTop(url) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => {
+// Nom masqué : la ligne « Nom : … » est repérée sur l'appareil (Tesseract, hébergé sur le site : rien n'est envoyé)
+// et seule cette ligne est blanchie. Une bande fixe en haut de page cachait aussi le début des réponses sur les
+// en-têtes courts, ou laissait passer le nom sur les en-têtes hauts. Nom introuvable (page de travers, pas de champ
+// « Nom ») : repli sur la bande du haut, de la hauteur choisie dans les réglages.
+const OCR_DIR = '/vendor/tesseract-5.1.1';
+let ocrWorker = null;
+const ocr = () => (ocrWorker ||= loadLib('tesseract')
+  .then(() => window.Tesseract.createWorker('fra', 1, { workerPath: `${OCR_DIR}/worker.min.js`, corePath: OCR_DIR, langPath: OCR_DIR, gzip: false }))
+  .catch((err) => { ocrWorker = null; throw err; }));
+const NAME_LABEL = /^(nom|name|prénom|prenom)$/i;
+const nameLines = new Map(); // url → [{ y0, y1 }] en fractions de la hauteur, ou null
+function nameLine(url) {
+  if (!nameLines.has(url)) nameLines.set(url, (async () => {
+    try {
+      const img = await loadImage(url);
+      const k = Math.min(1, 1600 / img.width), w = Math.round(img.width * k), hh = Math.round(img.height * k * 0.45);
+      const c = document.createElement('canvas'); c.width = w; c.height = hh;
+      c.getContext('2d').drawImage(img, 0, 0, img.width, hh / k, 0, 0, w, hh);
+      const { data } = await (await ocr()).recognize(c);
+      const H = img.height * k;
+      const hits = data.words.filter((x) => x.confidence >= 55 && NAME_LABEL.test(x.text.normalize('NFC').replace(/[^\p{L}]/gu, '')));
+      // Le nom manuscrit déborde du libellé imprimé : la ligne est prise large (1,5 fois sa hauteur de chaque côté).
+      return hits.length ? hits.map((x) => { const t = x.bbox.y1 - x.bbox.y0; return { y0: Math.max(0, (x.bbox.y0 - 1.5 * t) / H), y1: Math.min(1, (x.bbox.y1 + 1.5 * t) / H) }; }) : null;
+    } catch { return null; }
+  })());
+  return nameLines.get(url);
+}
+// Zones masquées d'une page : la ligne du nom, sinon la bande du haut.
+const maskZones = async (ref) => (await nameLine(ref)) || [{ y0: 0, y1: maskFrac(), fallback: true }];
+
+// La ligne du nom, découpée sur la photo originale (elle ne quitte pas l'appareil), est montrée dans la fiche pour que
+// l'enseignant tape le nom sans ouvrir la copie. Partie gauche de la page, là où s'écrit le nom.
+const bands = new Map();
+function nameBand(url) {
+  if (!bands.has(url)) bands.set(url, (async () => {
+    try {
+      const img = await loadImage(url);
+      const z = (await maskZones(url))[0];
+      const y0 = img.height * z.y0, sh = img.height * (z.y1 - z.y0), sw = img.width * 0.7, w = 480;
       const c = document.createElement('canvas');
-      c.width = img.width; c.height = img.height;
-      const g = c.getContext('2d');
-      g.drawImage(img, 0, 0);
-      g.fillStyle = '#fff';
-      g.fillRect(0, 0, c.width, Math.round(c.height * maskFrac()));
-      resolve(c.toDataURL('image/jpeg', 0.9));
-    };
-    img.onerror = reject;
-    img.src = url;
+      c.width = w; c.height = Math.max(1, Math.round((w * sh) / sw));
+      c.getContext('2d').drawImage(img, 0, y0, sw, sh, 0, 0, c.width, c.height);
+      return c.toDataURL('image/jpeg', 0.85);
+    } catch { return null; }
+  })());
+  return bands.get(url);
+}
+
+// Image envoyée : les zones du nom blanchies. ref = la photo affichée, sur laquelle le nom a été repéré
+// (l'image envoyée peut être une version plus grande de la même page).
+function maskName(url, ref = url) {
+  return Promise.all([maskZones(ref), loadImage(url)]).then(([zones, img]) => {
+    const c = document.createElement('canvas');
+    c.width = img.width; c.height = img.height;
+    const g = c.getContext('2d');
+    g.drawImage(img, 0, 0);
+    g.fillStyle = '#fff';
+    for (const z of zones) g.fillRect(0, Math.floor(c.height * z.y0), c.width, Math.ceil(c.height * (z.y1 - z.y0)));
+    return c.toDataURL('image/jpeg', 0.9);
   });
 }
 
@@ -399,6 +445,14 @@ function thumbnail(url, size = 640, crop = null) {
   });
 }
 
+// Aperçu des zones masquées sur la miniature ; le repérage du nom se fait en arrière-plan, puis l'aperçu se met à jour.
+function maskPreview(p) {
+  if (p.zonesFor !== p.url) { p.zonesFor = p.url; p.zones = null; const u = p.url; nameLine(u).then((z) => { if (p.url === u) { p.zones = z || false; renderPages(); } }); }
+  const zones = p.zones || [{ y0: 0, y1: maskFrac(), fallback: p.zones === false }];
+  return zones.map((z) => h('div', { class: `mask-band ${z.fallback ? 'fallback' : ''}`, style: `top:${z.y0 * 100}%;height:${(z.y1 - z.y0) * 100}%`,
+    title: z.fallback ? tr('« Nom » non repéré : le haut de la page est masqué. Vérifiez qu’aucune réponse ne s’y trouve.') : tr('Ligne du nom repérée : masquée, non envoyée') }));
+}
+
 const SPLIT_BATCH = 40;
 async function detectCopies() {
   const todo = state.pages.filter((p) => p.autoStart === undefined);
@@ -412,8 +466,8 @@ async function detectCopies() {
       const batch = todo.slice(i, i + SPLIT_BATCH);
       const before = state.pages[state.pages.indexOf(batch[0]) - 1];
       const { pages } = await api('/api/split', { method: 'POST', body: {
-        pages: await Promise.all(batch.map(async (p) => thumbnail(anonymous() ? await maskTop(p.url) : p.url))), // page de début possible : toujours masquée
-        previous: before ? await thumbnail(anonymous() ? await maskTop(before.url) : before.url) : undefined,
+        pages: await Promise.all(batch.map(async (p) => thumbnail(anonymous() ? await maskName(p.url) : p.url))), // page de début possible : toujours masquée
+        previous: before ? await thumbnail(anonymous() ? await maskName(before.url) : before.url) : undefined,
       } });
       batch.forEach((p, j) => { p.autoStart = pages[j].startsNew; p.detectedName = pages[j].name; });
     }
@@ -473,7 +527,7 @@ function renderPages() {
         pi > 0 ? h('button', { class: 'split', type: 'button', title: 'Séparer : une nouvelle copie commence ici', textContent: '✂', disabled: state.running,
           onclick: () => { p.startsNew = true; p.autoStart = true; renderPages(); } }) : null,
         h('div', { class: 'thumb', title: p.file },
-          masked(pi) ? h('div', { class: 'mask-band', style: `height:${maskFrac() * 100}%`, title: 'Zone masquée : non envoyée' }) : null,
+          ...(masked(pi) ? maskPreview(p) : []),
           h('img', { src: p.url, alt: `Page ${pi + 1}`, title: 'Agrandir', onclick: () => openZoom([p.url], `Copie ${nos[bi]} · page ${pi + 1} · ${p.file}`) }),
           h('button', { class: 'rot', type: 'button', textContent: '↻', title: 'Pivoter la page de 90°', disabled: state.running, onclick: () => rotatePage(p) }),
           h('button', { class: 'x', type: 'button', textContent: '×', title: 'Retirer cette page', disabled: state.running,
@@ -863,14 +917,14 @@ async function runAll(only, calibrating = false) {
       if (state.kind === 'lang') {
         const r = await withRetry(() => analyzeLanguage(b), waiting);
         setBalance(r.pagesLeft);
-        const res = { kind: 'lang', id, no: b[0].no, file: b[0].file, exam: settings.exam, group: r.group || settings.group, name: r.name, pageCount: b.length,
+        const res = { kind: 'lang', id, no: b[0].no, file: b[0].file, exam: settings.exam, group: r.group || settings.group, name: r.name, pageCount: b.length, band: anonymous() ? maskFrac() : 0,
           pages: b.map((p, i) => ({ url: p.url, errors: r.pages[i].errors, failed: !!r.pages[i].failed, reread: r.pages[i].reread, sent: r.urls[i], words: r.pages[i].words, text: r.pages[i].text })),
           scoring: langScoring(), pda: pdaScoring(), flags: r.failedPages ? [`${r.failedPages} page(s) n'ont pas pu être analysées (non décomptées).`] : [] };
         langGrade(res);
         state.results.unshift(res);
         reread(res);
       } else {
-      const pages = await Promise.all(b.map((p, i) => (masked(i) ? maskTop(p.url) : p.url)));
+      const pages = await Promise.all(b.map((p, i) => (masked(i) ? maskName(p.url) : p.url)));
       const r = await withRetry(() => api('/api/grade', { method: 'POST', body: { ...settings, pages, structure: state.structure?.list, avoid: openings(examKey) } }), waiting);
       // 1re copie bien corrigée avec un corrigé : ses questions servent de modèle pour les suivantes. Elles sont
       // découpées pareil, et les deux corrections du mode approfondi partent en même temps (deux fois plus rapide).
@@ -881,7 +935,7 @@ async function runAll(only, calibrating = false) {
       }
       setBalance(r.pagesLeft);
       state.results.unshift({
-        id, no: b[0].no, file: b[0].file, pageUrls: b.map((p) => p.url), exam: settings.exam, group: r.group || settings.group, name: r.name, reliability: r.reliability, grade: r.grade, total: r.total,
+        id, no: b[0].no, file: b[0].file, pageUrls: b.map((p) => p.url), band: anonymous() ? maskFrac() : 0, exam: settings.exam, group: r.group || settings.group, name: r.name, reliability: r.reliability, grade: r.grade, total: r.total,
         // `ai` : la note proposée, pour repérer celles que l'enseignant change (calibrage).
         unit: settings.wholePoints ? 1 : 0.5, questions: r.questions.map((q) => ({ ...q, ai: r.illegible ? null : q.points })), examKey, lang: settings.outLang,
         grid: settings.grid && settings.grid.length === r.questions.length ? structuredClone(settings.grid) : null, // niveaux par critère
@@ -1027,6 +1081,17 @@ function openZoom(urls, title) {
   $('zoom').hidden = false;
 }
 
+// Champ du nom ; avec le nom masqué, la bande du nom de la photo originale dessous, tant que le nom n'est pas tapé.
+function nameCell(r) {
+  const first = r.pageUrls?.[0] || r.pages?.[0]?.url;
+  const band = r.band && first ? h('button', { type: 'button', class: 'name-band', title: tr('Photo de l’en-tête (restée sur votre appareil) : cliquez pour agrandir'),
+    'aria-label': tr('Voir l’en-tête de la copie'), hidden: !!r.name, onclick: () => openZoom([first], copyTitle(r) || tr('Copie')) }) : null;
+  if (band) nameBand(first).then((src) => { if (src) band.append(h('img', { src, alt: '' })); else band.remove(); });
+  const input = h('input', { class: 'name', type: 'text', value: r.name, placeholder: r.no ? `✎ Tapez le nom (copie ${r.no})` : '✎ Tapez le nom', 'aria-label': "Nom de l'élève",
+    oninput: (e) => { r.name = e.target.value; state.exported = false; if (band) band.hidden = !!r.name.trim(); } });
+  return band ? h('div', { class: 'name-cell' }, input, band) : input;
+}
+
 // Fiche d'une copie : une ligne compacte (n°, nom, groupe, note), toujours fermée ; un clic sur la ligne l'ouvre.
 function cardShell(r, cells, body) {
   const el = h('article', { class: `card ${r.flags.length ? 'flag' : ''}` });
@@ -1038,8 +1103,7 @@ function cardShell(r, cells, body) {
     setOpen(state.open.has(r.id));
   } },
     h('span', { class: 'no', title: r.flags.length ? 'À vérifier' : '', textContent: `${r.flags.length ? '⚠ ' : ''}${r.no ?? ''}` }),
-    h('input', { class: 'name', type: 'text', value: r.name, placeholder: r.no ? `✎ Tapez le nom (copie ${r.no})` : '✎ Tapez le nom', 'aria-label': "Nom de l'élève",
-      oninput: (e) => { r.name = e.target.value; state.exported = false; } }),
+    nameCell(r),
     h('input', { class: 'group', type: 'text', value: r.group, placeholder: 'Groupe', 'aria-label': 'Groupe',
       oninput: (e) => { r.group = e.target.value; state.exported = false; } }),
     ...cells,
@@ -1337,7 +1401,7 @@ async function analyzeLanguage(bundle) {
   const anon = anonymous();
   const urls = await Promise.all(bundle.map(async (p, i) => {
     const url = p.source ? await imageToJpeg(p.source, LANG_MAX_SIDE, 0.9, p.rot || 0) : p.url;
-    return masked(i) ? maskTop(url) : url;
+    return masked(i) ? maskName(url, bundle[i].url) : url;
   }));
   const parts = await Promise.all(urls.map((url, i) => api('/api/language', { method: 'POST',
     body: { pages: [url], identify: i === 0 && !anon, ...langSettings() } }).catch((error) => ({ error }))));
@@ -2153,6 +2217,7 @@ const TAB_IDS = ['exam', 'rubric'];
 function savePrefs() {
   const prefs = Object.fromEntries(PREF_IDS.map((id) => [id, $(id).type === 'checkbox' ? $(id).checked : $(id).value]));
   prefs.cats = [...document.querySelectorAll('#lang-cats input')].filter((i) => i.checked).map((i) => i.value);
+  prefs.anonV = 2;
   try { localStorage.setItem('ce.prefs', JSON.stringify(prefs)); } catch { /* navigation privée */ }
   try { sessionStorage.setItem('ce.tab', JSON.stringify(Object.fromEntries(TAB_IDS.map((id) => [id, $(id).value])))); } catch { /* ignoré */ }
 }
@@ -2161,6 +2226,9 @@ function loadPrefs() {
   try { prefs = JSON.parse(localStorage.getItem('ce.prefs') || 'null'); } catch { /* ignoré */ }
   try { const tab = JSON.parse(sessionStorage.getItem('ce.tab') || 'null'); if (tab) TAB_IDS.forEach((id) => { if (tab[id]) $(id).value = tab[id]; }); } catch { /* ignoré */ }
   if (!prefs) return;
+  // Masquage du nom activé par défaut (guide du ministère : aucun renseignement personnel envoyé à une IA) :
+  // appliqué une fois aussi à qui l'avait laissé décoché avant ; un choix fait ensuite est respecté.
+  if (prefs.anonV !== 2) delete prefs.anon;
   for (const id of PREF_IDS) {
     if (prefs[id] == null) continue;
     if ($(id).type === 'checkbox') $(id).checked = !!prefs[id];

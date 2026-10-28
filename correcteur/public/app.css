@@ -498,3 +498,12 @@ body.light .layout > .levelbar { grid-column: 1 / -1; }
   #viewer-title { font-size: 1rem; }
   .viewer-pages .page-wrap, .viewer-pages .page-wrap img { width: 100%; max-height: none; }
 }
+/* Nom masqué : la bande de l'en-tête sous le champ du nom. */
+.card-head .name-cell { display: flex; flex-direction: column; gap: .2rem; min-width: 0; }
+.name-band { display: block; padding: 0; border: 1px solid var(--line-2); border-radius: 6px; background: #fff; overflow: hidden; cursor: zoom-in; max-width: 340px; height: 46px; }
+.name-band img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: left top; }
+@media (max-width: 480px) {
+  .name-band { height: 42px; }
+  .name-band img { width: 175%; height: auto; max-width: none; object-fit: fill; }
+}
+.thumb .mask-band.fallback { background: repeating-linear-gradient(45deg, rgba(255,247,230,.9) 0 4px, rgba(194,118,0,.75) 4px 8px); }
