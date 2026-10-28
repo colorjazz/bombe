@@ -102,6 +102,14 @@
         <div id="insight-out"></div>
       </section>
       <section class="panel stack">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap">
+          <h2>Fournisseur d'IA</h2>
+          <button id="ai-check" class="btn" type="button">Vérifier</button>
+        </div>
+        <p class="muted small" style="margin:0">Fait un petit appel de test (quelques fractions de cent) avec le fournisseur en service et, si la clé Vertex AI est ajoutée, avec Vertex AI à Montréal.</p>
+        <div id="ai-out"></div>
+      </section>
+      <section class="panel stack">
         <h2>Nouveaux essais gratuits, par jour (30 derniers jours)</h2>
         <div id="chart-trials"></div>
       </section>
@@ -345,6 +353,20 @@
 
     // Bilan IA : les détails (qui relancer, texte de l'idée citée) viennent de la page, pas de l'IA.
     const ICONS = { bravo: '🎉', action: '👉', idee: '💡', alerte: '⚠️' };
+    // Fournisseur d'IA : à vérifier avant et après le passage à Vertex AI (Montréal).
+    $('ai-check').addEventListener('click', async () => {
+      const btn = $('ai-check'); btn.disabled = true; btn.textContent = 'Un instant…';
+      const line = (p) => ['chat', 'natif'].map((k) => `${k === 'chat' ? 'Notation' : 'Langue'} : ${p[k].ok ? `✓ ${nf(Math.round(p[k].ms / 100) / 10)} s` : `✗ ${esc(p[k].error || 'échec')}`}`).join(' · ');
+      try {
+        const r = await call('/api/admin/ai-check', 'POST', {});
+        const cur = r.current.provider === 'vertex' ? `Vertex AI · ${esc(r.current.location)} (Montréal) · ${esc(r.current.model)}` : `API Gemini (sans garantie de pays) · ${esc(r.current.model)} / langue ${esc(r.current.langModel)}`;
+        $('ai-out').innerHTML = `<p><b>En service :</b> ${cur}<br>${line(r.current)}</p>`
+          + (r.vertex ? `<p><b>Vertex AI à Montréal (pas encore en service) :</b> ${esc(r.vertex.model)}<br>${line(r.vertex)}${r.vertex.chat.ok && r.vertex.natif.ok ? '<br><span class="ok">Prêt : ajoutez la variable AI_PROVIDER = vertex dans Cloudflare pour basculer.</span>' : ''}</p>`
+            : r.vertexKey ? '' : '<p class="muted small">Clé Vertex AI (VERTEX_SA_KEY) pas encore ajoutée dans Cloudflare.</p>');
+      } catch (err) { $('ai-out').innerHTML = `<p class="err">${esc(err.message)}</p>`; }
+      btn.disabled = false; btn.textContent = 'Vérifier';
+    });
+
     $('insight').addEventListener('click', async () => {
       const btn = $('insight'); btn.disabled = true; btn.textContent = 'Un instant, l’IA prépare le bilan…';
       try {

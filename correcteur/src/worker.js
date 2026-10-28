@@ -55,7 +55,7 @@ const ROUTES = {
   'POST /api/trial': trial,
   'POST /api/idea': idea,
   'POST /api/admin/keys': adminCreateKey, 'POST /api/admin/note': adminSetNote,
-  'GET /api/admin/keys': adminListKeys, 'GET /api/admin/stats': adminStats, 'POST /api/admin/insight': adminInsight,
+  'GET /api/admin/keys': adminListKeys, 'POST /api/admin/ai-check': adminAiCheck, 'GET /api/admin/stats': adminStats, 'POST /api/admin/insight': adminInsight,
   'POST /api/checkout': checkout,
   'GET /api/claim': claim,
   'POST /api/stripe-webhook': stripeWebhook,
@@ -209,6 +209,27 @@ async function adminListKeys(request, env) {
 
 // Statistiques du fondateur : toutes les clés (essai, offertes, achetées), achats, utilisation des 90 derniers jours, idées.
 // Pages données = essai + offertes + achetées ; pages utilisées = données − restantes.
+// Vérification du fournisseur d'IA depuis l'admin : un petit appel de chaque sorte (format OpenAI et format natif),
+// avec le fournisseur en service et, si la clé est là, avec Vertex AI à Montréal, avant de basculer AI_PROVIDER.
+async function adminAiCheck(request, env) {
+  await requireAdmin(request, env);
+  const schema = { type: 'json_schema', json_schema: { name: 'test', schema: { type: 'object', required: ['ok'], properties: { ok: { type: 'string' } } } } };
+  const probe = async (e) => {
+    const out = {};
+    for (const [name, call] of [['chat', () => aiChat(e, 'Réponds en JSON.', 'Écris « oui » dans ok.', schema)],
+      ['natif', () => geminiNative(e, [{ text: 'Écris « oui » dans ok.' }], { type: 'OBJECT', properties: { ok: { type: 'STRING' } }, required: ['ok'] }, e.LANG_MODEL, { thinking: 'low', timeoutMs: 30_000 })]]) {
+      const t = Date.now();
+      try { out[name] = { ok: !!(await call())?.ok, ms: Date.now() - t }; } catch (err) { out[name] = { ok: false, ms: Date.now() - t, error: String(err.message).slice(0, 300) }; }
+    }
+    return out;
+  };
+  const current = vertexOn(env) ? { provider: 'vertex', location: env.VERTEX_LOCATION || VERTEX_LOCATION, model: vertexModel(env) }
+    : { provider: 'gemini', model: env.AI_MODEL, langModel: env.LANG_MODEL };
+  return json({ current: { ...current, ...(await probe(env)) },
+    vertex: env.VERTEX_SA_KEY && !vertexOn(env) ? { location: env.VERTEX_LOCATION || VERTEX_LOCATION, model: vertexModel(env), ...(await probe({ ...env, AI_PROVIDER: 'vertex' })) } : null,
+    vertexKey: !!env.VERTEX_SA_KEY });
+}
+
 async function adminStats(request, env) {
   await requireAdmin(request, env);
   return json(await statsData(env));
@@ -535,12 +556,49 @@ async function callModel(env, prompt, rubricPages, pages, opts) {
 }
 
 // Appel au modèle (format compatible OpenAI) : nouvelles tentatives, modèle de secours, réponse JSON.
+// ---------- Fournisseur d'IA ----------
+// Par défaut : l'API Gemini (clé AI_API_KEY), sans garantie sur le pays de traitement. Avec AI_PROVIDER = "vertex" et
+// VERTEX_SA_KEY (clé JSON d'un compte de service Google Cloud, rôle « Utilisateur Vertex AI ») : Vertex AI dans la
+// région VERTEX_LOCATION, par défaut northamerica-northeast1 (Montréal), où le traitement reste dans la région.
+// Tous les appels y prennent VERTEX_MODEL : seul gemini-3.5-flash répondait à Montréal le 28 octobre 2026 (3.6 et 3.7 : 404).
+const VERTEX_LOCATION = 'northamerica-northeast1';
+const vertexOn = (env) => env.AI_PROVIDER === 'vertex' && !!env.VERTEX_SA_KEY;
+const vertexModel = (env) => env.VERTEX_MODEL || 'gemini-3.5-flash';
+function vertexBase(env) {
+  const sa = JSON.parse(env.VERTEX_SA_KEY), loc = env.VERTEX_LOCATION || VERTEX_LOCATION;
+  return `https://${loc}-aiplatform.googleapis.com/v1/projects/${env.VERTEX_PROJECT || sa.project_id}/locations/${loc}`;
+}
+// Jeton d'accès du compte de service (JWT signé RS256, échangé chez Google), gardé jusqu'à une minute de sa fin.
+let vertexAuth = null; // { exp, token: Promise<string> }
+const b64url = (bytes) => btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const b64urlText = (t) => b64url(new TextEncoder().encode(t));
+function vertexToken(env) {
+  if (vertexAuth && vertexAuth.exp > Date.now() + 60_000) return vertexAuth.token;
+  const token = (async () => {
+    const sa = JSON.parse(env.VERTEX_SA_KEY);
+    const der = Uint8Array.from(atob(sa.private_key.replace(/-----[^-]+-----|\s/g, '')), (c) => c.charCodeAt(0));
+    const key = await crypto.subtle.importKey('pkcs8', der, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['sign']);
+    const now = Math.floor(Date.now() / 1000);
+    const unsigned = `${b64urlText(JSON.stringify({ alg: 'RS256', typ: 'JWT' }))}.${b64urlText(JSON.stringify({
+      iss: sa.client_email, scope: 'https://www.googleapis.com/auth/cloud-platform', aud: 'https://oauth2.googleapis.com/token', iat: now, exp: now + 3600 }))}`;
+    const sig = new Uint8Array(await crypto.subtle.sign('RSASSA-PKCS1-v1_5', key, new TextEncoder().encode(unsigned)));
+    const res = await fetch('https://oauth2.googleapis.com/token', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: `${unsigned}.${b64url(sig)}` }) });
+    if (!res.ok) throw new Error(`IA ${res.status} : jeton Vertex refusé ${(await res.text().catch(() => '')).slice(0, 200)}`);
+    return (await res.json()).access_token;
+  })();
+  vertexAuth = { exp: Date.now() + 3500_000, token };
+  token.catch(() => { vertexAuth = null; });
+  return token;
+}
+
 async function aiChat(env, system, content, responseFormat, opts = {}) {
-  let model = opts.model || env.AI_MODEL;
+  const vx = vertexOn(env);
+  let model = vx ? `google/${vertexModel(env)}` : opts.model || env.AI_MODEL;
   for (let attempt = 0; ; attempt++) {
-    const res = await fetch(`${env.AI_BASE_URL}/chat/completions`, {
+    const res = await fetch(vx ? `${vertexBase(env)}/endpoints/openapi/chat/completions` : `${env.AI_BASE_URL}/chat/completions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${env.AI_API_KEY}` },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${vx ? await vertexToken(env) : env.AI_API_KEY}` },
       body: JSON.stringify({
         model,
         messages: [{ role: 'system', content: system }, { role: 'user', content }],
@@ -556,7 +614,7 @@ async function aiChat(env, system, content, responseFormat, opts = {}) {
       return JSON.parse(msg.content.replace(/^\s*```(?:json)?\s*|\s*```\s*$/g, ''));
     }
     // Modèle retiré par le fournisseur : on bascule sur l'alias « toujours à jour ».
-    if (res.status === 404 && env.AI_FALLBACK_MODEL && model !== env.AI_FALLBACK_MODEL) {
+    if (res.status === 404 && !vx && env.AI_FALLBACK_MODEL && model !== env.AI_FALLBACK_MODEL) {
       console.error(`Modèle ${model} introuvable, bascule sur ${env.AI_FALLBACK_MODEL}`);
       model = env.AI_FALLBACK_MODEL;
       continue;
@@ -753,13 +811,14 @@ async function geminiVision(env, prompt, dataUrl, pda) {
 // opts.thinking : niveau de réflexion du modèle (par défaut celui du modèle : « low » est deux fois plus rapide mais
 // invente 2 à 3 fois plus de fausses fautes) ; chaque appel a une limite de temps.
 async function geminiNative(env, parts, schema, preferredModel, opts = {}) {
-  const base = env.GEMINI_NATIVE_URL || 'https://generativelanguage.googleapis.com/v1beta';
-  const chain = [...new Set([preferredModel, env.AI_MODEL, env.AI_FALLBACK_MODEL].filter(Boolean))];
+  const vx = vertexOn(env);
+  const base = vx ? `${vertexBase(env)}/publishers/google` : env.GEMINI_NATIVE_URL || 'https://generativelanguage.googleapis.com/v1beta';
+  const chain = vx ? [vertexModel(env)] : [...new Set([preferredModel, env.AI_MODEL, env.AI_FALLBACK_MODEL].filter(Boolean))];
   let model = chain.shift();
   for (let attempt = 0; ; attempt++) {
     const res = await fetch(`${base}/models/${model}:generateContent`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': env.AI_API_KEY },
+      headers: { 'Content-Type': 'application/json', ...(vx ? { Authorization: `Bearer ${await vertexToken(env)}` } : { 'x-goog-api-key': env.AI_API_KEY }) },
       body: JSON.stringify({
         contents: [{ role: 'user', parts }],
         generationConfig: { responseMimeType: 'application/json', responseSchema: schema,

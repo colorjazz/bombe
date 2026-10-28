@@ -36,6 +36,27 @@ puis met le site en ligne. Il peut être relancé sans risque, par exemple aprè
 
 Ensuite, dans Cloudflare, rattachez votre nom de domaine au Worker (Workers → correcteur-express → Domaines).
 
+### Traitement à Montréal (Vertex AI), facultatif
+
+Par défaut, les copies vont à l'API Gemini, sans garantie de pays. Pour qu'elles soient traitées à Montréal :
+
+1. Google Cloud (projet avec facturation active), Cloud Shell :
+   ```
+   gcloud services enable aiplatform.googleapis.com
+   gcloud iam service-accounts create brulelapile --display-name="Brûle la pile"
+   gcloud projects add-iam-policy-binding $GOOGLE_CLOUD_PROJECT --member="serviceAccount:brulelapile@$GOOGLE_CLOUD_PROJECT.iam.gserviceaccount.com" --role="roles/aiplatform.user"
+   gcloud iam service-accounts keys create cle.json --iam-account=brulelapile@$GOOGLE_CLOUD_PROJECT.iam.gserviceaccount.com
+   cat cle.json
+   ```
+2. Cloudflare → Settings → Variables and Secrets : secret `VERTEX_SA_KEY` = tout le contenu de `cle.json`
+   (puis supprimer `cle.json` dans Cloud Shell : `rm cle.json`).
+3. Page admin → Vue d'ensemble → Fournisseur d'IA → « Vérifier » : Vertex AI à Montréal doit afficher ✓ deux fois.
+4. Cloudflare : variable `AI_PROVIDER` = `vertex` (texte). Retour à l'API Gemini : supprimer la variable.
+
+Variables facultatives : `VERTEX_LOCATION` (défaut `northamerica-northeast1`, Montréal), `VERTEX_MODEL`
+(défaut `gemini-3.5-flash`, le seul modèle Gemini 3 offert à Montréal le 28 octobre 2026), `VERTEX_PROJECT`
+(défaut : celui de la clé).
+
 À compléter avant la pub : courriel de contact (`CONTACT@VOTRE-DOMAINE.CA` dans `public/*.html`),
 textes marqués « À COMPLÉTER » dans `confidentialite.html` et `conditions.html`.
 
