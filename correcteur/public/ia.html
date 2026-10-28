@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="fr-CA" data-lang="fr" data-alt="ai.html">
+<head>
+  <meta charset="UTF-8">
+  <script src="lang.js"></script>
+  <link rel="icon" href="favicon.png" type="image/png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="site.css">
+  <title>Transparence de l’intelligence artificielle — Brûle la pile</title>
+</head>
+<body>
+  <header class="topbar"><div class="wrap"><a class="brand" href="index.html"><img class="logo" src="logo-96.png" alt="" width="40" height="40"><strong>Brûle la pile</strong></a><div class="top-actions"><div class="lang-switch" role="group" aria-label="Langue / Language"><a href="ia.html" data-set-lang="fr">FR</a><a href="ai.html" data-set-lang="en">EN</a></div><a class="btn ghost" href="index.html#tarifs">Tarifs</a><a class="btn primary" href="app.html">Essayer gratuitement</a></div></div></header>
+  <main class="wrap legal">
+    <h1>Transparence de l’intelligence artificielle</h1>
+    <p class="small">Dernière mise à jour : 28 octobre 2026.</p>
+    <p>Cette notice explique ce que fait l'IA de Brûle la pile, ce qu'elle ne fait pas, et ce que nous avons mesuré de sa fiabilité. En résumé : <strong>l'IA propose, l'enseignant décide.</strong></p>
+
+    <h2>Ce que fait l'IA</h2>
+    <ul>
+      <li><b>Correction des copies</b> : elle lit la photo de chaque copie et propose, pour chaque question ou chaque critère de votre grille, une note ou un niveau avec sa justification, puis un commentaire pour l'élève.</li>
+      <li><b>Correction de la langue</b> : elle relève et surligne les fautes sur la copie, avec la correction et la règle. Au primaire et au secondaire, elle ne retient que les notions prévues à l'année de vos élèves selon la Progression des apprentissages.</li>
+      <li><b>Tâches d'appoint</b> : lire votre grille ou votre corrigé, séparer les copies d'une même numérisation, redresser une photo prise de côté, réécrire un commentaire.</li>
+    </ul>
+    <p>Modèles utilisés : Gemini 3.5 Flash pour la correction des copies, Gemini 3.7 Flash pour la langue et pour la 2e correction du mode approfondi (Google, API Gemini) ; Gemini 3.5 Flash pour tout, avec l'option « Traiter les copies au Québec » (Google Cloud, Montréal).</p>
+
+    <h2>Ce qu'elle ne fait pas</h2>
+    <ul>
+      <li>Elle ne décide d'aucune note : chaque proposition est relue, modifiable et validée par l'enseignant. Une note changée par l'enseignant est indiquée comme telle dans la fiche et dans le fichier exporté.</li>
+      <li>Elle ne connaît pas l'élève : le nom est masqué sur l'appareil de l'enseignant avant l'envoi, et aucun profil d'élève n'est créé.</li>
+      <li>Elle n'apprend pas de vos copies : nos fournisseurs n'entraînent pas leurs modèles avec les copies, et nous ne les conservons pas.</li>
+    </ul>
+
+    <h2>Fiabilité mesurée</h2>
+    <p>Mesures faites par nous, en octobre 2026 ; elles donnent un ordre de grandeur, pas une garantie.</p>
+    <ul>
+      <li><b>Langue, primaire</b> (6 copies fictives, 21 fautes prévues, étapes 2 et 3) : 21 fautes trouvées sur 21, toutes bien classées, aucune faute en trop.</li>
+      <li><b>Position des surlignages</b> (9 vraies copies, 164 mots fautifs étiquetés à la main) : environ 84 % des cadres exactement sur le mot fautif ; environ 75 % avec l'option « Traiter les copies au Québec ».</li>
+      <li><b>Notes</b> : d'une correction à l'autre de la même copie, un niveau ou quelques points peuvent varier. Le mode approfondi fait deux corrections indépendantes et signale les écarts.</li>
+    </ul>
+
+    <h2>Limites à connaître</h2>
+    <ul>
+      <li>Une écriture difficile à lire, une photo floue ou une page mal cadrée réduisent la qualité ; ces copies sont signalées « à vérifier ».</li>
+      <li>Sans corrigé, les notes ont tendance à être généreuses.</li>
+      <li>L'IA peut oublier une faute ou en relever une qui n'en est pas une : vous pouvez en ajouter ou en retirer sur la copie annotée.</li>
+      <li>Le masquage du nom est une protection, pas un anonymat complet : un nom écrit ailleurs sur la copie, l'écriture ou le contenu d'une réponse peuvent parfois permettre de reconnaître un élève.</li>
+    </ul>
+
+    <h2>Cadre de référence</h2>
+    <p>Ce fonctionnement suit le <a href="https://cdn-contenu.quebec.ca/cdn-contenu/education/Numerique/guide-utilisation-pedagogique-ethique-legale-IAG.pdf" rel="noopener">guide du ministère de l'Éducation sur l'IA générative</a> (2026, section 1.2) : l'IA soutient l'évaluation sans remplacer le jugement professionnel, et les copies traitées ne contiennent pas de renseignements personnels (nom masqué par défaut). Le guide recommande aussi que l'outil soit autorisé par l'organisme scolaire : renseignez-vous auprès de votre direction. Un <a href="consentement.html">modèle de lettre aux parents</a> est offert.</p>
+    <p>Une question, une erreur de l'IA à signaler ? Écrivez-nous à <a href="mailto:bonjour@brulelapile.ca">bonjour@brulelapile.ca</a>. Voir aussi la <a href="sous-traitants.html">liste des sous-traitants</a> et la <a href="confidentialite.html">politique de confidentialité</a>.</p>
+  </main>
+  <footer><div class="wrap"><span>© 2026 Brûle la pile</span><span><a href="confidentialite.html">Confidentialité</a> · <a href="consentement.html">Lettre aux parents</a> · <a href="conditions.html">Conditions</a> · <a href="mailto:bonjour@brulelapile.ca">Nous joindre</a></span></div></footer>
+</body>
+</html>

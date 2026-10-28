@@ -99,7 +99,7 @@ FR = dict(
 <li><b>Le nom de l’élève est masqué</b>, par défaut : la ligne « Nom : » est repérée dans votre navigateur et blanchie avant l’envoi (si elle n’est pas trouvée, le haut de la page est blanchi : hachures orange sur la miniature). La ligne du nom s’affiche dans chaque fiche, sur votre appareil seulement, pour que vous tapiez le nom. Un code d’élève reste la solution la plus sûre.</li>
 <li><b>Traiter les copies au Québec</b> (réglages avancés) : les copies sont lues dans le centre de données de Google à Montréal. Les surlignages y sont un peu moins précis.</li>
 <li><b>Les parents</b> : un <a href="consentement.html">modèle de lettre de consentement</a> est prêt à remplir et à imprimer. Demandez d’abord l’accord de votre direction.</li>
-<li>Détails et documents pour les établissements : voir la <a href="confidentialite.html">politique de confidentialité</a>.</li>
+<li>Détails et documents pour les établissements : la <a href="confidentialite.html">politique de confidentialité</a>, la <a href="sous-traitants.html">liste des sous-traitants</a> et la <a href="ia.html">notice de transparence de l’IA</a> (fonctionnement, limites et fiabilité mesurée).</li>
 </ul>'''),
     ('limites', 'Limites importantes à connaître', '''
 <div class="callout">
@@ -213,7 +213,7 @@ EN = dict(
 <li><b>The student’s name is hidden</b>, by default: the “Name:” line is found in your browser and blanked before sending (if it is not found, the top of the page is blanked: orange hatching on the thumbnail). The name line shows on each result card, on your device only, so you can type the name. A student code remains the safest option.</li>
 <li><b>Process papers in Quebec</b> (advanced settings): papers are read in Google’s data centre in Montreal. Highlights are a little less precise there.</li>
 <li><b>Parents</b>: a <a href="consent.html">template consent letter</a> is ready to fill in and print. Check with your principal first.</li>
-<li>Details and documents for schools: see the <a href="privacy.html">privacy policy</a>.</li>
+<li>Details and documents for schools: the <a href="privacy.html">privacy policy</a>, the <a href="subprocessors.html">list of subprocessors</a> and the <a href="ai.html">AI transparency notice</a> (how it works, limits and measured reliability).</li>
 </ul>'''),
     ('limites', 'Important limits to know', '''
 <div class="callout">

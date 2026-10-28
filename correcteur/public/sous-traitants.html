@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="fr-CA" data-lang="fr" data-alt="subprocessors.html">
+<head>
+  <meta charset="UTF-8">
+  <script src="lang.js"></script>
+  <link rel="icon" href="favicon.png" type="image/png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="site.css">
+  <title>Sous-traitants — Brûle la pile</title>
+</head>
+<body>
+  <header class="topbar"><div class="wrap"><a class="brand" href="index.html"><img class="logo" src="logo-96.png" alt="" width="40" height="40"><strong>Brûle la pile</strong></a><div class="top-actions"><div class="lang-switch" role="group" aria-label="Langue / Language"><a href="sous-traitants.html" data-set-lang="fr">FR</a><a href="subprocessors.html" data-set-lang="en">EN</a></div><a class="btn ghost" href="index.html#tarifs">Tarifs</a><a class="btn primary" href="app.html">Essayer gratuitement</a></div></div></header>
+  <main class="wrap legal">
+    <h1>Sous-traitants</h1>
+    <p class="small">Dernière mise à jour : 28 octobre 2026.</p>
+    <p>Voici la liste complète des entreprises qui traitent des renseignements pour Brûle la pile, avec ce qu'elles reçoivent et où. Nous la mettons à jour avant tout changement de fournisseur qui touche les copies des élèves.</p>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Fournisseur</th><th>Rôle</th><th>Ce qu'il reçoit</th><th>Lieu de traitement</th><th>Garanties</th></tr></thead>
+      <tbody>
+        <tr><td><b>Google LLC</b><br>API Gemini</td><td>Correction des copies, par défaut</td><td>Images des copies (nom de l'élève masqué sur l'appareil), consignes et corrigé</td><td>États-Unis et autres pays où Google exploite ses centres de données</td><td><a href="https://ai.google.dev/gemini-api/terms" rel="noopener">Offre payante</a> : pas d'entraînement des modèles ; conservation limitée, pour la détection d'abus seulement</td></tr>
+        <tr><td><b>Google LLC</b><br>Google Cloud, Vertex AI</td><td>Correction des copies, seulement avec l'option « Traiter les copies au Québec »</td><td>Mêmes données que ci-dessus</td><td>Région de Montréal (northamerica-northeast1), au Québec ; jamais ailleurs</td><td><a href="https://cloud.google.com/vertex-ai/generative-ai/docs/data-governance" rel="noopener">Engagements de Google Cloud</a> : pas d'entraînement des modèles</td></tr>
+        <tr><td><b>Cloudflare, Inc.</b></td><td>Hébergement du site et du serveur, base de données, journaux techniques</td><td>Copies en transit, traitées en mémoire et jamais enregistrées ; clés d'accès, soldes, journal d'utilisation sans copie ni nom ; journaux techniques (7 jours au plus)</td><td>Réseau mondial ; entreprise établie aux États-Unis</td><td>Connexions chiffrées (HTTPS) ; aucun contenu de copie dans les journaux</td></tr>
+        <tr><td><b>Stripe</b></td><td>Paiements</td><td>Courriel et renseignements de paiement de l'acheteur ; jamais de donnée d'élève</td><td>Entreprise établie aux États-Unis</td><td>Nous ne voyons jamais votre carte</td></tr>
+        <tr><td><b>Google Fonts</b></td><td>Polices de caractères du site</td><td>Adresse IP du navigateur, au téléchargement des polices</td><td>Réseau mondial de Google</td><td>Aucune donnée d'élève</td></tr>
+      </tbody>
+    </table></div>
+    <p>Aucun autre fournisseur ne reçoit les copies des élèves. Voir aussi notre <a href="confidentialite.html">politique de confidentialité</a> et la <a href="ia.html">notice de transparence de l'IA</a>.</p>
+  </main>
+  <footer><div class="wrap"><span>© 2026 Brûle la pile</span><span><a href="confidentialite.html">Confidentialité</a> · <a href="consentement.html">Lettre aux parents</a> · <a href="conditions.html">Conditions</a> · <a href="mailto:bonjour@brulelapile.ca">Nous joindre</a></span></div></footer>
+</body>
+</html>

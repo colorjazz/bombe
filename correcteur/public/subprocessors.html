@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en-CA" data-lang="en" data-alt="sous-traitants.html">
+<head>
+  <meta charset="UTF-8">
+  <script src="lang.js"></script>
+  <link rel="icon" href="favicon.png" type="image/png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="site.css">
+  <title>Subprocessors — Burn the Pile</title>
+</head>
+<body>
+  <header class="topbar"><div class="wrap"><a class="brand" href="index-en.html"><img class="logo" src="logo-96.png" alt="" width="40" height="40"><strong>Burn the Pile</strong></a><div class="top-actions"><div class="lang-switch" role="group" aria-label="Langue / Language"><a href="sous-traitants.html" data-set-lang="fr">FR</a><a href="subprocessors.html" data-set-lang="en">EN</a></div><a class="btn ghost" href="index-en.html#pricing">Pricing</a><a class="btn primary" href="app.html">Try for free</a></div></div></header>
+  <main class="wrap legal">
+    <h1>Subprocessors</h1>
+    <p class="small">Last updated: October 28, 2026.</p>
+    <p>This is the complete list of companies that process information for Burn the Pile, with what they receive and where. We update it before any change of provider that affects student work.</p>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Provider</th><th>Role</th><th>What it receives</th><th>Where it is processed</th><th>Safeguards</th></tr></thead>
+      <tbody>
+        <tr><td><b>Google LLC</b><br>Gemini API</td><td>Marking papers, by default</td><td>Images of the papers (student name hidden on the device), instructions and answer key</td><td>United States and other countries where Google operates data centres</td><td><a href="https://ai.google.dev/gemini-api/terms" rel="noopener">Paid tier</a>: no model training; kept for a limited time, for abuse detection only</td></tr>
+        <tr><td><b>Google LLC</b><br>Google Cloud, Vertex AI</td><td>Marking papers, only with the “Process papers in Quebec” option</td><td>Same data as above</td><td>Montreal region (northamerica-northeast1), in Quebec; never anywhere else</td><td><a href="https://cloud.google.com/vertex-ai/generative-ai/docs/data-governance" rel="noopener">Google Cloud commitments</a>: no model training</td></tr>
+        <tr><td><b>Cloudflare, Inc.</b></td><td>Hosting the site and server, database, technical logs</td><td>Papers in transit, processed in memory and never stored; access keys, balances, usage log with no papers or names; technical logs (7 days at most)</td><td>Global network; company based in the United States</td><td>Encrypted connections (HTTPS); no paper content in logs</td></tr>
+        <tr><td><b>Stripe</b></td><td>Payments</td><td>Buyer’s email and payment details; never any student data</td><td>Company based in the United States</td><td>We never see your card</td></tr>
+        <tr><td><b>Google Fonts</b></td><td>Website fonts</td><td>Browser IP address, when the fonts are downloaded</td><td>Google’s global network</td><td>No student data</td></tr>
+      </tbody>
+    </table></div>
+    <p>No other provider receives student work. See also our <a href="privacy.html">privacy policy</a> and the <a href="ai.html">AI transparency notice</a>.</p>
+  </main>
+  <footer><div class="wrap"><span>© 2026 Burn the Pile</span><span><a href="privacy.html">Privacy</a> · <a href="consent.html">Parent letter</a> · <a href="terms.html">Terms</a> · <a href="mailto:hello@burnthepile.com">Contact us</a></span></div></footer>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en-CA" data-lang="en" data-alt="ia.html">
+<head>
+  <meta charset="UTF-8">
+  <script src="lang.js"></script>
+  <link rel="icon" href="favicon.png" type="image/png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="site.css">
+  <title>AI transparency notice — Burn the Pile</title>
+</head>
+<body>
+  <header class="topbar"><div class="wrap"><a class="brand" href="index-en.html"><img class="logo" src="logo-96.png" alt="" width="40" height="40"><strong>Burn the Pile</strong></a><div class="top-actions"><div class="lang-switch" role="group" aria-label="Langue / Language"><a href="ia.html" data-set-lang="fr">FR</a><a href="ai.html" data-set-lang="en">EN</a></div><a class="btn ghost" href="index-en.html#pricing">Pricing</a><a class="btn primary" href="app.html">Try for free</a></div></div></header>
+  <main class="wrap legal">
+    <h1>AI transparency notice</h1>
+    <p class="small">Last updated: October 28, 2026.</p>
+    <p>This notice explains what Burn the Pile’s AI does, what it does not do, and what we have measured of its reliability. In short: <strong>the AI suggests, the teacher decides.</strong></p>
+
+    <h2>What the AI does</h2>
+    <ul>
+      <li><b>Marking papers</b>: it reads the photo of each paper and suggests, for each question or each criterion of your rubric, a mark or a level with its justification, then a comment for the student.</li>
+      <li><b>Language check</b>: it finds and highlights errors on the paper, with the correction and the rule. In elementary and high school (Quebec), it only counts the concepts planned for your students’ grade under the Progression of Learning.</li>
+      <li><b>Supporting tasks</b>: reading your rubric or answer key, splitting papers in one scan, straightening a photo taken sideways, rewriting a comment.</li>
+    </ul>
+    <p>Models used: Gemini 3.5 Flash for marking, Gemini 3.7 Flash for language and for the second marking in thorough mode (Google, Gemini API); Gemini 3.5 Flash for everything with the “Process papers in Quebec” option (Google Cloud, Montreal).</p>
+
+    <h2>What it does not do</h2>
+    <ul>
+      <li>It decides no mark: every suggestion is reviewed, editable and approved by the teacher. A mark changed by the teacher is shown as such on the result card and in the exported file.</li>
+      <li>It does not know the student: the name is hidden on the teacher’s device before sending, and no student profile is created.</li>
+      <li>It does not learn from your papers: our providers do not train their models on the papers, and we do not keep them.</li>
+    </ul>
+
+    <h2>Measured reliability</h2>
+    <p>Our own measurements, October 2026; they give an order of magnitude, not a guarantee.</p>
+    <ul>
+      <li><b>Language, elementary</b> (6 sample papers, 21 planted errors, terms 2 and 3): 21 errors found out of 21, all correctly classified, no extra errors.</li>
+      <li><b>Highlight position</b> (9 real papers, 164 error words labelled by hand): about 84% of boxes exactly on the wrong word; about 75% with the “Process papers in Quebec” option.</li>
+      <li><b>Marks</b>: between two markings of the same paper, a level or a few points can vary. Thorough mode runs two independent markings and flags differences.</li>
+    </ul>
+
+    <h2>Limits to know</h2>
+    <ul>
+      <li>Hard-to-read handwriting, a blurry photo or a badly framed page lower quality; these papers are flagged for review.</li>
+      <li>Without an answer key, marks tend to be generous.</li>
+      <li>The AI can miss an error or flag one that is not: you can add or remove errors on the annotated paper.</li>
+      <li>Hiding the name is a protection, not full anonymity: a name written elsewhere, the handwriting or the content of an answer can sometimes identify a student.</li>
+    </ul>
+
+    <p>A question, or an AI error to report? Write to us at <a href="mailto:hello@burnthepile.com">hello@burnthepile.com</a>. See also the <a href="subprocessors.html">list of subprocessors</a> and the <a href="privacy.html">privacy policy</a>.</p>
+  </main>
+  <footer><div class="wrap"><span>© 2026 Burn the Pile</span><span><a href="privacy.html">Privacy</a> · <a href="consent.html">Parent letter</a> · <a href="terms.html">Terms</a> · <a href="mailto:hello@burnthepile.com">Contact us</a></span></div></footer>
+</body>
+</html>
