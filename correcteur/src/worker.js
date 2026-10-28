@@ -623,8 +623,11 @@ const NATIVE_LANG_SCHEMA = {
 };
 
 // Primaire : la notion de la Progression des apprentissages à laquelle se rattache chaque faute (voir public/pda.js).
+const NOT_YET = 'hors_annee';
 const langSchema = (pda) => (pda ? { ...NATIVE_LANG_SCHEMA, items: { ...NATIVE_LANG_SCHEMA.items,
-  properties: { ...NATIVE_LANG_SCHEMA.items.properties, notion: { type: 'STRING', enum: pda.notions.map((n) => n.id) } },
+  // « hors_annee » : une faute d'une notion pas encore vue a sa case (sans elle, l'IA la rangeait ailleurs, ex. l'imparfait
+  // en « orthographe d'usage ») ; langErrors la retire ensuite, comme toute notion absente des réglages.
+  properties: { ...NATIVE_LANG_SCHEMA.items.properties, notion: { type: 'STRING', enum: [...pda.notions.map((n) => n.id), ...(pda.ignored?.length ? [NOT_YET] : [])] } },
   required: [...NATIVE_LANG_SCHEMA.items.required, 'notion'] } } : NATIVE_LANG_SCHEMA);
 
 // Réglages primaire envoyés par l'appli : { year: 1-6, notions: [{ id, label, cat, state: 'count' | 'grey' }] }.
@@ -827,6 +830,9 @@ const CHECKS_EN = {
 const checklist = (cats) => `   Relis la copie phrase par phrase, puis mot par mot, et vérifie systématiquement chaque catégorie demandée :\n${cats.map((c) => `   - ${CHECKS[c]} ;`).join('\n')}\n   Pour une faute qui touche une phrase entière (phrase incomplète, sujet répété, virgule manquante), encadre les mots où elle se voit le mieux et donne la phrase corrigée.`;
 const checklistEn = (cats) => `   Read the paper sentence by sentence, then word by word, and systematically check each requested category:\n${cats.map((c) => `   - ${CHECKS_EN[c]};`).join('\n')}\n   For an error that affects a whole sentence (fragment, repeated subject, missing comma), box the words where it shows best and give the corrected wording.`;
 
+// Orthographe rectifiée (1990), acceptée par le ministère : « brulé » était compté comme faute.
+const RECTIF = "   L'orthographe rectifiée (1990) est acceptée au Québec : n'indique jamais comme faute un mot écrit selon l'orthographe rectifiée ou selon l'orthographe traditionnelle (« brulé » ou « brûlé », « connaitre » ou « connaître », « ile » ou « île », « évènement » ou « événement »).";
+
 // Consigne calquée sur la version Gemini de l'enseignant, dont le surlignage est précis.
 function langSystem(request, body, cats, pda) {
   if (pda) return pdaSystem(pda);
@@ -846,6 +852,7 @@ Ta mission :
 1. Lis le texte attentivement.
 2. Identifie UNIQUEMENT ces fautes : ${cats.map((c) => LANG_CATEGORIES[c]).join(' ; ')}. Pas de choix de style ; si un mot est illisible, ignore-le.
 ${checklist(cats)}
+${RECTIF}
    Une lettre bien formée n'est jamais une faute. Si une lettre est ambiguë (q ou d, accent douteux, lettre doublée ou non), relève la faute seulement si elle est probable, avec lecture_douteuse = true. Ignore les marques de l'enseignant (crochets, X, soulignés, encre de couleur).
 3. Pour CHAQUE faute trouvée, déduis ses coordonnées (bounding box) sur l'image en encadrant le MOT COMPLET ou l'EXPRESSION COMPLÈTE qui contient la faute.
    Les coordonnées 'box' doivent être un tableau de 4 nombres [ymin, xmin, ymax, xmax] normalisés entre 0 et 1000.
@@ -867,7 +874,8 @@ ${pda.notions.map((n) => `   - ${n.id} : ${n.label}`).join('\n')}
    Si une faute relève de plusieurs notions, choisis toujours la plus simple, celle qu'on apprend le plus tôt (ex. : « les poisson » → accord du déterminant avec le nom, pas l'accord dans tout le groupe du nom).
    Pour « o_mots » (orthographe d'usage) : relève TOUT mot courant mal orthographié (lettre manquante, en trop ou inversée, accent oublié, mot écrit au son, trait d'union oublié : « dor » → « dort », « glassé » → « glacée », « au dessus » → « au-dessus », « a » → « à »). C'est la faute la plus importante à repérer au primaire : relis chaque mot un par un. Ignore seulement un mot rare ou savant qu'un élève de ${year} n'a pas à connaître.
    Toute faute qui ne relève d'aucune de ces notions doit être IGNORÉE (ne la renvoie pas). Pas de choix de style ; si un mot est illisible, ignore-le.
-${pda.ignored?.length ? `   Notions PAS ENCORE VUES à cette année : ne relève JAMAIS une faute qui en relève, même dans « o_mots » : ${pda.ignored.join(' ; ')}.\n` : ''}
+${pda.ignored?.length ? `   Notions PAS ENCORE VUES à cette année : ${pda.ignored.join(' ; ')}. Une faute qui relève d'une de ces notions (par exemple un verbe mal conjugué à un temps pas encore vu) n'est PAS une faute d'orthographe d'usage : si tu la renvoies, mets notion = « ${NOT_YET} ».\n` : ''}
+${RECTIF}
    Une lettre bien formée n'est jamais une faute. Si une lettre est ambiguë (q ou d, accent douteux, lettre doublée ou non), relève la faute seulement si elle est probable, avec lecture_douteuse = true. Ignore les marques de l'enseignant (crochets, X, soulignés, encre de couleur).
 3. Pour CHAQUE faute trouvée, déduis ses coordonnées (bounding box) sur l'image en encadrant le MOT COMPLET ou l'EXPRESSION COMPLÈTE qui contient la faute.
    Les coordonnées 'box' doivent être un tableau de 4 nombres [ymin, xmin, ymax, xmax] normalisés entre 0 et 1000.
@@ -887,7 +895,8 @@ Ta mission :
 2. Relève UNIQUEMENT les fautes qui relèvent d'une des notions suivantes, attendues en ${year} selon la Progression des apprentissages du ministère :
 ${pda.notions.map((n) => `   - ${n.id} : ${n.label}`).join('\n')}
    Toute faute qui ne relève d'aucune de ces notions doit être IGNORÉE (ne la renvoie pas). Pas de choix de style ; si un mot est illisible, ignore-le.
-${pda.ignored?.length ? `   Notions PAS ENCORE VUES en ${year} : ne relève JAMAIS une faute qui en relève : ${pda.ignored.join(' ; ')}.\n` : ''}${checklist(cats)}
+${pda.ignored?.length ? `   Notions PAS ENCORE VUES en ${year} : ${pda.ignored.join(' ; ')}. Une faute qui en relève n'est rangée dans aucune autre notion : si tu la renvoies, mets notion = « ${NOT_YET} ».\n` : ''}${checklist(cats)}
+${RECTIF}
    Une lettre bien formée n'est jamais une faute. Si une lettre est ambiguë (q ou d, accent douteux, lettre doublée ou non), relève la faute seulement si elle est probable, avec lecture_douteuse = true. Ignore les marques de l'enseignant (crochets, X, soulignés, encre de couleur).
 3. Pour CHAQUE faute trouvée, déduis ses coordonnées (bounding box) sur l'image en encadrant le MOT COMPLET ou l'EXPRESSION COMPLÈTE qui contient la faute.
    Les coordonnées 'box' doivent être un tableau de 4 nombres [ymin, xmin, ymax, xmax] normalisés entre 0 et 1000.
