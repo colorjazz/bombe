@@ -21,6 +21,12 @@
     .key { font: 700 1.25rem ui-monospace, Menlo, monospace; letter-spacing: .05em; text-align: center; padding: .8rem; border-radius: 12px; background: #f3f4f8; border: 1px dashed var(--primary); user-select: all; }
     textarea.msg { min-height: 7.5rem; font-size: .85rem; }
     .tablewrap { overflow-x: auto; }
+    /* Sur téléphone, un tableau large défile dans son cadre au lieu d'élargir toute la page. */
+    main > *, main section, .panel { min-width: 0; }
+    .note-edit { width: 100%; min-width: 9rem; font: inherit; padding: .25rem .4rem; border: 1px solid transparent; border-radius: 8px; background: transparent; }
+    .note-edit:hover, .note-edit:focus { border-color: var(--line-2); background: #fff; }
+    .note-edit:placeholder-shown { border-color: var(--line-2); border-style: dashed; }
+    .note-edit.saved { border-color: var(--green); } .note-edit.failed { border-color: var(--red); }
     table { width: 100%; border-collapse: collapse; font-size: .84rem; }
     th, td { text-align: left; padding: .45rem .4rem; border-top: 1px solid var(--line); vertical-align: top; }
     th { font-size: .7rem; text-transform: uppercase; letter-spacing: .05em; color: var(--faint); white-space: nowrap; }
@@ -256,9 +262,23 @@
 
     function renderGifts() {
       const g = data.keys.filter((x) => x.type === 'gift');
-      $('gift-list').innerHTML = g.length ? g.map((x) => `<tr><td>${day(x.created_at)}</td><td>${esc(x.note) || '<span class="muted">—</span>'}</td><td class="k">${esc(x.key)}</td><td class="n">${nf(x.used)} / ${nf(x.given)}</td><td>${when(x.last_used)}</td></tr>`).join('')
+      // « Pour qui » modifiable sur place : enregistré dès qu'on quitte le champ.
+      $('gift-list').innerHTML = g.length ? g.map((x) => `<tr><td>${day(x.created_at)}</td><td><input class="note-edit" type="text" maxlength="200" data-key="${esc(x.key)}" value="${esc(x.note || '')}" placeholder="✎ Ajouter un nom" aria-label="Pour qui"></td><td class="k">${esc(x.key)}</td><td class="n">${nf(x.used)} / ${nf(x.given)}</td><td>${when(x.last_used)}</td></tr>`).join('')
         : '<tr><td colspan="5" class="muted">Aucune clé offerte pour l’instant.</td></tr>';
     }
+
+    $('gift-list').addEventListener('change', async (e) => {
+      const input = e.target.closest('.note-edit');
+      if (!input) return;
+      input.classList.remove('saved', 'failed');
+      try {
+        const { note } = await call('/api/admin/note', 'POST', { key: input.dataset.key, note: input.value });
+        const k = data.keys.find((x) => x.key === input.dataset.key);
+        if (k) k.note = note;
+        input.classList.add('saved');
+        renderKeys();
+      } catch (err) { input.classList.add('failed'); input.title = err.message; }
+    });
 
     let sortBy = 'created_at', sortDir = -1;
     function renderKeys() {

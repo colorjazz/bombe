@@ -54,7 +54,7 @@ const ROUTES = {
   'GET /api/balance': balance,
   'POST /api/trial': trial,
   'POST /api/idea': idea,
-  'POST /api/admin/keys': adminCreateKey,
+  'POST /api/admin/keys': adminCreateKey, 'POST /api/admin/note': adminSetNote,
   'GET /api/admin/keys': adminListKeys, 'GET /api/admin/stats': adminStats, 'POST /api/admin/insight': adminInsight,
   'POST /api/checkout': checkout,
   'GET /api/claim': claim,
@@ -187,6 +187,17 @@ async function adminCreateKey(request, env) {
     env.DB.prepare('INSERT INTO gifts (key, pages, note, created_at) VALUES (?, ?, ?, ?)').bind(key, pages, note || null, now),
   ]);
   return json({ key, pages });
+}
+
+// « Pour qui » oublié ou à corriger après coup.
+async function adminSetNote(request, env) {
+  await requireAdmin(request, env);
+  const body = await readJson(request);
+  const key = String(body.key || '').trim();
+  const note = String(body.note || '').trim().slice(0, 200);
+  const { meta } = await env.DB.prepare('UPDATE gifts SET note = ? WHERE key = ?').bind(note || null, key).run();
+  if (!meta.changes) throw new HttpError(404, 'Clé offerte introuvable.');
+  return json({ ok: true, note });
 }
 
 async function adminListKeys(request, env) {
