@@ -3,7 +3,8 @@
 
 const MAX_SIDE = 2000;          // pixels, côté le plus long d'une page envoyée (précision du surlignage)
 const JPEG_QUALITY = 0.85;
-const MAX_PAGES_PER_COPY = 10;
+const MAX_PAGES_PER_COPY = 30;
+const LONG_COPY = 10;            // au-delà, les pages sont réduites avant l'envoi (taille de la requête)
 const MAX_RUBRIC_PAGES = 6;
 const CONCURRENCY = 5;
 const KEY_STORAGE = 'ce.accessKey';
@@ -425,6 +426,17 @@ function maskName(url, ref = url) {
     for (const z of zones) g.fillRect(0, Math.floor(c.height * z.y0), c.width, Math.ceil(c.height * (z.y1 - z.y0)));
     return c.toDataURL('image/jpeg', 0.9);
   });
+}
+
+// Page réduite (côté le plus long, qualité JPEG) : pour les travaux longs, la requête reste légère.
+async function shrink(url, side, quality) {
+  const img = await loadImage(url);
+  const k = Math.min(1, side / Math.max(img.width, img.height));
+  if (k === 1 && /^data:image\/jpeg/.test(url) && url.length < 400_000) return url;
+  const c = document.createElement('canvas');
+  c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+  c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+  return c.toDataURL('image/jpeg', quality);
 }
 
 // crop : [x0, y0, x1, y1] en fractions de l'image, pour n'en envoyer qu'une partie.
@@ -925,7 +937,10 @@ async function runAll(only, calibrating = false) {
         state.results.unshift(res);
         reread(res);
       } else {
-      const pages = await Promise.all(b.map((p, i) => (masked(i) ? maskName(p.url) : p.url)));
+      const pages = await Promise.all(b.map(async (p, i) => {
+        const url = masked(i) ? await maskName(p.url) : p.url;
+        return b.length > LONG_COPY ? shrink(url, 1500, 0.72) : url; // travail long : ~250 Ko par page
+      }));
       const r = await withRetry(() => api('/api/grade', { method: 'POST', body: { ...settings, pages, structure: state.structure?.list, avoid: openings(examKey) } }), waiting);
       // 1re copie bien corrigée avec un corrigé : ses questions servent de modèle pour les suivantes. Elles sont
       // découpées pareil, et les deux corrections du mode approfondi partent en même temps (deux fois plus rapide).

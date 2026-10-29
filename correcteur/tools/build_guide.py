@@ -35,7 +35,7 @@ FR = dict(
 <li><b>Pages par élève</b> (obligatoire, section 1) : 1 pour une photo ou un fichier par élève, 2 si chaque copie a 2 pages, etc. Les pages sont regroupées dans l’ordre, même dans un PDF du photocopieur. Copies de longueur variable : en affichage <b>Avancé</b>, « Comment sont vos copies ? » → <b>Trouver chaque copie pour moi</b> (l’IA repère où commence chaque copie, gratuit).</li>
 <li><b>Vérifiez les copies</b> sur les miniatures : ✂ sépare deux pages, « rattacher à la copie du dessus » réunit deux copies, × retire une page. Cliquez sur une miniature pour l’agrandir.</li>
 <li><b>Photos prises de côté</b> : elles sont redressées automatiquement ; le bouton ↻ d’une miniature la tourne à la main.</li>
-<li><b>Limite</b> : 10 pages par copie. Au-delà, il s’agit sans doute de plusieurs élèves : utilisez le nombre fixe de pages ou ✂.</li>
+<li><b>Limite</b> : 30 pages par copie, pour les travaux longs du cégep. Une copie anormalement longue regroupe sans doute plusieurs élèves : utilisez le nombre fixe de pages ou ✂.</li>
 </ul>'''),
     ('camera', 'Numériser avec le téléphone', '''
 <ul>
@@ -151,7 +151,7 @@ EN = dict(
 <li><b>Pages per student</b> (required, section 1): 1 for one photo or file per student, 2 if each paper has 2 pages, and so on. Pages are grouped in order, even in a photocopier PDF. Papers of varying length: in the <b>Advanced</b> view, “How are your papers organized?” → <b>Find each student’s paper for me</b> (the AI finds where each paper starts, free).</li>
 <li><b>Check the papers</b> on the thumbnails: ✂ splits two pages, “join to the paper above” combines two papers, × removes a page. Click a thumbnail to enlarge it.</li>
 <li><b>Sideways photos</b> are straightened automatically; the ↻ button on a thumbnail rotates it by hand.</li>
-<li><b>Limit</b>: 10 pages per paper. Beyond that, it is probably several students: use a fixed number of pages or ✂.</li>
+<li><b>Limit</b>: 30 pages per paper, for long college assignments. An unusually long paper probably groups several students: use a fixed number of pages or ✂.</li>
 </ul>'''),
     ('camera', 'Scanning with your phone', '''
 <ul>

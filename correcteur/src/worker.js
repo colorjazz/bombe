@@ -10,7 +10,10 @@ export const PACKS = {
   annee: { name: 'Pack Année', nameEn: 'Year pack', pages: 1800, amount: 7900 },
 };
 
-const MAX_PAGES_PER_COPY = 10;
+// Un travail long du cégep fait souvent 20 à 30 pages ; au-delà de 10, l'appli réduit les pages avant l'envoi
+// pour que la requête reste sous la limite de taille de Google (MAX_COPY_CHARS).
+const MAX_PAGES_PER_COPY = 30;
+const MAX_COPY_CHARS = 18_000_000; // ~13 Mo d'images par copie
 const MAX_RUBRIC_PAGES = 6;
 const MAX_IMAGE_CHARS = 2_500_000; // ~1,8 Mo par page une fois décodée
 const MAX_LANG_IMAGE_CHARS = 14_000_000; // photos en pleine résolution pour la correction de la langue (~10 Mo)
@@ -1390,6 +1393,7 @@ async function grade(request, env, url, ctx) {
   if (!(total > 0 && total <= 1000)) throw new HttpError(400, 'Barème invalide');
   checkImages(body.pages, MAX_PAGES_PER_COPY, 'Copie');
   if (!body.pages.length) throw new HttpError(400, 'Copie vide');
+  if (body.pages.reduce((n, p) => n + p.length, 0) > MAX_COPY_CHARS) throw new HttpError(413, 'Copie trop lourde : rechargez la page et réessayez, ou séparez-la en deux.');
   checkImages(body.rubricPages || [], MAX_RUBRIC_PAGES, 'Corrigé');
 
   // Réserve les pages de façon atomique (le corrigé n'est pas facturé).
