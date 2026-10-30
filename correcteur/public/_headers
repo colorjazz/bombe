@@ -1,0 +1,12 @@
+# Pages et code de l'appli : le navigateur revérifie à chaque visite (sinon une ancienne page en mémoire avec le
+# nouveau code, ou l'inverse, peut empêcher l'appli de démarrer).
+/*.html
+  Cache-Control: no-cache
+/*.js
+  Cache-Control: no-cache
+/*.css
+  Cache-Control: no-cache
+/app
+  Cache-Control: no-cache
+/
+  Cache-Control: no-cache

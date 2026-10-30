@@ -13,6 +13,39 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="app.css">
+  <script>
+    // Filet de sécurité : si l'appli plante au démarrage (souvent une ancienne page gardée en mémoire avec le nouveau
+    // code), un message et un bouton de rechargement plutôt qu'une page vide.
+    (function () {
+      var shown = false;
+      function rescue(msg) {
+        if (shown) return;
+        var app = document.getElementById('app'), gate = document.getElementById('gate');
+        if ((app && !app.hidden) || (gate && !gate.hidden)) return; // l'appli a démarré : l'erreur est ailleurs
+        shown = true;
+        var box = document.createElement('div');
+        box.setAttribute('role', 'alert');
+        box.style.cssText = 'max-width:520px;margin:3rem auto;padding:1.5rem;border-radius:16px;background:#fff;border:1px solid #f5c26b;font:16px/1.5 system-ui,sans-serif;color:#1d1a2e;text-align:center';
+        var en = document.documentElement.lang === 'en' || (window.CE_LANG === 'en');
+        box.innerHTML = '<p style="margin:0 0 1rem"><b>' + (en ? 'Something prevented the app from starting.' : 'Un problème a empêché l’appli de démarrer.') + '</b><br>'
+          + (en ? 'Reloading usually fixes it.' : 'Recharger la page règle presque toujours le problème.') + '</p>';
+        var btn = document.createElement('button');
+        btn.textContent = en ? 'Reload the page' : 'Recharger la page';
+        btn.style.cssText = 'padding:.8rem 1.4rem;border-radius:12px;border:0;background:#e07b00;color:#fff;font-weight:700;font-size:16px;cursor:pointer';
+        btn.onclick = function () { location.reload(); };
+        box.appendChild(btn);
+        var small = document.createElement('p');
+        small.style.cssText = 'margin:1rem 0 0;font-size:12px;color:#8b93a5';
+        small.textContent = msg || '';
+        box.appendChild(small);
+        document.body.appendChild(box);
+      }
+      window.addEventListener('error', function (e) { setTimeout(function () { rescue(e.message); }, 300); });
+      window.addEventListener('unhandledrejection', function (e) { setTimeout(function () { rescue(String(e.reason && e.reason.message || e.reason)); }, 300); });
+      // Rien d'affiché après 12 s (code jamais chargé, réseau coupé) : même message.
+      setTimeout(function () { rescue(''); }, 12000);
+    })();
+  </script>
   <script type="module" src="app.js"></script>
 </head>
 <body class="light">
