@@ -523,3 +523,6 @@ body.light .layout > .levelbar { grid-column: 1 / -1; }
 .set-line { text-align: center; font-size: .88rem; color: var(--muted); margin: 0; }
 .set-line a { font-weight: 600; }
 #app.ui-simple[data-kind="content"] .adv-content { display: none !important; }
+/* Mode simple : l'étape unique, numéro au-dessus, titre centré sur une ligne. */
+#app.ui-simple[data-kind="content"] .s2 > .band h2 { flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: .35rem; width: 100%; white-space: nowrap; }
+#app.ui-simple[data-kind="content"] .s2 > .band { justify-content: center; }
