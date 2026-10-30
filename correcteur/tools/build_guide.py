@@ -37,12 +37,11 @@ FR = dict(
 <li><b>Photos prises de côté</b> : elles sont redressées automatiquement ; le bouton ↻ d’une miniature la tourne à la main.</li>
 <li><b>Limite</b> : 30 pages par copie, pour les travaux longs du cégep. Une copie anormalement longue regroupe sans doute plusieurs élèves : utilisez le nombre fixe de pages ou ✂.</li>
 </ul>'''),
-    ('camera', 'Numériser avec le téléphone', '''
+    ('camera', 'Prendre les copies en photo', '''
 <ul>
-<li>Sur téléphone, le bouton <b>Numériser « Brûle la pile »</b> ouvre la caméra. Cadrez la feuille dans les repères et touchez <b>Démarrer</b>.</li>
-<li>Tournez les pages devant le téléphone : chaque feuille est photographiée toute seule dès qu’elle est immobile et nette (bip, vibration et éclair vert). Rien n’est photographié avant « Démarrer » : la table ou votre main ne sont pas prises.</li>
-<li><b>Pages par élève</b> : réglez-le avant de commencer. « Annuler la dernière » retire une photo ratée ; ◉ prend une photo à la main.</li>
-<li>Touchez <b>Terminé</b> : vous relisez la pile, puis lancez la correction. L’option « Corriger pendant la prise de vue » corrige au fur et à mesure.</li>
+<li>Sur téléphone, le bouton <b>Prendre les copies en photo</b> ouvre la caméra. Placez la feuille dans le cadre : les coins deviennent verts quand elle est trouvée.</li>
+<li>Touchez le <b>gros bouton blanc</b> pour chaque page. Seule la feuille est gardée. La dernière photo s’affiche en bas à gauche ; touchez-la pour l’agrandir, ou <b>Reprendre</b> si elle est floue.</li>
+<li>Touchez <b>Terminé</b> : l’appli trouve où commence chaque copie (gratuit, quelques secondes). Vérifiez avec « Voir », puis touchez <b>Corriger</b>.</li>
 </ul>'''),
     ('corrige', 'Corrigé, consignes et grille détaillée', '''
 <ul>
@@ -153,12 +152,11 @@ EN = dict(
 <li><b>Sideways photos</b> are straightened automatically; the ↻ button on a thumbnail rotates it by hand.</li>
 <li><b>Limit</b>: 30 pages per paper, for long college assignments. An unusually long paper probably groups several students: use a fixed number of pages or ✂.</li>
 </ul>'''),
-    ('camera', 'Scanning with your phone', '''
+    ('camera', 'Taking photos of the papers', '''
 <ul>
-<li>On a phone, the <b>Scan “Burn the Pile”</b> button opens the camera. Frame the sheet within the corner marks and tap <b>Start</b>.</li>
-<li>Turn the pages in front of the phone: each sheet is photographed on its own as soon as it is still and sharp (beep, vibration and green flash). Nothing is photographed before “Start”, so the table or your hand are not captured.</li>
-<li><b>Pages per student</b>: set it before you begin. “Undo last” removes a bad photo; ◉ takes a photo by hand.</li>
-<li>Tap <b>Done</b>: you review the stack, then start grading. The “Grade while capturing” option grades as you go.</li>
+<li>On a phone, the <b>Take photos of the papers</b> button opens the camera. Place the sheet in the frame: the corners turn green when it is found.</li>
+<li>Tap the <b>big white button</b> for each page. Only the sheet is kept. The last photo appears at the bottom left; tap it to enlarge it, or tap <b>Retake</b> if it is blurry.</li>
+<li>Tap <b>Done</b>: the app finds where each paper starts (free, a few seconds). Check with “View”, then tap <b>Mark</b>.</li>
 </ul>'''),
     ('corrige', 'Answer key, instructions and detailed rubric', '''
 <ul>
