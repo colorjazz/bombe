@@ -1213,7 +1213,8 @@ function nameCell(r) {
   const first = r.pageUrls?.[0] || r.pages?.[0]?.url;
   const band = r.band && first ? h('button', { type: 'button', class: 'name-band', title: tr('Photo de l’en-tête (restée sur votre appareil) : cliquez pour agrandir'),
     'aria-label': tr('Voir l’en-tête de la copie'), hidden: !!r.name, onclick: () => openZoom([first], copyTitle(r) || tr('Copie')) }) : null;
-  if (band) nameBand(first).then((src) => { if (src) band.append(h('img', { src, alt: '' })); else band.remove(); });
+  // Seulement si la ligne « Nom : » a été trouvée : sinon la bande montrerait une ligne quelconque de la copie.
+  if (band) nameLine(first).then((z) => (z ? nameBand(first) : null)).then((src) => { if (src) band.append(h('img', { src, alt: '' })); else band.remove(); });
   const input = h('input', { class: 'name', type: 'text', value: r.name, placeholder: r.no ? `✎ Tapez le nom (copie ${r.no})` : '✎ Tapez le nom', 'aria-label': "Nom de l'élève",
     oninput: (e) => { r.name = e.target.value; state.exported = false; if (band) band.hidden = !!r.name.trim(); } });
   return band ? h('div', { class: 'name-cell' }, input, band) : input;
@@ -1432,15 +1433,34 @@ async function rewrite(r, box, btn) {
   btn.disabled = false; btn.textContent = label;
 }
 
+// Mode simple : un seul bouton principal ; le reste dans « Plus d'options ».
+function simpleActions(r, commentBox) {
+  const opt = (label, onclick, cls = '') => h('button', { class: `btn ghost small ${cls}`, type: 'button', textContent: tr(label), onclick });
+  return h('div', { class: 'card-simple' },
+    r.pageUrls ? h('button', { class: 'btn primary block', type: 'button', textContent: tr('Voir la copie corrigée'), onclick: async () => openZoom(await annotatedPages(r), copyTitle(r)) }) : null,
+    h('details', { class: 'more' }, h('summary', { textContent: tr('Plus d’options') }),
+      h('div', { class: 'more-list' },
+        opt(r.showTable ? '▴ Résumé des notes' : '✎ Modifier les notes', () => { r.showTable = !r.showTable; renderResults(); }),
+        opt('↻ Réécrire le commentaire', (e) => rewrite(r, commentBox, e.currentTarget)),
+        r.pageUrls ? opt('🖨 Imprimer cette copie', () => printBatch([r], { copies: true })) : null,
+        opt('Supprimer', () => { if (!confirm(tr(`Supprimer la correction de ${r.name || 'cet élève'} ?`))) return; state.results = state.results.filter((x) => x !== r); renderResults(); }, 'danger'))),
+    h('span', { class: 'muted small', textContent: copyLabel(r) }));
+}
+
 function card(r) {
   const commentBox = h('textarea', { rows: 6, class: 'comment-box', value: r.comment, oninput: (e) => { r.comment = e.target.value; state.exported = false; } });
   const gradeEl = h('span', { class: 'grade' });
   const updateGrade = () => { gradeEl.replaceChildren(...(r.grade == null ? [tr('Illisible')] : byLetters(r) ? [globalLetter(r)] : [fmt(r.grade), h('small', {}, ` / ${fmt(r.total)}`)])); };
   updateGrade();
 
+  // Mode simple : un résumé des notes ; le tableau complet (modifiable) s'ouvre avec « Modifier les notes ».
+  const simple = simpleContent(), compact = simple && !r.showTable;
+  const summary = compact ? h('div', { class: 'qsum' }, r.questions.map((q, i) => h('div', { class: q.points < q.max ? 'lost' : '' },
+    h('span', { textContent: q.question }), h('b', { textContent: qMarkText(r, q, i) })))) : null;
   const body = h('div', { class: 'card-body' },
     r.flags.length ? h('div', { class: 'flags' }, r.flags.map((f) => h('div', { textContent: `⚠ ${f}` }))) : null,
-    h('table', { class: 'qtable' },
+    summary,
+    h('table', { class: 'qtable', hidden: compact },
       h('thead', {}, h('tr', {}, h('th', { textContent: r.grid ? 'Critère' : 'Question' }), h('th', { textContent: r.grid ? 'Niveau' : 'Points' }), h('th', { textContent: 'Justification' }))),
       h('tbody', {}, r.questions.map((qq, qi) => {
         const rowClass = () => [qq.points < qq.max ? 'lost' : '', qq.second != null ? 'disputed' : ''].join(' ');
@@ -1492,9 +1512,9 @@ function card(r) {
       }))),
     h('label', { class: 'field comment' }, 'Commentaire pour l\'élève',
       commentBox),
-    h('button', { class: 'btn ghost small rewrite', type: 'button', textContent: '↻ Réécrire le commentaire', title: 'Selon vos notes et vos niveaux (gratuit)',
+    simple ? null : h('button', { class: 'btn ghost small rewrite', type: 'button', textContent: '↻ Réécrire le commentaire', title: 'Selon vos notes et vos niveaux (gratuit)',
       onclick: (e) => rewrite(r, commentBox, e.currentTarget) }),
-    h('div', { class: 'card-foot' },
+    simple ? simpleActions(r, commentBox) : h('div', { class: 'card-foot' },
       h('span', { textContent: copyLabel(r) }),
       h('div', { style: 'display:flex;gap:.4rem;flex-wrap:wrap' },
         r.pageUrls ? h('button', { class: 'btn small', type: 'button', textContent: 'Voir la copie corrigée', onclick: async () => openZoom(await annotatedPages(r), copyTitle(r)) }) : null,
@@ -2419,6 +2439,9 @@ const uiAdv = () => !$('app').classList.contains('ui-simple');
 $('ui-simple').addEventListener('click', () => setUiMode(false));
 $('ui-adv').addEventListener('click', () => setUiMode(true));
 $('adv-show').addEventListener('click', (e) => { e.preventDefault(); setUiMode(true); });
+// Téléphone : Guide, achat, changement de clé et langue dans un menu ; le solde reste visible (et mène à l'achat).
+$('top-menu').addEventListener('click', () => { const open = document.querySelector('.top-actions').classList.toggle('open'); $('top-menu').setAttribute('aria-expanded', String(open)); });
+$('balance').addEventListener('click', () => { if (!$('buy-open').hidden) $('buy-open').click(); });
 $('to-adv').addEventListener('click', (e) => { e.preventDefault(); setUiMode(true); $('app').querySelector('.s1').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
 advControls().forEach((el) => el.addEventListener('change', () => setUiMode(uiAdv())));
 let savedUi = null;

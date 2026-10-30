@@ -526,3 +526,25 @@ body.light .layout > .levelbar { grid-column: 1 / -1; }
 /* Mode simple : l'étape unique, numéro au-dessus, titre centré sur une ligne. */
 #app.ui-simple[data-kind="content"] .s2 > .band h2 { flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: .35rem; width: 100%; white-space: nowrap; }
 #app.ui-simple[data-kind="content"] .s2 > .band { justify-content: center; }
+
+/* Fiche d'une copie, mode simple : résumé des notes, un bouton principal, le reste dans « Plus d'options ». */
+.qsum { display: grid; gap: .3rem; font-size: .9rem; }
+.qsum > div { display: flex; justify-content: space-between; gap: .8rem; padding: .3rem 0; border-bottom: 1px solid var(--line); }
+.qsum > div b { white-space: nowrap; }
+.qsum > div.lost span { color: #c0263f; }
+.card-simple { display: grid; gap: .6rem; }
+.card-simple .more summary { cursor: pointer; font-weight: 600; font-size: .9rem; color: var(--muted); list-style: none; text-align: center; padding: .3rem; }
+.card-simple .more summary::-webkit-details-marker { display: none; }
+.card-simple .more summary::after { content: ' ▾'; }
+.card-simple .more[open] summary::after { content: ' ▴'; }
+.card-simple .more-list { display: grid; gap: .4rem; margin-top: .4rem; }
+.card-simple .more-list .btn { justify-content: flex-start; text-align: left; }
+.card-simple .more-list .btn.danger { color: #c0263f; }
+.top-menu { display: none; }
+#balance { cursor: pointer; }
+@media (max-width: 640px) {
+  .topbar .top-menu { display: inline-flex; }
+  .topbar .top-actions > :not(#balance):not(#top-menu) { display: none; }
+  .topbar .top-actions.open { flex-wrap: wrap; justify-content: flex-end; }
+  .topbar .top-actions.open > :not([hidden]) { display: inline-flex !important; }
+}
