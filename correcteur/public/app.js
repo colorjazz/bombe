@@ -224,6 +224,13 @@ async function documentToJpegs(html) {
   }
 }
 
+// Commentaires Word déjà présents dans le fichier (d'un correcteur, ou un Word annoté réimporté) : leurs renvois
+// (« [CO1.1] ») et leur texte ne font pas partie de la copie de l'élève.
+function stripWordComments(root) {
+  root.querySelectorAll('a[href^="#comment"], a[id^="comment-ref"]').forEach((a) => (a.closest('sup') || a).remove());
+  root.querySelectorAll('[id^="comment-"]').forEach((n) => n.closest('dl, dd, li') ? n.closest('dl, dd, li').remove() : n.remove());
+}
+
 // Word : le texte est mis en page en images ; une grande image collée dans le document (grille numérisée, photo)
 // devient sa propre page en pleine résolution, au lieu d'être réduite à la largeur d'une page.
 async function docxToJpegs(file) {
@@ -232,6 +239,7 @@ async function docxToJpegs(file) {
   if (!value.trim()) throw new Error('document vide');
   const tmp = document.createElement('div');
   tmp.innerHTML = value;
+  stripWordComments(tmp);
   const big = [];
   for (const img of [...tmp.querySelectorAll('img')]) {
     const el = await loadImage(img.src).catch(() => null);
@@ -253,6 +261,7 @@ async function docxToText(file) {
   const { value } = await window.mammoth.convertToHtml({ arrayBuffer: await file.arrayBuffer() });
   const tmp = document.createElement('div');
   tmp.innerHTML = value;
+  stripWordComments(tmp);
   const lines = [];
   const walk = (node) => {
     for (const n of node.children) {
@@ -712,7 +721,8 @@ const renderMode = () => {
   if (!labelled(state.grid)) return 'points';
   let pref = null;
   try { pref = localStorage.getItem(renderKey()); } catch { /* ignoré */ }
-  return pref || (state.gridPoints ? 'points' : 'letters');
+  // Au cégep, on attend une note sur 100 : les points par défaut, même avec des niveaux nommés (Excellent, Bien…).
+  return pref || (state.gridPoints || $('lang-level').value === 'cegep' ? 'points' : 'letters');
 };
 const byLetters = (r) => r.render === 'letters' && labelled(r.grid);
 // Niveau d'un critère : celui de la grille dont les points sont les plus proches.
