@@ -200,6 +200,9 @@ async function documentToJpegs(html) {
   sheet.innerHTML = html; // contenu converti localement (Word / texte), jamais exécuté : aucune balise script n'est produite
   sheet.querySelectorAll('script, iframe, object').forEach((el) => el.remove());
   sheet.querySelectorAll('img').forEach((img) => { img.style.maxWidth = '100%'; });
+  // Tableaux (grilles d'évaluation) : bordures et cellules lisibles ; sans elles, l'IA voyait un bloc de texte sans colonnes.
+  sheet.querySelectorAll('table').forEach((t) => { t.style.cssText = 'border-collapse:collapse;width:100%;table-layout:fixed;margin:8px 0'; });
+  sheet.querySelectorAll('td, th').forEach((c) => { c.style.cssText = 'border:1px solid #555;padding:4px 6px;vertical-align:top;font-size:12px;line-height:1.35;overflow-wrap:anywhere'; });
   document.body.append(sheet);
   try {
     const full = await window.html2canvas(sheet, { scale: 2, backgroundColor: '#ffffff', logging: false });
@@ -221,11 +224,47 @@ async function documentToJpegs(html) {
   }
 }
 
+// Word : le texte est mis en page en images ; une grande image collée dans le document (grille numérisée, photo)
+// devient sa propre page en pleine résolution, au lieu d'être réduite à la largeur d'une page.
 async function docxToJpegs(file) {
   await loadLib('mammoth');
   const { value } = await window.mammoth.convertToHtml({ arrayBuffer: await file.arrayBuffer() });
   if (!value.trim()) throw new Error('document vide');
-  return documentToJpegs(value);
+  const tmp = document.createElement('div');
+  tmp.innerHTML = value;
+  const big = [];
+  for (const img of [...tmp.querySelectorAll('img')]) {
+    const el = await loadImage(img.src).catch(() => null);
+    if (el && Math.max(el.width, el.height) >= 900) { big.push(el); img.replaceWith(document.createTextNode(`[image ${big.length}, page à part]`)); }
+  }
+  const pages = tmp.textContent.replace(/\[image \d+, page à part\]/g, '').trim().length > 40 || !big.length ? await documentToJpegs(tmp.innerHTML) : [];
+  for (const el of big) {
+    const c = fitCanvas(el.width, el.height);
+    c.getContext('2d').drawImage(el, 0, 0, c.width, c.height);
+    pages.push(canvasToJpeg(c));
+  }
+  return pages;
+}
+
+// Texte d'un document Word, tableaux compris (une ligne par rangée, cellules séparées par « | ») : pour lire une
+// grille, le texte exact vaut mieux qu'une image.
+async function docxToText(file) {
+  await loadLib('mammoth');
+  const { value } = await window.mammoth.convertToHtml({ arrayBuffer: await file.arrayBuffer() });
+  const tmp = document.createElement('div');
+  tmp.innerHTML = value;
+  const lines = [];
+  const walk = (node) => {
+    for (const n of node.children) {
+      if (n.tagName === 'TABLE') {
+        for (const tr of n.querySelectorAll('tr')) lines.push(`| ${[...tr.children].map((c) => c.textContent.replace(/\s+/g, ' ').trim()).join(' | ')} |`);
+        lines.push('');
+      } else if (/^(P|H[1-6]|LI)$/.test(n.tagName)) { const t = n.textContent.replace(/\s+/g, ' ').trim(); if (t) lines.push(n.tagName === 'LI' ? `- ${t}` : t); }
+      else walk(n);
+    }
+  };
+  walk(tmp);
+  return lines.join('\n').trim();
 }
 
 async function textToJpegs(file) {
@@ -299,7 +338,8 @@ async function filesToPages(files, progress = (text) => banner('info', text)) {
       } else if (isDocx(file) || isText(file)) {
         progress(`${of}Mise en page de « ${file.name} »…`);
         const urls = await (isDocx(file) ? docxToJpegs(file) : textToJpegs(file));
-        urls.forEach((url, i) => out.push({ id: uid(), url, file: file.name, firstOfFile: i === 0 }));
+        const docText = isDocx(file) ? await docxToText(file).catch(() => '') : await file.text();
+        urls.forEach((url, i) => out.push({ id: uid(), url, file: file.name, firstOfFile: i === 0, ...(i === 0 && docText ? { docText } : {}) }));
       } else {
         errors.push(`${file.name} (format non pris en charge : enregistrez-le en PDF${ext(file) === 'doc' ? ' ou en .docx' : ''})`);
       }
@@ -598,7 +638,7 @@ function renderSummary() {
 
 function renderRubric() {
   $('rubric-thumbs').replaceChildren(...state.rubricPages.map((p) => h('div', { class: 'thumb' },
-    h('img', { src: p.url, alt: tr('Corrigé') }),
+    h('img', { src: p.url, alt: tr('Corrigé'), title: tr('Agrandir'), style: 'cursor:zoom-in', onclick: () => openZoom(state.rubricPages.map((x) => x.url), tr(byGrid() ? 'Grille' : 'Corrigé')) }),
     h('button', { class: 'x', type: 'button', textContent: '×', onclick: () => {
       state.rubricPages = state.rubricPages.filter((x) => x !== p); renderRubric();
     } }))));
@@ -735,6 +775,9 @@ function conversionBox() {
 
 // « Avec une grille » : l'IA recopie la grille de l'enseignant telle quelle (critères, niveaux, points).
 // Sinon : elle rédige une grille détaillée à partir des consignes et du corrigé.
+// Consignes tapées + texte exact des grilles importées en Word ou en texte.
+const rubricText = () => [$('rubric').value.trim(), ...state.rubricPages.filter((p) => p.docText).map((p) => `TEXTE DU FICHIER « ${p.file} » :\n${p.docText}`)].filter(Boolean).join('\n\n');
+
 async function makeGrid() {
   if (state.grid && !confirm(tr('Remplacer la grille actuelle par une nouvelle ?'))) return;
   const copy = byGrid();
@@ -748,7 +791,7 @@ async function makeGrid() {
   renderSummary();
   try {
     const { grid, pointsWritten } = await api('/api/rubric', { method: 'POST', body: {
-      rubric: $('rubric').value.trim(), rubricPages: state.rubricPages.map((p) => p.url), copy,
+      rubric: rubricText(), rubricPages: state.rubricPages.map((p) => p.url), copy,
       total: copy ? undefined : Number($('total').value), wholePoints: $('whole').value === '1',
     } });
     state.grid = grid.map((c) => ({ ...c, name: cleanText(c.name), levels: c.levels.map((l) => ({ ...l, label: cleanText(l.label || ''), description: cleanText(l.description) })) }));
@@ -882,7 +925,7 @@ async function runAll(only, calibrating = false) {
     wholePoints: $('whole').value === '1',
     deep: $('deep').value === '1',
     checkLanguage: $('language').checked,
-    rubric: $('rubric').value.trim(),
+    rubric: state.grid && byGrid() ? $('rubric').value.trim() : rubricText(), // corrigé en Word : son texte exact aide à lire les réponses
     rubricPages: state.rubricPages.map((p) => p.url),
     grid: state.grid || undefined,
     anonymous: anonymous(),
@@ -2108,7 +2151,7 @@ dropzone($('drop'), $('files'), async (files, progress) => {
 });
 dropzone($('rubric-drop'), $('rubric-files'), async (files, progress) => {
   const added = await filesToPages(files, progress);
-  state.rubricPages.push(...added.map(({ id, url }) => ({ id, url })));
+  state.rubricPages.push(...added.map(({ id, url, docText, file }) => ({ id, url, docText, file })));
   if (state.rubricPages.length > MAX_RUBRIC_PAGES) {
     state.rubricPages.length = MAX_RUBRIC_PAGES;
     banner('err', `Corrigé limité à ${MAX_RUBRIC_PAGES} pages : les suivantes ont été ignorées.`);

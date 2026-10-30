@@ -1217,7 +1217,7 @@ async function rubric(request, env) {
   const copy = !!body.copy; // « Avec une grille » : recopier la grille de l'enseignant telle quelle, total compris
   const total = Number(body.total);
   if (!copy && !(total > 0 && total <= 1000)) throw new HttpError(400, 'Barème invalide');
-  const text = String(body.rubric || '').slice(0, 8000);
+  const text = String(body.rubric || '').slice(0, copy ? 60000 : 8000); // une grille Word de 6 pages : environ 20 000 caractères
   checkImages(body.rubricPages || [], MAX_RUBRIC_PAGES, 'Corrigé');
   if (!text.trim() && !(body.rubricPages || []).length) throw new HttpError(400, "Écrivez d'abord vos consignes ou ajoutez votre corrigé.");
   const unit = body.wholePoints ? 1 : 0.5;
@@ -1418,7 +1418,7 @@ async function grade(request, env, url, ctx) {
     const unit = body.wholePoints ? 1 : 0.5;
     const grid = readGrid(body.grid);
     const prompt = buildPrompt({ exam: String(body.exam || '').slice(0, 200), total, wholePoints: !!body.wholePoints,
-      checkLanguage: !!body.checkLanguage, rubric: String(body.rubric || '').slice(0, 8000), grid, english: isEnglish(request),
+      checkLanguage: !!body.checkLanguage, rubric: String(body.rubric || '').slice(0, 20000), grid, english: isEnglish(request),
       hasKey: !!(String(body.rubric || '').trim() || (body.rubricPages || []).length || grid), anonymous: !!body.anonymous, annotate: !!body.annotate,
       calibration: readCalibration(body.calibration), avoid: readAvoid(body.avoid) });
 
