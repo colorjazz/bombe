@@ -14,7 +14,7 @@ export const PACKS = {
 // pour que la requête reste sous la limite de taille de Google (MAX_COPY_CHARS).
 const MAX_PAGES_PER_COPY = 30;
 const MAX_COPY_CHARS = 18_000_000; // ~13 Mo d'images par copie
-const MAX_RUBRIC_PAGES = 6;
+const MAX_RUBRIC_PAGES = 10;
 const MAX_IMAGE_CHARS = 2_500_000; // ~1,8 Mo par page une fois décodée
 const MAX_LANG_IMAGE_CHARS = 14_000_000; // photos en pleine résolution pour la correction de la langue (~10 Mo)
 // Une école entière partage souvent la même adresse IP : on plafonne par jour au lieu de bloquer.
@@ -564,7 +564,8 @@ async function callModel(env, prompt, rubricPages, pages, opts) {
   const content = [];
   if (rubricPages.length) content.push({ type: 'text', text: 'CORRIGÉ / GRILLE DE L’ENSEIGNANT :' }, ...rubricPages.map(image));
   content.push({ type: 'text', text: `COPIE DE L'ÉLÈVE (${pages.length} page(s), dans l'ordre) :` }, ...pages.map(image));
-  return aiChat(env, prompt, content, opts?.annotate ? ANNOTATED_SCHEMA : SCHEMA, opts);
+  // Grille de 20 critères ou travail de 30 pages : la réponse (une justification par critère) dépasse 8192 jetons.
+  return aiChat(env, prompt, content, opts?.annotate ? ANNOTATED_SCHEMA : SCHEMA, { maxTokens: 24000, ...opts });
 }
 
 // Appel au modèle (format compatible OpenAI) : nouvelles tentatives, modèle de secours, réponse JSON.
@@ -616,11 +617,14 @@ async function aiChat(env, system, content, responseFormat, opts = {}) {
         messages: [{ role: 'system', content: system }, { role: 'user', content }],
         response_format: responseFormat,
         temperature: opts.temperature ?? 0,
-        max_tokens: 8192, // les modèles qui « réfléchissent » comptent aussi ces jetons
+        max_tokens: opts.maxTokens || 8192, // les modèles qui « réfléchissent » comptent aussi ces jetons
+        ...(opts.reasoning ? { reasoning_effort: opts.reasoning } : {}),
       }),
     });
     if (res.ok) {
-      const msg = (await res.json()).choices?.[0]?.message;
+      const choice = (await res.json()).choices?.[0], msg = choice?.message;
+      // Réponse coupée (limite de longueur atteinte) : le JSON est incomplet ; on le dit plutôt qu'une erreur de syntaxe.
+      if (choice?.finish_reason === 'length') throw new Error('réponse coupée (trop longue)');
       if (!msg?.content) throw new Error('réponse vide');
       // Certains modèles entourent le JSON de ```json … ``` malgré la consigne.
       return JSON.parse(msg.content.replace(/^\s*```(?:json)?\s*|\s*```\s*$/g, ''));
@@ -1220,7 +1224,8 @@ async function rubric(request, env) {
   const system = copy ? [
     "Tu es conseiller pédagogique. Voici la grille d'évaluation d'un enseignant (image ou texte). Recopie-la FIDÈLEMENT, sans rien inventer ni reformuler :",
     "- chaque critère de la grille, dans l'ordre, avec son nom exact et ses points maximum (sa pondération) ;",
-    "- pour chaque critère, tous ses niveaux du plus élevé au plus bas : « etiquette » = l'étiquette courte du niveau, sans pourcentage ni points (« A » et non « A (100 %) » ; aussi 5, 4, 3 ; « Marquée », « Assurée »… ; vide s'il n'y en a pas), « points » = les points de ce niveau (pour une plage comme « 18-20 », « points » = 20 et « points_min » = 18 ; sans plage, pas de « points_min »), « description » = le texte exact du niveau (corrige seulement les coquilles évidentes).",
+    "- pour chaque critère, tous ses niveaux du plus élevé au plus bas : « etiquette » = l'étiquette courte du niveau, sans pourcentage ni points (« A » et non « A (100 %) » ; aussi 5, 4, 3 ; « Marquée », « Assurée »… ; vide s'il n'y en a pas), « points » = les points de ce niveau (pour une plage comme « 18-20 », « points » = 20 et « points_min » = 18 ; sans plage, pas de « points_min »), « description » = le texte exact du niveau (corrige seulement les coquilles évidentes ; s'il dépasse 80 mots, garde ses éléments observables en 80 mots au plus).",
+    "- Ignore les pages qui ne contiennent pas la grille (page titre, consignes générales) ; une remarque utile à la correction (pénalité, politique sur la langue) peut aller dans la description du critère concerné.",
     "- Si la grille donne une échelle commune à tous les critères (ex. une légende A à E), répète-la pour chaque critère, avec les points correspondants.",
     "- Si la grille comporte une table de conversion des niveaux ou des cotes en points ou en pourcentages (ex. : « Excellent = 100 %, Très bien = 85 %… », « A = 10 pts »), applique-la à chaque critère : elle prime sur tout le reste.",
     "- Si un niveau n'a pas de points écrits, calcule-les à partir des points maximum du critère : le plus haut niveau = 100 %, puis 80 %, 60 %, 40 %, 20 % (0 pour un niveau qui signifie « absent » ou « non fait »). Si un critère n'a pas de points maximum, mets 10.",
@@ -1241,9 +1246,13 @@ async function rubric(request, env) {
     : text ? `CONSIGNES DE L'ENSEIGNANT :\n${text}` : 'Consignes : voir le corrigé joint.' },
     ...(body.rubricPages || []).map(image)];
   let raw;
-  try { raw = await aiChat(env, system, content, GRID_SCHEMA); } catch (err) {
+  // Une grille de cégep de plusieurs pages (20 critères × 6 niveaux) dépassait la longueur de réponse par défaut :
+  // le JSON était coupé et la lecture échouait. Recopier demande peu de réflexion et beaucoup de texte.
+  try { raw = await aiChat(env, system, content, GRID_SCHEMA, { maxTokens: 60000, reasoning: 'low' }); } catch (err) {
     console.error('Grille impossible :', err.message);
-    throw new HttpError(502, 'La préparation de la grille a échoué. Réessayez.');
+    throw new HttpError(502, /coupée/.test(err.message)
+      ? 'Grille trop longue à recopier d’un coup. Retirez les pages sans grille (page titre, consignes), puis réessayez.'
+      : 'La lecture de la grille a échoué. Réessayez dans un instant.');
   }
   const snap = (n) => Math.round((Number(n) || 0) / unit) * unit;
   const grid = (raw.criteres || []).map((c) => {

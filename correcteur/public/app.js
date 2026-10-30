@@ -5,7 +5,7 @@ const MAX_SIDE = 2000;          // pixels, côté le plus long d'une page envoy�
 const JPEG_QUALITY = 0.85;
 const MAX_PAGES_PER_COPY = 30;
 const LONG_COPY = 10;            // au-delà, les pages sont réduites avant l'envoi (taille de la requête)
-const MAX_RUBRIC_PAGES = 6;
+const MAX_RUBRIC_PAGES = 10;
 const CONCURRENCY = 5;
 const KEY_STORAGE = 'ce.accessKey';
 const PDFJS = '/vendor/pdfjs'; // pdf.js 3.11.174, hébergé sur le site
@@ -742,7 +742,9 @@ async function makeGrid() {
   const btn = $('make-grid');
   btn.disabled = true;
   state.reading = true;
-  btn.textContent = copy ? 'Un instant, lecture de la grille…' : 'Un instant, l’IA prépare la grille…';
+  const n = state.rubricPages.length;
+  btn.textContent = copy ? (n > 2 ? `Un instant, lecture de la grille (${n} pages, environ ${n > 5 ? 'une minute' : '30 secondes'})…` : 'Un instant, lecture de la grille…') : 'Un instant, l’IA prépare la grille…';
+  $('grid-error').hidden = true;
   renderSummary();
   try {
     const { grid, pointsWritten } = await api('/api/rubric', { method: 'POST', body: {
@@ -757,6 +759,9 @@ async function makeGrid() {
       : 'Grille préparée : relisez-la et ajustez au besoin. Elle sera appliquée à toutes les copies.');
     if (copy) setTimeout(() => $('grid-editor').scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
   } catch (err) {
+    // Sous le bouton, là où l'enseignant regarde (le bandeau général est plus bas, dans la section des copies).
+    $('grid-error').textContent = `⚠ ${tr(err.message)}`;
+    $('grid-error').hidden = false;
     banner('err', err.message);
   } finally {
     btn.disabled = false;
