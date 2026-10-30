@@ -88,7 +88,7 @@ export async function startCamera(video, { onCapture, onStatus }) {
   const audio = Audio ? new Audio() : null; // créé pendant le geste qui ouvre la caméra : le son est permis
 
   const small = document.createElement('canvas'), work = document.createElement('canvas');
-  // En pause au départ : rien n'est photographié (la table, la main…) avant que l'enseignant touche « Démarrer ».
+  // Prise manuelle : rien n'est photographié sans que l'enseignant touche le bouton (la prise automatique reste possible avec setArmed).
   // turned : la page a été tournée depuis la dernière photo. On ne compare plus la feuille à la précédente : deux
   // copies au même gabarit (feuille lignée, même en-tête) se ressemblent trop et la 2e n'était jamais prise.
   let armed = false, prev = null, lastShot = null, turned = true, stableSince = 0, coolUntil = 0, stopped = false, timer = 0;
@@ -133,7 +133,8 @@ export async function startCamera(video, { onCapture, onStatus }) {
     if (now < coolUntil) return;
     if (!page || page.cover < 0.3) { onStatus('Placez une feuille dans le cadre', 'wait', null); return; }
     if (page.ink < 0.002) { onStatus('Feuille vide ?', 'wait', page); return; } // à 160 px, l'écriture ne couvre que 0,5 à 2 % de la feuille
-    if (!armed) { onStatus('En pause : placez la première feuille, puis touchez « Démarrer »', 'wait', page); return; }
+    // Prise manuelle (par défaut) : la feuille est trouvée, l'enseignant touche le bouton.
+    if (!armed) { onStatus(turned ? 'Feuille trouvée : touchez le bouton' : '✓ Photographiée : placez la page suivante', turned ? 'done' : 'wait', page); return; }
     if (!turned) { onStatus('✓ Photographiée — tournez la page', 'done', page); return; }
     if (moving || now - stableSince < STABLE_MS) { onStatus('Tenez immobile…', 'hold', page); return; }
     // Mise au point : la photo part dès que la netteté cesse de s'améliorer (l'autofocus a trouvé), sans viser

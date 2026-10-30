@@ -113,11 +113,11 @@
           <button id="ui-simple" type="button" aria-pressed="true">Simple</button><button id="ui-adv" type="button" aria-pressed="false">Avancé</button>
         </div>
       </div>
-      <p class="req-note"><span class="req">*</span> obligatoire</p>
+      <p class="req-note adv"><span class="req">*</span> obligatoire</p>
       <p id="adv-note" class="muted small" style="margin:0" hidden>Des réglages avancés sont actifs (<a href="#" id="adv-show">voir</a>).</p>
 
       <div class="row2 f-name">
-        <label class="field"><span>Nom de l'évaluation <span class="muted small">(facultatif)</span></span>
+        <label class="field adv"><span>Nom de l'évaluation <span class="muted small">(facultatif)</span></span>
           <input id="exam" type="text" placeholder="Ex. : Examen — Révolution tranquille">
         </label>
         <label class="field adv" title="Utilisé seulement si le groupe n'est pas écrit sur la copie">Groupe par défaut
@@ -131,7 +131,7 @@
         <select id="out-lang"><option value="fr">Français</option><option value="en">English</option></select>
       </label>
       <div id="lang-settings" class="stack" hidden>
-        <p class="muted small" style="margin:0">L'IA relève les fautes de français sur chaque page et les surligne directement sur la copie, avec la correction et la règle. 1 page de copie = 1 page décomptée.</p>
+        <p class="muted small adv" style="margin:0">L'IA relève les fautes de français sur chaque page et les surligne directement sur la copie, avec la correction et la règle. 1 page de copie = 1 page décomptée.</p>
         <label class="field" hidden>Niveau des élèves <!-- réglé par « Vous enseignez au » en haut de l'appli -->
           <select id="lang-level">
             <option value="primaire">Primaire (selon la Progression des apprentissages)</option>
@@ -141,7 +141,8 @@
         </label>
         <p id="pda-en-note" class="muted small" style="margin:0" hidden>La Progression des apprentissages s'applique aux copies en français. Ici, la langue des copies est l'anglais (mode Avancé → « Langue des copies »).</p>
         <div id="pda" class="stack pda" hidden>
-          <div class="row3">
+          <div class="field lang-simple-only"><span>Vos élèves sont en :</span><div id="pda-years" class="year-btns" role="group" aria-label="Année scolaire"></div></div>
+          <div class="row3 adv">
             <label class="field">Année scolaire
               <select id="pda-year"><option value="1">1re année</option><option value="2">2e année</option><option value="3">3e année</option><option value="4" selected>4e année</option><option value="5">5e année</option><option value="6">6e année</option></select>
             </label>
@@ -152,13 +153,13 @@
               <select id="pda-once"><option value="1">Retenues une seule fois</option><option value="0">Retenues chaque fois</option></select>
             </label>
           </div>
-          <details class="pda-notions">
+          <details class="pda-notions adv">
             <summary>Notions : <span id="pda-sum"></span> <span class="linklike">voir et modifier</span></summary>
             <p class="muted small pda-legend">Réglées selon la Progression des apprentissages ; ouvrez une catégorie pour l'ajuster. <span class="n-count">Acquise</span> : soulignée, compte. <span class="n-grey">En apprentissage</span> : en gris, ne compte pas. <span class="n-ignore">Pas encore vue</span> : pas soulignée.</p>
             <div id="pda-list" class="pda-list"></div>
             <button id="pda-reset" class="btn small ghost" type="button">Remettre les réglages du ministère</button>
           </details>
-          <div class="field">Cote selon le pourcentage de fautes (fautes retenues ÷ nombre de mots)
+          <div class="field adv">Cote selon le pourcentage de fautes (fautes retenues ÷ nombre de mots)
             <div class="pda-cotes" id="pda-cotes">
               <label>A <small>jusqu'à</small> <input id="pda-a" type="text" inputmode="decimal" class="num" value="2"> %</label>
               <label>B <small>jusqu'à</small> <input id="pda-b" type="text" inputmode="decimal" class="num" value="4"> %</label>
@@ -169,6 +170,7 @@
             <span class="muted small">Seuils d'exemple : remplacez-les par ceux de votre école.</span>
           </div>
         </div>
+        <p class="lang-simple-only set-line"><span id="lang-set-txt"></span> · <a href="#" id="lang-to-adv">Modifier</a></p>
         <div class="field adv" id="lang-cats-field">Fautes à relever
           <div class="cats" id="lang-cats">
             <label class="cat c-orth"><input type="checkbox" value="orthographe" checked> Orthographe d'usage</label>
@@ -250,9 +252,9 @@
         <span class="small simple-only drop-plus">Tout en même temps : l'appli reconnaît ce qui est quoi.</span>
       </label>
       <p id="drop-done" class="added adv" hidden></p>
-      <p id="cam-hint" class="muted small adv" style="margin:0" hidden>Tournez les pages devant votre téléphone : chaque page est photographiée toute seule. Vous relisez la pile, puis lancez la correction.</p>
+      <p id="cam-hint" class="muted small adv" style="margin:0" hidden>Photographiez chaque page avec votre téléphone, puis vérifiez les photos et lancez la correction.</p>
       <div class="opts">
-  <button id="cam-open" class="btn" type="button" hidden><svg class="ic flame" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c1 3.2 5.5 5.6 5.5 10.5a5.5 5.5 0 0 1-11 0c0-2.3 1.2-4 2.5-5.2.2 1.7 1 2.9 2.2 3.4C10.7 9 11 6 12 3z"/><path d="M12 20a2.3 2.3 0 0 1-2.3-2.3c0-1.4 1.2-2.3 2.3-3.7 1.1 1.4 2.3 2.3 2.3 3.7A2.3 2.3 0 0 1 12 20z"/></svg> Numériser « Brûle la pile »</button>
+  <button id="cam-open" class="btn" type="button" hidden><svg class="ic cam-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg> Prendre les copies en photo</button>
         <label class="toggle adv-content"><input id="anon" type="checkbox" checked><span>Masquer le nom de l'élève avant l'envoi <span class="tip" title="La ligne « Nom : » est repérée sur votre appareil et cachée avant l'envoi à l'IA (zone hachurée sur les miniatures). Si elle n'est pas trouvée, le haut de la page est caché (hachures orange : vérifiez qu'aucune réponse ne s'y trouve). Le nom reste visible pour vous dans chaque fiche.">ⓘ</span></span></label>
       </div>
       <p class="muted small" style="margin:0"><a id="consent-link" href="consentement.html" target="_blank" rel="noopener">Lettre de consentement pour les parents</a> · à remplir et à imprimer</p>
@@ -270,11 +272,11 @@
             <option value="fixed">Le même nombre de pages par élève</option>
           </select>
           <input id="per" class="adv" type="number" min="1" max="10" value="" placeholder="Pages par élève" hidden aria-label="Pages par élève" style="width:9rem">
-          <button id="clear-pages" class="btn ghost small" type="button">Tout retirer</button>
         </div>
         <p id="mode-hint" class="banner info small" style="margin:0">Indiquez comment les pages sont regroupées : un fichier par élève, un nombre fixe de pages par élève, ou laissez l'IA détecter où commence chaque copie.</p>
-        <p class="muted small" style="margin:0">Deux élèves dans la même copie ? Le bouton ✂ entre deux pages les sépare. Une copie coupée en deux ? « rattacher à la copie du dessus » la réunit.</p>
+        <p class="muted small" style="margin:0">Deux élèves dans une même copie ? Touchez ✂ entre leurs pages. Une copie coupée en deux ? Touchez « ↑ Même élève ».</p>
         <div id="bundles" class="bundles"></div>
+        <div class="pages-foot"><button id="clear-pages" class="btn ghost small" type="button">Tout retirer</button></div>
       </div>
 
       <div id="ready" class="ready" hidden></div>
@@ -283,7 +285,7 @@
       <button id="run" class="btn primary big block" type="button" disabled>Corriger</button>
       <p class="simple-only set-line">Réglages par défaut · <a href="#" id="to-adv">Modifier</a></p>
       <p class="awake-line muted small">📱 Pendant la correction, gardez l’écran allumé et restez sur cette page.</p>
-      <button id="calib-run" class="btn block" type="button" title="Corrigez 3 copies, ajustez leurs notes : la suite de la pile est corrigée comme vous" hidden>🎯 Calibrer d'abord : corriger 3 copies, ajuster, puis le reste</button>
+      <button id="calib-run" class="btn block adv" type="button" title="Corrigez 3 copies, ajustez leurs notes : la suite de la pile est corrigée comme vous" hidden>🎯 Calibrer d'abord : corriger 3 copies, ajuster, puis le reste</button>
       <div id="progress" class="progress" hidden aria-live="polite">
         <div class="progress-top"><b id="progress-count"></b><span id="progress-eta"></span><button id="stop-run" class="btn ghost small" type="button">Arrêter</button></div>
         <div class="bar"><div id="progress-bar"></div></div>
@@ -293,11 +295,11 @@
     </section>
 
     <section class="panel s3">
-      <div class="band"><h2><span class="step">3</span> Résultats</h2></div>
+      <div class="band"><h2><span class="step" id="step3-no">3</span> Résultats</h2></div>
       <div class="results-head">
         <div class="results-tools">
           <input id="search" type="search" placeholder="Rechercher un élève…" style="width:12rem">
-          <button id="export" class="btn green" type="button" disabled hidden>Télécharger les notes (tableur CSV)</button>
+          <button id="export" class="btn green" type="button" disabled hidden>Télécharger les notes (Excel)</button>
           <button id="print-all" class="btn" type="button" disabled>Imprimer toutes les copies…</button>
           <button id="end" class="btn ghost" type="button" disabled>Terminer la session</button>
         </div>
@@ -310,7 +312,7 @@
       </div>
       <p id="done-msg" class="banner ok small" style="margin:0" hidden></p>
       <div id="cards" class="cards"></div>
-      <p class="muted small">Les notes sont des propositions : vérifiez-les, surtout les copies marquées ⚠. Tout est modifiable.<br>
+      <p class="muted small res-foot">Les notes sont des propositions : vérifiez-les, surtout les copies marquées ⚠. Tout est modifiable.<br>
       <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> Aucune copie ni note n'est conservée : téléchargez les notes avant de fermer la page.</p>
     </section>
   </main>
@@ -339,15 +341,13 @@
       <div id="cam-count" class="cam-count"></div>
     </div>
     <div class="cam-bottom">
-      <label class="cam-opt">Pages par élève
-        <select id="cam-per"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="6">6</option><option value="8">8</option></select>
-      </label>
-      <label class="cam-opt"><input id="cam-auto" type="checkbox"> Corriger pendant la prise de vue</label>
-      <button id="cam-go" class="btn primary" type="button">▶ Démarrer</button>
       <div class="cam-buttons">
-        <button id="cam-undo" class="btn" type="button">Annuler la dernière</button>
-        <button id="cam-shoot" class="btn" type="button" aria-label="Photographier maintenant">◉</button>
-        <button id="cam-done" class="btn" type="button">Terminer</button>
+        <div class="cam-last-box">
+          <img id="cam-last" alt="Dernière photo" hidden>
+          <button id="cam-undo" class="btn small" type="button" hidden>Reprendre</button>
+        </div>
+        <button id="cam-shoot" class="btn" type="button" aria-label="Photographier"><span></span></button>
+        <button id="cam-done" class="btn" type="button">Terminé</button>
       </div>
     </div>
   </div>
@@ -436,7 +436,7 @@
     <div class="panel stack" style="max-width:460px">
       <div style="display:flex;justify-content:space-between;align-items:center"><h2 style="margin:0">Terminer la session</h2><button class="icon-btn" type="button" data-close-end aria-label="Fermer">×</button></div>
       <p id="end-warn" class="banner warn small" style="margin:0;display:block" hidden>Vos notes ne sont pas encore enregistrées : téléchargez-les ou imprimez-les d'abord, car tout sera effacé.</p>
-      <div id="end-save" style="display:flex;gap:.5rem;flex-wrap:wrap"><button id="end-export" class="btn green" type="button">Télécharger les notes (tableur CSV)</button><button id="end-print" class="btn" type="button">Imprimer…</button></div>
+      <div id="end-save" style="display:flex;gap:.5rem;flex-wrap:wrap"><button id="end-export" class="btn green" type="button">Télécharger les notes (Excel)</button><button id="end-print" class="btn" type="button">Imprimer…</button></div>
       <button id="end-keep" class="btn primary block" type="button">Tout effacer et garder ma clé</button>
       <button id="end-forget" class="btn ghost block" type="button">Tout effacer et retirer ma clé de cet ordinateur</button>
       <p class="muted small" style="margin:0">Retirer la clé : pour un ordinateur partagé. Elle reste valable ailleurs : notez-la pour utiliser vos pages restantes (<b id="end-key"></b>).</p>
