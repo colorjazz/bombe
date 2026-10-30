@@ -2408,7 +2408,7 @@ function setUiMode(adv) {
   $('app').dataset.kind = state.kind;
   const simple = !adv && state.kind === 'content';
   $('step2-no').textContent = simple ? '1' : '2';
-  $('step2-title').textContent = tr(simple ? 'Déposez vos copies' : state.kind === 'lang' ? $('step2-title').textContent : 'Insérer les copies');
+  $('step2-title').textContent = tr(simple ? 'Déposez vos copies, votre corrigé ou votre grille' : state.kind === 'lang' ? $('step2-title').textContent : 'Insérer les copies');
   $('ui-simple').setAttribute('aria-pressed', String(!adv));
   $('ui-adv').setAttribute('aria-pressed', String(adv));
   $('adv-note').hidden = adv || advControls().every(isDefault);
