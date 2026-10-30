@@ -2418,11 +2418,11 @@ renderPda();
 
 // Affichage simple (par défaut) ou avancé : le mode simple cache les réglages fins (classe « adv »), qui restent appliqués.
 // Si l'un d'eux n'a pas sa valeur par défaut, une ligne le signale : rien ne change en douce (ex. double correction facturée).
-const advControls = () => [...document.querySelectorAll('.adv input, .adv select')];
-const isDefault = (el) => (el.id === 'out-lang' ? el.value === lang
+function advControls() { return [...document.querySelectorAll('.adv input, .adv select')]; }
+function isDefault(el) { return (el.id === 'out-lang' ? el.value === lang
   : el.type === 'checkbox' ? el.checked === el.defaultChecked
   : el.tagName === 'SELECT' ? el.value === ([...el.options].find((o) => o.defaultSelected) || el.options[0])?.value
-  : el.value === el.defaultValue);
+  : el.value === el.defaultValue); }
 function setUiMode(adv) {
   $('app').classList.toggle('ui-simple', !adv);
   $('app').dataset.kind = state.kind;
@@ -2435,7 +2435,7 @@ function setUiMode(adv) {
   try { localStorage.setItem('ce.ui', adv ? 'adv' : 'simple'); } catch { /* ignoré */ }
   renderPages(); // le mode simple cache les pages et la section 1 de la correction des copies
 }
-const uiAdv = () => !$('app').classList.contains('ui-simple');
+function uiAdv() { return !$('app').classList.contains('ui-simple'); } // déclarée (hissée) : appelée avant cette ligne au démarrage
 $('ui-simple').addEventListener('click', () => setUiMode(false));
 $('ui-adv').addEventListener('click', () => setUiMode(true));
 $('adv-show').addEventListener('click', (e) => { e.preventDefault(); setUiMode(true); });
