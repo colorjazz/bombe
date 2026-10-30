@@ -207,18 +207,19 @@
     </section>
 
     <section class="panel stack s2">
-      <div class="band"><h2><span class="step">2</span> <span id="step2-title">Insérer les copies</span> <span class="req" aria-hidden="true">*</span></h2></div>
+      <div class="band"><h2><span class="step" id="step2-no">2</span> <span id="step2-title">Insérer les copies</span> <span class="req adv" aria-hidden="true">*</span></h2></div>
       <label id="drop" class="drop">
         <input id="files" type="file" accept="image/*,.heic,.heif,application/pdf,.docx,.txt" multiple hidden>
         <span class="ico"><svg class="ic ic-lg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg></span>
         <b class="pc-only">Glissez les copies ici ou cliquez pour choisir les fichiers</b><b class="touch-only">Choisir les photos ou le PDF des copies</b>
         <span class="muted small">PDF, photos (y compris iPhone), Word (.docx) ou texte · plusieurs fichiers à la fois</span>
+        <span class="small simple-only drop-plus">Votre corrigé ou votre grille aussi, au même endroit : l'appli reconnaît ce qui est quoi.</span>
       </label>
-      <p id="drop-done" class="added" hidden></p>
+      <p id="drop-done" class="added adv" hidden></p>
       <p id="cam-hint" class="muted small adv" style="margin:0" hidden>Tournez les pages devant votre téléphone : chaque page est photographiée toute seule. Vous relisez la pile, puis lancez la correction.</p>
       <div class="opts">
   <button id="cam-open" class="btn" type="button" hidden><svg class="ic flame" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c1 3.2 5.5 5.6 5.5 10.5a5.5 5.5 0 0 1-11 0c0-2.3 1.2-4 2.5-5.2.2 1.7 1 2.9 2.2 3.4C10.7 9 11 6 12 3z"/><path d="M12 20a2.3 2.3 0 0 1-2.3-2.3c0-1.4 1.2-2.3 2.3-3.7 1.1 1.4 2.3 2.3 2.3 3.7A2.3 2.3 0 0 1 12 20z"/></svg> Numériser « Brûle la pile »</button>
-        <label class="toggle"><input id="anon" type="checkbox" checked><span>Masquer le nom de l'élève avant l'envoi <span class="tip" title="La ligne « Nom : » est repérée sur votre appareil et cachée avant l'envoi à l'IA (zone hachurée sur les miniatures). Si elle n'est pas trouvée, le haut de la page est caché (hachures orange : vérifiez qu'aucune réponse ne s'y trouve). Le nom reste visible pour vous dans chaque fiche.">ⓘ</span></span></label>
+        <label class="toggle adv-content"><input id="anon" type="checkbox" checked><span>Masquer le nom de l'élève avant l'envoi <span class="tip" title="La ligne « Nom : » est repérée sur votre appareil et cachée avant l'envoi à l'IA (zone hachurée sur les miniatures). Si elle n'est pas trouvée, le haut de la page est caché (hachures orange : vérifiez qu'aucune réponse ne s'y trouve). Le nom reste visible pour vous dans chaque fiche.">ⓘ</span></span></label>
       </div>
       <p class="muted small" style="margin:0"><a id="consent-link" href="consentement.html" target="_blank" rel="noopener">Lettre de consentement pour les parents</a> · à remplir et à imprimer</p>
       <div id="anon-opts" class="mode adv" hidden>
@@ -242,9 +243,11 @@
         <div id="bundles" class="bundles"></div>
       </div>
 
-      <div class="summary"><span id="summary"></span><span id="cost"></span></div>
+      <div id="ready" class="ready" hidden></div>
+      <div class="summary adv-content"><span id="summary"></span><span id="cost"></span></div>
       <p id="calib-info" class="banner info small" style="margin:0" hidden></p>
       <button id="run" class="btn primary big block" type="button" disabled>Corriger</button>
+      <p class="simple-only set-line">Réglages par défaut · <a href="#" id="to-adv">Modifier</a></p>
       <p class="awake-line muted small">📱 Pendant la correction, gardez l’écran allumé et restez sur cette page.</p>
       <button id="calib-run" class="btn block" type="button" title="Corrigez 3 copies, ajustez leurs notes : la suite de la pile est corrigée comme vous" hidden>🎯 Calibrer d'abord : corriger 3 copies, ajuster, puis le reste</button>
       <div id="progress" class="progress" hidden aria-live="polite">

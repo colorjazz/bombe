@@ -507,3 +507,19 @@ body.light .layout > .levelbar { grid-column: 1 / -1; }
   .name-band img { width: 175%; height: auto; max-width: none; object-fit: fill; }
 }
 .thumb .mask-band.fallback { background: repeating-linear-gradient(45deg, rgba(255,247,230,.9) 0 4px, rgba(194,118,0,.75) 4px 8px); }
+
+/* Mode simple (correction des copies) : pas de section 1 ; tout se dépose au même endroit. */
+#app.ui-simple[data-kind="content"] > .s1 { display: none; }
+#app:not(.ui-simple) .simple-only, #app[data-kind="lang"] .simple-only { display: none !important; }
+.drop .drop-plus { color: #9a5b00; font-weight: 600; }
+.ready { display: grid; gap: .6rem; background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: .9rem 1rem; }
+.ready-title { font-size: 1.02rem; }
+.ready-line { display: flex; gap: .7rem; align-items: center; font-size: .92rem; line-height: 1.3; }
+.ready-line > span { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; flex: none; }
+.ready-line > span.ok { background: #e3f6ee; color: #0b7a55; }
+.ready-line > span.warn { background: #fff4e5; color: #9a5b00; }
+.ready-line > div { flex: 1; min-width: 0; }
+.ready-line .link { background: none; border: 0; color: var(--primary, #4f46e5); font-weight: 600; cursor: pointer; font: inherit; font-size: .88rem; padding: .2rem; }
+.set-line { text-align: center; font-size: .88rem; color: var(--muted); margin: 0; }
+.set-line a { font-weight: 600; }
+#app.ui-simple[data-kind="content"] .adv-content { display: none !important; }

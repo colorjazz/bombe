@@ -534,7 +534,7 @@ async function detectCopies() {
       batch.forEach((p, j) => { p.autoStart = pages[j].startsNew; p.detectedName = pages[j].name; });
     }
     applyMode();
-    banner('info', `${bundles().length} copie(s) trouvée(s). Vérifiez que chaque copie correspond à un seul élève (cliquez sur une page pour l’agrandir) avant de corriger.`);
+    if (!simpleContent()) banner('info', `${bundles().length} copie(s) trouvée(s). Vérifiez que chaque copie correspond à un seul élève (cliquez sur une page pour l’agrandir) avant de corriger.`);
   } catch (err) {
     banner('err', `${err.message} Les pages non analysées restent regroupées par fichier.`);
   } finally {
@@ -554,7 +554,7 @@ function bundles() {
 
 function renderPages() {
   const list = bundles();
-  $('pages-zone').hidden = !state.pages.length;
+  $('pages-zone').hidden = !state.pages.length || (simpleContent() && !state.showPages);
   const mode = $('mode').value;
   $('per').hidden = mode !== 'fixed';
   // « Une photo ou un fichier par élève » avec un fichier de plusieurs pages : c'est peut-être toute une classe.
@@ -622,27 +622,76 @@ function renderSummary() {
   const gridSum = state.grid ? state.grid.reduce((a, c) => a + (Number(c.max) || 0), 0) : null;
   const gridOk = state.kind === 'lang' || gridSum == null || Math.abs(gridSum - Number($('total').value)) < 1e-9;
   // Le nombre de points et les pages par élève ne servent qu'à la correction de copies (champs cachés en mode langue).
+  const simple = simpleContent();
   const needGrid = byGrid() && !state.grid; // avec une grille : la grille lue fixe le total
   const needYear = state.kind === 'lang' && isPda() && !$('pda-year').value;
-  const needTotal = state.kind === 'content' && !needGrid && !(Number($('total').value) > 0);
+  const needTotal = state.kind === 'content' && !simple && !needGrid && !(Number($('total').value) > 0);
   run.disabled = state.running || state.detecting || !n || !grouped || tooLong || !enough || !gridOk || needTotal || needGrid || needYear || state.reading
-    || (state.kind === 'content' && !(Number($('per-student').value) >= 1));
+    || (state.kind === 'content' && !simple && !(Number($('per-student').value) >= 1));
   run.textContent = state.running ? (state.kind === 'lang' ? 'Analyse en cours…' : 'Correction en cours…')
     : state.detecting ? 'Analyse des copies en cours…'
     : n && state.reading ? 'Lecture de la grille…'
     : n && needGrid ? 'Ajoutez votre grille (section 1)'
     : n && needYear ? 'Choisissez l’année de vos élèves (section 1)'
     : n && needTotal ? 'Indiquez le nombre de points'
-    : n && state.kind === 'content' && !(Number($('per-student').value) >= 1) ? 'Indiquez le nombre de pages par élève'
+    : n && state.kind === 'content' && !simple && !(Number($('per-student').value) >= 1) ? 'Indiquez le nombre de pages par élève'
     : n && !grouped ? 'Indiquez le nombre de pages par élève'
     : !enough ? 'Solde insuffisant : rechargez votre compte'
     : n && !gridOk ? `La grille totalise ${fmt(gridSum)} points au lieu de ${fmt(Number($('total').value))}`
     : n ? `${state.kind === 'lang' ? 'Analyser la langue de' : 'Corriger'} ${pl(list.length, 'copie', 'copies')}` : 'Corriger';
+  renderReady(list, n, cost);
   $('export').disabled = $('end').disabled = state.running || !state.results.length;
   // Pas de gros bouton vert tant qu'il n'y a rien à télécharger.
   $('export').hidden = $('print-all').hidden = !state.results.length;
   $('print-all').disabled = state.running || !state.results.some((r) => r.kind !== 'lang');
   renderCalib();
+}
+
+// ---------- Mode simple ----------
+// Correction des copies en mode simple : pas de section 1. L'enseignant dépose tout au même endroit (copies, et
+// corrigé ou grille), l'appli reconnaît chaque fichier, lit la grille, trouve chaque copie et le barème.
+// Le mode avancé garde tous les réglages ; il ne fait que préciser ce que le mode simple a deviné.
+const simpleContent = () => state.kind === 'content' && !uiAdv();
+
+// Résumé « C'est prêt » : ce que l'appli a compris, chaque ligne vérifiable (« Voir »).
+function renderReady(list, n, cost) {
+  const box = $('ready');
+  box.hidden = !simpleContent() || !(n || state.rubricPages.length);
+  if (box.hidden) return;
+  const line = (ok, title, sub, onSee) => h('div', { class: 'ready-line' }, h('span', { class: ok ? 'ok' : 'warn', textContent: ok ? '✓' : '!' }),
+    h('div', {}, h('b', { textContent: tr(title) }), sub ? h('div', { class: 'muted small', textContent: tr(sub) }) : null),
+    onSee ? h('button', { class: 'link', type: 'button', textContent: tr('Voir'), onclick: onSee }) : null);
+  const seeRubric = () => { setUiMode(true); setTimeout(() => ($('grid-editor').hidden ? $('rubric-thumbs') : $('grid-editor')).scrollIntoView({ behavior: 'smooth', block: 'start' }), 60); };
+  const gridSum = state.grid ? state.grid.reduce((a, c) => a + (Number(c.max) || 0), 0) : 0;
+  const key = state.reading ? line(true, 'Lecture de la grille…', `${pl(state.rubricPages.length, 'page', 'pages')}`)
+    : state.grid ? line(true, 'Grille lue', `${pl(state.grid.length, 'critère', 'critères')} · ${fmt(gridSum)} points`, seeRubric)
+    : state.rubricPages.length ? line(true, 'Corrigé ajouté', Number($('total').value) > 0 ? `${fmt(Number($('total').value))} points` : 'barème lu sur les copies', seeRubric)
+    : line(false, 'Sans corrigé', 'les notes ont tendance à être généreuses ; déposez votre corrigé ou votre grille au même endroit');
+  const files = new Set(state.pages.map((p) => p.file)).size;
+  box.replaceChildren(h('b', { class: 'ready-title', textContent: tr(n ? 'C’est prêt' : 'Déposez maintenant les copies') }), key,
+    n ? line(true, `${pl(list.length, 'copie trouvée', 'copies trouvées')}`, `${pl(files, 'fichier', 'fichiers')} · ${pl(n, 'page', 'pages')}${cost ? ` · ${pl(cost, 'page décomptée', 'pages décomptées')}` : ''}`,
+      () => { state.showPages = !state.showPages; renderPages(); if (state.showPages) $('pages-zone').scrollIntoView({ behavior: 'smooth', block: 'start' }); }) : null,
+    n && anonymous() ? line(true, 'Noms masqués', 'sur votre appareil, avant l’envoi') : null);
+}
+
+// Dépôt unique (mode simple) : chaque fichier est classé grille, corrigé ou copie (gratuit), d'après sa 1re page.
+async function sortDrop(added) {
+  const byFile = [];
+  for (const p of added) { const last = byFile.at(-1); if (last && last.name === p.file && !p.firstOfFile) last.pages.push(p); else byFile.push({ name: p.file, pages: [p] }); }
+  let types = byFile.map(() => ({ type: 'copie', total: 0 }));
+  try { ({ types } = await api('/api/classify', { method: 'POST', body: { files: await Promise.all(byFile.map(async (f) => ({ page: await thumbnail(f.pages[0].url, 640) }))) } })); } catch { /* en cas d'échec : des copies */ }
+  const copies = [], keys = [];
+  byFile.forEach((f, k) => (['grille', 'corrige'].includes(types[k]?.type) ? keys : copies).push({ ...f, ...types[k] }));
+  if (keys.length) {
+    state.rubricPages.push(...keys.flatMap((f) => f.pages.map(({ id, url, docText, file }) => ({ id, url, docText, file }))).slice(0, MAX_RUBRIC_PAGES));
+    const total = keys.find((f) => f.total > 0)?.total;
+    if (total && !(Number($('total').value) > 0)) $('total').value = String(total);
+    setMethod(keys.some((f) => f.type === 'grille') ? 'grid' : 'points');
+    renderRubric();
+    banner('info', keys.map((f) => `« ${f.name} » : ${f.type === 'grille' ? 'grille d’évaluation' : 'corrigé'}`).join(' · ') + ' (pas facturé). Ce n’est pas ça ? Passez en mode avancé.');
+    if (byGrid() && !state.grid) makeGrid();
+  } else if (byGrid() && !state.grid) setMethod('points'); // pas de grille déposée : correction par points
+  return copies.flatMap((f) => f.pages);
 }
 
 function renderRubric() {
@@ -932,6 +981,8 @@ async function runAll(only, calibrating = false) {
     exam: $('exam').value.trim(),
     group: $('group').value.trim(),
     total: Number($('total').value),
+    // Mode simple, sans grille ni barème tapé : l'IA prend les points indiqués sur la copie ou le corrigé.
+    autoTotal: simpleContent() && !state.grid && !(Number($('total').value) > 0),
     wholePoints: $('whole').value === '1',
     deep: $('deep').value === '1',
     checkLanguage: $('language').checked,
@@ -1008,6 +1059,8 @@ async function runAll(only, calibrating = false) {
         state.structure = { key: examKey, list: r.questions.map((q) => ({ name: q.question, max: q.max })) };
       }
       setBalance(r.pagesLeft);
+      // Barème trouvé par l'IA sur la 1re copie : les suivantes sont corrigées sur le même total.
+      if (settings.autoTotal && !r.illegible && r.total > 0 && !(Number($('total').value) > 0)) { $('total').value = String(r.total); settings.total = r.total; settings.autoTotal = false; }
       state.results.unshift({
         id, no: b[0].no, file: b[0].file, pageUrls: b.map((p) => p.url), band: anonymous() ? maskFrac() : 0, exam: settings.exam, group: r.group || settings.group, name: r.name, reliability: r.reliability, grade: r.grade, total: r.total,
         // `ai` : la note proposée, pour repérer celles que l'enseignant change (calibrage).
@@ -1878,6 +1931,8 @@ function setKind(kind) {
   $('kind-content').setAttribute('aria-selected', String(kind === 'content'));
   $('kind-lang').setAttribute('aria-selected', String(kind === 'lang'));
   document.querySelector('.kind').dataset.active = kind;
+  $('app').dataset.kind = kind; // mode simple : la correction des copies n'a plus de section 1
+  if (!uiAdv()) setUiMode(false); // titre et numéro de l'étape des copies
   $('content-settings').hidden = kind !== 'content';
   $('lang-settings').hidden = kind !== 'lang';
   renderPda(); // exemples du primaire seulement en correction de la langue
@@ -2148,11 +2203,20 @@ function dropzone(zone, input, onFiles) {
 }
 
 dropzone($('drop'), $('files'), async (files, progress) => {
-  const added = await filesToPages(files, progress);
+  let added = await filesToPages(files, progress);
+  if (simpleContent() && added.length) { progress(tr('Un instant : je regarde ce que vous avez déposé…')); added = await sortDrop(added); progress(''); }
   state.pages.push(...added);
   // Regroupement choisi pour l'enseignant (il peut changer ensuite) : des photos ou fichiers d'une page = un élève
   // chacun ; un fichier de plusieurs pages (PDF du photocopieur) = on trouve où commence chaque copie.
-  if (!state.modeChosen) $('mode').value = state.pages.some((p) => !p.firstOfFile) ? 'auto' : 'file';
+  // Mode simple : plusieurs documents (PDF ou Word de plusieurs pages, remis par chaque élève) = un fichier par élève ;
+  // des photos d'une page chacune = des pages à regrouper (l'IA trouve où commence chaque copie).
+  const docs = [...new Set(state.pages.map((p) => p.file))];
+  const multi = docs.filter((f) => state.pages.filter((p) => p.file === f).length > 1 || /\.docx$/i.test(f));
+  if (!state.modeChosen) {
+    $('mode').value = simpleContent()
+      ? (docs.length > 1 && multi.length === docs.length) || (docs.length === 1 && /\.docx$/i.test(docs[0])) ? 'file' : docs.length === 1 && !multi.length ? 'file' : 'auto'
+      : !state.pages.some((p) => !p.firstOfFile) ? 'file' : 'auto';
+  }
   applyMode();
   if ($('mode').value === 'auto') { renderPages(); await detectCopies(); return; }
   renderPages();
@@ -2341,15 +2405,21 @@ const isDefault = (el) => (el.id === 'out-lang' ? el.value === lang
   : el.value === el.defaultValue);
 function setUiMode(adv) {
   $('app').classList.toggle('ui-simple', !adv);
+  $('app').dataset.kind = state.kind;
+  const simple = !adv && state.kind === 'content';
+  $('step2-no').textContent = simple ? '1' : '2';
+  $('step2-title').textContent = tr(simple ? 'Déposez vos copies' : state.kind === 'lang' ? $('step2-title').textContent : 'Insérer les copies');
   $('ui-simple').setAttribute('aria-pressed', String(!adv));
   $('ui-adv').setAttribute('aria-pressed', String(adv));
   $('adv-note').hidden = adv || advControls().every(isDefault);
   try { localStorage.setItem('ce.ui', adv ? 'adv' : 'simple'); } catch { /* ignoré */ }
+  renderPages(); // le mode simple cache les pages et la section 1 de la correction des copies
 }
 const uiAdv = () => !$('app').classList.contains('ui-simple');
 $('ui-simple').addEventListener('click', () => setUiMode(false));
 $('ui-adv').addEventListener('click', () => setUiMode(true));
 $('adv-show').addEventListener('click', (e) => { e.preventDefault(); setUiMode(true); });
+$('to-adv').addEventListener('click', (e) => { e.preventDefault(); setUiMode(true); $('app').querySelector('.s1').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
 advControls().forEach((el) => el.addEventListener('change', () => setUiMode(uiAdv())));
 let savedUi = null;
 try { savedUi = localStorage.getItem('ce.ui'); } catch { /* ignoré */ }

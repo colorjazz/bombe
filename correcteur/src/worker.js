@@ -74,7 +74,7 @@ const ROUTES = {
   'POST /api/grade': grade,
   'POST /api/split': split,
   'POST /api/orient': orient,
-  'POST /api/rubric': rubric,
+  'POST /api/rubric': rubric, 'POST /api/classify': classify,
   'POST /api/comment': rewriteComment,
   'POST /api/language': language,
   'POST /api/language-reread': languageReread,
@@ -467,13 +467,14 @@ function buildPrompt(o) {
     // parfois le commentaire en français (tutoiement), la consigne étant rédigée en français.
     o.english ? ENGLISH_OUTPUT : '',
     '',
-    `Évaluation : « ${o.exam || 'non précisé'} ». Barème total : ${o.total} points. Granularité : ${step} (aucune valeur plus fine).`,
+    o.total ? `Évaluation : « ${o.exam || 'non précisé'} ». Barème total : ${o.total} points. Granularité : ${step} (aucune valeur plus fine).`
+      : `Évaluation : « ${o.exam || 'non précisé'} ». Barème total : non fourni. Prends les points maximum de chaque question là où ils sont indiqués (énoncé sur la copie, corrigé) ; s'ils ne sont indiqués nulle part, note chaque question sur 10. Granularité : ${step} (aucune valeur plus fine).`,
     '',
     'MÉTHODE :',
     "1. Repère chaque question ou critère du barème. Si un corrigé ou une grille est fourni, suis-le strictement (questions, points par question, réponses attendues).",
     "2. Pour chaque question : lis ce que l'élève a réellement écrit, compare à la réponse attendue, attribue des points entre 0 et le maximum de la question. Accorde des points partiels quand la réponse est partiellement juste.",
     "3. Dans la justification, cite brièvement la réponse de l'élève et ce qui était attendu. Ne suppose jamais une réponse que tu ne lis pas : si c'est illisible, dis-le.",
-    `4. La somme des points maximum des questions doit faire ${o.total}. N'ajoute jamais de ligne « Total », « Note finale » ou « Sous-total » parmi les questions : chaque élément de la liste est une vraie question ou un vrai critère.`,
+    `4. ${o.total ? `La somme des points maximum des questions doit faire ${o.total}. ` : ''}N'ajoute jamais de ligne « Total », « Note finale » ou « Sous-total » parmi les questions : chaque élément de la liste est une vraie question ou un vrai critère.`,
     o.hasKey ? '' : "SANS CORRIGÉ : sois exigeant, comme un enseignant expérimenté. Une réponse vague, circulaire, trop courte ou incomplète ne mérite pas tous les points ; n'accorde le maximum qu'à une réponse complète, précise et justifiée.",
     o.checkLanguage
       ? "5. Tiens compte de la qualité de la langue (orthographe, grammaire) selon la grille ; sans indication de la grille, consacre-lui un critère « Qualité de la langue » raisonnable."
@@ -1268,6 +1269,36 @@ async function rubric(request, env) {
   return json({ grid, pointsWritten: copy ? !!raw.points_ecrits : true });
 }
 
+// Mode simple (gratuit) : l'enseignant dépose tout au même endroit ; pour chaque fichier, l'IA dit si sa première page
+// est une grille d'évaluation, un corrigé ou une copie d'élève, et le total de points indiqué s'il y en a un.
+async function classify(request, env) {
+  await getKey(env, bearer(request));
+  const { files } = await readJson(request);
+  const ok = (f) => f && typeof f.page === 'string' && /^data:image\/(jpeg|png|webp);base64,/.test(f.page) && f.page.length <= MAX_THUMB_CHARS;
+  if (!Array.isArray(files) || !files.length || files.length > 40 || !files.every(ok)) throw new HttpError(400, 'Fichiers invalides');
+  const parts = [{ text: "Un enseignant a déposé ces fichiers pour corriger des copies. Chaque image est la première page d'un fichier. Pour chacune, dis ce que c'est : "
+    + "« grille » = grille d'évaluation VIERGE (critères et niveaux de réussite, sans réponse d'élève) ; "
+    + "« corrige » = corrigé, clé de réponses ou barème de l'enseignant (questions avec les réponses attendues) ; "
+    + "« copie » = travail ou examen rempli par un élève (écriture d'élève, réponses personnelles), même s'il porte une grille ou un barème imprimé ; "
+    + "« autre » = rien de cela. « total » = le total de points indiqué sur une grille ou un corrigé (ex. « /40 », « Total : 100 points ») ; 0 s'il n'est pas indiqué ou pour une copie." }];
+  files.forEach((f, k) => parts.push({ text: `Image ${k} :` }, inlineImage(f.page)));
+  let raw;
+  try {
+    raw = await geminiNative(env, parts, { type: 'ARRAY', items: { type: 'OBJECT', properties: {
+      image: { type: 'INTEGER' }, type: { type: 'STRING', enum: ['grille', 'corrige', 'copie', 'autre'] }, total: { type: 'NUMBER' } }, required: ['image', 'type', 'total'] } },
+    env.LANG_MODEL, { thinking: 'low', timeoutMs: 45_000 });
+  } catch (err) {
+    console.error('Classement impossible :', err.message);
+    return json({ types: files.map(() => ({ type: 'copie', total: 0 })) }); // en cas de doute : des copies, comme avant
+  }
+  const byImage = new Map((Array.isArray(raw) ? raw : []).map((x) => [Number(x.image), x]));
+  return json({ types: files.map((_, k) => {
+    const x = byImage.get(k) || {};
+    const total = Number(x.total);
+    return { type: ['grille', 'corrige', 'copie', 'autre'].includes(x.type) ? x.type : 'copie', total: total > 0 && total <= 1000 ? total : 0 };
+  }) });
+}
+
 // Fiabilité : accord des deux corrections question par question (écarts de points rapportés au barème),
 // pénalisée si l'IA exprime un doute, ne lit pas le nom ou si le barème ne totalise pas.
 // Chaque question de la 1re correction reçoit `second` : les points de la 2e quand ils diffèrent.
@@ -1398,8 +1429,11 @@ async function split(request, env) {
 async function grade(request, env, url, ctx) {
   const key = bearer(request);
   const body = await readJson(request);
-  const total = Number(body.total);
-  if (!(total > 0 && total <= 1000)) throw new HttpError(400, 'Barème invalide');
+  // Mode simple : sans barème fourni (autoTotal), l'IA prend les points indiqués sur la copie ou le corrigé, et le
+  // total de la copie devient la somme des points maximum des questions.
+  let total = Number(body.total);
+  const autoTotal = !(total > 0) && !!body.autoTotal;
+  if (!autoTotal && !(total > 0 && total <= 1000)) throw new HttpError(400, 'Barème invalide');
   checkImages(body.pages, MAX_PAGES_PER_COPY, 'Copie');
   if (!body.pages.length) throw new HttpError(400, 'Copie vide');
   if (body.pages.reduce((n, p) => n + p.length, 0) > MAX_COPY_CHARS) throw new HttpError(413, 'Copie trop lourde : rechargez la page et réessayez, ou séparez-la en deux.');
@@ -1427,7 +1461,7 @@ async function grade(request, env, url, ctx) {
     const rubricPages = body.rubricPages || [];
     const errors = [];
     const attempt = async (p, opts) => {
-      try { return normalize(await callModel(env, p, rubricPages, body.pages, { ...opts, annotate: !!body.annotate }), total, unit); } catch (err) { errors.push(err); return null; }
+      try { return normalize(await callModel(env, p, rubricPages, body.pages, { ...opts, annotate: !!body.annotate }), total || Infinity, unit); } catch (err) { errors.push(err); return null; }
     };
     const impose = (list) => `${prompt}
 
@@ -1455,6 +1489,7 @@ ${list.map((q, i) => `${i + 1}. ${q.name} (sur ${fr(q.max)} points)`).join('\n')
       throw new HttpError(502, `La correction a échoué${hint}. Aucune page n'a été décomptée, réessayez.`);
     }
 
+    if (autoTotal) total = a.sumMax > 0 && a.sumMax <= 1000 ? a.sumMax : 10;
     const b = deep && a.questions.length && !a.illegible
       ? await (early || attempt(impose(a.questions.map((q) => ({ name: q.question, max: q.max }))) + SECOND_LOOK, secondOpts)) : null;
     if (grid) { snapToGrid(a, grid, unit); if (b) snapToGrid(b, grid, unit); }
