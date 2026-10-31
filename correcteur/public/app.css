@@ -568,3 +568,12 @@ body.light .layout > .levelbar { grid-column: 1 / -1; }
 .year-btns { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .35rem; }
 .year-btns button { font: inherit; font-weight: 600; padding: .6rem .9rem; min-width: 3.4rem; border-radius: 12px; border: 1.5px solid var(--line-2); background: var(--panel, #fff); color: inherit; cursor: pointer; }
 .year-btns button[aria-pressed="true"] { background: var(--primary, #4f46e5); border-color: var(--primary, #4f46e5); color: #fff; }
+
+/* Téléphone : un menu ou une ligne trop longue ne doit pas élargir toute la section (texte coupé à droite) */
+.stack > * { min-width: 0; }
+.panel select { max-width: 100%; }
+.mode { flex-wrap: wrap; }
+/* Téléphone : le gros bouton caméra d'abord, la zone de dépôt en plus petit */
+.drop.drop-small { padding: 1rem; }
+.drop.drop-small .ico { display: none; }
+#cam-open.cam-main { font-size: 1.05rem; padding: .95rem 1rem; }

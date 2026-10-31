@@ -2173,6 +2173,10 @@ function closeCamera(fromHistory) {
 }
 
 if (navigator.mediaDevices?.getUserMedia) $('cam-open').hidden = $('cam-hint').hidden = false;
+// Téléphone : la caméra de l'appli (toute la pile à la suite, sans quitter la page) passe avant la zone de dépôt,
+// qui sert aux photos déjà prises et aux fichiers. La caméra du téléphone, elle, ne prend qu'une photo à la fois.
+const touchCam = !!navigator.mediaDevices?.getUserMedia && matchMedia('(pointer: coarse)').matches;
+if (touchCam) { $('drop').before($('cam-open')); $('cam-open').classList.add('primary', 'big', 'block', 'cam-main'); $('drop').classList.add('drop-small'); }
 $('cam-open').addEventListener('click', openCamera);
 $('cam-done').addEventListener('click', () => closeCamera());
 window.addEventListener('popstate', () => closeCamera(true));
@@ -2217,6 +2221,11 @@ function dropzone(zone, input, onFiles) {
 
 dropzone($('drop'), $('files'), async (files, progress) => {
   let added = await filesToPages(files, progress);
+  // Une seule photo ajoutée au téléphone (souvent prise avec la caméra du téléphone) : la caméra de l'appli fait toute la pile.
+  if (touchCam && files.length === 1 && files[0].type.startsWith('image/') && state.pages.length < 2 && !state.camTipShown) {
+    state.camTipShown = true;
+    setTimeout(() => banner('info', 'Toute une classe à photographier ? Touchez « Prendre les copies en photo » : vous photographiez les pages à la suite, sans quitter l’appli. Vous pouvez aussi choisir plusieurs photos d’un coup dans votre galerie.'), 0);
+  }
   if (simpleContent() && added.length) { progress(tr('Un instant : je regarde ce que vous avez déposé…')); added = await sortDrop(added); progress(''); }
   state.pages.push(...added);
   // Regroupement choisi pour l'enseignant (il peut changer ensuite) : des photos ou fichiers d'une page = un élève
