@@ -1,0 +1,82 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><style>
+*{box-sizing:border-box;margin:0}
+body{font-family:Inter,sans-serif;background:#ddd;padding:20px;display:grid;gap:20px}
+.m{width:1080px;height:1080px;background:#fff;position:relative;overflow:hidden;display:flex;flex-direction:column}
+.foot{position:absolute;bottom:0;left:0;right:0;height:96px;background:#1f1b2e;color:#fff;display:flex;align-items:center;gap:18px;padding:0 44px;font-size:34px;font-weight:700}
+.foot img{width:58px;height:58px}.foot span{margin-left:auto;color:#fb923c}
+.e{font-family:"Noto Color Emoji",sans-serif}
+/* 1 : Non / Oui */
+.dr{display:grid;grid-template-columns:400px 1fr;height:492px;border-bottom:4px solid #1f1b2e}
+.dr .face{display:grid;place-items:center;font-size:230px}
+.dr .no{background:#fde7e7}.dr .yes{background:#e3f6ee}
+.dr .t{display:flex;align-items:center;padding:0 50px;font-size:56px;font-weight:800;line-height:1.15;color:#1f1b2e}
+/* 2 : tout va bien */
+.fine{background:linear-gradient(#fff4e5,#ffd9a8);flex:1;padding:60px 60px 0}
+.fine h2{font-size:58px;line-height:1.15;color:#1f1b2e}
+.scene{position:relative;height:560px;margin-top:20px}
+.scene .e{position:absolute}
+.bub{position:absolute;left:560px;top:-10px;background:#fff;border:5px solid #1f1b2e;border-radius:40px;padding:26px 40px;font-size:70px;font-weight:900}
+.fine p{position:absolute;bottom:120px;left:60px;right:60px;font-size:42px;font-weight:700;color:#7a3e00}
+/* 3 : personne */
+.pers{flex:1;margin-bottom:96px;display:flex;flex-direction:column;justify-content:center;padding:0 80px;font-size:66px;line-height:1.35;color:#1f1b2e;font-weight:600}
+.pers b{display:block;margin-top:60px;font-size:96px;font-weight:900;line-height:1.1;color:#d6283a}
+.pers small{display:block;margin-top:60px;font-size:46px;color:#4f46e5;font-weight:700}
+/* 4 : prévu / réel */
+.two{display:grid;grid-template-columns:1fr 1fr;flex:1;margin-bottom:96px}
+.two>div{padding:60px 44px;display:flex;flex-direction:column;gap:40px}
+.two h3{font-size:50px;line-height:1.15;color:#1f1b2e}
+.two .big{font-size:150px;line-height:1.2}
+.two .a{background:#e9f8f1}.two .b{background:#fde7e7;border-left:4px solid #1f1b2e}
+/* 5 : niveaux */
+.lv{display:grid;grid-template-rows:repeat(4,1fr);flex:1;margin-bottom:96px}
+.lv>div{display:grid;grid-template-columns:1fr 300px;border-bottom:4px solid #1f1b2e}
+.lv .t{display:flex;align-items:center;padding:0 46px;font-size:46px;font-weight:800;line-height:1.15;color:#1f1b2e}
+.lv .g{display:grid;place-items:center;font-size:120px}
+.lv>div:nth-child(1) .g{background:#e5e7eb}.lv>div:nth-child(2) .g{background:#c7d2fe}.lv>div:nth-child(3) .g{background:#a5b4fc}.lv>div:nth-child(4) .g{background:radial-gradient(#fff7c2,#fb923c);font-size:140px}
+.lv>div:nth-child(4) .t{background:#fff4e5;color:#7a3e00}
+</style></head><body>
+
+<div class="m" id="m1">
+  <div class="dr"><div class="face no e">🙅</div><div class="t">Corriger 90 copies le dimanche soir, seul dans la cuisine</div></div>
+  <div class="dr" style="border:0"><div class="face yes e">😎</div><div class="t">Photographier la pile, relire, ajuster… et souper avec ma famille</div></div>
+  <div class="foot"><img src="logo.png" alt="">Brûle la pile<span>brulelapile.ca</span></div>
+</div>
+
+<div class="m" id="m2">
+  <div class="fine"><h2>Moi, le 11 novembre au soir, devant ma pile de copies :</h2>
+    <div class="scene">
+      <div class="e" style="left:0;top:40px;font-size:150px">🔥</div><div class="e" style="left:40px;top:-40px;font-size:120px">🔥</div>
+      <div class="e" style="left:140px;top:300px;font-size:150px">📚</div><div class="e" style="left:250px;top:170px;font-size:240px">🐶</div>
+      <div class="e" style="left:560px;top:300px;font-size:130px">☕</div><div class="e" style="left:760px;top:300px;font-size:150px">📚</div>
+      <div class="e" style="left:880px;top:300px;font-size:120px">🔥</div>
+      <div class="bub">Tout va bien.</div>
+    </div>
+    <p>Ou bien… vous laissez Brûle la pile faire le premier jet.</p></div>
+  <div class="foot"><img src="logo.png" alt="">Brûle la pile<span>brulelapile.ca</span></div>
+</div>
+
+<div class="m" id="m3">
+  <div class="pers">Personne :<br>Absolument personne :<br>Les profs du Québec, la veille de la consignation :
+    <b>« J'ai juste besoin de 3 heures de plus. »</b>
+    <small>Brûle la pile vous les redonne. 30 pages gratuites pour essayer.</small></div>
+  <div class="foot"><img src="logo.png" alt="">Brûle la pile<span>brulelapile.ca</span></div>
+</div>
+
+<div class="m" id="m4">
+  <div class="two">
+    <div class="a"><h3>Ma fin de semaine prévue</h3><div class="big e">🍂🚶<br>🍷📖</div></div>
+    <div class="b"><h3>Ma fin de semaine réelle</h3><div class="big e">📚📚<br>✏️😵</div></div>
+  </div>
+  <div class="foot"><img src="logo.png" alt="">Cette fin de semaine, brûlez la pile.<span>brulelapile.ca</span></div>
+</div>
+
+<div class="m" id="m5">
+  <div class="lv">
+    <div><div class="t">Corriger au stylo rouge</div><div class="g e">🧠</div></div>
+    <div><div class="t">Corriger avec 4 cafés</div><div class="g e">🧠☕</div></div>
+    <div><div class="t">Corriger dans l'auto pendant le cours de natation du petit</div><div class="g e">🧠✨</div></div>
+    <div><div class="t">Photographier la pile et laisser Brûle la pile faire le premier jet</div><div class="g e">🌟</div></div>
+  </div>
+  <div class="foot"><img src="logo.png" alt="">Brûle la pile<span>brulelapile.ca</span></div>
+</div>
+</body></html>
