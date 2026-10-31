@@ -337,6 +337,7 @@ const EN = {
   '↑ Même élève': '↑ Same student', 'Même élève que la copie au-dessus : les réunir': 'Same student as the paper above: join them',
   'Deux élèves dans une même copie ? Touchez ✂ entre leurs pages. Une copie coupée en deux ? Touchez « ↑ Même élève ».': 'Two students in one paper? Tap ✂ between their pages. One paper split in two? Tap “↑ Same student”.',
   'Retirer toutes les pages ?': 'Remove all pages?',
+  'Acheter des pages · dès 14 $': 'Buy pages · from $14', 'Acheter': 'Buy',
 };
 
 // Textes avec des valeurs variables : [modèle français, traduction] ($1, $2… = valeurs capturées).

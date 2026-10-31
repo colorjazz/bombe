@@ -552,6 +552,7 @@ body.light .layout > .levelbar { grid-column: 1 / -1; }
 @media (max-width: 640px) {
   .topbar .top-menu { display: inline-flex; }
   .topbar .top-actions > :not(#balance):not(#top-menu) { display: none; }
+  #balance::after { content: ' · ' attr(data-buy); text-decoration: underline; } /* l'achat reste visible sur téléphone */
   .topbar .top-actions.open { flex-wrap: wrap; justify-content: flex-end; }
   .topbar .top-actions.open > :not([hidden]) { display: inline-flex !important; }
 }

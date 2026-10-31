@@ -50,7 +50,7 @@ T = {
   price_h='Payez à la page, sans abonnement',
   price_sub="Une classe de 30 élèves avec des copies de 3 pages : environ 5 $ en mode rapide, 10 $ en mode approfondi (double correction). La correction de la langue compte 1 page par page. Le corrigé n'est jamais facturé. Les pages achetées n'expirent pas.",
   prices=[('Découverte', '14 $', '200 pages', ['~7 ¢ la page', '~2 classes en mode rapide'], ''), ('Session', '29 $', '500 pages', ['~5,8 ¢ la page', '~5 classes en mode rapide, 2 à 3 en approfondi'], 'Le plus populaire'), ('Année', '79 $', '1 800 pages', ['~4,4 ¢ la page', "Toute l'année scolaire"], '')],
-  start='Essayer gratuitement d’abord',
+  start='ou essayer gratuitement d’abord', buy='Acheter', see_prices='Voir les tarifs →',
   price_note='Prix en dollars canadiens. Commencez par 30 pages gratuites. École ou centre de services ? <a href="mailto:bonjour@brulelapile.ca">Écrivez-nous</a> pour un tarif de groupe.',
   faq_h='Questions fréquentes',
   faq=[("L'IA remplace-t-elle mon jugement ?", "Non. Elle vous propose une note et une justification ; vous restez le correcteur. Tout est modifiable avant l'export, et les copies douteuses sont signalées."),
@@ -120,7 +120,7 @@ T = {
   price_h='Pay per page, no subscription',
   price_sub='A class of 30 students with 3-page tests: about $5 in quick mode, $10 in in-depth mode (double marking). Language checks count 1 page per page. The answer key is never charged. Purchased pages never expire.',
   prices=[('Starter', '$14 CAD', '200 pages', ['~7¢ per page', '~2 classes in quick mode'], ''), ('Term', '$29 CAD', '500 pages', ['~5.8¢ per page', '~5 classes in quick mode, 2–3 in-depth'], 'Most popular'), ('Year', '$79 CAD', '1,800 pages', ['~4.4¢ per page', 'The whole school year'], '')],
-  start='Try it free first',
+  start='or try it free first', buy='Buy', see_prices='See pricing →',
   price_note='Prices in Canadian dollars. Start with 30 free pages. A school or board? <a href="mailto:hello@burnthepile.com">Contact us</a> for group pricing.',
   faq_h='Frequently asked questions',
   faq=[('Does the AI replace my judgment?', 'No. It suggests a mark and a justification; you remain the marker. Everything can be edited before export, and papers that need a second look are flagged.'),
@@ -194,7 +194,7 @@ def page(L, d):
           <a class="btn primary big" href="app.html">{d['cta1']}</a>
           <a class="btn ghost big" href="#how">{d['cta2']}</a>
         </div>
-        <p class="key-line"><a href="app.html#cle">{d['key_line']}</a></p>
+        <p class="key-line"><a href="app.html#cle">{d['key_line']}</a><br><a href="#{d['anchor_prices']}">{d['see_prices']}</a></p>
         <p class="muted small">{d['reassure']}</p>
       </div>
       {f'<figure class="demo demo-prim" hidden><img src="{d["prim"]["img"]}" alt="{d["prim"]["alt"]}" width="1196" height="548"><figcaption>{d["prim"]["note"]}</figcaption></figure>' if d.get('prim') else ''}
@@ -242,7 +242,7 @@ def page(L, d):
       <h2>{d['price_h']}</h2>
       <p class="sub">{d['price_sub']}</p>
       <div class="grid3">
-        {''.join(f'<div class="panel price{" best" if badge else ""}"><b>{n}{f" <span class=\"pill\">{badge}</span>" if badge else ""}</b><div class="amount">{a} <small>{pg}</small></div><ul>{"".join(f"<li>{li}</li>" for li in lis)}</ul><a class="btn{" primary" if badge else ""} block" href="app.html">{d["start"]}</a></div>' for n, a, pg, lis, badge in d['prices'])}
+        {''.join(f'<div class="panel price{" best" if badge else ""}"><b>{n}{f" <span class=\"pill\">{badge}</span>" if badge else ""}</b><div class="amount">{a} <small>{pg}</small></div><ul>{"".join(f"<li>{li}</li>" for li in lis)}</ul><a class="btn{" primary" if badge else ""} block" href="app.html#acheter-{pack}">{d["buy"]} · {a}</a><a class="price-try" href="app.html">{d["start"]}</a></div>' for (n, a, pg, lis, badge), pack in zip(d['prices'], ['decouverte', 'session', 'annee']))}
       </div>
       <p class="muted small" style="margin-top:1rem">{d['price_note']}</p>
     </section>

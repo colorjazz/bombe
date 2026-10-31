@@ -80,6 +80,7 @@ function setBalance(pages) {
   b.hidden = pages == null;
   b.textContent = `${fmt(pages)} page${pages > 1 ? 's' : ''} restante${pages > 1 ? 's' : ''}`;
   b.classList.toggle('low', pages < 30);
+  b.dataset.buy = tr('Acheter');
   renderSummary();
 }
 
@@ -2472,3 +2473,5 @@ renderResults();
 
 // Lien « J'ai une clé » de l'accueil : le curseur est déjà dans le champ de la clé.
 if (location.hash === '#cle' && !$('gate').hidden) $('key-input').focus();
+// Arrivée depuis les tarifs de l'accueil (app.html#acheter-session) : la fenêtre d'achat s'ouvre et part vers le paiement.
+{ const m = location.hash.match(/^#acheter(?:-(decouverte|session|annee))?$/); if (m) { $('buy').hidden = false; history.replaceState(null, '', location.pathname + location.search); if (m[1]) buy(m[1]); } }
