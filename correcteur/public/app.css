@@ -577,3 +577,8 @@ body.light .layout > .levelbar { grid-column: 1 / -1; }
 .drop.drop-small { padding: 1rem; }
 .drop.drop-small .ico { display: none; }
 #cam-open.cam-main { font-size: 1.05rem; padding: .95rem 1rem; }
+/* Copie corrigée agrandie : ‹ › pour passer à la copie voisine */
+.zoom-nav { display: flex; align-items: center; gap: .4rem; margin-left: auto; }
+.zoom-nav[hidden] { display: none; }
+.zoom-nav .btn { width: 46px; height: 42px; padding: 0; font-size: 1.6rem; line-height: 1; }
+.zoom-nav .btn:disabled { opacity: .35; }

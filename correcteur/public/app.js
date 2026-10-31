@@ -1202,11 +1202,17 @@ function renderQuestionStats(graded) {
     h('span', { class: 'qv', textContent: letters ? value(q) : `${fmt(Math.round(q.avg * 10) / 10)} / ${fmt(q.max)} · ${pctText(fmt(Math.round(q.pct)))}` }))));
 }
 
-function renderResults() {
+// Copies affichées dans les résultats (onglet courant, recherche), dans l'ordre de la pile.
+function shownResults() {
   const q = $('search').value.trim().toLowerCase();
+  return state.results.filter((r) => (r.kind === 'lang') === (state.kind === 'lang'))
+    .filter((r) => !q || `${r.name} ${r.group} ${r.exam} ${r.file}`.toLowerCase().includes(q))
+    .sort((x, y) => (x.no ?? 0) - (y.no ?? 0));
+}
+
+function renderResults() {
   const mine = state.results.filter((r) => (r.kind === 'lang') === (state.kind === 'lang'));
-  const shown = mine.filter((r) => !q || `${r.name} ${r.group} ${r.exam} ${r.file}`.toLowerCase().includes(q))
-    .sort((x, y) => (x.no ?? 0) - (y.no ?? 0)); // même ordre que la pile de copies
+  const shown = shownResults();
   $('empty').hidden = !!mine.length;
   document.body.classList.toggle('has-results', !!mine.length); // résultats plus larges sur ordinateur
   $('cards').replaceChildren(...shown.map((r) => (r.kind === 'lang' ? langCard(r) : card(r))));
@@ -1218,10 +1224,34 @@ const copyTitle = (r) => [r.no ? `Copie ${r.no}` : '', r.name].filter(Boolean).j
 const copyLabel = (r) => [r.no ? `Copie ${r.no}` : '', r.file, r.exam, pl(r.pageCount, 'page', 'pages')].filter(Boolean).join(' · ');
 
 // Agrandissement des pages (miniatures avant correction, ou copie corrigée à côté de sa fiche).
-function openZoom(urls, title) {
+// nav : { list, i } pour passer d'une copie corrigée à l'autre sans fermer (flèches, clavier, glisser du doigt).
+let zoomNav = null;
+function openZoom(urls, title, nav = null) {
+  zoomNav = nav;
   $('zoom-title').textContent = title;
   $('zoom-pages').replaceChildren(...urls.map((url, i) => h('img', { src: url, alt: `Page ${i + 1}` })));
+  $('zoom-pages').scrollTop = 0;
+  $('zoom-nav').hidden = !nav;
+  if (nav) {
+    $('zoom-pos').textContent = tr(`${nav.i + 1} sur ${nav.list.length}`);
+    $('zoom-prev').disabled = nav.i === 0;
+    $('zoom-next').disabled = nav.i === nav.list.length - 1;
+  }
   $('zoom').hidden = false;
+}
+async function openCorrected(r) {
+  const list = shownResults().filter((x) => x.pageUrls && x.kind !== 'lang');
+  const i = list.indexOf(r);
+  openZoom(await annotatedPages(r), copyTitle(r), list.length > 1 && i >= 0 ? { list, i } : null);
+}
+let zoomBusy = false;
+async function zoomStep(d) {
+  const nav = zoomNav;
+  if (!nav || zoomBusy || $('zoom').hidden) return;
+  const r = nav.list[nav.i + d];
+  if (!r) return;
+  zoomBusy = true;
+  try { openZoom(await annotatedPages(r), copyTitle(r), { list: nav.list, i: nav.i + d }); } finally { zoomBusy = false; }
 }
 
 // Champ du nom ; avec le nom masqué, la bande du nom de la photo originale dessous, tant que le nom n'est pas tapé.
@@ -1453,7 +1483,7 @@ async function rewrite(r, box, btn) {
 function simpleActions(r, commentBox) {
   const opt = (label, onclick, cls = '') => h('button', { class: `btn ghost small ${cls}`, type: 'button', textContent: tr(label), onclick });
   return h('div', { class: 'card-simple' },
-    r.pageUrls ? h('button', { class: 'btn primary block', type: 'button', textContent: tr('Voir la copie corrigée'), onclick: async () => openZoom(await annotatedPages(r), copyTitle(r)) }) : null,
+    r.pageUrls ? h('button', { class: 'btn primary block', type: 'button', textContent: tr('Voir la copie corrigée'), onclick: () => openCorrected(r) }) : null,
     h('details', { class: 'more' }, h('summary', { textContent: tr('Plus d’options') }),
       h('div', { class: 'more-list' },
         opt(r.showTable ? '▴ Résumé des notes' : '✎ Modifier les notes', () => { r.showTable = !r.showTable; renderResults(); }),
@@ -1533,7 +1563,7 @@ function card(r) {
     simple ? simpleActions(r, commentBox) : h('div', { class: 'card-foot' },
       h('span', { textContent: copyLabel(r) }),
       h('div', { style: 'display:flex;gap:.4rem;flex-wrap:wrap' },
-        r.pageUrls ? h('button', { class: 'btn small', type: 'button', textContent: 'Voir la copie corrigée', onclick: async () => openZoom(await annotatedPages(r), copyTitle(r)) }) : null,
+        r.pageUrls ? h('button', { class: 'btn small', type: 'button', textContent: 'Voir la copie corrigée', onclick: () => openCorrected(r) }) : null,
         r.pageUrls ? h('button', { class: 'btn small', type: 'button', textContent: 'Imprimer cette copie', title: 'Imprimer la copie corrigée pour l’élève', onclick: () => printBatch([r], { copies: true }) }) : null,
         h('button', { class: 'btn ghost small', type: 'button', style: 'margin-left:1rem', textContent: 'Supprimer', onclick: () => {
           if (!confirm(tr(`Supprimer la correction de ${r.name || 'cet élève'} ?`))) return;
@@ -2288,6 +2318,19 @@ document.addEventListener('keydown', (e) => {
   }
 });
 $('zoom-close').addEventListener('click', () => { $('zoom').hidden = true; });
+$('zoom-prev').addEventListener('click', () => zoomStep(-1));
+$('zoom-next').addEventListener('click', () => zoomStep(1));
+document.addEventListener('keydown', (e) => { if (zoomNav && !$('zoom').hidden && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) zoomStep(e.key === 'ArrowLeft' ? -1 : 1); });
+{ // Glisser du doigt vers la gauche : copie suivante ; vers la droite : précédente (pas pendant un zoom à deux doigts).
+  let x0 = null, y0 = 0;
+  $('zoom-pages').addEventListener('touchstart', (e) => { if (e.touches.length === 1) { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; } else x0 = null; }, { passive: true });
+  $('zoom-pages').addEventListener('touchend', (e) => {
+    if (x0 == null || !zoomNav) return;
+    const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0;
+    x0 = null;
+    if (Math.abs(dx) > 70 && Math.abs(dy) < 50 && (window.visualViewport?.scale ?? 1) <= 1.05) zoomStep(dx < 0 ? 1 : -1);
+  }, { passive: true });
+}
 document.querySelectorAll('[data-close-viewer]').forEach((b) => b.addEventListener('click', () => { $('viewer').hidden = true; viewing = null; }));
 $('grid-remove').addEventListener('click', () => { state.grid = null; state.gridFolded = false; renderGrid(); });
 $('grid-fold').addEventListener('click', () => { state.gridFolded = !state.gridFolded; renderGrid(); });

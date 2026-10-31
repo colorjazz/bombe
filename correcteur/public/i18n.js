@@ -342,6 +342,7 @@ const EN = {
 
 // Textes avec des valeurs variables : [modèle français, traduction] ($1, $2… = valeurs capturées).
 const PATTERNS = [
+  [/^(\d+) sur (\d+)$/, '$1 of $2'],
   [/^(\d+) pages? photographiées?$/, (m, n) => `${n} page${n > 1 ? 's' : ''} captured`],
   [/^(\d+) pages? · gratuit, quelques secondes$/, (m, n) => `${n} page${n > 1 ? 's' : ''} · free, a few seconds`],
   [/^(\d+) pages? · il vous restera (\d+) pages?$/, (m, n, k) => `${n} page${n > 1 ? 's' : ''} · ${k} page${k > 1 ? 's' : ''} will be left`],
