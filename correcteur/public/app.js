@@ -1069,8 +1069,10 @@ async function runAll(only, calibrating = false) {
       // 1re copie bien corrigée avec un corrigé : ses questions servent de modèle pour les suivantes. Elles sont
       // découpées pareil, et les deux corrections du mode approfondi partent en même temps (deux fois plus rapide).
       // Seulement si les points maximum totalisent le barème : une question oubliée ne se propage pas.
-      if (!state.structure && hasKey && !settings.grid && !r.illegible && r.questions.length
-        && Math.abs(r.questions.reduce((x, q) => x + q.max, 0) - settings.total) < 1e-9) {
+      // Sans corrigé aussi : sinon chaque copie recevait son propre découpage (pas les mêmes points pour une même question).
+      const refTotal = settings.total > 0 ? settings.total : r.total;
+      if (!state.structure && !settings.grid && !r.illegible && r.questions.length && refTotal > 0
+        && Math.abs(r.questions.reduce((x, q) => x + q.max, 0) - refTotal) < 1e-9) {
         state.structure = { key: examKey, list: r.questions.map((q) => ({ name: q.question, max: q.max })) };
       }
       setBalance(r.pagesLeft);
@@ -1107,6 +1109,8 @@ async function runAll(only, calibrating = false) {
   // (leurs deux corrections partent alors en même temps). En mode rapide, attendre coûte plus que ça ne rapporte
   // (mesuré : 12 copies en 54 s contre 57 s) ; le découpage s'applique dès qu'une copie est finie.
   if (settings.deep && state.kind === 'content' && hasKey && !settings.grid && !state.structure && list.length > CONCURRENCY) await one(list[next++]);
+  // Sans corrigé : la 1re copie passe seule ; son découpage et son barème servent ensuite à toutes les autres.
+  else if (state.kind === 'content' && !hasKey && !settings.grid && !state.structure && list.length > 1) await one(list[next++]);
   await Promise.all(Array.from({ length: CONCURRENCY }, worker));
   clearInterval(timer);
   $('progress').hidden = true;
