@@ -109,6 +109,7 @@
           <label class="small">Date <input id="ad-date" type="date"></label>
           <label class="small">Montant dépensé ($) <input id="ad-amount" type="text" inputmode="decimal" placeholder="Ex. : 10,00" style="width:8rem"></label>
           <button id="ad-add" class="btn" type="button">Ajouter la dépense</button>
+          <button id="ad-reset" class="btn ghost" type="button" hidden>Tout effacer</button>
         </div>
         <p class="muted small" style="margin:0">Recopiez le « Montant dépensé » du Gestionnaire de publicités Meta, par exemple une fois par jour. Les essais et les ventes comptent à partir de la première dépense.</p>
         <div class="tablewrap"><table><tbody id="ad-list"></tbody></table></div>
@@ -337,6 +338,7 @@
       ].join('') : '<p class="muted small" style="margin:0">Ajoutez votre première dépense de pub ci-dessous.</p>';
       $('ad-list').innerHTML = list.map((x, i) => `<tr><td>${x.d}</td><td class="n">${money(x.c)}</td><td><button class="link" type="button" data-del="${i}" style="background:none;border:0;color:var(--red);cursor:pointer">retirer</button></td></tr>`).join('');
       $('ad-list').dataset.list = JSON.stringify(list);
+      $('ad-reset').hidden = !list.length;
     }
     $('ad-date').value = iso(Date.now());
     const saveSetting = async (name, value) => { await call('/api/admin/setting', 'POST', { name, value }); await load(); };
@@ -344,6 +346,10 @@
       const c = parseMoney($('ad-amount').value), d = $('ad-date').value;
       if (!(c > 0) || !d) { $('msg').textContent = 'Entrez une date et un montant.'; $('msg').className = 'small err'; return; }
       try { await saveSetting('ad_spend', [...(data.adSpend || []), { d, c }]); $('ad-amount').value = ''; } catch (e) { $('msg').textContent = e.message; $('msg').className = 'small err'; }
+    });
+    $('ad-reset').addEventListener('click', async () => {
+      if (!confirm('Effacer toutes les dépenses de pub saisies ?\n\nSeules vos saisies sont effacées : rien ne change dans Meta, ni dans les essais et les achats.')) return;
+      try { await saveSetting('ad_spend', []); } catch (e) { $('msg').textContent = e.message; $('msg').className = 'small err'; }
     });
     $('ad-list').addEventListener('click', async (e) => {
       const i = e.target.dataset?.del; if (i == null) return;
