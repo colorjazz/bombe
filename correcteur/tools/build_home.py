@@ -24,10 +24,11 @@ T = {
   og_desc="Brûle la pile propose la note et la rétroaction, et surligne les fautes de français. Vous gardez le dernier mot. 30 pages gratuites.",
   made='Fait au Québec', flag=QC_FLAG, nav_prices='Tarifs', nav_guide='Guide', guide_href='guide.html', nav_key='J’ai déjà une clé', nav_key_short='J’ai une clé', key_line='Vous avez déjà une clé d’accès ? Entrez-la ici →', nav_try='Essayer gratuitement', nav_try_short='Essayer', anchor_prices='tarifs',
   eyebrow='Fait par un prof, pour des profs · Primaire, secondaire et cégep',
-  h1='Brûle la pile fait <em>le premier jet</em>. Vous avez le dernier mot.',
-  lead="Photographiez ou numérisez les copies, même manuscrites, et ajoutez votre corrigé : chaque question reçoit une note proposée et son explication, et les fautes sont surlignées sur la copie. Vous relisez, ajustez et exportez.",
+  h1='Photographiez vos copies. <em>Brûle la pile les corrige.</em>',
+  lead="Même écrites à la main. Une note proposée et son explication pour chaque question, les fautes surlignées sur la copie. Vous relisez et vous gardez le dernier mot.",
+  later='Pas devant vos copies en ce moment ? <a href="mailto:?subject=Br%C3%BBle%20la%20pile%20%C3%A0%20essayer&amp;body=%C3%80%20essayer%20sur%20ma%20prochaine%20pile%20de%20copies%20%3A%20https%3A%2F%2Fbrulelapile.ca">Envoyez-vous le lien par courriel</a>',
   cta1='Essayer avec 30 pages gratuites', cta2='Voir comment ça marche',
-  reassure='Sans compte · Sans carte de crédit · Aucune copie conservée · Pensé pour la Loi 25',
+  reassure='30 pages gratuites · Sans compte · Sans carte de crédit · Aucune copie conservée',
   demo='demo-fr', demo_label='Démonstration : une copie manuscrite corrigée par Brûle la pile, avec la note et l’explication de chaque question', demo_note='Copie fictive ; notes, marques et explications produites par Brûle la pile.',
   steps_h='Trois étapes, quelques minutes', steps_sub="Pas de formation, pas d'installation. Ça fonctionne dans votre navigateur, sur ordinateur comme sur tablette.",
   steps=[('clip', '1. Votre corrigé', "Collez vos consignes ou importez votre corrigé (PDF, photo). Points par question, réponses acceptées, critères : Brûle la pile suit votre grille, ou vous en prépare une détaillée."),
@@ -94,10 +95,11 @@ T = {
   lead_by={'primaire': 'Photograph your students’ writing, even handwritten: Burn the Pile highlights the errors with explanations a child understands, counts the words and the error rate. You review and keep the final say.',
            'secondaire': 'Photograph or scan the papers, even handwritten: every question gets a suggested mark based on your answer key or rubric, and errors are highlighted on the paper. You review, adjust and export.',
            'cegep': 'Essays, analyses, long-answer exams: Burn the Pile applies your rubric criterion by criterion, justifies every mark and highlights writing errors. You review, adjust and export.'},
-  h1='Burn the Pile does <em>the first pass</em>. You make the call.',
-  lead='Photograph or scan the papers, even handwritten, and add your answer key: every question gets a suggested mark and its explanation, and errors are highlighted on the paper. You review, adjust and export.',
+  h1='Snap your papers. <em>Burn the Pile marks them.</em>',
+  lead='Even handwritten. A suggested mark and its explanation for every question, errors highlighted on the paper. You review and you make the final call.',
+  later='Not in front of your papers right now? <a href="mailto:?subject=Burn%20the%20Pile%20to%20try&amp;body=To%20try%20on%20my%20next%20pile%20of%20papers%3A%20https%3A%2F%2Fburnthepile.com">Email yourself the link</a>',
   cta1='Try it with 30 free pages', cta2='See how it works',
-  reassure='No account · No credit card · No student work stored · Privacy-first',
+  reassure='30 free pages · No account · No credit card · No student work stored',
   demo='demo-en', demo_label='Demo: a handwritten paper marked by Burn the Pile, with the mark and explanation for each question', demo_note='Fictional paper; marks, notes and explanations produced by Burn the Pile.',
   steps_h='Three steps, a few minutes', steps_sub='No training, nothing to install. It runs in your browser, on a computer or a tablet.',
   steps=[('clip', '1. Your answer key', 'Paste your instructions or upload your answer key (PDF, photo). Points per question, accepted answers, criteria: Burn the Pile follows your rubric, or builds a detailed one for you.'),
@@ -184,18 +186,21 @@ def page(L, d):
   <header class="topbar"><div class="wrap"><a class="brand" href="{d['file']}"><img class="logo" src="logo-96.png" alt="" width="40" height="40"><strong>{d['brand']}</strong></a><span id="made-ca" class="made-ca" hidden>{d['flag']}{d['made']}</span><div class="top-actions">{sw}<a class="btn ghost nav-x" href="#{d['anchor_prices']}">{d['nav_prices']}</a><a class="btn ghost nav-x" href="{d['guide_href']}">{d['nav_guide']}</a><a class="btn ghost nav-key" href="app.html#cle"><span class="k-long">{d['nav_key']}</span><span class="k-short">{d['nav_key_short']}</span></a><a class="btn primary nav-key" href="app.html"><span class="k-long">{d['nav_try']}</span><span class="k-short">{d['nav_try_short']}</span></a></div></div></header>
   <main class="wrap">
     <section class="hero">
-      <div>
+      <div class="hero-head">
         <img class="hero-logo" src="logo.png" alt="{d['brand']}" width="132" height="132">
         <span class="eyebrow">{d['eyebrow']}</span>
         <h1>{d['h1']}</h1>
         <p class="lead" id="lead">{d['lead']}</p>
-        <div class="lvl-pick" role="group" aria-label="{d['lvl_q']}"><span>{d['lvl_q']}</span><div class="lvl-btns">{''.join(f'<button type="button" data-niveau="{k}" aria-pressed="false">{t}</button>' for k, t in d['lvls'])}</div></div>
         <div class="cta">
           <a class="btn primary big" href="app.html">{d['cta1']}</a>
           <a class="btn ghost big" href="#how">{d['cta2']}</a>
         </div>
-        <p class="key-line"><a href="app.html#cle">{d['key_line']}</a><br><a href="#{d['anchor_prices']}">{d['see_prices']}</a></p>
         <p class="muted small">{d['reassure']}</p>
+      </div>
+      <div class="hero-rest">
+        <div class="lvl-pick" role="group" aria-label="{d['lvl_q']}"><span>{d['lvl_q']}</span><div class="lvl-btns">{''.join(f'<button type="button" data-niveau="{k}" aria-pressed="false">{t}</button>' for k, t in d['lvls'])}</div></div>
+        <p class="small later">{d['later']}</p>
+        <p class="key-line"><a href="app.html#cle">{d['key_line']}</a><br><a href="#{d['anchor_prices']}">{d['see_prices']}</a></p>
       </div>
       {f'<figure class="demo demo-prim" hidden><img src="{d["prim"]["img"]}" alt="{d["prim"]["alt"]}" width="1196" height="548"><figcaption>{d["prim"]["note"]}</figcaption></figure>' if d.get('prim') else ''}
       <figure class="demo demo-main">

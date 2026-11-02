@@ -1,5 +1,8 @@
-.hero { padding: 4.5rem 0 3rem; display: grid; grid-template-columns: 1.1fr 1fr; gap: 2.5rem; align-items: center; }
-@media (max-width: 900px) { .hero { grid-template-columns: 1fr; padding-top: 2.5rem; } }
+.hero { padding: 4.5rem 0 3rem; display: grid; grid-template-columns: 1.1fr 1fr; grid-template-areas: "head fig" "rest fig"; column-gap: 2.5rem; row-gap: 1rem; align-items: center; }
+.hero .hero-head { grid-area: head; align-self: end; } .hero .hero-rest { grid-area: rest; align-self: start; } .hero .demo { grid-area: fig; }
+/* Téléphone : le titre et le bouton, puis tout de suite la démo (on voit le produit), puis le reste. */
+@media (max-width: 900px) { .hero { grid-template-columns: 1fr; grid-template-areas: "head" "fig" "rest"; padding-top: 2.5rem; row-gap: 1.5rem; } }
+.hero .later { margin: .2rem 0 0; color: var(--muted); }
 .eyebrow { display: inline-block; font-size: .78rem; font-weight: 700; color: var(--primary-2); background: rgba(99,102,241,.12); border: 1px solid rgba(99,102,241,.3); padding: .3rem .75rem; border-radius: 999px; }
 .hero h1 { font-size: clamp(2rem, 5vw, 3.2rem); line-height: 1.1; margin: 1rem 0; font-weight: 800; }
 .hero h1 em { font-style: normal; color: var(--primary-2); }
