@@ -284,6 +284,8 @@ async function adminSetting(request, env) {
     if (!Array.isArray(value) || value.length > 500) throw new HttpError(400, 'Liste de dépenses invalide');
     clean = value.map((x) => ({ d: String(x.d || '').slice(0, 10), c: Math.round(Number(x.c)) }))
       .filter((x) => /^\d{4}-\d{2}-\d{2}$/.test(x.d) && x.c > 0 && x.c < 10_000_000);
+  } else if (name === 'ai_since') { // remise à zéro du coût de l'IA (corrections de test) : on compte à partir de maintenant
+    clean = Date.now();
   } else if (name === 'ai_cpp') {
     const v = Number(value);
     if (!(v >= 0 && v < 1000)) throw new HttpError(400, 'Coût par page invalide');
@@ -316,14 +318,14 @@ async function statsData(env) {
   const conf = Object.fromEntries(settings.results.map((r) => [r.name, r.value]));
   const parse = (v, d) => { try { return v == null ? d : JSON.parse(v); } catch { return d; } };
   const revenueSince = Number(conf.revenue_since) || 0;
-  const adSpend = parse(conf.ad_spend, []), aiCpp = parse(conf.ai_cpp, null);
+  const adSpend = parse(conf.ad_spend, []), aiCpp = parse(conf.ai_cpp, null), aiSince = Number(parse(conf.ai_since, 0)) || 0;
   const trialPages = Number(env.TRIAL_PAGES) || 30;
   const list = keys.results.map((k) => {
     // Une clé d'essai achetée avant le suivi des conversions a perdu sa marque « essai » : les pages restantes le trahissent.
     const given = Math.max((k.gift || 0) + (k.bought || 0) + (k.trial || k.converted ? trialPages : 0), k.left);
     return { ...k, type: k.gift ? 'gift' : k.bought ? 'bought' : k.trial ? 'trial' : 'other', given, used: given - k.left };
   });
-  return { keys: list, sales: sales.results, usage: usage.results, ideas: ideas.results, trialPages, since, revenueSince, adSpend, aiCpp, notify: !!env.NOTIFY_URL };
+  return { keys: list, sales: sales.results, usage: usage.results, ideas: ideas.results, trialPages, since, revenueSince, adSpend, aiCpp, aiSince, notify: !!env.NOTIFY_URL };
 }
 
 // Bilan IA, à la demande (bouton de la page admin) : l'IA ne reçoit que des chiffres agrégés et le texte des idées,

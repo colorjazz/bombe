@@ -363,19 +363,29 @@
     // Coût de l'IA : pages corrigées × coût estimé d'un appel (1 ¢ par page par défaut, ou la valeur de l'admin).
     const DEFAULT_CPP = 1;
     const aiCpp = () => (data.aiCpp != null ? data.aiCpp : DEFAULT_CPP);
+    // Pages comptées dans le coût de l'IA : depuis la dernière remise à zéro (corrections de test exclues).
+    const aiPages = (from, to) => pagesBetween(Math.max(from, data.aiSince || 0), to);
     const pagesBetween = (from, to) => Math.max(0, data.usage.filter((u) => u.created_at > from && u.created_at <= to).reduce((a, u) => a + u.pages, 0));
     function renderAi() {
       const cpp = aiCpp(); // cents par page
       $('cpp').value = String(Math.round(cpp * 1000) / 1000).replace('.', ',');
       const now = Date.now(), H = 3600000;
+      const since = data.aiSince || 0;
       $('ai-tiles').innerHTML = [
         tile(`${String(Math.round(cpp * 1000) / 1000).replace('.', ',')} ¢`, 'par appel (une page)', data.aiCpp == null ? 'estimation par défaut' : 'votre valeur'),
-        tile(money(pagesBetween(now - 24 * H, now) * cpp), 'dernières 24 h', `${nf(pagesBetween(now - 24 * H, now))} pages`),
-        tile(money(pagesBetween(now - 7 * 24 * H, now) * cpp), '7 derniers jours', `${nf(pagesBetween(now - 7 * 24 * H, now))} pages`),
-        tile(money(pagesBetween(now - 30 * 24 * H, now) * cpp), '30 derniers jours', `${nf(pagesBetween(now - 30 * 24 * H, now))} pages`),
+        tile(money(aiPages(0, now) * cpp), since ? `depuis le ${when(since)}` : 'total (90 derniers jours)',
+          `${nf(aiPages(0, now))} pages · <button type="button" class="link" id="ai-reset">Remettre à zéro</button>`),
+        tile(money(aiPages(now - 24 * H, now) * cpp), 'dernières 24 h', `${nf(aiPages(now - 24 * H, now))} pages`),
+        tile(money(aiPages(now - 7 * 24 * H, now) * cpp), '7 derniers jours', `${nf(aiPages(now - 7 * 24 * H, now))} pages`),
+        tile(money(aiPages(now - 30 * 24 * H, now) * cpp), '30 derniers jours', `${nf(aiPages(now - 30 * 24 * H, now))} pages`),
         tile(money((data.trialPages || 30) * cpp), 'un essai gratuit utilisé en entier', `${data.trialPages || 30} pages`),
       ].join('');
     }
+    $('ai-tiles').addEventListener('click', async (e) => {
+      if (e.target.id !== 'ai-reset') return;
+      if (!confirm('Remettre le coût de l’IA à zéro à partir de maintenant ?\n\nVos corrections de test ne seront plus comptées. Les pages utilisées restent dans les autres statistiques.')) return;
+      try { await saveSetting('ai_since', true); } catch (err) { $('msg').textContent = err.message; $('msg').className = 'small err'; }
+    });
     $('bill-calc').addEventListener('click', async () => {
       const c = parseMoney($('bill-amount').value), a = $('bill-from').value, b = $('bill-to').value;
       if (!(c > 0) || !a || !b) { $('msg').textContent = 'Entrez le montant et les deux dates de la facture.'; $('msg').className = 'small err'; return; }
@@ -410,7 +420,7 @@
         ['Achats', (f) => data.sales.filter((s) => inSpan(s.created_at, f)).length],
         ['Revenus', (f) => revenue(data.sales.filter((s) => inSpan(s.created_at, Math.max(f, data.revenueSince || 0)))), money],
         ['Idées reçues', (f) => data.ideas.filter((i) => inSpan(i.created_at, f)).length],
-        ['Coût de l’IA (estimé)', (f) => Math.round(pagesBetween(f, Date.now()) * aiCpp()), money],
+        ['Coût de l’IA (estimé)', (f) => Math.round(aiPages(f, Date.now()) * aiCpp()), money],
       ];
       $('recent').innerHTML = rows.map(([label, fn, fmt = nf]) => `<tr><td>${label}</td>${spans.map((f) => { const v = fn(f); return `<td class="n${v ? '' : ' z'}">${fmt(v)}</td>`; }).join('')}</tr>`).join('');
     }
