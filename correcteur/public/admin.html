@@ -65,6 +65,10 @@
     .pt p { margin: 0; }
     .pt blockquote { margin: .35rem 0 0; padding: .35rem .6rem; border-left: 3px solid var(--line-2); color: var(--muted); font-size: .85rem; white-space: pre-wrap; }
     .pt ul { margin: .35rem 0 0; padding-left: 1.1rem; font-size: .85rem; color: var(--muted); }
+    .tile .link { background: none; border: 0; padding: 0; color: var(--primary); font: inherit; font-size: .75rem; cursor: pointer; text-decoration: underline; }
+    table.recent th, table.recent td { text-align: right; }
+    table.recent th:first-child, table.recent td:first-child { text-align: left; white-space: nowrap; }
+    table.recent td.z { color: var(--faint); }
   </style>
 </head>
 <body>
@@ -93,6 +97,11 @@
 
     <section id="tab-overview" class="stack">
       <div id="tiles" class="tiles"><p class="muted">Entrez le mot de passe, puis « Afficher ».</p></div>
+      <section class="panel stack">
+        <h2>Activité récente</h2>
+        <div class="tablewrap"><table class="recent"><thead><tr><th></th><th>1 h</th><th>3 h</th><th>6 h</th><th>12 h</th><th>24 h</th><th>7 jours</th><th>30 jours</th></tr></thead><tbody id="recent"></tbody></table></div>
+        <p class="muted small" style="margin:0">Chaque colonne compte depuis maintenant : « 3 h » = les 3 dernières heures. Revenus comptés depuis la dernière remise à zéro.</p>
+      </section>
       <section class="panel stack insight">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap">
           <h2>Bilan et conseils</h2>
@@ -250,8 +259,9 @@
       const k = data.keys, by = (t) => k.filter((x) => x.type === t);
       const trials = by('trial'), gifts = by('gift'), bought = by('bought');
       const usedTrials = trials.filter((x) => x.used > 0);
-      const paid = data.sales.reduce((a, s) => a + (s.amount ?? PACK_PRICE[s.pages] ?? 0), 0);
-      const estimated = data.sales.some((s) => s.amount == null);
+      const counted = data.sales.filter((s) => s.created_at > (data.revenueSince || 0));
+      const paid = revenue(counted), allPaid = revenue(data.sales);
+      const estimated = counted.some((s) => s.amount == null);
       const conv = data.sales.filter((s) => s.from_trial).length;
       const pagesUsed = k.reduce((a, x) => a + Math.max(0, x.used), 0);
       const week = data.usage.filter((u) => u.created_at > Date.now() - 7 * 86400000).reduce((a, u) => a + u.pages, 0);
@@ -259,14 +269,40 @@
         tile(nf(trials.length), 'essais gratuits', `${nf(usedTrials.length)} utilisés (${trials.length ? Math.round((100 * usedTrials.length) / trials.length) : 0} %) · ${nf(usedTrials.reduce((a, x) => a + x.used, 0))} pages`),
         tile(nf(gifts.length), 'clés offertes', `${nf(gifts.filter((x) => x.used > 0).length)} utilisées · ${nf(gifts.reduce((a, x) => a + x.used, 0))} pages`),
         tile(nf(data.sales.length), 'achats', `${nf(bought.length)} clé(s) acheteuse(s)`),
-        tile(`${estimated ? '≈ ' : ''}${money(paid)}`, 'revenus', estimated ? 'certains montants estimés au prix du forfait' : 'montants réels, après codes promo'),
+        tile(`${estimated ? '≈ ' : ''}${money(paid)}`, data.revenueSince ? `revenus depuis le ${when(data.revenueSince)}` : 'revenus',
+          `${estimated ? 'certains montants estimés au prix du forfait · ' : ''}${data.revenueSince ? `total depuis le début : ${money(allPaid)} · ` : ''}<button type="button" class="link" id="rev-reset">Remettre à zéro</button>`),
         tile(nf(conv), 'essais convertis en achat', 'suivi depuis l’ajout des statistiques'),
         tile(nf(pagesUsed), 'pages utilisées (total)', `${nf(week)} ces 7 derniers jours`),
       ].join('');
       const days = lastDays(30), count = Object.fromEntries(days.map((d) => [d, 0]));
       for (const x of k) if ((x.type === 'trial' || x.converted) && count[day(x.created_at)] != null) count[day(x.created_at)]++;
       bars($('chart-trials'), days.map((d) => ({ label: d, short: d.slice(8), v: count[d] })), { unit: 'essai(s)', every: 3 });
+      renderRecent();
     }
+
+    // Activité par tranche de temps, depuis maintenant.
+    const revenue = (sales) => sales.reduce((a, s) => a + (s.amount ?? PACK_PRICE[s.pages] ?? 0), 0);
+    function renderRecent() {
+      const H = 3600000, spans = [1, 3, 6, 12, 24, 24 * 7, 24 * 30].map((h) => Date.now() - h * H);
+      const inSpan = (t, from) => t > from;
+      const rows = [
+        ['Nouveaux essais gratuits', (f) => data.keys.filter((k) => (k.type === 'trial' || k.converted) && inSpan(k.created_at, f)).length],
+        ['Profs actifs (clés qui ont corrigé)', (f) => new Set(data.usage.filter((u) => u.pages > 0 && inSpan(u.created_at, f)).map((u) => u.key)).size],
+        ['Corrections lancées', (f) => data.usage.filter((u) => u.pages > 0 && inSpan(u.created_at, f)).length],
+        ['Pages utilisées', (f) => Math.max(0, data.usage.filter((u) => inSpan(u.created_at, f)).reduce((a, u) => a + u.pages, 0))],
+        ['Achats', (f) => data.sales.filter((s) => inSpan(s.created_at, f)).length],
+        ['Revenus', (f) => revenue(data.sales.filter((s) => inSpan(s.created_at, Math.max(f, data.revenueSince || 0)))), money],
+        ['Idées reçues', (f) => data.ideas.filter((i) => inSpan(i.created_at, f)).length],
+      ];
+      $('recent').innerHTML = rows.map(([label, fn, fmt = nf]) => `<tr><td>${label}</td>${spans.map((f) => { const v = fn(f); return `<td class="n${v ? '' : ' z'}">${fmt(v)}</td>`; }).join('')}</tr>`).join('');
+    }
+
+    $('tiles').addEventListener('click', async (e) => {
+      if (e.target.id !== 'rev-reset') return;
+      if (!confirm('Remettre le compteur de revenus à zéro à partir de maintenant ?\n\nRien n’est effacé : les achats restent dans l’onglet « Achats », et le total depuis le début reste affiché.')) return;
+      try { await call('/api/admin/revenue-reset', 'POST', {}); await load(); }
+      catch (err) { $('msg').textContent = err.message; $('msg').className = 'small err'; }
+    });
 
     function renderGifts() {
       const g = data.keys.filter((x) => x.type === 'gift');

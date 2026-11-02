@@ -67,7 +67,7 @@ const ROUTES = {
   'POST /api/trial': trial,
   'POST /api/idea': idea,
   'POST /api/admin/keys': adminCreateKey, 'POST /api/admin/note': adminSetNote,
-  'GET /api/admin/keys': adminListKeys, 'POST /api/admin/ai-check': adminAiCheck, 'GET /api/admin/stats': adminStats, 'POST /api/admin/insight': adminInsight,
+  'GET /api/admin/keys': adminListKeys, 'POST /api/admin/ai-check': adminAiCheck, 'GET /api/admin/stats': adminStats, 'POST /api/admin/revenue-reset': adminRevenueReset, 'POST /api/admin/insight': adminInsight,
   'POST /api/checkout': checkout,
   'GET /api/claim': claim,
   'POST /api/stripe-webhook': stripeWebhook,
@@ -102,6 +102,8 @@ const DB_SCHEMA = [
   `CREATE INDEX IF NOT EXISTS usage_key ON usage (key, created_at)`,
   // Détail des ventes : montant payé (après code promo) et clé d'essai convertie en achat.
   `CREATE TABLE IF NOT EXISTS sales (session_id TEXT PRIMARY KEY, amount INTEGER, from_trial INTEGER NOT NULL DEFAULT 0)`,
+  // Réglages du fondateur (ex. revenue_since : début du compteur de revenus, après une remise à zéro).
+  `CREATE TABLE IF NOT EXISTS settings (name TEXT PRIMARY KEY, value TEXT)`,
 ];
 let schemaReady;
 function ensureSchema(env) {
@@ -247,9 +249,18 @@ async function adminStats(request, env) {
   return json(await statsData(env));
 }
 
+// Remise à zéro du compteur de revenus (achats de test du fondateur, par exemple) : rien n'est effacé,
+// les achats restent dans la base ; l'admin compte les revenus à partir de cette date.
+async function adminRevenueReset(request, env) {
+  await requireAdmin(request, env);
+  const now = Date.now();
+  await env.DB.prepare('INSERT INTO settings (name, value) VALUES (?, ?) ON CONFLICT(name) DO UPDATE SET value = excluded.value').bind('revenue_since', String(now)).run();
+  return json({ revenueSince: now });
+}
+
 async function statsData(env) {
   const since = Date.now() - 90 * DAY_MS;
-  const [keys, sales, usage, ideas] = await env.DB.batch([
+  const [keys, sales, usage, ideas, settings] = await env.DB.batch([
     env.DB.prepare(`SELECT k.key, k.pages AS left, k.is_trial AS trial, k.email, k.created_at, g.pages AS gift, g.note,
         (SELECT SUM(p.pages) FROM payments p WHERE p.key = k.key AND p.session_id NOT LIKE 'cs_test_%') AS bought,
         (SELECT MAX(s.from_trial) FROM payments p JOIN sales s ON s.session_id = p.session_id WHERE p.key = k.key) AS converted,
@@ -257,16 +268,18 @@ async function statsData(env) {
       FROM access_keys k LEFT JOIN gifts g ON g.key = k.key ORDER BY k.created_at DESC LIMIT 3000`),
     env.DB.prepare(`SELECT p.key, p.pages, p.created_at, s.amount, s.from_trial FROM payments p LEFT JOIN sales s ON s.session_id = p.session_id
       WHERE p.session_id NOT LIKE 'cs_test_%' ORDER BY p.created_at DESC LIMIT 1000`),
-    env.DB.prepare('SELECT pages, kind, created_at FROM usage WHERE created_at > ? ORDER BY created_at LIMIT 50000').bind(since),
+    env.DB.prepare('SELECT key, pages, kind, created_at FROM usage WHERE created_at > ? ORDER BY created_at LIMIT 50000').bind(since),
     env.DB.prepare('SELECT text, email, lang, created_at FROM ideas ORDER BY created_at DESC LIMIT 500'),
+    env.DB.prepare("SELECT value FROM settings WHERE name = 'revenue_since'"),
   ]);
+  const revenueSince = Number(settings.results[0]?.value) || 0;
   const trialPages = Number(env.TRIAL_PAGES) || 30;
   const list = keys.results.map((k) => {
     // Une clé d'essai achetée avant le suivi des conversions a perdu sa marque « essai » : les pages restantes le trahissent.
     const given = Math.max((k.gift || 0) + (k.bought || 0) + (k.trial || k.converted ? trialPages : 0), k.left);
     return { ...k, type: k.gift ? 'gift' : k.bought ? 'bought' : k.trial ? 'trial' : 'other', given, used: given - k.left };
   });
-  return { keys: list, sales: sales.results, usage: usage.results, ideas: ideas.results, trialPages, since };
+  return { keys: list, sales: sales.results, usage: usage.results, ideas: ideas.results, trialPages, since, revenueSince };
 }
 
 // Bilan IA, à la demande (bouton de la page admin) : l'IA ne reçoit que des chiffres agrégés et le texte des idées,
@@ -290,7 +303,7 @@ async function adminInsight(request, env) {
     cles_offertes: { total: by('gift').length, utilisees: by('gift').filter((k) => k.used > 0).length,
       jamais_utilisees_depuis_3_jours: by('gift').filter((k) => k.used === 0 && k.created_at < now - 3 * DAY).length },
     achats: { total: d.sales.length, '7_derniers_jours': d.sales.filter((x) => inDays(x.created_at, 0, 7)).length,
-      revenus_dollars: d.sales.reduce((x, s) => x + (s.amount ?? ({ 200: 1400, 500: 2900, 1800: 7900 }[s.pages] || 0)), 0) / 100,
+      revenus_dollars: d.sales.filter((x) => x.created_at > d.revenueSince).reduce((x, s) => x + (s.amount ?? ({ 200: 1400, 500: 2900, 1800: 7900 }[s.pages] || 0)), 0) / 100,
       essais_convertis: d.sales.filter((x) => x.from_trial).length },
     pages_utilisees: { '7_derniers_jours': sumUsage(0, 7), '7_jours_precedents': sumUsage(7, 14),
       langue: d.usage.filter((u) => u.kind === 'langue').reduce((x, u) => x + u.pages, 0), copies: d.usage.filter((u) => u.kind === 'copies').reduce((x, u) => x + u.pages, 0) },

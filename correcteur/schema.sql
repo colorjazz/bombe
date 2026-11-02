@@ -56,3 +56,9 @@ CREATE TABLE IF NOT EXISTS sales (
   amount     INTEGER,
   from_trial INTEGER NOT NULL DEFAULT 0
 );
+
+-- Réglages du fondateur (ex. revenue_since : début du compteur de revenus après une remise à zéro).
+CREATE TABLE IF NOT EXISTS settings (
+  name  TEXT PRIMARY KEY,
+  value TEXT
+);
