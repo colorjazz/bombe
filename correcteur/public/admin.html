@@ -102,6 +102,39 @@
         <div class="tablewrap"><table class="recent"><thead><tr><th></th><th>1 h</th><th>3 h</th><th>6 h</th><th>12 h</th><th>24 h</th><th>7 jours</th><th>30 jours</th></tr></thead><tbody id="recent"></tbody></table></div>
         <p class="muted small" style="margin:0">Chaque colonne compte depuis maintenant : « 3 h » = les 3 dernières heures. Revenus comptés depuis la dernière remise à zéro.</p>
       </section>
+      <section class="panel stack">
+        <h2>Publicité : coût par essai et par vente</h2>
+        <div id="ad-tiles" class="tiles"></div>
+        <div class="filters">
+          <label class="small">Date <input id="ad-date" type="date"></label>
+          <label class="small">Montant dépensé ($) <input id="ad-amount" type="text" inputmode="decimal" placeholder="Ex. : 10,00" style="width:8rem"></label>
+          <button id="ad-add" class="btn" type="button">Ajouter la dépense</button>
+        </div>
+        <p class="muted small" style="margin:0">Recopiez le « Montant dépensé » du Gestionnaire de publicités Meta, par exemple une fois par jour. Les essais et les ventes comptent à partir de la première dépense.</p>
+        <div class="tablewrap"><table><tbody id="ad-list"></tbody></table></div>
+      </section>
+      <section class="panel stack">
+        <h2>Coût de l'IA (estimé)</h2>
+        <div id="ai-tiles" class="tiles"></div>
+        <div class="filters">
+          <label class="small">Facture Google ($) <input id="bill-amount" type="text" inputmode="decimal" placeholder="Ex. : 4,20" style="width:7rem"></label>
+          <label class="small">du <input id="bill-from" type="date"></label>
+          <label class="small">au <input id="bill-to" type="date"></label>
+          <button id="bill-calc" class="btn" type="button">Calculer le coût par page</button>
+        </div>
+        <div class="filters">
+          <label class="small">ou directement : coût par page (¢) <input id="cpp" type="text" inputmode="decimal" style="width:6rem"></label>
+          <button id="cpp-save" class="btn ghost" type="button">Enregistrer</button>
+        </div>
+        <p class="muted small" style="margin:0">Le montant de votre facture Google Cloud (Facturation → Rapports), divisé par les pages corrigées pendant la même période. Recalculez de temps en temps : le prix dépend du modèle et de la longueur des copies.</p>
+      </section>
+      <section class="panel stack">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap">
+          <h2>Alerte à chaque vente</h2>
+          <button id="notify-test" class="btn" type="button">Envoyer une alerte de test</button>
+        </div>
+        <p id="notify-state" class="small" style="margin:0"></p>
+      </section>
       <section class="panel stack insight">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap">
           <h2>Bilan et conseils</h2>
@@ -277,8 +310,78 @@
       const days = lastDays(30), count = Object.fromEntries(days.map((d) => [d, 0]));
       for (const x of k) if ((x.type === 'trial' || x.converted) && count[day(x.created_at)] != null) count[day(x.created_at)]++;
       bars($('chart-trials'), days.map((d) => ({ label: d, short: d.slice(8), v: count[d] })), { unit: 'essai(s)', every: 3 });
-      renderRecent();
+      renderRecent(); renderAds(); renderAi();
+      $('notify-state').innerHTML = data.notify ? '<span class="ok">✓ Activée :</span> une notification arrive sur votre téléphone (appli ntfy) à chaque achat, avec le forfait et le montant seulement.'
+        : 'Pas encore activée : ajoutez le secret <b>NOTIFY_URL</b> dans Cloudflare (voir les explications reçues).';
     }
+
+    // Publicité : essais et ventes depuis la première dépense, divisés par le total dépensé.
+    const iso = (t) => new Date(t).toLocaleDateString('en-CA', { timeZone: TZ }); // AAAA-MM-JJ, heure du Québec
+    const parseMoney = (v) => Math.round(Number(String(v).replace(/\s|\$/g, '').replace(',', '.')) * 100);
+    function renderAds() {
+      const list = [...(data.adSpend || [])].sort((a, b) => a.d.localeCompare(b.d));
+      const spent = list.reduce((a, x) => a + x.c, 0);
+      const start = list[0]?.d;
+      const after = (t) => start && iso(t) >= start;
+      const trials = data.keys.filter((k) => (k.type === 'trial' || k.converted) && after(k.created_at)).length;
+      const sales = data.sales.filter((x) => after(x.created_at));
+      const rev = revenue(sales);
+      $('ad-tiles').innerHTML = list.length ? [
+        tile(money(spent), 'dépensé en publicité', `depuis le ${start}`),
+        tile(trials ? money(spent / trials) : '—', 'coût par essai gratuit', `${nf(trials)} essai(s) depuis le ${start}`),
+        tile(sales.length ? money(spent / sales.length) : '—', 'coût par vente', `${nf(sales.length)} vente(s) · ${money(rev)} de revenus`),
+        tile(spent ? `${(rev / spent).toLocaleString('fr-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} $` : '—', 'revenus pour 1 $ de pub', rev >= spent ? '<span class="ok">la pub est rentable</span>' : 'sous 1 $ : la pub coûte plus qu’elle ne rapporte (pour l’instant)'),
+      ].join('') : '<p class="muted small" style="margin:0">Ajoutez votre première dépense de pub ci-dessous.</p>';
+      $('ad-list').innerHTML = list.map((x, i) => `<tr><td>${x.d}</td><td class="n">${money(x.c)}</td><td><button class="link" type="button" data-del="${i}" style="background:none;border:0;color:var(--red);cursor:pointer">retirer</button></td></tr>`).join('');
+      $('ad-list').dataset.list = JSON.stringify(list);
+    }
+    $('ad-date').value = iso(Date.now());
+    const saveSetting = async (name, value) => { await call('/api/admin/setting', 'POST', { name, value }); await load(); };
+    $('ad-add').addEventListener('click', async () => {
+      const c = parseMoney($('ad-amount').value), d = $('ad-date').value;
+      if (!(c > 0) || !d) { $('msg').textContent = 'Entrez une date et un montant.'; $('msg').className = 'small err'; return; }
+      try { await saveSetting('ad_spend', [...(data.adSpend || []), { d, c }]); $('ad-amount').value = ''; } catch (e) { $('msg').textContent = e.message; $('msg').className = 'small err'; }
+    });
+    $('ad-list').addEventListener('click', async (e) => {
+      const i = e.target.dataset?.del; if (i == null) return;
+      const list = JSON.parse($('ad-list').dataset.list); list.splice(Number(i), 1);
+      try { await saveSetting('ad_spend', list); } catch (err) { $('msg').textContent = err.message; $('msg').className = 'small err'; }
+    });
+
+    // Coût de l'IA : pages corrigées × coût par page (calibré sur la facture Google).
+    const pagesBetween = (from, to) => Math.max(0, data.usage.filter((u) => u.created_at > from && u.created_at <= to).reduce((a, u) => a + u.pages, 0));
+    function renderAi() {
+      const cpp = data.aiCpp; // cents par page
+      $('cpp').value = cpp != null ? String(Math.round(cpp * 1000) / 1000).replace('.', ',') : '';
+      const now = Date.now(), H = 3600000;
+      $('ai-tiles').innerHTML = cpp == null ? '<p class="muted small" style="margin:0">Entrez votre facture Google ci-dessous pour estimer le coût de l’IA.</p>' : [
+        tile(`${String(Math.round(cpp * 1000) / 1000).replace('.', ',')} ¢`, 'par page corrigée', 'estimation'),
+        tile(money(pagesBetween(now - 24 * H, now) * cpp), 'dernières 24 h', `${nf(pagesBetween(now - 24 * H, now))} pages`),
+        tile(money(pagesBetween(now - 7 * 24 * H, now) * cpp), '7 derniers jours', `${nf(pagesBetween(now - 7 * 24 * H, now))} pages`),
+        tile(money(pagesBetween(now - 30 * 24 * H, now) * cpp), '30 derniers jours', `${nf(pagesBetween(now - 30 * 24 * H, now))} pages`),
+        tile(money((data.trialPages || 30) * cpp), 'un essai gratuit utilisé en entier', `${data.trialPages || 30} pages`),
+      ].join('');
+    }
+    $('bill-calc').addEventListener('click', async () => {
+      const c = parseMoney($('bill-amount').value), a = $('bill-from').value, b = $('bill-to').value;
+      if (!(c > 0) || !a || !b) { $('msg').textContent = 'Entrez le montant et les deux dates de la facture.'; $('msg').className = 'small err'; return; }
+      const from = new Date(`${a}T00:00:00-05:00`).getTime(), to = new Date(`${b}T23:59:59-05:00`).getTime();
+      const pages = pagesBetween(from, to);
+      if (!pages) { $('msg').textContent = 'Aucune page corrigée pendant cette période (le journal garde 90 jours).'; $('msg').className = 'small err'; return; }
+      try { await saveSetting('ai_cpp', c / pages); $('msg').textContent = `✓ ${money(c)} ÷ ${nf(pages)} pages`; $('msg').className = 'small ok'; } catch (e) { $('msg').textContent = e.message; $('msg').className = 'small err'; }
+    });
+    $('cpp-save').addEventListener('click', async () => {
+      const v = Number(String($('cpp').value).replace(',', '.'));
+      if (!(v >= 0)) return;
+      try { await saveSetting('ai_cpp', v); } catch (e) { $('msg').textContent = e.message; $('msg').className = 'small err'; }
+    });
+    $('notify-test').addEventListener('click', async () => {
+      try {
+        const r = await call('/api/admin/notify-test', 'POST', {});
+        $('notify-state').innerHTML = !r.configured ? 'Pas encore activée : ajoutez le secret <b>NOTIFY_URL</b> dans Cloudflare.'
+          : r.ok ? '<span class="ok">✓ Alerte de test envoyée : regardez votre téléphone.</span>' : '<span class="err">L’alerte n’est pas partie : vérifiez l’adresse NOTIFY_URL.</span>';
+      } catch (e) { $('notify-state').innerHTML = `<span class="err">${esc(e.message)}</span>`; }
+    });
 
     // Activité par tranche de temps, depuis maintenant.
     const revenue = (sales) => sales.reduce((a, s) => a + (s.amount ?? PACK_PRICE[s.pages] ?? 0), 0);
@@ -293,6 +396,7 @@
         ['Achats', (f) => data.sales.filter((s) => inSpan(s.created_at, f)).length],
         ['Revenus', (f) => revenue(data.sales.filter((s) => inSpan(s.created_at, Math.max(f, data.revenueSince || 0)))), money],
         ['Idées reçues', (f) => data.ideas.filter((i) => inSpan(i.created_at, f)).length],
+        ...(data.aiCpp != null ? [['Coût de l’IA (estimé)', (f) => Math.round(pagesBetween(f, Date.now()) * data.aiCpp), money]] : []),
       ];
       $('recent').innerHTML = rows.map(([label, fn, fmt = nf]) => `<tr><td>${label}</td>${spans.map((f) => { const v = fn(f); return `<td class="n${v ? '' : ' z'}">${fmt(v)}</td>`; }).join('')}</tr>`).join('');
     }

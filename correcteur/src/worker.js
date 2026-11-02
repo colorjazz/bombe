@@ -67,7 +67,7 @@ const ROUTES = {
   'POST /api/trial': trial,
   'POST /api/idea': idea,
   'POST /api/admin/keys': adminCreateKey, 'POST /api/admin/note': adminSetNote,
-  'GET /api/admin/keys': adminListKeys, 'POST /api/admin/ai-check': adminAiCheck, 'GET /api/admin/stats': adminStats, 'POST /api/admin/revenue-reset': adminRevenueReset, 'POST /api/admin/insight': adminInsight,
+  'GET /api/admin/keys': adminListKeys, 'POST /api/admin/ai-check': adminAiCheck, 'GET /api/admin/stats': adminStats, 'POST /api/admin/revenue-reset': adminRevenueReset, 'POST /api/admin/setting': adminSetting, 'POST /api/admin/notify-test': adminNotifyTest, 'POST /api/admin/insight': adminInsight,
   'POST /api/checkout': checkout,
   'GET /api/claim': claim,
   'POST /api/stripe-webhook': stripeWebhook,
@@ -258,6 +258,30 @@ async function adminRevenueReset(request, env) {
   return json({ revenueSince: now });
 }
 
+// Réglages modifiables depuis l'admin : dépenses de pub (pour le coût par essai) et coût de l'IA par page.
+async function adminSetting(request, env) {
+  await requireAdmin(request, env);
+  const { name, value } = await readJson(request);
+  let clean;
+  if (name === 'ad_spend') {
+    if (!Array.isArray(value) || value.length > 500) throw new HttpError(400, 'Liste de dépenses invalide');
+    clean = value.map((x) => ({ d: String(x.d || '').slice(0, 10), c: Math.round(Number(x.c)) }))
+      .filter((x) => /^\d{4}-\d{2}-\d{2}$/.test(x.d) && x.c > 0 && x.c < 10_000_000);
+  } else if (name === 'ai_cpp') {
+    const v = Number(value);
+    if (!(v >= 0 && v < 1000)) throw new HttpError(400, 'Coût par page invalide');
+    clean = v;
+  } else throw new HttpError(400, 'Réglage inconnu');
+  await env.DB.prepare('INSERT INTO settings (name, value) VALUES (?, ?) ON CONFLICT(name) DO UPDATE SET value = excluded.value').bind(name, JSON.stringify(clean)).run();
+  return json({ name, value: clean });
+}
+
+async function adminNotifyTest(request, env) {
+  await requireAdmin(request, env);
+  if (!env.NOTIFY_URL) return json({ ok: false, configured: false });
+  return json({ ok: await notify(env, 'Les alertes de vente fonctionnent.', 'Test Brûle la pile ✅'), configured: true });
+}
+
 async function statsData(env) {
   const since = Date.now() - 90 * DAY_MS;
   const [keys, sales, usage, ideas, settings] = await env.DB.batch([
@@ -270,16 +294,19 @@ async function statsData(env) {
       WHERE p.session_id NOT LIKE 'cs_test_%' ORDER BY p.created_at DESC LIMIT 1000`),
     env.DB.prepare('SELECT key, pages, kind, created_at FROM usage WHERE created_at > ? ORDER BY created_at LIMIT 50000').bind(since),
     env.DB.prepare('SELECT text, email, lang, created_at FROM ideas ORDER BY created_at DESC LIMIT 500'),
-    env.DB.prepare("SELECT value FROM settings WHERE name = 'revenue_since'"),
+    env.DB.prepare('SELECT name, value FROM settings'),
   ]);
-  const revenueSince = Number(settings.results[0]?.value) || 0;
+  const conf = Object.fromEntries(settings.results.map((r) => [r.name, r.value]));
+  const parse = (v, d) => { try { return v == null ? d : JSON.parse(v); } catch { return d; } };
+  const revenueSince = Number(conf.revenue_since) || 0;
+  const adSpend = parse(conf.ad_spend, []), aiCpp = parse(conf.ai_cpp, null);
   const trialPages = Number(env.TRIAL_PAGES) || 30;
   const list = keys.results.map((k) => {
     // Une clé d'essai achetée avant le suivi des conversions a perdu sa marque « essai » : les pages restantes le trahissent.
     const given = Math.max((k.gift || 0) + (k.bought || 0) + (k.trial || k.converted ? trialPages : 0), k.left);
     return { ...k, type: k.gift ? 'gift' : k.bought ? 'bought' : k.trial ? 'trial' : 'other', given, used: given - k.left };
   });
-  return { keys: list, sales: sales.results, usage: usage.results, ideas: ideas.results, trialPages, since, revenueSince };
+  return { keys: list, sales: sales.results, usage: usage.results, ideas: ideas.results, trialPages, since, revenueSince, adSpend, aiCpp, notify: !!env.NOTIFY_URL };
 }
 
 // Bilan IA, à la demande (bouton de la page admin) : l'IA ne reçoit que des chiffres agrégés et le texte des idées,
@@ -431,8 +458,25 @@ async function creditSession(env, session) {
     await env.DB.prepare(`INSERT INTO access_keys (key, pages, email, is_trial, created_at) VALUES (?, ?, ?, 0, ?)
       ON CONFLICT(key) DO UPDATE SET pages = pages + excluded.pages, is_trial = 0, email = COALESCE(excluded.email, email)`)
       .bind(key, pages, session.customer_details?.email || null, now).run();
+    const pack = { 200: 'Découverte', 500: 'Session', 1800: 'Année' }[pages] || `${pages} pages`;
+    const paid = Number.isFinite(session.amount_total) ? `${(session.amount_total / 100).toFixed(2).replace('.', ',')} $` : '';
+    await notify(env, `${pack} (${pages} pages)${paid ? ` · ${paid}` : ''}${before?.is_trial ? ' · après un essai gratuit' : ''}`,
+      `Nouvelle vente${String(session.id).startsWith('cs_test_') ? ' (test)' : ''} 🎉`);
   }
   return { key, pages };
+}
+
+// Alerte au fondateur (appli ntfy sur son téléphone) : NOTIFY_URL = https://ntfy.sh/<sujet secret>, dans Cloudflare.
+// Seulement le forfait et le montant : jamais de clé, de nom ni de courriel. Une alerte ratée ne bloque jamais la vente.
+async function notify(env, message, title) {
+  if (!env.NOTIFY_URL) return false;
+  try {
+    // Publication en JSON (accents et émojis permis, contrairement aux en-têtes HTTP) : sujet = chemin de l'adresse.
+    const u = new URL(env.NOTIFY_URL);
+    const res = await fetch(u.origin, { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(5000),
+      body: JSON.stringify({ topic: u.pathname.replace(/^\/+|\/+$/g, ''), title, message, tags: ['moneybag'] }) });
+    return res.ok;
+  } catch (err) { console.error('Alerte impossible :', err.message); return false; }
 }
 
 // Stripe prévient le site après chaque paiement : les pages sont créditées même si le client
