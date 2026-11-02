@@ -117,16 +117,19 @@
         <h2>Coût de l'IA (estimé)</h2>
         <div id="ai-tiles" class="tiles"></div>
         <div class="filters">
+          <label class="small">Coût estimé d'un appel à l'IA, par page (¢) <input id="cpp" type="text" inputmode="decimal" style="width:6rem"></label>
+          <button id="cpp-save" class="btn" type="button">Enregistrer</button>
+        </div>
+        <p class="muted small" style="margin:0">Coût de l'IA = pages corrigées × coût d'un appel. Par défaut : 1 ¢ par page, une estimation pour une page photographiée (image, consignes et réponse de l'IA) au tarif d'un modèle Gemini Flash. Une page en mode approfondi compte déjà pour 2.</p>
+        <details class="data"><summary>Ajuster avec ma facture Google</summary>
+        <div class="filters" style="margin-top:.5rem">
           <label class="small">Facture Google ($) <input id="bill-amount" type="text" inputmode="decimal" placeholder="Ex. : 4,20" style="width:7rem"></label>
           <label class="small">du <input id="bill-from" type="date"></label>
           <label class="small">au <input id="bill-to" type="date"></label>
-          <button id="bill-calc" class="btn" type="button">Calculer le coût par page</button>
+          <button id="bill-calc" class="btn ghost" type="button">Calculer le coût réel par page</button>
         </div>
-        <div class="filters">
-          <label class="small">ou directement : coût par page (¢) <input id="cpp" type="text" inputmode="decimal" style="width:6rem"></label>
-          <button id="cpp-save" class="btn ghost" type="button">Enregistrer</button>
-        </div>
-        <p class="muted small" style="margin:0">Le montant de votre facture Google Cloud (Facturation → Rapports), divisé par les pages corrigées pendant la même période. Recalculez de temps en temps : le prix dépend du modèle et de la longueur des copies.</p>
+        <p class="muted small" style="margin:.3rem 0 0">Le montant de votre facture Google Cloud (Facturation → Rapports), divisé par les pages corrigées pendant la même période.</p>
+        </details>
       </section>
       <section class="panel stack">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap">
@@ -348,14 +351,16 @@
       try { await saveSetting('ad_spend', list); } catch (err) { $('msg').textContent = err.message; $('msg').className = 'small err'; }
     });
 
-    // Coût de l'IA : pages corrigées × coût par page (calibré sur la facture Google).
+    // Coût de l'IA : pages corrigées × coût estimé d'un appel (1 ¢ par page par défaut, ou la valeur de l'admin).
+    const DEFAULT_CPP = 1;
+    const aiCpp = () => (data.aiCpp != null ? data.aiCpp : DEFAULT_CPP);
     const pagesBetween = (from, to) => Math.max(0, data.usage.filter((u) => u.created_at > from && u.created_at <= to).reduce((a, u) => a + u.pages, 0));
     function renderAi() {
-      const cpp = data.aiCpp; // cents par page
-      $('cpp').value = cpp != null ? String(Math.round(cpp * 1000) / 1000).replace('.', ',') : '';
+      const cpp = aiCpp(); // cents par page
+      $('cpp').value = String(Math.round(cpp * 1000) / 1000).replace('.', ',');
       const now = Date.now(), H = 3600000;
-      $('ai-tiles').innerHTML = cpp == null ? '<p class="muted small" style="margin:0">Entrez votre facture Google ci-dessous pour estimer le coût de l’IA.</p>' : [
-        tile(`${String(Math.round(cpp * 1000) / 1000).replace('.', ',')} ¢`, 'par page corrigée', 'estimation'),
+      $('ai-tiles').innerHTML = [
+        tile(`${String(Math.round(cpp * 1000) / 1000).replace('.', ',')} ¢`, 'par appel (une page)', data.aiCpp == null ? 'estimation par défaut' : 'votre valeur'),
         tile(money(pagesBetween(now - 24 * H, now) * cpp), 'dernières 24 h', `${nf(pagesBetween(now - 24 * H, now))} pages`),
         tile(money(pagesBetween(now - 7 * 24 * H, now) * cpp), '7 derniers jours', `${nf(pagesBetween(now - 7 * 24 * H, now))} pages`),
         tile(money(pagesBetween(now - 30 * 24 * H, now) * cpp), '30 derniers jours', `${nf(pagesBetween(now - 30 * 24 * H, now))} pages`),
@@ -396,7 +401,7 @@
         ['Achats', (f) => data.sales.filter((s) => inSpan(s.created_at, f)).length],
         ['Revenus', (f) => revenue(data.sales.filter((s) => inSpan(s.created_at, Math.max(f, data.revenueSince || 0)))), money],
         ['Idées reçues', (f) => data.ideas.filter((i) => inSpan(i.created_at, f)).length],
-        ...(data.aiCpp != null ? [['Coût de l’IA (estimé)', (f) => Math.round(pagesBetween(f, Date.now()) * data.aiCpp), money]] : []),
+        ['Coût de l’IA (estimé)', (f) => Math.round(pagesBetween(f, Date.now()) * aiCpp()), money],
       ];
       $('recent').innerHTML = rows.map(([label, fn, fmt = nf]) => `<tr><td>${label}</td>${spans.map((f) => { const v = fn(f); return `<td class="n${v ? '' : ' z'}">${fmt(v)}</td>`; }).join('')}</tr>`).join('');
     }
