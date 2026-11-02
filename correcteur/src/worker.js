@@ -270,7 +270,8 @@ async function adminStats(request, env) {
 // les achats restent dans la base ; l'admin compte les revenus à partir de cette date.
 async function adminRevenueReset(request, env) {
   await requireAdmin(request, env);
-  const now = Date.now();
+  const { undo } = await readJson(request).catch(() => ({}));
+  const now = undo ? 0 : Date.now(); // undo : on recompte depuis le début
   await env.DB.prepare('INSERT INTO settings (name, value) VALUES (?, ?) ON CONFLICT(name) DO UPDATE SET value = excluded.value').bind('revenue_since', String(now)).run();
   return json({ revenueSince: now });
 }
@@ -284,8 +285,11 @@ async function adminSetting(request, env) {
     if (!Array.isArray(value) || value.length > 500) throw new HttpError(400, 'Liste de dépenses invalide');
     clean = value.map((x) => ({ d: String(x.d || '').slice(0, 10), c: Math.round(Number(x.c)) }))
       .filter((x) => /^\d{4}-\d{2}-\d{2}$/.test(x.d) && x.c > 0 && x.c < 10_000_000);
-  } else if (name === 'ai_since') { // remise à zéro du coût de l'IA (corrections de test) : on compte à partir de maintenant
-    clean = Date.now();
+  } else if (name === 'ai_since') { // remise à zéro du coût de l'IA : on compte à partir de maintenant (0 = annuler)
+    clean = value === 0 ? 0 : Date.now();
+  } else if (name === 'test_keys') { // clés du fondateur (tests) : exclues de toutes les statistiques
+    if (!Array.isArray(value) || value.length > 500) throw new HttpError(400, 'Liste de clés invalide');
+    clean = [...new Set(value.map((k) => String(k).trim()).filter((k) => /^CE-[A-Z0-9-]{5,40}$/.test(k)))];
   } else if (name === 'ai_cpp') {
     const v = Number(value);
     if (!(v >= 0 && v < 1000)) throw new HttpError(400, 'Coût par page invalide');
@@ -319,13 +323,16 @@ async function statsData(env) {
   const parse = (v, d) => { try { return v == null ? d : JSON.parse(v); } catch { return d; } };
   const revenueSince = Number(conf.revenue_since) || 0;
   const adSpend = parse(conf.ad_spend, []), aiCpp = parse(conf.ai_cpp, null), aiSince = Number(parse(conf.ai_since, 0)) || 0;
+  // Clés de test du fondateur : marquées dans la liste, et leurs pages et achats ne comptent nulle part.
+  const testKeys = parse(conf.test_keys, []), isTest = new Set(testKeys);
   const trialPages = Number(env.TRIAL_PAGES) || 30;
   const list = keys.results.map((k) => {
     // Une clé d'essai achetée avant le suivi des conversions a perdu sa marque « essai » : les pages restantes le trahissent.
     const given = Math.max((k.gift || 0) + (k.bought || 0) + (k.trial || k.converted ? trialPages : 0), k.left);
     return { ...k, type: k.gift ? 'gift' : k.bought ? 'bought' : k.trial ? 'trial' : 'other', given, used: given - k.left };
   });
-  return { keys: list, sales: sales.results, usage: usage.results, ideas: ideas.results, trialPages, since, revenueSince, adSpend, aiCpp, aiSince, notify: !!env.NOTIFY_URL };
+  list.forEach((k) => { k.test = isTest.has(k.key); });
+  return { keys: list, sales: sales.results.filter((x) => !isTest.has(x.key)), usage: usage.results.filter((u) => !isTest.has(u.key)), ideas: ideas.results, testKeys, trialPages, since, revenueSince, adSpend, aiCpp, aiSince, notify: !!env.NOTIFY_URL };
 }
 
 // Bilan IA, à la demande (bouton de la page admin) : l'IA ne reçoit que des chiffres agrégés et le texte des idées,
@@ -340,7 +347,7 @@ async function adminInsight(request, env) {
   const d = await statsData(env);
   const now = Date.now(), DAY = DAY_MS;
   const inDays = (t, a, b) => t > now - b * DAY && t <= now - a * DAY;
-  const by = (t) => d.keys.filter((k) => k.type === t);
+  const by = (t) => d.keys.filter((k) => k.type === t && !k.test);
   const sumUsage = (a, b) => d.usage.filter((u) => inDays(u.created_at, a, b)).reduce((x, u) => x + u.pages, 0);
   const facts = {
     aujourdhui: new Date(now).toISOString().slice(0, 10),

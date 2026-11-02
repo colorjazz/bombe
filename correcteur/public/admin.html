@@ -198,14 +198,14 @@
     <section id="tab-keys" class="panel stack" hidden>
       <div class="filters">
         <h2 style="margin-right:auto">Toutes les clés</h2>
-        <select id="f-type" aria-label="Type de clé"><option value="">Tous les types</option><option value="trial">Essai gratuit</option><option value="gift">Offerte</option><option value="bought">Achetée</option></select>
+        <select id="f-type" aria-label="Type de clé"><option value="">Tous les types</option><option value="trial">Essai gratuit</option><option value="gift">Offerte</option><option value="bought">Achetée</option><option value="test">Mes clés de test</option></select>
         <select id="f-used" aria-label="Utilisation"><option value="">Utilisées ou non</option><option value="1">Utilisées</option><option value="0">Jamais utilisées</option></select>
         <input id="f-q" type="search" placeholder="Chercher (clé, nom, courriel)" aria-label="Chercher">
       </div>
       <p id="keys-sum" class="muted small" style="margin:0"></p>
       <div class="tablewrap"><table><thead><tr>
         <th data-sort="created_at">Créée</th><th data-sort="type">Type</th><th>Clé</th><th>Pour qui / courriel</th>
-        <th data-sort="given" class="n">Données</th><th data-sort="used" class="n">Utilisées</th><th data-sort="left" class="n">Restantes</th><th data-sort="last_used">Dernière utilisation</th><th></th>
+        <th data-sort="given" class="n">Données</th><th data-sort="used" class="n">Utilisées</th><th data-sort="left" class="n">Restantes</th><th data-sort="last_used">Dernière utilisation</th><th>Ma clé de test</th><th></th>
       </tr></thead><tbody id="key-list"></tbody></table></div>
       <p class="muted small" style="margin:0">Les clés d'essai sont effacées après 90 jours (politique de confidentialité). « Dernière utilisation » : connue depuis l'ajout du journal d'utilisation.</p>
     </section>
@@ -310,7 +310,7 @@
         tile(nf(gifts.length), 'clés offertes', `${nf(gifts.filter((x) => x.used > 0).length)} utilisées · ${nf(gifts.reduce((a, x) => a + x.used, 0))} pages`),
         tile(nf(data.sales.length), 'achats', `${nf(bought.length)} clé(s) acheteuse(s)`),
         tile(`${estimated ? '≈ ' : ''}${money(paid)}`, data.revenueSince ? `revenus depuis le ${when(data.revenueSince)}` : 'revenus',
-          `${estimated ? 'certains montants estimés au prix du forfait · ' : ''}${data.revenueSince ? `total depuis le début : ${money(allPaid)} · ` : ''}<button type="button" class="link" id="rev-reset">Remettre à zéro</button>`),
+          `${estimated ? 'certains montants estimés au prix du forfait · ' : ''}${data.revenueSince ? `total depuis le début : ${money(allPaid)} · <button type="button" class="link" id="rev-undo">Annuler la remise à zéro</button> · ` : ''}<button type="button" class="link" id="rev-reset">Remettre à zéro</button>`),
         tile(nf(conv), 'essais convertis en achat', 'suivi depuis l’ajout des statistiques'),
         tile(nf(pagesUsed), 'pages utilisées (total)', `${nf(week)} ces 7 derniers jours`),
       ].join('');
@@ -374,7 +374,7 @@
       $('ai-tiles').innerHTML = [
         tile(`${String(Math.round(cpp * 1000) / 1000).replace('.', ',')} ¢`, 'par appel (une page)', data.aiCpp == null ? 'estimation par défaut' : 'votre valeur'),
         tile(money(aiPages(0, now) * cpp), since ? `depuis le ${when(since)}` : 'total (90 derniers jours)',
-          `${nf(aiPages(0, now))} pages · <button type="button" class="link" id="ai-reset">Remettre à zéro</button>`),
+          `${nf(aiPages(0, now))} pages · ${since ? '<button type="button" class="link" id="ai-undo">Annuler la remise à zéro</button> · ' : ''}<button type="button" class="link" id="ai-reset">Remettre à zéro</button>`),
         tile(money(aiPages(now - 24 * H, now) * cpp), 'dernières 24 h', `${nf(aiPages(now - 24 * H, now))} pages`),
         tile(money(aiPages(now - 7 * 24 * H, now) * cpp), '7 derniers jours', `${nf(aiPages(now - 7 * 24 * H, now))} pages`),
         tile(money(aiPages(now - 30 * 24 * H, now) * cpp), '30 derniers jours', `${nf(aiPages(now - 30 * 24 * H, now))} pages`),
@@ -382,6 +382,7 @@
       ].join('');
     }
     $('ai-tiles').addEventListener('click', async (e) => {
+      if (e.target.id === 'ai-undo') { try { await saveSetting('ai_since', 0); } catch (err) { $('msg').textContent = err.message; $('msg').className = 'small err'; } return; }
       if (e.target.id !== 'ai-reset') return;
       if (!confirm('Remettre le coût de l’IA à zéro à partir de maintenant ?\n\nVos corrections de test ne seront plus comptées. Les pages utilisées restent dans les autres statistiques.')) return;
       try { await saveSetting('ai_since', true); } catch (err) { $('msg').textContent = err.message; $('msg').className = 'small err'; }
@@ -426,6 +427,10 @@
     }
 
     $('tiles').addEventListener('click', async (e) => {
+      if (e.target.id === 'rev-undo') {
+        try { await call('/api/admin/revenue-reset', 'POST', { undo: true }); await load(); } catch (err) { $('msg').textContent = err.message; $('msg').className = 'small err'; }
+        return;
+      }
       if (e.target.id !== 'rev-reset') return;
       if (!confirm('Remettre le compteur de revenus à zéro à partir de maintenant ?\n\nRien n’est effacé : les achats restent dans l’onglet « Achats », et le total depuis le début reste affiché.')) return;
       try { await call('/api/admin/revenue-reset', 'POST', {}); await load(); }
@@ -467,7 +472,7 @@
     }
     document.addEventListener('click', (e) => {
       const key = e.target.dataset?.delKey; if (!key) return;
-      const k = data.keys.find((x) => x.key === key);
+      const k = data.allKeys.find((x) => x.key === key);
       deleteKeys([key], `Effacer la clé ${key}${k?.note ? ` (${k.note})` : ''} ?\n\n${k?.used > 0 ? `Attention : elle a déjà servi (${k.used} pages). ` : ''}La clé cessera de fonctionner. C’est définitif.`);
     });
     $('del-unused').addEventListener('click', () => {
@@ -478,15 +483,23 @@
     let sortBy = 'created_at', sortDir = -1;
     function renderKeys() {
       const t = $('f-type').value, u = $('f-used').value, q = $('f-q').value.trim().toLowerCase();
-      const rows = data.keys.filter((x) => (!t || x.type === t) && (!u || (u === '1') === (x.used > 0))
+      const rows = data.allKeys.filter((x) => (t === 'test' ? x.test : !t || x.type === t) && (!u || (u === '1') === (x.used > 0))
         && (!q || `${x.key} ${x.note || ''} ${x.email || ''}`.toLowerCase().includes(q)))
         .sort((a, b) => ((a[sortBy] ?? -1) > (b[sortBy] ?? -1) ? 1 : (a[sortBy] ?? -1) < (b[sortBy] ?? -1) ? -1 : 0) * sortDir);
       $('keys-sum').textContent = `${nf(rows.length)} clé(s) · ${nf(rows.reduce((a, x) => a + x.used, 0))} pages utilisées sur ${nf(rows.reduce((a, x) => a + x.given, 0))} données`;
       $('key-list').innerHTML = rows.slice(0, 1000).map((x) => `<tr><td>${day(x.created_at)}</td><td><span class="type ${x.type}">${TYPES[x.type]}${x.converted ? ' → achat' : ''}</span></td>
         <td class="k">${esc(x.key)}</td><td>${esc(x.note || x.email || '') || '<span class="muted">—</span>'}</td>
-        <td class="n">${nf(x.given)}</td><td class="n">${nf(x.used)}</td><td class="n">${nf(x.left)}</td><td>${when(x.last_used)}</td><td>${delBtn(x)}</td></tr>`).join('')
-        || '<tr><td colspan="9" class="muted">Aucune clé.</td></tr>';
+        <td class="n">${nf(x.given)}</td><td class="n">${nf(x.used)}</td><td class="n">${nf(x.left)}</td><td>${when(x.last_used)}</td>
+        <td><label class="small" title="Mes clés de test : exclues de toutes les statistiques"><input type="checkbox" data-test-key="${esc(x.key)}" ${x.test ? 'checked' : ''}> test</label></td><td>${delBtn(x)}</td></tr>`).join('')
+        || '<tr><td colspan="10" class="muted">Aucune clé.</td></tr>';
     }
+    $('key-list').addEventListener('change', async (e) => {
+      const key = e.target.dataset?.testKey; if (!key) return;
+      const set = new Set(data.testKeys || []);
+      if (e.target.checked) set.add(key); else set.delete(key);
+      try { await saveSetting('test_keys', [...set]); $('msg').textContent = e.target.checked ? `✓ ${key} : clé de test, exclue des statistiques` : `✓ ${key} : de nouveau comptée`; $('msg').className = 'small ok'; }
+      catch (err) { e.target.checked = !e.target.checked; $('msg').textContent = err.message; $('msg').className = 'small err'; }
+    });
     document.querySelectorAll('th[data-sort]').forEach((th) => th.addEventListener('click', () => {
       sortDir = sortBy === th.dataset.sort ? -sortDir : -1; sortBy = th.dataset.sort; renderKeys();
     }));
@@ -532,6 +545,8 @@
       $('msg').textContent = ''; $('msg').className = 'small';
       try {
         data = await call('/api/admin/stats');
+        // Les clés de test restent visibles dans « Toutes les clés » (pour les démarquer), mais ne comptent nulle part.
+        data.allKeys = data.keys; data.keys = data.allKeys.filter((k) => !k.test);
         renderOverview(); renderGifts(); renderKeys(); renderUsage(); renderSales(); renderIdeas();
         $('msg').textContent = `✓ À jour (${when(Date.now())})`; $('msg').className = 'small ok';
       } catch (e) { $('msg').textContent = e.message; $('msg').className = 'small err'; }
