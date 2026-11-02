@@ -67,7 +67,7 @@ const ROUTES = {
   'POST /api/trial': trial,
   'POST /api/idea': idea,
   'POST /api/admin/keys': adminCreateKey, 'POST /api/admin/note': adminSetNote,
-  'GET /api/admin/keys': adminListKeys, 'POST /api/admin/ai-check': adminAiCheck, 'GET /api/admin/stats': adminStats, 'POST /api/admin/revenue-reset': adminRevenueReset, 'POST /api/admin/setting': adminSetting, 'POST /api/admin/notify-test': adminNotifyTest, 'POST /api/admin/insight': adminInsight,
+  'GET /api/admin/keys': adminListKeys, 'POST /api/admin/ai-check': adminAiCheck, 'GET /api/admin/stats': adminStats, 'POST /api/admin/revenue-reset': adminRevenueReset, 'POST /api/admin/setting': adminSetting, 'POST /api/admin/notify-test': adminNotifyTest, 'POST /api/admin/delete-keys': adminDeleteKeys, 'POST /api/admin/insight': adminInsight,
   'POST /api/checkout': checkout,
   'GET /api/claim': claim,
   'POST /api/stripe-webhook': stripeWebhook,
@@ -212,6 +212,23 @@ async function adminSetNote(request, env) {
   const { meta } = await env.DB.prepare('UPDATE gifts SET note = ? WHERE key = ?').bind(note || null, key).run();
   if (!meta.changes) throw new HttpError(404, 'Clé offerte introuvable.');
   return json({ ok: true, note });
+}
+
+// Clés créées pour rien (tests, doublons) : effacées avec leur note. Une clé qui a servi à un achat n'est jamais
+// effacée (le client a payé ces pages). Le journal d'utilisation reste, pour garder des statistiques justes.
+async function adminDeleteKeys(request, env) {
+  await requireAdmin(request, env);
+  const { keys } = await readJson(request);
+  if (!Array.isArray(keys) || !keys.length || keys.length > 500) throw new HttpError(400, 'Liste de clés invalide');
+  const list = [...new Set(keys.map((k) => String(k).trim()))].filter(Boolean);
+  const deleted = [], kept = [];
+  for (const key of list) {
+    const paid = await env.DB.prepare('SELECT 1 FROM payments WHERE key = ? LIMIT 1').bind(key).first();
+    if (paid) { kept.push(key); continue; }
+    await env.DB.batch([env.DB.prepare('DELETE FROM access_keys WHERE key = ?').bind(key), env.DB.prepare('DELETE FROM gifts WHERE key = ?').bind(key)]);
+    deleted.push(key);
+  }
+  return json({ deleted, kept });
 }
 
 async function adminListKeys(request, env) {

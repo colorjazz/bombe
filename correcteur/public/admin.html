@@ -186,9 +186,12 @@
         </div>
       </section>
       <section class="panel stack">
-        <h2>Clés offertes</h2>
-        <p class="muted small" style="margin:0">0 utilisée : le prof n'a pas encore essayé, c'est le moment de lui écrire.</p>
-        <div class="tablewrap"><table><thead><tr><th>Créée</th><th>Pour qui</th><th>Clé</th><th>Utilisées</th><th>Dernière utilisation</th></tr></thead><tbody id="gift-list"></tbody></table></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap">
+          <h2>Clés offertes</h2>
+          <button id="del-unused" class="btn ghost small" type="button" hidden></button>
+        </div>
+        <p class="muted small" style="margin:0">0 utilisée : le prof n'a pas encore essayé, c'est le moment de lui écrire. « Effacer » : pour une clé créée pour rien ; la clé cesse de fonctionner.</p>
+        <div class="tablewrap"><table><thead><tr><th>Créée</th><th>Pour qui</th><th>Clé</th><th>Utilisées</th><th>Dernière utilisation</th><th></th></tr></thead><tbody id="gift-list"></tbody></table></div>
       </section>
     </section>
 
@@ -202,7 +205,7 @@
       <p id="keys-sum" class="muted small" style="margin:0"></p>
       <div class="tablewrap"><table><thead><tr>
         <th data-sort="created_at">Créée</th><th data-sort="type">Type</th><th>Clé</th><th>Pour qui / courriel</th>
-        <th data-sort="given" class="n">Données</th><th data-sort="used" class="n">Utilisées</th><th data-sort="left" class="n">Restantes</th><th data-sort="last_used">Dernière utilisation</th>
+        <th data-sort="given" class="n">Données</th><th data-sort="used" class="n">Utilisées</th><th data-sort="left" class="n">Restantes</th><th data-sort="last_used">Dernière utilisation</th><th></th>
       </tr></thead><tbody id="key-list"></tbody></table></div>
       <p class="muted small" style="margin:0">Les clés d'essai sont effacées après 90 jours (politique de confidentialité). « Dernière utilisation » : connue depuis l'ajout du journal d'utilisation.</p>
     </section>
@@ -422,8 +425,11 @@
     function renderGifts() {
       const g = data.keys.filter((x) => x.type === 'gift');
       // « Pour qui » modifiable sur place : enregistré dès qu'on quitte le champ.
-      $('gift-list').innerHTML = g.length ? g.map((x) => `<tr><td>${day(x.created_at)}</td><td><input class="note-edit" type="text" maxlength="200" data-key="${esc(x.key)}" value="${esc(x.note || '')}" placeholder="✎ Ajouter un nom" aria-label="Pour qui"></td><td class="k">${esc(x.key)}</td><td class="n">${nf(x.used)} / ${nf(x.given)}</td><td>${when(x.last_used)}</td></tr>`).join('')
-        : '<tr><td colspan="5" class="muted">Aucune clé offerte pour l’instant.</td></tr>';
+      $('gift-list').innerHTML = g.length ? g.map((x) => `<tr><td>${day(x.created_at)}</td><td><input class="note-edit" type="text" maxlength="200" data-key="${esc(x.key)}" value="${esc(x.note || '')}" placeholder="✎ Ajouter un nom" aria-label="Pour qui"></td><td class="k">${esc(x.key)}</td><td class="n">${nf(x.used)} / ${nf(x.given)}</td><td>${when(x.last_used)}</td><td>${delBtn(x)}</td></tr>`).join('')
+        : '<tr><td colspan="6" class="muted">Aucune clé offerte pour l’instant.</td></tr>';
+      const unused = g.filter((x) => x.used === 0);
+      $('del-unused').hidden = !unused.length;
+      $('del-unused').textContent = `Effacer les clés jamais utilisées (${unused.length})`;
     }
 
     $('gift-list').addEventListener('change', async (e) => {
@@ -439,6 +445,26 @@
       } catch (err) { input.classList.add('failed'); input.title = err.message; }
     });
 
+    // Effacer des clés créées pour rien. Une clé achetée ne s'efface pas (refusé aussi par le serveur).
+    const delBtn = (x) => (x.type === 'bought' || x.converted ? '' : `<button type="button" class="link" data-del-key="${esc(x.key)}" style="background:none;border:0;color:var(--red);cursor:pointer;font-size:.8rem">Effacer</button>`);
+    async function deleteKeys(keys, question) {
+      if (!keys.length || !confirm(question)) return;
+      try {
+        const r = await call('/api/admin/delete-keys', 'POST', { keys });
+        await load();
+        $('msg').textContent = `✓ ${nf(r.deleted.length)} clé(s) effacée(s)${r.kept.length ? ` · ${nf(r.kept.length)} gardée(s) : elles ont servi à un achat` : ''}`; $('msg').className = 'small ok';
+      } catch (e) { $('msg').textContent = e.message; $('msg').className = 'small err'; }
+    }
+    document.addEventListener('click', (e) => {
+      const key = e.target.dataset?.delKey; if (!key) return;
+      const k = data.keys.find((x) => x.key === key);
+      deleteKeys([key], `Effacer la clé ${key}${k?.note ? ` (${k.note})` : ''} ?\n\n${k?.used > 0 ? `Attention : elle a déjà servi (${k.used} pages). ` : ''}La clé cessera de fonctionner. C’est définitif.`);
+    });
+    $('del-unused').addEventListener('click', () => {
+      const keys = data.keys.filter((x) => x.type === 'gift' && x.used === 0).map((x) => x.key);
+      deleteKeys(keys, `Effacer les ${keys.length} clés offertes qui n’ont jamais servi ?\n\nElles cesseront de fonctionner. C’est définitif.`);
+    });
+
     let sortBy = 'created_at', sortDir = -1;
     function renderKeys() {
       const t = $('f-type').value, u = $('f-used').value, q = $('f-q').value.trim().toLowerCase();
@@ -448,8 +474,8 @@
       $('keys-sum').textContent = `${nf(rows.length)} clé(s) · ${nf(rows.reduce((a, x) => a + x.used, 0))} pages utilisées sur ${nf(rows.reduce((a, x) => a + x.given, 0))} données`;
       $('key-list').innerHTML = rows.slice(0, 1000).map((x) => `<tr><td>${day(x.created_at)}</td><td><span class="type ${x.type}">${TYPES[x.type]}${x.converted ? ' → achat' : ''}</span></td>
         <td class="k">${esc(x.key)}</td><td>${esc(x.note || x.email || '') || '<span class="muted">—</span>'}</td>
-        <td class="n">${nf(x.given)}</td><td class="n">${nf(x.used)}</td><td class="n">${nf(x.left)}</td><td>${when(x.last_used)}</td></tr>`).join('')
-        || '<tr><td colspan="8" class="muted">Aucune clé.</td></tr>';
+        <td class="n">${nf(x.given)}</td><td class="n">${nf(x.used)}</td><td class="n">${nf(x.left)}</td><td>${when(x.last_used)}</td><td>${delBtn(x)}</td></tr>`).join('')
+        || '<tr><td colspan="9" class="muted">Aucune clé.</td></tr>';
     }
     document.querySelectorAll('th[data-sort]').forEach((th) => th.addEventListener('click', () => {
       sortDir = sortBy === th.dataset.sort ? -sortDir : -1; sortBy = th.dataset.sort; renderKeys();
