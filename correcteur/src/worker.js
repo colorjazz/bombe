@@ -58,6 +58,7 @@ export default {
       env.DB.prepare('DELETE FROM access_keys WHERE is_trial = 1 AND created_at < ?').bind(now - 90 * DAY_MS),
       env.DB.prepare('UPDATE ideas SET ip_hash = NULL WHERE ip_hash IS NOT NULL AND created_at < ?').bind(now - DAY_MS),
       env.DB.prepare('DELETE FROM usage WHERE created_at < ?').bind(now - 365 * DAY_MS),
+      env.DB.prepare('DELETE FROM ai_calls WHERE created_at < ?').bind(now - 90 * DAY_MS),
     ]);
   },
 };
@@ -104,6 +105,10 @@ const DB_SCHEMA = [
   `CREATE TABLE IF NOT EXISTS sales (session_id TEXT PRIMARY KEY, amount INTEGER, from_trial INTEGER NOT NULL DEFAULT 0)`,
   // Réglages du fondateur (ex. revenue_since : début du compteur de revenus, après une remise à zéro).
   `CREATE TABLE IF NOT EXISTS settings (name TEXT PRIMARY KEY, value TEXT)`,
+  // Jetons consommés par chaque appel à l'IA (modèle, entrée, sortie avec la réflexion) : le vrai coût de l'IA dans l'admin.
+  // Aucun contenu, aucune clé. Gardé 90 jours.
+  `CREATE TABLE IF NOT EXISTS ai_calls (model TEXT NOT NULL, tin INTEGER NOT NULL, tout INTEGER NOT NULL, created_at INTEGER NOT NULL)`,
+  `CREATE INDEX IF NOT EXISTS ai_calls_time ON ai_calls (created_at)`,
 ];
 let schemaReady;
 function ensureSchema(env) {
@@ -290,6 +295,11 @@ async function adminSetting(request, env) {
   } else if (name === 'test_keys') { // clés du fondateur (tests) : exclues de toutes les statistiques
     if (!Array.isArray(value) || value.length > 500) throw new HttpError(400, 'Liste de clés invalide');
     clean = [...new Set(value.map((k) => String(k).trim()).filter((k) => /^CE-[A-Z0-9-]{5,40}$/.test(k)))];
+  } else if (name === 'ai_prices') { // prix par million de jetons (USD) et taux de change
+    if (!value || typeof value !== 'object') throw new HttpError(400, 'Prix invalides');
+    const num = (v, max) => { const n = Number(v); if (!(n >= 0 && n < max)) throw new HttpError(400, 'Prix invalides'); return n; };
+    clean = { usdCad: num(value.usdCad, 5), models: Object.fromEntries(Object.entries(value.models || {}).slice(0, 20)
+      .map(([m, p]) => [String(m).slice(0, 60), { in: num(p.in, 1000), out: num(p.out, 1000) }])) };
   } else if (name === 'ai_cpp') {
     const v = Number(value);
     if (!(v >= 0 && v < 1000)) throw new HttpError(400, 'Coût par page invalide');
@@ -307,7 +317,7 @@ async function adminNotifyTest(request, env) {
 
 async function statsData(env) {
   const since = Date.now() - 90 * DAY_MS;
-  const [keys, sales, usage, ideas, settings] = await env.DB.batch([
+  const [keys, sales, usage, ideas, settings, aiCalls] = await env.DB.batch([
     env.DB.prepare(`SELECT k.key, k.pages AS left, k.is_trial AS trial, k.email, k.created_at, g.pages AS gift, g.note,
         (SELECT SUM(p.pages) FROM payments p WHERE p.key = k.key AND p.session_id NOT LIKE 'cs_test_%') AS bought,
         (SELECT MAX(s.from_trial) FROM payments p JOIN sales s ON s.session_id = p.session_id WHERE p.key = k.key) AS converted,
@@ -318,6 +328,8 @@ async function statsData(env) {
     env.DB.prepare('SELECT key, pages, kind, created_at FROM usage WHERE created_at > ? ORDER BY created_at LIMIT 50000').bind(since),
     env.DB.prepare('SELECT text, email, lang, created_at FROM ideas ORDER BY created_at DESC LIMIT 500'),
     env.DB.prepare('SELECT name, value FROM settings'),
+    env.DB.prepare(`SELECT model, CAST(created_at / 3600000 AS INTEGER) AS hour, COUNT(*) AS calls, SUM(tin) AS tin, SUM(tout) AS tout
+      FROM ai_calls WHERE created_at > ? GROUP BY model, hour ORDER BY hour`).bind(since),
   ]);
   const conf = Object.fromEntries(settings.results.map((r) => [r.name, r.value]));
   const parse = (v, d) => { try { return v == null ? d : JSON.parse(v); } catch { return d; } };
@@ -332,7 +344,7 @@ async function statsData(env) {
     return { ...k, type: k.gift ? 'gift' : k.bought ? 'bought' : k.trial ? 'trial' : 'other', given, used: given - k.left };
   });
   list.forEach((k) => { k.test = isTest.has(k.key); });
-  return { keys: list, sales: sales.results.filter((x) => !isTest.has(x.key)), usage: usage.results.filter((u) => !isTest.has(u.key)), ideas: ideas.results, testKeys, trialPages, since, revenueSince, adSpend, aiCpp, aiSince, notify: !!env.NOTIFY_URL };
+  return { keys: list, sales: sales.results.filter((x) => !isTest.has(x.key)), usage: usage.results.filter((u) => !isTest.has(u.key)), ideas: ideas.results, testKeys, trialPages, since, revenueSince, adSpend, aiCpp, aiSince, aiCalls: aiCalls.results, aiPrices: parse(conf.ai_prices, null), notify: !!env.NOTIFY_URL };
 }
 
 // Bilan IA, à la demande (bouton de la page admin) : l'IA ne reçoit que des chiffres agrégés et le texte des idées,
@@ -689,6 +701,14 @@ function vertexToken(env) {
   return token;
 }
 
+// Un appel réussi à l'IA : on note le modèle et les jetons (sortie = réponse + réflexion). Ne bloque jamais la correction.
+async function logAi(env, model, tin, tout) {
+  try {
+    await env.DB.prepare('INSERT INTO ai_calls (model, tin, tout, created_at) VALUES (?, ?, ?, ?)')
+      .bind(String(model).replace(/^google\//, ''), Math.max(0, Math.round(Number(tin) || 0)), Math.max(0, Math.round(Number(tout) || 0)), Date.now()).run();
+  } catch (err) { console.error('Journal IA impossible :', err.message); }
+}
+
 async function aiChat(env, system, content, responseFormat, opts = {}) {
   const vx = vertexOn(env);
   let model = vx ? `google/${vertexModel(env)}` : opts.model || env.AI_MODEL;
@@ -706,7 +726,10 @@ async function aiChat(env, system, content, responseFormat, opts = {}) {
       }),
     });
     if (res.ok) {
-      const choice = (await res.json()).choices?.[0], msg = choice?.message;
+      const out = await res.json();
+      const u = out.usage || {};
+      await logAi(env, model, u.prompt_tokens, (u.total_tokens || 0) - (u.prompt_tokens || 0));
+      const choice = out.choices?.[0], msg = choice?.message;
       // Réponse coupée (limite de longueur atteinte) : le JSON est incomplet ; on le dit plutôt qu'une erreur de syntaxe.
       if (choice?.finish_reason === 'length') throw new Error('réponse coupée (trop longue)');
       if (!msg?.content) throw new Error('réponse vide');
@@ -927,7 +950,10 @@ async function geminiNative(env, parts, schema, preferredModel, opts = {}) {
       signal: AbortSignal.timeout(opts.timeoutMs || 120_000),
     });
     if (res.ok) {
-      const text = (await res.json()).candidates?.[0]?.content?.parts?.map((p) => p.text || '').join('');
+      const out = await res.json();
+      const u = out.usageMetadata || {};
+      await logAi(env, model, u.promptTokenCount, (u.totalTokenCount || 0) - (u.promptTokenCount || 0));
+      const text = out.candidates?.[0]?.content?.parts?.map((p) => p.text || '').join('');
       if (!text) throw new Error('réponse vide');
       return JSON.parse(text.replace(/^\s*```(?:json)?\s*|\s*```\s*$/g, ''));
     }

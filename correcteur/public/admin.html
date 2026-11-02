@@ -117,6 +117,7 @@
       <section class="panel stack">
         <h2>Coût de l'IA (estimé)</h2>
         <div id="ai-tiles" class="tiles"></div>
+        <div id="ai-measure" class="stack" style="gap:.5rem"></div>
         <div class="filters">
           <label class="small">Coût estimé d'un appel à l'IA, par page (¢) <input id="cpp" type="text" inputmode="decimal" style="width:6rem"></label>
           <button id="cpp-save" class="btn" type="button">Enregistrer</button>
@@ -317,7 +318,7 @@
       const days = lastDays(30), count = Object.fromEntries(days.map((d) => [d, 0]));
       for (const x of k) if ((x.type === 'trial' || x.converted) && count[day(x.created_at)] != null) count[day(x.created_at)]++;
       bars($('chart-trials'), days.map((d) => ({ label: d, short: d.slice(8), v: count[d] })), { unit: 'essai(s)', every: 3 });
-      renderRecent(); renderAds(); renderAi();
+      renderRecent(); renderAds(); renderAi(); renderMeasure();
       $('notify-state').innerHTML = data.notify ? '<span class="ok">✓ Activée :</span> une notification arrive sur votre téléphone (appli ntfy) à chaque achat, avec le forfait et le montant seulement.'
         : 'Pas encore activée : ajoutez le secret <b>NOTIFY_URL</b> dans Cloudflare (voir les explications reçues).';
     }
@@ -360,9 +361,37 @@
       try { await saveSetting('ad_spend', list); } catch (err) { $('msg').textContent = err.message; $('msg').className = 'small err'; }
     });
 
-    // Coût de l'IA : pages corrigées × coût estimé d'un appel (1 ¢ par page par défaut, ou la valeur de l'admin).
+    // Coût de l'IA : pages corrigées × coût d'une page. Ordre : coût réellement mesuré (jetons de chaque appel × prix du
+    // modèle), sinon la valeur entrée dans l'admin, sinon 1 ¢.
     const DEFAULT_CPP = 1;
-    const aiCpp = () => (data.aiCpp != null ? data.aiCpp : DEFAULT_CPP);
+    // Prix publics Gemini (USD par million de jetons ; sortie = réponse + réflexion), modifiables ci-dessous.
+    const DEFAULT_PRICES = { usdCad: 1.38, models: { 'gemini-3.5-flash': { in: 1.5, out: 9 }, 'gemini-3.7-flash': { in: 0.75, out: 3.75 } } };
+    const prices = () => ({ usdCad: data.aiPrices?.usdCad ?? DEFAULT_PRICES.usdCad, models: { ...DEFAULT_PRICES.models, ...(data.aiPrices?.models || {}) } });
+    // Coût en cents (CAD) des appels depuis « from ».
+    function callsCost(from) {
+      const P = prices(), H = 3600000, by = {};
+      for (const c of data.aiCalls || []) {
+        if ((c.hour + 1) * H <= from) continue;
+        const m = (by[c.model] ||= { calls: 0, tin: 0, tout: 0 });
+        m.calls += c.calls; m.tin += c.tin; m.tout += c.tout;
+      }
+      let cents = 0, unknown = [];
+      for (const [model, m] of Object.entries(by)) {
+        const pr = P.models[model];
+        if (!pr) { unknown.push(model); continue; }
+        m.cents = ((m.tin * pr.in + m.tout * pr.out) / 1e6) * P.usdCad * 100; cents += m.cents;
+      }
+      return { by, cents, unknown };
+    }
+    // Mesure : depuis le premier appel enregistré (ou la remise à zéro), coût des appels ÷ pages corrigées.
+    function measured() {
+      const first = (data.aiCalls || [])[0]; if (!first) return null;
+      const from = Math.max(first.hour * 3600000, data.aiSince || 0);
+      const pages = pagesBetween(from, Date.now());
+      const { cents, unknown } = callsCost(from);
+      return pages >= 20 && !unknown.length ? { cpp: cents / pages, pages, from } : { cpp: null, pages, from, unknown };
+    }
+    const aiCpp = () => measured()?.cpp ?? (data.aiCpp != null ? data.aiCpp : DEFAULT_CPP);
     // Pages comptées dans le coût de l'IA : depuis la dernière remise à zéro (corrections de test exclues).
     const aiPages = (from, to) => pagesBetween(Math.max(from, data.aiSince || 0), to);
     const pagesBetween = (from, to) => Math.max(0, data.usage.filter((u) => u.created_at > from && u.created_at <= to).reduce((a, u) => a + u.pages, 0));
@@ -372,7 +401,7 @@
       const now = Date.now(), H = 3600000;
       const since = data.aiSince || 0;
       $('ai-tiles').innerHTML = [
-        tile(`${String(Math.round(cpp * 1000) / 1000).replace('.', ',')} ¢`, 'par appel (une page)', data.aiCpp == null ? 'estimation par défaut' : 'votre valeur'),
+        tile(`${String(Math.round(cpp * 1000) / 1000).replace('.', ',')} ¢`, 'par page corrigée', measured()?.cpp != null ? '<span class="ok">mesuré sur vos vrais appels</span>' : data.aiCpp == null ? 'estimation par défaut' : 'votre valeur'),
         tile(money(aiPages(0, now) * cpp), since ? `depuis le ${when(since)}` : 'total (90 derniers jours)',
           `${nf(aiPages(0, now))} pages · ${since ? '<button type="button" class="link" id="ai-undo">Annuler la remise à zéro</button> · ' : ''}<button type="button" class="link" id="ai-reset">Remettre à zéro</button>`),
         tile(money(aiPages(now - 24 * H, now) * cpp), 'dernières 24 h', `${nf(aiPages(now - 24 * H, now))} pages`),
@@ -381,6 +410,28 @@
         tile(money((data.trialPages || 30) * cpp), 'un essai gratuit utilisé en entier', `${data.trialPages || 30} pages`),
       ].join('');
     }
+    // Détail de la mesure : jetons et coût par modèle, et prix modifiables.
+    function renderMeasure() {
+      const m = measured(), P = prices(), now = Date.now();
+      if (!m) { $('ai-measure').innerHTML = '<p class="muted small" style="margin:0">Mesure réelle : le serveur note les jetons de chaque appel depuis cette mise à jour. Les chiffres apparaîtront après les prochaines corrections.</p>'; return; }
+      const { by, cents } = callsCost(m.from);
+      const rows = Object.entries(by).map(([model, x]) => `<tr><td>${esc(model)}</td><td class="n">${nf(x.calls)}</td><td class="n">${nf(x.tin)}</td><td class="n">${nf(x.tout)}</td>
+        <td class="n">${x.cents != null ? money(x.cents) : '<span class="err">prix inconnu</span>'}</td>
+        <td class="n"><input data-price="${esc(model)}" data-k="in" value="${String(P.models[model]?.in ?? '').replace('.', ',')}" style="width:4.5rem"> / <input data-price="${esc(model)}" data-k="out" value="${String(P.models[model]?.out ?? '').replace('.', ',')}" style="width:4.5rem"></td></tr>`).join('');
+      $('ai-measure').innerHTML = `<p class="small" style="margin:0"><b>Mesure réelle depuis le ${when(m.from)} :</b> ${money(cents)} pour ${nf(m.pages)} pages${m.cpp != null ? `, soit <b>${String(Math.round(m.cpp * 100) / 100).replace('.', ',')} ¢ par page</b>` : m.pages < 20 ? ' (au moins 20 pages pour un coût par page fiable)' : ''}.
+        Inclut les appels gratuits pour le prof (lecture de la grille, découpage des copies, classement).</p>
+        <div class="tablewrap"><table><thead><tr><th>Modèle</th><th class="n">Appels</th><th class="n">Jetons d'entrée</th><th class="n">Jetons de sortie</th><th class="n">Coût (CAD)</th><th class="n">Prix USD / million : entrée / sortie</th></tr></thead><tbody>${rows}</tbody></table></div>
+        <div class="filters"><label class="small">Taux de change (1 $ US en $ CA) <input id="usd-cad" value="${String(P.usdCad).replace('.', ',')}" style="width:5rem"></label>
+        <button id="prices-save" class="btn ghost" type="button">Enregistrer les prix</button></div>
+        <p class="muted small" style="margin:0">Prix par défaut : tarifs publiés de Gemini (3.5 Flash : 1,50 $ / 9 $ ; 3.7 Flash : 0,75 $ / 3,75 $ US par million de jetons). Vérifiez-les sur la page des tarifs de Google ; la facture Google reste le chiffre exact.</p>`;
+    }
+    $('ai-measure').addEventListener('click', async (e) => {
+      if (e.target.id !== 'prices-save') return;
+      const num = (v) => Number(String(v).replace(',', '.'));
+      const models = {};
+      document.querySelectorAll('#ai-measure [data-price]').forEach((i) => { (models[i.dataset.price] ||= {})[i.dataset.k] = num(i.value); });
+      try { await saveSetting('ai_prices', { usdCad: num($('usd-cad').value), models }); } catch (err) { $('msg').textContent = err.message; $('msg').className = 'small err'; }
+    });
     $('ai-tiles').addEventListener('click', async (e) => {
       if (e.target.id === 'ai-undo') { try { await saveSetting('ai_since', 0); } catch (err) { $('msg').textContent = err.message; $('msg').className = 'small err'; } return; }
       if (e.target.id !== 'ai-reset') return;

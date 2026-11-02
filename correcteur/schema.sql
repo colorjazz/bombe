@@ -62,3 +62,12 @@ CREATE TABLE IF NOT EXISTS settings (
   name  TEXT PRIMARY KEY,
   value TEXT
 );
+
+-- Jetons consommés par chaque appel à l'IA (modèle, entrée, sortie avec la réflexion) : vrai coût de l'IA. Gardé 90 jours.
+CREATE TABLE IF NOT EXISTS ai_calls (
+  model      TEXT NOT NULL,
+  tin        INTEGER NOT NULL,
+  tout       INTEGER NOT NULL,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS ai_calls_time ON ai_calls (created_at);
