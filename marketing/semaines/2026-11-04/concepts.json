@@ -1,0 +1,151 @@
+[
+  {
+    "date": "2026-11-13T12:05:00",
+    "reseau": "facebook",
+    "type": "communaute",
+    "texte": "Les notes sont consignées. Cette fois, c'est la pile qui reçoit son bulletin. 📋\n\nRésultat : « Envahissante ». Commentaire général : doit apprendre à disparaître plus vite.\n\nEt vous, quel commentaire écririez-vous dans le bulletin de VOTRE pile ?",
+    "carte": {
+      "fichier": "concept-bulletin.png",
+      "gabarit": "bulletin",
+      "titre": "Bulletin — 1re étape",
+      "eleve": "La Pile",
+      "groupe": "Groupe : table de cuisine",
+      "rangees": [
+        [
+          "Comportement",
+          "Envahissante",
+          "Occupe la table de cuisine depuis 9 jours."
+        ],
+        [
+          "Ponctualité",
+          "Exemplaire",
+          "Revient à chaque fin d'étape, sans exception."
+        ],
+        [
+          "Autonomie",
+          "À développer",
+          "Refuse catégoriquement de se corriger toute seule."
+        ]
+      ],
+      "commentaire": "Doit apprendre à disparaître plus vite. Un essai de 30 pages est fortement recommandé.",
+      "offre": "Bulletin remis"
+    },
+    "alt": "Faux bulletin scolaire de « La Pile » : comportement envahissant, ponctualité exemplaire, autonomie à développer."
+  },
+  {
+    "date": "2026-11-15T10:05:00",
+    "reseau": "facebook",
+    "type": "communaute",
+    "texte": "Dimanche, 10 h. Votre téléphone vibre. 📱\n\nC'est la pile.\n\n(Toute ressemblance avec votre fin de semaine est purement voulue.)",
+    "carte": {
+      "fichier": "concept-texto.png",
+      "gabarit": "texto",
+      "contact": "La pile",
+      "messages": [
+        {
+          "de": "pile",
+          "texte": "Allo. T'es où ?"
+        },
+        {
+          "de": "prof",
+          "texte": "Brunch en famille 🙂"
+        },
+        {
+          "de": "pile",
+          "texte": "Ok. Je t'attends sur la table de cuisine."
+        },
+        {
+          "de": "pile",
+          "texte": "Les 90 copies aussi."
+        },
+        {
+          "de": "prof",
+          "texte": "J'ai trouvé quelqu'un pour m'aider cette fois."
+        },
+        {
+          "de": "pile",
+          "texte": "??? QUI ÇA"
+        }
+      ],
+      "offre": "30 pages gratuites"
+    },
+    "alt": "Fausse conversation par texto entre un enseignant et sa pile de copies, qui l'attend sur la table de cuisine."
+  },
+  {
+    "date": "2026-11-17T12:05:00",
+    "reseau": "facebook",
+    "type": "produit",
+    "texte": "On a imprimé le vrai coût de la correction d'une classe. 🧾\n\n30 élèves, copies de 3 pages : environ 5 $. Le corrigé n'est jamais facturé, il n'y a pas d'abonnement, et les pages n'expirent pas.\n\nEt la ligne la plus importante du reçu : le dernier mot, c'est vous. 30 pages gratuites, sans carte de crédit : https://brulelapile.ca/?utm_source=facebook&utm_campaign=agents&utm_content=2026-11-17-recu",
+    "carte": {
+      "fichier": "concept-recu.png",
+      "gabarit": "recu",
+      "titre": "BRÛLE LA PILE",
+      "sous_titre": "Reçu · Groupe 541 · fin d'étape",
+      "lignes": [
+        [
+          "30 copies × 3 pages",
+          "≈ 5 $"
+        ],
+        [
+          "Votre corrigé",
+          "0 $"
+        ],
+        [
+          "Abonnement",
+          "0 $"
+        ],
+        [
+          "Pages restantes",
+          "n'expirent pas"
+        ],
+        [
+          "Dimanche soir",
+          "RENDU"
+        ],
+        [
+          "Dernier mot",
+          "VOUS"
+        ]
+      ],
+      "total": "≈ 5 $",
+      "merci": "Merci ! Revenez à la prochaine étape."
+    },
+    "alt": "Faux reçu de caisse Brûle la pile : 30 copies de 3 pages pour environ 5 $, corrigé et abonnement à 0 $, dimanche soir rendu, dernier mot à vous."
+  },
+  {
+    "date": "2026-11-19T12:05:00",
+    "reseau": "facebook",
+    "type": "produit",
+    "texte": "On a trouvé cette offre d'emploi affichée dans une salle des profs. 📌\n\nOn connaît tous quelqu'un qui occupe ce poste depuis des années. Parfois, c'est nous.\n\nPour démissionner de ce poste : 30 pages gratuites, sans carte de crédit, sur https://brulelapile.ca/?utm_source=facebook&utm_campaign=agents&utm_content=2026-11-19-emploi",
+    "carte": {
+      "fichier": "concept-emploi.png",
+      "gabarit": "emploi",
+      "titre": "OFFRE D'EMPLOI",
+      "poste": "Correcteur ou correctrice du dimanche soir",
+      "rangees": [
+        [
+          "Horaire",
+          "19 h à minuit, à chaque fin d'étape"
+        ],
+        [
+          "Lieu",
+          "Votre table de cuisine"
+        ],
+        [
+          "Salaire",
+          "0 $ (le café froid est fourni)"
+        ],
+        [
+          "Exigences",
+          "Aucune vie sociale le dimanche"
+        ],
+        [
+          "Avantages",
+          "Mal de dos, crayon rouge à volonté"
+        ]
+      ],
+      "chute": "Candidature refusée ? 30 pages gratuites."
+    },
+    "alt": "Fausse offre d'emploi : correcteur ou correctrice du dimanche soir, à la table de cuisine, salaire 0 $."
+  }
+]

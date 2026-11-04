@@ -34,6 +34,37 @@ function corps(carte) {
       <b>${echap(carte.note || "22 / 25")}</b></div>${lignes}
       <div class="fictif">Exemple fictif</div></div>`;
   }
+  if (g === "bulletin") {
+    // carte.rangees : [[critère, résultat, commentaire]] ; carte.commentaire : commentaire général
+    const rangees = (carte.rangees || []).map(([c, r, m]) =>
+      `<tr><td>${echap(c)}</td><td class="res">${echap(r)}</td><td>${echap(m)}</td></tr>`).join("");
+    return `<div class="feuille bulletin"><div class="bt">${echap(carte.titre)}</div>
+      <div class="bi"><span>Élève : <b>${echap(carte.eleve || "La Pile")}</b></span><span>${echap(carte.groupe || "Table de cuisine")}</span></div>
+      <table><tr><th>Critère</th><th>Résultat</th><th>Commentaire</th></tr>${rangees}</table>
+      <div class="bc"><b>Commentaire général :</b> ${echap(carte.commentaire)}</div></div>`;
+  }
+  if (g === "recu") {
+    // carte.lignes : [[libellé, montant]] ; carte.total
+    const lignes = (carte.lignes || []).map(([l, m]) =>
+      `<div class="rl"><span>${echap(l)}</span><span class="pts"></span><b>${echap(m)}</b></div>`).join("");
+    return `<div class="feuille recu"><div class="rt">${echap(carte.titre)}</div><div class="rs">${echap(carte.sous_titre || "")}</div>
+      <div class="rsep"></div>${lignes}<div class="rsep"></div>
+      <div class="rl total"><span>TOTAL</span><span class="pts"></span><b>${echap(carte.total)}</b></div>
+      <div class="rmerci">${echap(carte.merci || "Merci, revenez à la prochaine étape !")}</div></div>`;
+  }
+  if (g === "texto") {
+    // carte.messages : [{de: "pile"|"prof", texte}]
+    const bulles = (carte.messages || []).map((m) =>
+      `<div class="bulle ${m.de === "prof" ? "moi" : "elle"}">${echap(m.texte)}</div>`).join("");
+    return `<div class="tel"><div class="contact"><span class="avatar">📚</span>${echap(carte.contact || "La pile")}</div>${bulles}</div>`;
+  }
+  if (g === "emploi") {
+    // carte.rangees : [[libellé, valeur]] ; carte.chute : la ligne finale
+    const rangees = (carte.rangees || []).map(([l, v]) =>
+      `<div class="er"><b>${echap(l)}</b><span>${echap(v)}</span></div>`).join("");
+    return `<div class="feuille emploi"><div class="et">${echap(carte.titre || "OFFRE D'EMPLOI")}</div>
+      <div class="ep">${echap(carte.poste)}</div>${rangees}<div class="ec">${echap(carte.chute)}</div></div>`;
+  }
   return `<h1>${echap(carte.titre)}</h1>${carte.sous_titre ? `<p class="sous">${echap(carte.sous_titre)}</p>` : ""}`;
 }
 
@@ -64,6 +95,32 @@ function page(carte) {
   .ligne.perdu{color:#b91c1c}.ligne.perdu::before{content:"✗  ";color:#b91c1c}
   .fictif{position:absolute;top:-18px;right:30px;background:#ffb547;color:#1a1411;font-size:22px;font-weight:700;
     padding:6px 16px;border-radius:999px}
+  .feuille{background:#fff4e6;color:#1a1411;border-radius:18px;padding:40px 46px;box-shadow:0 30px 60px rgba(0,0,0,.45)}
+  .bulletin .bt{font-weight:800;font-size:44px;text-align:center;letter-spacing:1px;text-transform:uppercase}
+  .bulletin .bi{display:flex;justify-content:space-between;font-size:27px;margin:18px 0 20px;padding-bottom:16px;border-bottom:3px solid #1a1411}
+  .bulletin table{width:100%;border-collapse:collapse;font-size:25px}
+  .bulletin th{text-align:left;font-size:20px;text-transform:uppercase;letter-spacing:1.5px;color:#7c5a3c;padding:6px 10px}
+  .bulletin td{padding:14px 10px;border-top:2px solid #e9d3bb;vertical-align:top;line-height:1.25}
+  .bulletin td:first-child{font-weight:700;width:24%}.bulletin .res{color:#c2410c;font-weight:800;width:24%}
+  .bulletin .bc{margin-top:20px;font-size:27px;line-height:1.35;background:#ffe7cc;padding:18px 22px;border-radius:12px}
+  .recu{font-family:"JetBrains Mono",monospace;width:760px;align-self:center;border-radius:6px;font-size:28px}
+  .recu .rt{text-align:center;font-weight:800;font-size:38px}.recu .rs{text-align:center;color:#7c5a3c;margin-top:8px;font-size:24px}
+  .recu .rsep{border-top:3px dashed #1a1411;margin:22px 0}
+  .recu .rl{display:flex;align-items:baseline;gap:12px;padding:9px 0}.recu .pts{flex:1;border-bottom:3px dotted #b59a7f}
+  .recu .total{font-size:40px;font-weight:800}.recu .total b{color:#c2410c}
+  .recu .rmerci{text-align:center;margin-top:22px;font-size:24px;color:#7c5a3c}
+  .tel{margin-top:24px;background:#0f0b09;border:3px solid #3a2c24;border-radius:44px;padding:34px 36px;display:flex;flex-direction:column;gap:16px;width:820px;align-self:center}
+  .contact{display:flex;align-items:center;gap:16px;font-weight:700;font-size:30px;padding-bottom:18px;border-bottom:2px solid #2b211b;margin-bottom:6px}
+  .avatar{width:58px;height:58px;border-radius:50%;background:#ff6a1a;display:flex;align-items:center;justify-content:center;font-size:30px}
+  .bulle{max-width:78%;padding:16px 24px;border-radius:30px;font-size:29px;line-height:1.28}
+  .elle{background:#2b211b;color:#fff4e6;align-self:flex-start;border-bottom-left-radius:8px}
+  .moi{background:#ff6a1a;color:#1a1411;align-self:flex-end;border-bottom-right-radius:8px;font-weight:600}
+  .emploi{border:6px double #1a1411}
+  .emploi .et{font-weight:900;font-size:66px;text-align:center;letter-spacing:2px}
+  .emploi .ep{text-align:center;font-size:34px;font-weight:700;color:#c2410c;margin:8px 0 22px}
+  .emploi .er{display:flex;gap:20px;font-size:29px;padding:12px 0;border-top:2px solid #e9d3bb;line-height:1.3}
+  .emploi .er b{width:210px;flex:none}
+  .emploi .ec{margin-top:20px;text-align:center;font-size:34px;font-weight:800;background:#1a1411;color:#ffb547;padding:16px;border-radius:12px}
   .pied{display:flex;justify-content:space-between;align-items:center;font-size:30px;color:#f3d9bf}
   .pied b{color:#fff4e6;font-weight:800}
   .offre{background:#ff6a1a;color:#1a1411;font-weight:800;padding:14px 26px;border-radius:999px}
