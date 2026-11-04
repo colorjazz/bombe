@@ -1,14 +1,17 @@
 # Rapport — semaine du 2026-11-04 (première exécution)
 
-## Programmé
+## Programmé (version finale, tout avant la consignation du 12 novembre)
 
-| Date | Réseau | Accroche |
+| Date | Réseau | Concept |
 |---|---|---|
-| 2026-11-11, 12 h 05 | Facebook | Astuce : écrivez votre corrigé AVANT d'ouvrir la première copie |
-| 2026-11-13, 12 h 05 | Facebook | Notes consignées : vous avez survécu à la pile |
-| 2026-11-15, 10 h 05 | Facebook | Coulisses : pourquoi un prof d'histoire a créé Brûle la pile |
+| Jeu. 2026-11-05, 19 h 35 | Facebook | Profil de rencontre de la Pile de correction, avec la notification de Brûle la pile |
+| Ven. 2026-11-06, 16 h 05 | Facebook | Avertissement de pile pour la fin de semaine |
+| Dim. 2026-11-08, 12 h 05 | Facebook (Reel) | La Pile de correction texte en direct |
+| Lun. 2026-11-09, 12 h 05 | Facebook | Constat d'infraction |
+| Mar. 2026-11-10, 12 h 05 | Facebook | Offre d'emploi « Correcteur ou correctrice du dimanche soir » |
+| Mer. 2026-11-11, 12 h 05 | Facebook | Le reçu : environ 5 $ pour une classe |
 
-**Non programmé :** 2026-11-17, « Une classe de 30 élèves ? Environ 5 $. » Le propriétaire a refusé la programmation. Le texte et le visuel restent dans `publications.json` et `2026-11-17-prix.png`, au cas où.
+En réserve pour la 2e étape : le bulletin de la pile, la petite annonce, l'avis de départ (à publier juste après la prochaine consignation).
 
 ## Ce qu'on a appris
 

@@ -16,8 +16,12 @@ Le message change selon le moment de l'année. Les dates du régime pédagogique
 | Juillet | Bulletin final au plus tard le 10 juillet, vacances | Pause (1 publication par semaine au plus) |
 | Mi-août à septembre | Rentrée, planification de l'année | Forfait Année : « Réglez votre année de correction » |
 
+## Règle d'or (décision du propriétaire)
+
+**Toutes les publications de vente sortent AVANT la consignation des notes.** Après la consignation, les corrections sont terminées et personne n'achète. Entre deux étapes, on publie peu (1 ou 2 fois par semaine) : de l'humour et de la communauté, pour rester présent. On recommence à vendre environ 10 jours avant la consignation suivante.
+
 ## Dates confirmées pour ton milieu
 
 Ajoute ici les dates exactes de ton école ou de ton CSS (consignation, bulletins, journées pédagogiques). Les agents s'en servent en priorité.
 
-- 2026-11-12 : consignation des notes de la 1re étape
+- 2026-11-12 : consignation des notes de la 1re étape (dernière publication de vente : le 11 novembre)
