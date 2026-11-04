@@ -40,7 +40,7 @@
     "carte": {
       "fichier": "concept-texto.png",
       "gabarit": "texto",
-      "contact": "La pile",
+      "contact": "Pile de correction",
       "messages": [
         {
           "de": "pile",
@@ -56,7 +56,7 @@
         },
         {
           "de": "pile",
-          "texte": "Les 90 copies aussi."
+          "texte": "Et le paquet de correction dans ton sac aussi."
         },
         {
           "de": "prof",
@@ -69,7 +69,7 @@
       ],
       "offre": "30 pages gratuites"
     },
-    "alt": "Fausse conversation par texto entre un enseignant et sa pile de copies, qui l'attend sur la table de cuisine."
+    "alt": "Fausse conversation par texto entre un enseignant et sa « Pile de correction », qui l'attend sur la table de cuisine avec le paquet de correction dans son sac."
   },
   {
     "date": "2026-11-17T12:05:00",

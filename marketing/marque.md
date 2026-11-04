@@ -52,6 +52,10 @@ Brûle la pile aide les enseignants à corriger leur pile de copies : on photogr
 - Des phrases courtes. Au plus 2 emojis par publication.
 - On parle du vécu (la pile sur la table de cuisine le dimanche soir) avant de parler du produit.
 
+## Personnage récurrent
+
+- **« Pile de correction »** : la pile de copies qui texte l'enseignant, l'attend sur la table de cuisine et cache « le paquet de correction dans ton sac ». C'est le nom exact à utiliser (choisi par le propriétaire). Elle tutoie le prof ; le prof lui répond.
+
 ## Visuels
 
 - Couleurs : fond charbon `#1a1411`, orange flamme `#ff6a1a`, ambre `#ffb547`, crème `#fff4e6`. Police Inter.

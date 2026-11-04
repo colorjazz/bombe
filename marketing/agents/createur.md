@@ -22,7 +22,7 @@ Le propriétaire a rejeté les premières publications parce qu'elles étaient *
 
 **La méthode :** on détourne un objet de l'univers scolaire ou du quotidien, que tout prof reconnaît en une seconde, et la pile en devient le personnage.
 
-- **La pile est un personnage récurrent** : elle texte, elle a un bulletin, elle a un dossier disciplinaire, elle part en vacances aux Fêtes (enfin).
+- **La « Pile de correction » est un personnage récurrent** (voir `marque.md`) : elle texte, elle a un bulletin, elle a un dossier disciplinaire, elle part en vacances aux Fêtes (enfin).
 - **Objets détournés** (gabarits de `visuels/rendre.mjs`) : `bulletin`, `recu` (reçu de caisse), `texto` (conversation), `emploi` (offre d'emploi). Autres idées à construire : plan d'intervention de la pile, billet de tirage de la direction, note de la secrétaire, avis météo (« alerte pile : 90 copies attendues dimanche »), mémo de la direction, carte de Noël, ordonnance du médecin, menu de la cafétéria, horoscope de fin d'étape.
 - **Chaque fait sur le produit glissé dans la blague** vient de `marque.md` (le reçu : environ 5 $ ; corrigé à 0 $ ; pages qui n'expirent pas ; « Dernier mot : VOUS »).
 - **Au plus 1 publication « classique » par semaine** (astuce ou explication). Les autres utilisent un objet détourné.

@@ -109,7 +109,7 @@ function page(carte) {
   .recu .rl{display:flex;align-items:baseline;gap:12px;padding:9px 0}.recu .pts{flex:1;border-bottom:3px dotted #b59a7f}
   .recu .total{font-size:40px;font-weight:800}.recu .total b{color:#c2410c}
   .recu .rmerci{text-align:center;margin-top:22px;font-size:24px;color:#7c5a3c}
-  .tel{margin-top:24px;background:#0f0b09;border:3px solid #3a2c24;border-radius:44px;padding:34px 36px;display:flex;flex-direction:column;gap:16px;width:820px;align-self:center}
+  .tel{margin-top:10px;background:#0f0b09;border:3px solid #3a2c24;border-radius:44px;padding:26px 36px;display:flex;flex-direction:column;gap:12px;width:820px;align-self:center}
   .contact{display:flex;align-items:center;gap:16px;font-weight:700;font-size:30px;padding-bottom:18px;border-bottom:2px solid #2b211b;margin-bottom:6px}
   .avatar{width:58px;height:58px;border-radius:50%;background:#ff6a1a;display:flex;align-items:center;justify-content:center;font-size:30px}
   .bulle{max-width:78%;padding:16px 24px;border-radius:30px;font-size:29px;line-height:1.28}
