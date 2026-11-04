@@ -24,11 +24,12 @@ Le propriétaire a rejeté les premières publications parce qu'elles étaient *
 
 - **La « Pile de correction » est un personnage récurrent** (voir `marque.md`) : elle texte, elle a un bulletin, elle a un dossier disciplinaire, elle part en vacances aux Fêtes (enfin).
 - **Objets détournés** (gabarits de `visuels/rendre.mjs`) : `bulletin`, `recu` (reçu de caisse), `texto` (conversation), `emploi` (offre d'emploi). Autres idées à construire : plan d'intervention de la pile, billet de tirage de la direction, note de la secrétaire, avis météo (« alerte pile : 90 copies attendues dimanche »), mémo de la direction, carte de Noël, ordonnance du médecin, menu de la cafétéria, horoscope de fin d'étape.
-- **Gabarit `libre`** : pour inventer un objet qui n'a pas de gabarit, écris son HTML dans `carte.html` et ses styles dans `carte.css` (voir `semaines/2026-11-04/idees-folles.json` : avertissement météo, petite annonce, profil de rencontre, constat d'infraction, avis de départ). Aucun logo ni aucune marque réelle, et aucun organisme réel imité.
+- **Gabarit `libre`** : pour inventer un objet qui n'a pas de gabarit, écris son HTML dans `carte.html` et ses styles dans `carte.css` (voir `semaines/2026-11-04/idees-folles.json` : avertissement météo, petite annonce, profil de rencontre, constat d'infraction). Aucun logo ni aucune marque réelle, et aucun organisme réel imité.
 - **Reel vidéo** : au moins un par mois. `node marketing/visuels/reel.mjs <reel.json>` produit un MP4 vertical de 15 à 25 s où la Pile de correction texte en direct (exemple : `semaines/2026-11-04/reel-texto.json`). Programme-le avec `facebookData.type` = `REEL`.
 - **Chaque fait sur le produit glissé dans la blague** vient de `marque.md` (le reçu : environ 5 $ ; corrigé à 0 $ ; pages qui n'expirent pas ; « Dernier mot : VOUS »).
 - **Au plus 1 publication « classique » par semaine** (astuce ou explication). Les autres utilisent un objet détourné.
 - **Jamais deux fois le même objet en 4 semaines**, sauf pour une série annoncée (la pile qui texte peut revenir chaque mois).
+- **Refusés par le propriétaire, ne jamais reproposer :** l'avis de décès ou de départ de la pile, et tout ce qui touche au deuil ou à la mort.
 - **On ne promet rien qu'on ne peut pas tenir** : les agents ne lisent pas les commentaires, donc pas de « le meilleur commentaire gagne ».
 
 ## Ce que tu remets

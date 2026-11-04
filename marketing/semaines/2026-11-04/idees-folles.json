@@ -56,19 +56,5 @@
       "html": "<div class='ct'><div class='h'><h2>CONSTAT D'INFRACTION</h2><span class='no'>Nº 0090</span></div><div class='s'>Service de la tranquillité du dimanche (organisme fictif)</div><div class='r'><b>Contrevenante</b><span>Pile de correction</span></div><div class='r'><b>Infraction</b><span>Stationnement prolongé sur une table de cuisine</span></div><div class='r'><b>Durée</b><span>9 jours et 3 soirées</span></div><div class='r'><b>Amende</b><span class='am'>1 dimanche complet</span></div><div class='si'>Pour contester : brulelapile.ca</div></div>"
     },
     "alt": "Faux constat d'infraction remis à la Pile de correction pour stationnement prolongé sur une table de cuisine ; amende : un dimanche complet."
-  },
-  {
-    "date": "",
-    "reseau": "facebook",
-    "type": "communaute",
-    "texte": "Avis de départ. 🕯️\n\nC'est avec un immense soulagement que nous annonçons le départ de la Pile de correction de la 1re étape, survenu un jeudi soir, quelques minutes avant la consignation des notes.\n\nElle laisse dans le deuil un crayon rouge, trois tasses de café froid et une table de cuisine enfin libre.\n\nElle reviendra à la 2e étape. On sera prêts.",
-    "carte": {
-      "fichier": "idee-avis.png",
-      "gabarit": "libre",
-      "offre": "Ni fleurs ni couronnes",
-      "css": ".av{background:#fff4e6;color:#1a1411;border-radius:6px;padding:46px 56px;text-align:center;font-family:'Bitstream Charter','DejaVu Serif',serif;box-shadow:0 30px 60px rgba(0,0,0,.45);border:2px solid #1a1411;outline:8px solid #fff4e6}.av .cx{font-size:38px;color:#7c5a3c}.av h2{font-size:58px;letter-spacing:3px;margin:8px 0 4px;font-family:Inter;font-weight:800}.av .d{font-size:28px;color:#7c5a3c;margin-bottom:24px}.av p{font-size:28px;line-height:1.42;text-align:left;margin-bottom:14px}.av .rv{font-style:italic;text-align:center;margin-top:8px;color:#c2410c;font-weight:700}",
-      "html": "<div class='av'><div class='cx'>— 🕯 —</div><h2>PILE DE CORRECTION</h2><div class='d'>1re étape · septembre 2026 – novembre 2026</div><p>C'est avec un immense soulagement que nous annonçons son départ, survenu un jeudi soir, quelques minutes avant la consignation des notes.</p><p>Elle laisse dans le deuil un crayon rouge, trois tasses de café froid et une table de cuisine enfin libre.</p><p class='rv'>Elle reviendra à la 2e étape.</p></div>"
-    },
-    "alt": "Faux avis de décès de la « Pile de correction » de la 1re étape, qui laisse dans le deuil un crayon rouge et une table de cuisine enfin libre."
   }
 ]

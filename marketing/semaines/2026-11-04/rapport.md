@@ -11,7 +11,7 @@
 | Mar. 2026-11-10, 12 h 05 | Facebook | Offre d'emploi « Correcteur ou correctrice du dimanche soir » |
 | Mer. 2026-11-11, 12 h 05 | Facebook | Le reçu : environ 5 $ pour une classe |
 
-En réserve pour la 2e étape : le bulletin de la pile, la petite annonce, l'avis de départ (à publier juste après la prochaine consignation).
+En réserve pour la 2e étape : le bulletin de la pile et la petite annonce. (L'avis de départ a été refusé par le propriétaire.)
 
 ## Ce qu'on a appris
 
