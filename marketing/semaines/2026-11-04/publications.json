@@ -1,0 +1,63 @@
+[
+  {
+    "date": "2026-11-11T12:05:00",
+    "reseau": "facebook",
+    "type": "valeur",
+    "texte": "Une astuce qui accélère n'importe quelle correction, avec ou sans IA : écrivez votre corrigé AVANT d'ouvrir la première copie.\n\nPour chaque question : les points, la réponse attendue et les réponses acceptables. Les cas limites, décidez-les une fois, pas trente fois.\n\nBonus : avec un corrigé comme celui-là, Brûle la pile suit vos critères. 30 pages gratuites, sans carte de crédit : https://brulelapile.ca/?utm_source=facebook&utm_campaign=agents&utm_content=2026-11-11-corrige",
+    "carte": {
+      "fichier": "2026-11-11-corrige.png",
+      "gabarit": "liste",
+      "surtitre": "Astuce de correction",
+      "titre": "Le corrigé qui fait gagner du temps",
+      "points": ["Les points de chaque question", "La réponse attendue", "Les réponses acceptables", "Les cas limites, décidés une seule fois"]
+    },
+    "alt": "Carte Brûle la pile : le corrigé qui fait gagner du temps, en quatre points (points par question, réponse attendue, réponses acceptables, cas limites)."
+  },
+  {
+    "date": "2026-11-13T12:05:00",
+    "reseau": "facebook",
+    "type": "communaute",
+    "texte": "Pour plusieurs d'entre vous, les notes de la 1re étape sont consignées. 🎉\n\nVous avez survécu à la pile, aux soirées de correction et au café qui refroidit à côté des copies.\n\nQuestion honnête pour la salle des profs : combien de soirées la correction vous a-t-elle prises cette étape ?",
+    "carte": {
+      "fichier": "2026-11-13-survecu.png",
+      "gabarit": "titre",
+      "surtitre": "Fin de la 1re étape",
+      "titre": "Notes consignées. Vous avez survécu à la pile.",
+      "offre": "Bravo, collègues"
+    },
+    "alt": "Carte Brûle la pile : « Notes consignées. Vous avez survécu à la pile. »"
+  },
+  {
+    "date": "2026-11-15T10:05:00",
+    "reseau": "facebook",
+    "type": "produit",
+    "texte": "Pourquoi un prof d'histoire du secondaire a-t-il créé Brûle la pile ?\n\nParce que, comme vous, il connaît la pile du dimanche soir.\n\nDeux règles dès le départ :\n• le prof garde le dernier mot sur chaque note ;\n• les copies des élèves ne sont jamais conservées.\n\nLe reste, c'est du temps rendu aux profs. 30 pages gratuites, sans carte de crédit : https://brulelapile.ca/?utm_source=facebook&utm_campaign=agents&utm_content=2026-11-15-coulisses",
+    "carte": {
+      "fichier": "2026-11-15-coulisses.png",
+      "gabarit": "titre",
+      "surtitre": "Coulisses",
+      "titre": "Créé par un prof, pour les profs.",
+      "sous_titre": "Vous gardez le dernier mot. Les copies de vos élèves ne sont jamais conservées."
+    },
+    "alt": "Carte Brûle la pile : « Créé par un prof, pour les profs. Vous gardez le dernier mot. Les copies de vos élèves ne sont jamais conservées. »"
+  },
+  {
+    "date": "2026-11-17T12:05:00",
+    "reseau": "facebook",
+    "type": "produit",
+    "texte": "Combien coûte la correction d'une classe ?\n30 élèves, copies de 3 pages : environ 5 $ avec Brûle la pile.\n\nPas d'abonnement. Vous payez à la page, et les pages n'expirent pas : celles qui restent après cette étape serviront à la prochaine.\n\nChaque point retiré est justifié, et vous pouvez le changer d'un clic. Commencez par 30 pages gratuites, sans carte de crédit : https://brulelapile.ca/?utm_source=facebook&utm_campaign=agents&utm_content=2026-11-17-prix",
+    "carte": {
+      "fichier": "2026-11-17-prix.png",
+      "gabarit": "copie",
+      "titre": "Une classe de 30 élèves ? Environ 5 $.",
+      "eleve": "Léa Tremblay · groupe 541",
+      "note": "22 / 25",
+      "lignes": [
+        {"texte": "Q1 Révolution russe — 2/2 · 1917", "ok": true},
+        {"texte": "Q3 Bandung — 0/2 · écrit 1942, attendu 1955", "ok": false},
+        {"texte": "Q6 Assassinat de l'archiduc — 2/2", "ok": true}
+      ]
+    },
+    "alt": "Carte Brûle la pile : exemple fictif de copie corrigée (Léa Tremblay, 22 sur 25, chaque point justifié) et le titre « Une classe de 30 élèves ? Environ 5 $. »"
+  }
+]
