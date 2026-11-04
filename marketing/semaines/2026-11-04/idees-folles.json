@@ -1,0 +1,72 @@
+[
+  {
+    "date": "",
+    "reseau": "facebook",
+    "type": "communaute",
+    "texte": "⚠️ Avertissement de pile en vigueur pour votre table de cuisine.\n\nAccumulation de 90 copies prévue d'ici dimanche soir, avec des rafales de 3 pages par élève. Visibilité nulle sur la vie sociale.\n\nLes autorités recommandent de préparer votre corrigé et d'éviter les déplacements inutiles vers le divan.",
+    "carte": {
+      "fichier": "idee-meteo.png",
+      "gabarit": "libre",
+      "offre": "Restez à l'abri",
+      "css": ".al{margin-top:20px;background:#fff4e6;color:#1a1411;border-radius:18px;overflow:hidden;box-shadow:0 30px 60px rgba(0,0,0,.45)}.al .bd{height:34px;background:repeating-linear-gradient(-45deg,#1a1411 0 26px,#ffb547 26px 52px)}.al .in{padding:34px 46px}.al h2{font-size:54px;font-weight:900;letter-spacing:1px;color:#b91c1c}.al .z{font-size:27px;color:#7c5a3c;margin:6px 0 24px}.al .r{display:flex;gap:18px;font-size:32px;padding:13px 0;border-top:2px solid #e9d3bb}.al .r b{width:270px;flex:none}.al .cs{margin-top:20px;background:#1a1411;color:#ffb547;font-weight:700;font-size:29px;padding:18px 22px;border-radius:12px;line-height:1.3}",
+      "html": "<div class='al'><div class='bd'></div><div class='in'><h2>⚠ AVERTISSEMENT DE PILE</h2><div class='z'>En vigueur : table de cuisine et régions avoisinantes</div><div class='r'><b>Accumulation</b><span>90 copies d'ici dimanche soir</span></div><div class='r'><b>Rafales</b><span>jusqu'à 3 pages par élève</span></div><div class='r'><b>Visibilité</b><span>nulle sur la vie sociale</span></div><div class='r'><b>Fin prévue</b><span>à la consignation des notes</span></div><div class='cs'>Conseil : préparez votre corrigé et évitez les déplacements inutiles vers le divan.</div></div><div class='bd'></div></div>"
+    },
+    "alt": "Faux avertissement météo : accumulation de 90 copies prévue sur la table de cuisine, visibilité nulle sur la vie sociale."
+  },
+  {
+    "date": "",
+    "reseau": "facebook",
+    "type": "communaute",
+    "texte": "Vu sur un site de petites annonces. 🪑\n\n« Table de cuisine. Jamais vue depuis la rentrée. Possiblement en bois. Vendue avec la pile dessus, non négociable. »\n\nOn connaît tous ce vendeur. Parfois, c'est nous.",
+    "carte": {
+      "fichier": "idee-annonce.png",
+      "gabarit": "libre",
+      "offre": "30 pages gratuites",
+      "css": ".an{background:#fff4e6;color:#1a1411;border-radius:18px;display:flex;overflow:hidden;box-shadow:0 30px 60px rgba(0,0,0,.45)}.an .ph{width:330px;flex:none;background:#e9d3bb;position:relative}.an .ph i{position:absolute;left:55px;width:220px;height:30px;background:#fffaf2;border:2px solid #c9ad8f;border-radius:3px}.an .tb{position:absolute;left:25px;right:25px;bottom:70px;height:26px;background:#8a5a34;border-radius:4px}.an .in{padding:36px 40px;flex:1}.an .tag{display:inline-block;background:#b91c1c;color:#fff;font-weight:800;font-size:24px;padding:6px 14px;border-radius:6px;letter-spacing:2px}.an h2{font-size:52px;font-weight:800;margin:14px 0 6px}.an .px{font-size:34px;font-weight:800;color:#c2410c;margin-bottom:18px}.an li{font-size:28px;line-height:1.3;margin:0 0 10px 34px;list-style:disc inside;margin-left:0}.an .v{margin-top:18px;font-size:23px;color:#7c5a3c}",
+      "html": "<div class='an'><div class='ph'><i style='bottom:96px;transform:rotate(-3deg)'></i><i style='bottom:120px;transform:rotate(2deg)'></i><i style='bottom:144px;transform:rotate(-1deg)'></i><i style='bottom:168px;transform:rotate(3deg)'></i><i style='bottom:192px;transform:rotate(-2deg)'></i><i style='bottom:216px;transform:rotate(1deg)'></i><i style='bottom:240px;transform:rotate(-4deg)'></i><i style='bottom:264px;transform:rotate(2deg)'></i><i style='bottom:288px;transform:rotate(0deg)'></i><i style='bottom:312px;transform:rotate(-2deg)'></i><i style='bottom:336px;transform:rotate(3deg)'></i><i style='bottom:360px;transform:rotate(-1deg)'></i><div class='tb'></div></div><div class='in'><span class='tag'>À VENDRE</span><h2>Table de cuisine</h2><div class='px'>Prix : votre dimanche</div><ul><li>Jamais vue depuis la rentrée</li><li>Possiblement en bois</li><li>Vendue avec la pile dessus (non négociable)</li></ul><div class='v'>Vendeur : un prof · répond après la consignation des notes</div></div></div>"
+    },
+    "alt": "Fausse petite annonce : table de cuisine à vendre, jamais vue depuis la rentrée, vendue avec la pile de copies dessus."
+  },
+  {
+    "date": "",
+    "reseau": "facebook",
+    "type": "produit",
+    "texte": "Elle a matché avec vous en septembre. Elle revient à chaque fin d'étape. Elle ne prend jamais de vacances. 💔\n\nIl est peut-être temps de swiper à gauche.\n\nBrûle la pile lit votre corrigé et propose une note justifiée pour chaque question. Vous vérifiez, vous décidez. 30 pages gratuites, sans carte de crédit : https://brulelapile.ca/?utm_source=facebook&utm_campaign=agents&utm_content=rencontre",
+    "carte": {
+      "fichier": "idee-rencontre.png",
+      "gabarit": "libre",
+      "offre": "Swipez à gauche",
+      "css": ".pr{margin-top:20px;background:#fff4e6;color:#1a1411;border-radius:36px;overflow:hidden;width:700px;align-self:center;box-shadow:0 30px 60px rgba(0,0,0,.45)}.pr .im{height:250px;background:linear-gradient(160deg,#ffb547,#ff6a1a);position:relative}.pr .im i{position:absolute;left:230px;width:240px;height:28px;background:#fffaf2;border:2px solid #c9ad8f;border-radius:3px}.pr .in{padding:26px 36px}.pr h2{font-size:40px;font-weight:800}.pr h2 span{font-weight:500;color:#7c5a3c}.pr .lo{font-size:25px;color:#7c5a3c;margin:4px 0 14px}.pr p{font-size:26px;line-height:1.3;margin-bottom:8px}.pr .bt{display:flex;justify-content:center;gap:80px;padding:6px 0 26px}.pr .bt span{width:96px;height:96px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:50px;font-weight:800;background:#fff;box-shadow:0 8px 20px rgba(0,0,0,.15)}.pr .x{color:#b91c1c;border:4px solid #b91c1c}.pr .c{color:#15803d;border:4px solid #15803d}",
+      "html": "<div class='pr'><div class='im'><i style='bottom:24px;transform:rotate(-3deg)'></i><i style='bottom:46px;transform:rotate(2deg)'></i><i style='bottom:68px;transform:rotate(-1deg)'></i><i style='bottom:90px;transform:rotate(3deg)'></i><i style='bottom:112px;transform:rotate(-2deg)'></i><i style='bottom:134px;transform:rotate(1deg)'></i><i style='bottom:156px;transform:rotate(-4deg)'></i><i style='bottom:178px;transform:rotate(2deg)'></i><i style='bottom:200px;transform:rotate(0deg)'></i></div><div class='in'><h2>Pile de correction, <span>90 copies</span></h2><div class='lo'>📍 À 0 km de vous (sur votre table)</div><p><b>Aime :</b> vos dimanches soir, votre crayon rouge, se multiplier en fin d'étape.</p><p><b>Cherche :</b> relation longue durée (jusqu'en juin).</p></div><div class='bt'><span class='x'>✕</span><span class='c'>♥</span></div></div>"
+    },
+    "alt": "Faux profil d'application de rencontre de la « Pile de correction, 90 copies », à 0 km de vous, qui aime vos dimanches soir."
+  },
+  {
+    "date": "",
+    "reseau": "facebook",
+    "type": "produit",
+    "texte": "Constat d'infraction remis ce matin. 🚨\n\nContrevenante : Pile de correction.\nInfraction : stationnement prolongé sur une table de cuisine.\nAmende : un dimanche complet.\n\nPour contester : votre corrigé et vos copies dans Brûle la pile. Vous vérifiez chaque note, vous gardez le dernier mot. 30 pages gratuites : https://brulelapile.ca/?utm_source=facebook&utm_campaign=agents&utm_content=constat",
+    "carte": {
+      "fichier": "idee-constat.png",
+      "gabarit": "libre",
+      "offre": "Contester l'amende",
+      "css": ".ct{background:#fffaf0;color:#1a1411;border-radius:10px;padding:34px 44px;font-family:'JetBrains Mono',monospace;box-shadow:0 30px 60px rgba(0,0,0,.45);border-top:18px solid #b91c1c}.ct .h{display:flex;justify-content:space-between;align-items:baseline}.ct h2{font-family:Inter;font-size:50px;font-weight:900}.ct .no{font-size:26px;color:#b91c1c;font-weight:700}.ct .s{font-size:22px;color:#7c5a3c;margin:4px 0 20px}.ct .r{display:flex;gap:16px;font-size:27px;padding:12px 0;border-top:2px dashed #d6bfa5}.ct .r b{width:280px;flex:none;font-family:Inter}.ct .am{font-size:34px;font-weight:800;color:#b91c1c}.ct .si{margin-top:18px;font-family:Inter;font-size:22px;color:#7c5a3c}",
+      "html": "<div class='ct'><div class='h'><h2>CONSTAT D'INFRACTION</h2><span class='no'>Nº 0090</span></div><div class='s'>Service de la tranquillité du dimanche (organisme fictif)</div><div class='r'><b>Contrevenante</b><span>Pile de correction</span></div><div class='r'><b>Infraction</b><span>Stationnement prolongé sur une table de cuisine</span></div><div class='r'><b>Durée</b><span>9 jours et 3 soirées</span></div><div class='r'><b>Amende</b><span class='am'>1 dimanche complet</span></div><div class='si'>Pour contester : brulelapile.ca</div></div>"
+    },
+    "alt": "Faux constat d'infraction remis à la Pile de correction pour stationnement prolongé sur une table de cuisine ; amende : un dimanche complet."
+  },
+  {
+    "date": "",
+    "reseau": "facebook",
+    "type": "communaute",
+    "texte": "Avis de départ. 🕯️\n\nC'est avec un immense soulagement que nous annonçons le départ de la Pile de correction de la 1re étape, survenu un jeudi soir, quelques minutes avant la consignation des notes.\n\nElle laisse dans le deuil un crayon rouge, trois tasses de café froid et une table de cuisine enfin libre.\n\nElle reviendra à la 2e étape. On sera prêts.",
+    "carte": {
+      "fichier": "idee-avis.png",
+      "gabarit": "libre",
+      "offre": "Ni fleurs ni couronnes",
+      "css": ".av{background:#fff4e6;color:#1a1411;border-radius:6px;padding:46px 56px;text-align:center;font-family:'Bitstream Charter','DejaVu Serif',serif;box-shadow:0 30px 60px rgba(0,0,0,.45);border:2px solid #1a1411;outline:8px solid #fff4e6}.av .cx{font-size:38px;color:#7c5a3c}.av h2{font-size:58px;letter-spacing:3px;margin:8px 0 4px;font-family:Inter;font-weight:800}.av .d{font-size:28px;color:#7c5a3c;margin-bottom:24px}.av p{font-size:28px;line-height:1.42;text-align:left;margin-bottom:14px}.av .rv{font-style:italic;text-align:center;margin-top:8px;color:#c2410c;font-weight:700}",
+      "html": "<div class='av'><div class='cx'>— 🕯 —</div><h2>PILE DE CORRECTION</h2><div class='d'>1re étape · septembre 2026 – novembre 2026</div><p>C'est avec un immense soulagement que nous annonçons son départ, survenu un jeudi soir, quelques minutes avant la consignation des notes.</p><p>Elle laisse dans le deuil un crayon rouge, trois tasses de café froid et une table de cuisine enfin libre.</p><p class='rv'>Elle reviendra à la 2e étape.</p></div>"
+    },
+    "alt": "Faux avis de décès de la « Pile de correction » de la 1re étape, qui laisse dans le deuil un crayon rouge et une table de cuisine enfin libre."
+  }
+]

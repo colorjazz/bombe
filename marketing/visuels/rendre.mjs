@@ -34,6 +34,11 @@ function corps(carte) {
       <b>${echap(carte.note || "22 / 25")}</b></div>${lignes}
       <div class="fictif">Exemple fictif</div></div>`;
   }
+  if (g === "libre") {
+    // carte.html : le contenu HTML de la carte, écrit par l'agent (styles dans carte.css).
+    // Pour inventer n'importe quel objet détourné sans gabarit fixe.
+    return carte.html || "";
+  }
   if (g === "bulletin") {
     // carte.rangees : [[critère, résultat, commentaire]] ; carte.commentaire : commentaire général
     const rangees = (carte.rangees || []).map(([c, r, m]) =>
@@ -121,6 +126,7 @@ function page(carte) {
   .emploi .er{display:flex;gap:20px;font-size:29px;padding:12px 0;border-top:2px solid #e9d3bb;line-height:1.3}
   .emploi .er b{width:210px;flex:none}
   .emploi .ec{margin-top:20px;text-align:center;font-size:34px;font-weight:800;background:#1a1411;color:#ffb547;padding:16px;border-radius:12px}
+  ${carte.css || ""}
   .pied{display:flex;justify-content:space-between;align-items:center;font-size:30px;color:#f3d9bf}
   .pied b{color:#fff4e6;font-weight:800}
   .offre{background:#ff6a1a;color:#1a1411;font-weight:800;padding:14px 26px;border-radius:999px}

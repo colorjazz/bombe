@@ -1,0 +1,17 @@
+{
+  "fichier": "reel-pile-de-correction.mp4",
+  "accroche": "Dimanche, 10 h. Votre téléphone vibre.",
+  "contact": "Pile de correction",
+  "messages": [
+    {"de": "pile", "texte": "Allo. T'es où ?"},
+    {"de": "prof", "texte": "Brunch en famille 🙂"},
+    {"de": "pile", "texte": "Ok. Je t'attends sur la table de cuisine."},
+    {"de": "pile", "texte": "Et le paquet de correction dans ton sac aussi."},
+    {"de": "prof", "texte": "J'ai trouvé quelqu'un pour m'aider cette fois."},
+    {"de": "pile", "texte": "??? QUI ÇA"},
+    {"de": "prof", "texte": "Elle lit mon corrigé, propose les notes, et c'est moi qui décide."},
+    {"de": "pile", "texte": "Tu me trompes avec une APPLI ?!"},
+    {"de": "prof", "texte": "Je te quitte avant le souper."}
+  ],
+  "fin": {"titre": "Brûlez la pile.", "sous_titre": "Vous gardez le dernier mot. Les copies de vos élèves ne sont jamais conservées."}
+}

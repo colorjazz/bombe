@@ -16,6 +16,15 @@ Les agents publient seuls sur les réseaux. Les idées ci-dessous rapportent sou
 | 10 | **Burn the Pile en anglais** : commissions scolaires anglophones du Québec, puis le reste du Canada | Le marché est plusieurs fois plus grand, et le produit est déjà là | Session du SaaS (traduction), puis les agents (comptes en anglais) | Élevé |
 | 11 | **Tarif école ou département** : 5 profs, forfait Année à prix réduit | Un seul achat par la direction ou le budget du département | Toi (prix) ; la session du SaaS (clés multiples) | Moyen |
 
+## Coups d'éclat (à faire par toi, les agents préparent le matériel)
+
+| Idée | Comment | Pourquoi |
+|---|---|---|
+| **Affiche dans les salles des profs** | L'offre d'emploi « Correcteur ou correctrice du dimanche soir », en format lettre, avec un code QR vers l'essai gratuit. Avec la permission de la direction : ton école, puis des collègues d'autres écoles. | Elle est vue chaque jour, au moment où les profs parlent de leur pile. C'est un objet qu'on photographie et qu'on partage. |
+| **Le bûcher en direct** | Un Facebook Live de 10 minutes le vendredi avant une consignation : tu corriges une pile fictive de 30 copies, chrono à l'écran, et tu réponds aux questions. | Une démo en direct est une preuve impossible à truquer, et la vidéo reste sur la page ensuite. |
+| **Les 12 piles de Noël** | Du 1er au 12 décembre : chaque jour, un objet détourné de la Pile de correction (sa liste au père Noël, sa carte de vœux, etc.). | Une série qu'on attend chaque jour, au moment des évaluations d'avant les Fêtes. |
+| **Le défi de la pire pile** | Les profs publient la photo de leur pile (sans aucun nom d'élève visible). Un forfait Année pour la plus haute. | Du contenu créé par les profs eux-mêmes. **Concours : règlement écrit et règles de la Régie à vérifier avant le lancement.** |
+
 ## Déjà en place
 
 - Campagne Facebook payante de fin d'étape, du 2 au 15 novembre 2026 (environ 100 $). Les agents ne la touchent pas.
