@@ -73,7 +73,18 @@ function corps(carte) {
   return `<h1>${echap(carte.titre)}</h1>${carte.sous_titre ? `<p class="sous">${echap(carte.sous_titre)}</p>` : ""}`;
 }
 
+// carte.plein = true : image pleine page sans cadre de marque (ex. fausse capture d'écran),
+// au format carte.largeur × carte.hauteur (1080 × 1350 par défaut, format portrait du fil).
+function pagePleine(carte) {
+  const l = carte.largeur || 1080, h = carte.hauteur || 1350;
+  return `<!doctype html><html lang="fr-CA"><head><meta charset="utf-8"><style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{width:${l}px;height:${h}px;overflow:hidden;font-family:Inter,sans-serif}
+  ${carte.css || ""}</style></head><body>${carte.html || ""}</body></html>`;
+}
+
 function page(carte) {
+  if (carte.plein) return pagePleine(carte);
   return `<!doctype html><html lang="fr-CA"><head><meta charset="utf-8"><style>
   *{box-sizing:border-box;margin:0;padding:0}
   body{width:1080px;height:1080px;font-family:Inter,sans-serif;color:#fff4e6;
@@ -149,7 +160,9 @@ const onglet = await navigateur.newPage({ viewport: { width: 1080, height: 1080 
 let n = 0;
 for (const pub of publications) {
   if (!pub.carte || !pub.carte.fichier) continue;
-  await onglet.setContent(page(pub.carte), { waitUntil: "load" });
+  const c = pub.carte;
+  await onglet.setViewportSize(c.plein ? { width: c.largeur || 1080, height: c.hauteur || 1350 } : { width: 1080, height: 1080 });
+  await onglet.setContent(page(c), { waitUntil: "load" });
   await onglet.evaluate(() => document.fonts.ready);
   const sortie = join(dossier, pub.carte.fichier);
   await onglet.screenshot({ path: sortie, type: "png" });
