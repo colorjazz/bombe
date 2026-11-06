@@ -1,0 +1,88 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><style>
+*{box-sizing:border-box;margin:0}
+body{background:#ddd}
+.m{--w:1080px;width:var(--w);position:relative;overflow:hidden;color:#fff;font-family:"Inter Display",Inter,sans-serif;
+  background:
+    radial-gradient(760px 620px at 92% 4%,rgba(99,86,255,.62),transparent 62%),
+    radial-gradient(700px 560px at -6% 104%,rgba(234,88,12,.55),transparent 60%),
+    radial-gradient(500px 400px at 60% 70%,rgba(79,70,229,.18),transparent 70%),
+    linear-gradient(160deg,#17133a 0%,#100d24 55%,#0c0a1c 100%);
+  display:flex;flex-direction:column;padding:var(--pt) 76px 0}
+.sq{height:1080px;--pt:60px;--gap:.82} .pt{height:1350px;--pt:86px;--gap:1.35} .st{height:1920px;--pt:210px;--gap:1.7}
+/* grain du papier, très léger, et lignes de cahier en fondu */
+.m::before{content:'';position:absolute;inset:0;pointer-events:none;opacity:.10;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.m::after{content:'';position:absolute;inset:0;pointer-events:none;opacity:.07;
+  background:repeating-linear-gradient(transparent 0 58px,#c7d2fe 58px 60px);
+  -webkit-mask-image:linear-gradient(180deg,transparent 30%,#000 75%,transparent 100%)}
+.top{display:flex;justify-content:space-between;align-items:flex-start;position:relative;z-index:2;height:170px}
+.stamp{width:430px;height:200px;margin:-18px 0 0 -16px;transform:rotate(-9deg);filter:drop-shadow(0 6px 18px rgba(251,146,60,.25))}
+.pill{margin-top:22px;font:600 27px Inter;padding:13px 24px;border-radius:999px;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.22);backdrop-filter:blur(6px);color:#eceaff}
+.pill b{display:inline-block;width:10px;height:10px;border-radius:50%;background:#4ade80;margin-right:10px;box-shadow:0 0 12px #4ade80;vertical-align:2px}
+.t1{position:relative;z-index:2;margin-top:calc(18px*var(--gap));font-weight:900;font-size:142px;letter-spacing:-5.5px;line-height:.98;
+  background:linear-gradient(95deg,#ffd29a 0%,#fdba74 30%,#fb923c 65%,#f97316 100%);-webkit-background-clip:text;color:transparent;width:max-content}
+.pen{display:block;align-self:flex-start;flex:none;width:680px;height:34px;margin:6px 0 0 8px;position:relative;z-index:2}
+.t2{position:relative;z-index:2;margin-top:calc(26px*var(--gap));font-weight:900;font-size:86px;letter-spacing:-3px;line-height:1.04}
+.t2 .hl{background:linear-gradient(100deg,rgba(124,108,255,0) .8%,rgba(124,108,255,.85) 2.2%,rgba(110,95,250,.62) 6%,rgba(110,95,250,.58) 94%,rgba(124,108,255,.85) 97.5%,rgba(124,108,255,0) 99%) 0 72%/100% 62% no-repeat;
+  border-radius:.12em .4em .16em .35em;padding:0 .12em;margin:0 -.06em;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.steps{position:relative;z-index:2;margin-top:calc(46px*var(--gap));display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.card{border-radius:24px;padding:20px 22px 22px;background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.04));border:1.5px solid rgba(255,255,255,.16);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 20px 40px rgba(0,0,0,.25)}
+.ico{width:58px;height:58px;border-radius:16px;display:grid;place-items:center;background:linear-gradient(135deg,#fb923c,#f97316);margin-bottom:16px;box-shadow:0 8px 20px rgba(249,115,22,.35)}
+.ico svg{width:32px;height:32px;stroke:#1a1230;stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.card .n{font:800 20px Inter;color:#fdba74;letter-spacing:1.5px;margin-bottom:6px}
+.card p{font:700 28px/1.22 Inter;color:#fff}
+.last{position:relative;z-index:2;margin-top:calc(34px*var(--gap));font:600 31px Inter;color:#cfcaf7}
+.last b{color:#fff}
+.spacer{flex:1}
+/* Vertical 4:5 : un peu plus grand, mieux réparti */
+.pt .t2{font-size:90px} .pt .card p{font-size:31px} .pt .card{padding:26px 24px 30px}
+/* Story : étapes empilées, icône à gauche, gros texte ; la zone du bas reste libre pour les boutons d'Instagram et de Facebook */
+.st .t1{font-size:140px} .st .pen{width:690px}
+.st .t2{font-size:98px;letter-spacing:-3.2px}
+.st .steps{grid-template-columns:1fr;gap:22px}
+.st .card{display:grid;grid-template-columns:84px 1fr;align-items:center;column-gap:26px;padding:24px 28px}
+.st .card .ico{width:84px;height:84px;border-radius:22px;margin:0;grid-row:span 2}
+.st .card .ico svg{width:44px;height:44px}
+.st .card .n{margin:0;font-size:22px}
+.st .card p{font-size:37px}
+.st .last{font-size:38px}
+.foot{position:relative;z-index:2;margin:0 -76px;height:var(--fh,112px);display:flex;align-items:center;gap:18px;padding:0 50px 0 46px;
+  background:linear-gradient(180deg,rgba(8,6,20,.55),rgba(8,6,20,.92));border-top:1px solid rgba(255,255,255,.08)}
+.st .foot{--fh:170px;margin-bottom:120px;border-radius:0;background:transparent;border:0}
+.foot img{width:62px;height:62px}
+.foot .brand{font:800 34px Inter}
+.foot .cta{margin-left:auto;display:flex;align-items:center;gap:14px;font:800 30px Inter;color:#1a1230;background:linear-gradient(95deg,#fdba74,#fb923c);padding:16px 26px;border-radius:999px;box-shadow:0 10px 28px rgba(249,115,22,.4)}
+.foot .cta small{font:700 22px Inter;color:#4a2a0a}
+</style></head><body>
+<svg width="0" height="0" style="position:absolute"><defs>
+  <filter id="ink" x="-6%" y="-10%" width="112%" height="120%">
+    <feTurbulence type="fractalNoise" baseFrequency=".04" numOctaves="2" seed="7" result="warp"/>
+    <feDisplacementMap in="SourceGraphic" in2="warp" scale="5" xChannelSelector="R" yChannelSelector="G" result="d"/>
+    <feTurbulence type="fractalNoise" baseFrequency="1.4" numOctaves="1" seed="4" result="g"/>
+    <feColorMatrix in="g" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.5 1.55" result="holes"/>
+    <feComposite in="d" in2="holes" operator="in"/>
+  </filter>
+</defs></svg>
+<div class="m SIZE" id="m">
+  <div class="top">
+    <svg class="stamp" viewBox="0 0 430 200"><g filter="url(#ink)" fill="none" stroke="#ff9a4a">
+      <rect x="14" y="14" width="402" height="172" rx="22" stroke-width="9"/>
+      <rect x="30" y="30" width="370" height="140" rx="14" stroke-width="3.5"/>
+      <text x="215" y="94" text-anchor="middle" fill="#ff9a4a" stroke="none" font-family="Inter Display" font-weight="900" font-size="52" letter-spacing="3">MÊME ÉCRIT</text>
+      <text x="215" y="150" text-anchor="middle" fill="#ff9a4a" stroke="none" font-family="Inter Display" font-weight="900" font-size="52" letter-spacing="3">À LA MAIN</text>
+    </g></svg>
+    <div class="pill"><b></b>Primaire et secondaire</div>
+  </div>
+  <div class="t1">Oui, ça existe…</div>
+  <svg class="pen" viewBox="0 0 680 34"><path d="M6 22 C 110 10, 250 7, 370 13 S 570 27, 672 11" stroke="#ef4444" stroke-width="7" fill="none" stroke-linecap="round" opacity=".92"/></svg>
+  <div class="t2">Une appli qui <span class="hl">corrige le français</span> de tes élèves.</div>
+  <div class="steps">
+    <div class="card"><div class="ico"><svg viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></div><div class="n">1</div><p>Tu photographies les textes</p></div>
+    <div class="card"><div class="ico"><svg viewBox="0 0 24 24"><path d="M15 4l5 5-9 9H6v-5z"/><path d="M4 21h16"/></svg></div><div class="n">2</div><p>Fautes surlignées, règle expliquée</p></div>
+    <div class="card"><div class="ico"><svg viewBox="0 0 24 24"><path d="M3 9l9-5 9 5-9 5z"/><path d="M7 11v5c3 2 7 2 10 0v-5"/></svg></div><div class="n">3</div><p>Selon l’année de tes élèves</p></div>
+  </div>
+  <div class="last">Tu relis, tu ajustes, <b>tu gardes le dernier mot.</b></div>
+  <div class="spacer"></div>
+  <div class="foot"><img src="logo.png" alt=""><span class="brand">Brûle la pile</span><span class="cta">brulelapile.ca <small>30 pages gratuites</small></span></div>
+</div></body></html>
