@@ -4,6 +4,11 @@
 // Confidentialité : les copies transitent en mémoire vers l'IA puis sont oubliées.
 // Rien n'est écrit sur disque ni dans les journaux, à part les clés d'accès et leur solde.
 
+// Parrainage : un collègue invité reçoit REFERRAL.referee pages en plus de son premier forfait ; le parrain reçoit
+// REFERRAL.referrer pages quand ce collègue a corrigé REFERRAL.activePages pages (un vrai utilisateur), pour
+// REFERRAL.max collègues au plus.
+export const REFERRAL = { referrer: 200, referee: 100, activePages: 30, max: 5 };
+
 export const PACKS = {
   decouverte: { name: 'Pack Découverte', nameEn: 'Starter pack', pages: 200, amount: 1400 },
   session: { name: 'Pack Session', nameEn: 'Term pack', pages: 500, amount: 2900 },
@@ -64,7 +69,7 @@ export default {
 };
 
 const ROUTES = {
-  'GET /api/balance': balance,
+  'GET /api/balance': balance, 'GET /api/referral': referral,
   'POST /api/trial': trial,
   'POST /api/idea': idea,
   'POST /api/admin/keys': adminCreateKey, 'POST /api/admin/note': adminSetNote,
@@ -109,6 +114,11 @@ const DB_SCHEMA = [
   // Aucun contenu, aucune clé. Gardé 90 jours.
   `CREATE TABLE IF NOT EXISTS ai_calls (model TEXT NOT NULL, tin INTEGER NOT NULL, tout INTEGER NOT NULL, created_at INTEGER NOT NULL)`,
   `CREATE INDEX IF NOT EXISTS ai_calls_time ON ai_calls (created_at)`,
+  // Parrainage : un code par clé (le lien ne montre jamais la clé), et une ligne par achat parrainé.
+  `CREATE TABLE IF NOT EXISTS referral_codes (code TEXT PRIMARY KEY, key TEXT NOT NULL UNIQUE, created_at INTEGER NOT NULL)`,
+  `CREATE TABLE IF NOT EXISTS referrals (session_id TEXT PRIMARY KEY, code TEXT NOT NULL, referrer_key TEXT NOT NULL, referee_key TEXT NOT NULL,
+     referrer_pages INTEGER NOT NULL, referee_pages INTEGER NOT NULL, created_at INTEGER NOT NULL, referrer_paid INTEGER NOT NULL DEFAULT 0, paid_at INTEGER)`,
+  `CREATE INDEX IF NOT EXISTS referrals_referee ON referrals (referee_key, referrer_paid)`,
 ];
 let schemaReady;
 function ensureSchema(env) {
@@ -429,7 +439,7 @@ async function stripe(env, method, path, params) {
 }
 
 async function checkout(request, env, url) {
-  const { pack, key: existingKey } = await readJson(request);
+  const { pack, key: existingKey, ref } = await readJson(request);
   const p = PACKS[pack];
   if (!p) throw new HttpError(400, 'Pack inconnu');
 
@@ -439,6 +449,12 @@ async function checkout(request, env, url) {
     key = bearer(new Request(url, { headers: { Authorization: `Bearer ${existingKey}` } }));
     await getKey(env, key);
   }
+
+  // Code de parrainage valide et qui n'est pas celui de l'acheteur : le filleul voit son bonus sur la page de paiement.
+  const code = /^[A-Z0-9]{6,12}$/.test(String(ref || '')) ? String(ref) : '';
+  const owner = code ? await env.DB.prepare('SELECT key FROM referral_codes WHERE code = ?').bind(code).first() : null;
+  const referred = owner && owner.key !== key ? code : '';
+  const bonus = referred ? (isEnglish(request) ? ` + ${REFERRAL.referee} bonus pages (referral)` : ` + ${REFERRAL.referee} pages offertes (parrainage)`) : '';
 
   const session = await stripe(env, 'POST', 'checkout/sessions', {
     mode: 'payment',
@@ -450,10 +466,11 @@ async function checkout(request, env, url) {
     // La clé fait partie du nom de l'article : c'est la seule ligne présente sur tous les reçus, y compris
     // ceux d'une commande à 0 $ (code promo à 100 %), où Stripe ne crée pas de paiement ni sa description.
     'line_items[0][price_data][product_data][name]': isEnglish(request)
-      ? `Burn the Pile — ${p.nameEn}, ${p.pages.toLocaleString('en-CA')} pages · Access key ${key}`
-      : `Brûle la pile — ${p.name}, ${p.pages.toLocaleString('fr-CA')} pages · Clé d'accès ${key}`,
+      ? `Burn the Pile — ${p.nameEn}, ${p.pages.toLocaleString('en-CA')} pages${bonus} · Access key ${key}`
+      : `Brûle la pile — ${p.name}, ${p.pages.toLocaleString('fr-CA')} pages${bonus} · Clé d'accès ${key}`,
     'metadata[key]': key,
     'metadata[pages]': String(p.pages),
+    ...(referred ? { 'metadata[ref]': referred } : {}),
     // La description du paiement figure sur le reçu que Stripe envoie par courriel : le client y retrouve sa clé.
     'payment_intent_data[description]': isEnglish(request)
       ? `Your access key: ${key} (${p.pages.toLocaleString('en-CA')} pages added). Keep this email.`
@@ -498,10 +515,67 @@ async function creditSession(env, session) {
       .bind(key, pages, session.customer_details?.email || null, now).run();
     const pack = { 200: 'Découverte', 500: 'Session', 1800: 'Année' }[pages] || `${pages} pages`;
     const paid = Number.isFinite(session.amount_total) ? `${(session.amount_total / 100).toFixed(2).replace('.', ',')} $` : '';
-    await notify(env, `${pack} (${pages} pages)${paid ? ` · ${paid}` : ''}${before?.is_trial ? ' · après un essai gratuit' : ''}`,
+    const bonus = await rewardReferral(env, session, key, now);
+    await notify(env, `${pack} (${pages} pages)${paid ? ` · ${paid}` : ''}${before?.is_trial ? ' · après un essai gratuit' : ''}${bonus ? ' · parrainée' : ''}`,
       `Nouvelle vente${String(session.id).startsWith('cs_test_') ? ' (test)' : ''} 🎉`);
+    return { key, pages: pages + bonus };
   }
-  return { key, pages };
+  const done = await env.DB.prepare('SELECT referee_pages FROM referrals WHERE session_id = ?').bind(session.id).first();
+  return { key, pages: pages + (done?.referee_pages || 0) };
+}
+
+// Achat parrainé : seulement le premier achat payant de la clé du filleul, jamais sa propre clé ni son propre courriel.
+// Une seule fois par achat (INSERT OR IGNORE sur la session). Le filleul reçoit son bonus tout de suite ; le parrain,
+// plus tard (payReferrer), et seulement pour ses REFERRAL.max premiers collègues. Retourne les pages offertes au filleul.
+async function rewardReferral(env, session, key, now) {
+  const code = session.metadata?.ref;
+  if (!code || !(session.amount_total > 0)) return 0;
+  const owner = await env.DB.prepare('SELECT r.key, k.email FROM referral_codes r JOIN access_keys k ON k.key = r.key WHERE r.code = ?').bind(code).first();
+  if (!owner || owner.key === key) return 0;
+  const email = session.customer_details?.email;
+  if (email && owner.email && email.toLowerCase() === owner.email.toLowerCase()) return 0;
+  const earlier = await env.DB.prepare('SELECT COUNT(*) AS n FROM payments WHERE key = ? AND session_id != ?').bind(key, session.id).first();
+  if (earlier.n) return 0;
+  const done = await env.DB.prepare('SELECT COUNT(*) AS n FROM referrals WHERE referrer_key = ? AND referrer_pages > 0').bind(owner.key).first();
+  const forReferrer = done.n < REFERRAL.max ? REFERRAL.referrer : 0; // au-delà du plafond, seul le filleul reçoit son bonus
+  const row = await env.DB.prepare(`INSERT OR IGNORE INTO referrals (session_id, code, referrer_key, referee_key, referrer_pages, referee_pages, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?)`).bind(session.id, code, owner.key, key, forReferrer, REFERRAL.referee, now).run();
+  if (!row.meta.changes) return 0;
+  await env.DB.prepare('UPDATE access_keys SET pages = pages + ? WHERE key = ?').bind(REFERRAL.referee, key).run();
+  return REFERRAL.referee;
+}
+
+// Le parrain reçoit ses pages quand le collègue a vraiment corrigé REFERRAL.activePages pages depuis son achat
+// (pages nettes : les remboursements sont déduits). Appelé à chaque correction ; une seule fois par parrainage.
+async function payReferrer(env, key) {
+  try {
+    const r = await env.DB.prepare('SELECT session_id, referrer_key, referrer_pages, created_at FROM referrals WHERE referee_key = ? AND referrer_paid = 0 AND referrer_pages > 0 LIMIT 1').bind(key).first();
+    if (!r) return;
+    const used = await env.DB.prepare('SELECT COALESCE(SUM(pages), 0) AS n FROM usage WHERE key = ? AND created_at >= ?').bind(key, r.created_at).first();
+    if (used.n < REFERRAL.activePages) return;
+    const upd = await env.DB.prepare('UPDATE referrals SET referrer_paid = 1, paid_at = ? WHERE session_id = ? AND referrer_paid = 0').bind(Date.now(), r.session_id).run();
+    if (!upd.meta.changes) return;
+    await env.DB.prepare('UPDATE access_keys SET pages = pages + ? WHERE key = ?').bind(r.referrer_pages, r.referrer_key).run();
+    await notify(env, `Le collègue parrainé a corrigé ${REFERRAL.activePages} pages : le parrain reçoit ${r.referrer_pages} pages.`, 'Parrainage réussi 🤝');
+  } catch (err) { console.error('Parrainage :', err.message); }
+}
+
+// Lien de parrainage de l'enseignant (créé au premier appel) et ce qu'il lui a rapporté.
+async function referral(request, env, url) {
+  const key = bearer(request);
+  await getKey(env, key);
+  let row = await env.DB.prepare('SELECT code FROM referral_codes WHERE key = ?').bind(key).first();
+  if (!row) {
+    const bytes = crypto.getRandomValues(new Uint8Array(7));
+    const code = Array.from(bytes, (b) => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b % 32]).join('');
+    await env.DB.prepare('INSERT OR IGNORE INTO referral_codes (code, key, created_at) VALUES (?, ?, ?)').bind(code, key, Date.now()).run();
+    row = await env.DB.prepare('SELECT code FROM referral_codes WHERE key = ?').bind(key).first();
+  }
+  const stats = await env.DB.prepare(`SELECT COALESCE(SUM(referrer_paid), 0) AS paid, COALESCE(SUM(CASE WHEN referrer_paid = 0 AND referrer_pages > 0 THEN 1 ELSE 0 END), 0) AS pending,
+      COALESCE(SUM(CASE WHEN referrer_paid = 1 THEN referrer_pages ELSE 0 END), 0) AS pages, COALESCE(SUM(CASE WHEN referrer_pages > 0 THEN 1 ELSE 0 END), 0) AS counted
+    FROM referrals WHERE referrer_key = ?`).bind(key).first();
+  return json({ code: row.code, link: `${url.origin}/?ref=${row.code}`, count: stats.paid, pending: stats.pending, pages: stats.pages,
+    left: Math.max(0, REFERRAL.max - stats.counted), reward: REFERRAL });
 }
 
 // Alerte au fondateur (appli ntfy sur son téléphone) : NOTIFY_URL = https://ntfy.sh/<sujet secret>, dans Cloudflare.
@@ -1113,6 +1187,8 @@ async function reserve(env, key, n, request, ctx, kind) {
   const log = (pages) => env.DB.prepare('INSERT INTO usage (key, pages, kind, created_at) VALUES (?, ?, ?, ?)').bind(key, pages, kind, Date.now()).run()
     .catch((e) => console.error('Journal d\'utilisation :', e.message));
   await log(n);
+  const paying = payReferrer(env, key); // un collègue parrainé qui atteint 30 pages : le parrain reçoit ses pages
+  if (ctx) ctx.waitUntil(paying); else await paying;
   let back = 0;
   const refund = async (k) => {
     k = Math.min(k, n - back);
