@@ -52,6 +52,8 @@ T = {
   price_sub="Une classe de 30 élèves avec des copies de 3 pages : environ 5 $ en mode rapide, 10 $ en mode approfondi (double correction). La correction de la langue compte 1 page par page. Le corrigé n'est jamais facturé. Les pages achetées n'expirent pas.",
   prices=[('Découverte', '14 $', '200 pages', ['~7 ¢ la page', '~2 classes en mode rapide'], ''), ('Session', '29 $', '500 pages', ['~5,8 ¢ la page', '~5 classes en mode rapide, 2 à 3 en approfondi'], 'Le plus populaire'), ('Année', '79 $', '1 800 pages', ['~4,4 ¢ la page', "Toute l'année scolaire"], '')],
   start='ou essayer gratuitement d’abord', buy='Acheter', see_prices='Voir les tarifs →',
+  refer='<b>🤝 Parrainage :</b> faites découvrir Brûle la pile à un collègue. Il reçoit <b>100 pages de plus</b> sur son premier forfait, et vous recevez <b>200 pages</b> dès qu’il a corrigé ses 30 premières pages. Jusqu’à 5 collègues. Votre lien est dans l’appli, bouton « Inviter un collègue ».',
+  ref_banner='🤝 Un collègue vous a invité : <b>100 pages offertes</b> en plus de votre premier forfait.',
   price_note='Prix en dollars canadiens. Commencez par 30 pages gratuites. École ou centre de services ? <a href="mailto:bonjour@brulelapile.ca">Écrivez-nous</a> pour un tarif de groupe.',
   faq_h='Questions fréquentes',
   faq=[("L'IA remplace-t-elle mon jugement ?", "Non. Elle vous propose une note et une justification ; vous restez le correcteur. Tout est modifiable avant l'export, et les copies douteuses sont signalées."),
@@ -63,7 +65,7 @@ T = {
        ('Qu’est-ce qu’une « page » ?', 'Une page de copie d’élève (une face numérisée ou une photo). En mode rapide et en correction de la langue, une page de copie compte pour 1 page ; en mode approfondi (double correction et fiabilité), pour 2 pages. Le corrigé n’est pas compté. Une correction qui échoue n’est pas décomptée.'),
        ('Que deviennent les copies de mes élèves ?', 'Nous ne conservons aucune copie, aucune note et aucun nom d’élève. Pour la correction, les copies sont envoyées de façon chiffrée à Google (API Gemini, offre payante) : Google ne s’en sert pas pour entraîner ses modèles et ne les garde que brièvement, pour détecter les abus. Le nom de l’élève est masqué sur votre appareil avant l’envoi, et une option permet de faire traiter les copies à Montréal. Voir notre <a href="confidentialite.html">politique de confidentialité</a>.'),
        ('Et les parents ? Faut-il leur demander la permission ?', 'Le guide du ministère sur l’IA générative (2026) recommande d’abord que l’outil soit autorisé par votre organisme scolaire, et que les copies ne contiennent pas de renseignements personnels : c’est pourquoi le nom est masqué par défaut. Pour informer les parents et obtenir leur accord, utilisez notre <a href="consentement.html">modèle de lettre de consentement</a>, à remplir et à imprimer.'),
-       ('Dois-je créer un compte ?', 'Non. Vous recevez une clé d’accès qui contient votre solde de pages. Notez-la pour l’utiliser sur un autre appareil ou recharger votre compte.')],
+       ('Dois-je créer un compte ?', 'Non. Vous recevez une clé d’accès qui contient votre solde de pages. Notez-la pour l’utiliser sur un autre appareil ou recharger votre compte.'), ("Y a-t-il un programme de parrainage ?", "Oui. Dans l’appli, le bouton « Inviter un collègue » vous donne votre lien personnel et un message prêt à envoyer. Quand un collègue achète son premier forfait avec ce lien, il reçoit 100 pages de plus ; vous recevez 200 pages dès qu’il a corrigé ses 30 premières pages. Jusqu’à 5 collègues par prof.")],
   end_h='Votre prochaine pile de copies, en quelques minutes', end_sub='30 pages gratuites, sans carte de crédit.', end_cta='Essayer maintenant',
   lvl_q='Vous enseignez au :', lvls=[('primaire', 'Primaire'), ('secondaire', 'Secondaire'), ('cegep', 'Cégep')],
   lead_by={'primaire': "Photographiez les textes de vos élèves, même manuscrits : Brûle la pile surligne les fautes selon la Progression des apprentissages de leur année, calcule le pourcentage de fautes et propose la cote. Vous relisez et gardez le dernier mot.",
@@ -123,6 +125,8 @@ T = {
   price_sub='A class of 30 students with 3-page tests: about $5 in quick mode, $10 in in-depth mode (double marking). Language checks count 1 page per page. The answer key is never charged. Purchased pages never expire.',
   prices=[('Starter', '$14 CAD', '200 pages', ['~7¢ per page', '~2 classes in quick mode'], ''), ('Term', '$29 CAD', '500 pages', ['~5.8¢ per page', '~5 classes in quick mode, 2–3 in-depth'], 'Most popular'), ('Year', '$79 CAD', '1,800 pages', ['~4.4¢ per page', 'The whole school year'], '')],
   start='or try it free first', buy='Buy', see_prices='See pricing →',
+  refer='<b>🤝 Referrals:</b> introduce Burn the Pile to a colleague. They get <b>100 extra pages</b> on their first pack, and you get <b>200 pages</b> once they have marked their first 30 pages. Up to 5 colleagues. Your link is in the app, “Invite a colleague” button.',
+  ref_banner='🤝 A colleague invited you: <b>100 free pages</b> on top of your first pack.',
   price_note='Prices in Canadian dollars. Start with 30 free pages. A school or board? <a href="mailto:hello@burnthepile.com">Contact us</a> for group pricing.',
   faq_h='Frequently asked questions',
   faq=[('Does the AI replace my judgment?', 'No. It suggests a mark and a justification; you remain the marker. Everything can be edited before export, and papers that need a second look are flagged.'),
@@ -133,7 +137,7 @@ T = {
        ('What is a “page”?', 'One page of student work (one scanned side or one photo). In quick mode and for language checks, a page counts as 1; in in-depth mode (double grading and reliability), as 2. The answer key is not counted. Failed gradings are not charged.'),
        ('What happens to my students’ work?', 'We store no student work, marks or student names. For marking, papers are sent encrypted to Google (Gemini API, paid tier): Google does not use them to train its models and keeps them only briefly, to detect abuse. The student’s name is hidden on your device before sending, and an option lets papers be processed in Montreal. See our <a href="privacy.html">privacy policy</a>.'),
        ('What about parents? Do I need their permission?', 'Check first with your principal or school board: most boards decide which AI tools may be used with student work. To inform parents and get their consent, use our <a href="consent.html">template consent letter</a>, ready to fill in and print.'),
-       ('Do I need an account?', 'No. You get an access key that holds your page balance. Write it down to use it on another device or to top up.')],
+       ('Do I need an account?', 'No. You get an access key that holds your page balance. Write it down to use it on another device or to top up.'), ('Is there a referral program?', 'Yes. In the app, the “Invite a colleague” button gives you your personal link and a ready-to-send message. When a colleague buys their first pack with that link, they get 100 extra pages; you get 200 pages once they have marked their first 30 pages. Up to 5 colleagues per teacher.')],
   end_h='Your next pile of papers, in a few minutes', end_sub='30 free pages, no credit card.', end_cta='Try it now',
   creator_h='Made by a teacher, for teachers.', creator_p='I teach high-school history in Quebec. I built Burn the Pile to do the first pass of my own stacks of tests, without sending my students’ work just anywhere. I still read every paper: the tool does the first pass, I keep the judgment.',
   idea_h='An idea for Burn the Pile?', idea_sub='Suggest a feature or tell us what’s missing for your subject. I read every suggestion.', idea_ph='E.g., marking math tests including the work shown…', idea_mail='Your email (optional, so I can reply)', idea_send='Send my idea', idea_ok='Thank you! Your idea has been received.', idea_err='Sending didn’t work. Try again, or email us.', idea_short='Describe your idea in a few words.', idea_link='Suggest an idea',
@@ -187,6 +191,7 @@ def page(L, d):
   <main class="wrap">
     <section class="hero">
       <div class="hero-head">
+        <p id="ref-banner" class="ref-banner" hidden>{d['ref_banner']}</p>
         <img class="hero-logo" src="logo.png" alt="{d['brand']}" width="132" height="132">
         <span class="eyebrow">{d['eyebrow']}</span>
         <h1>{d['h1']}</h1>
@@ -249,6 +254,7 @@ def page(L, d):
       <div class="grid3">
         {''.join(f'<div class="panel price{" best" if badge else ""}"><b>{n}{f" <span class=\"pill\">{badge}</span>" if badge else ""}</b><div class="amount">{a} <small>{pg}</small></div><ul>{"".join(f"<li>{li}</li>" for li in lis)}</ul><a class="btn{" primary" if badge else ""} block" href="app.html#acheter-{pack}">{d["buy"]} · {a}</a><a class="price-try" href="app.html">{d["start"]}</a></div>' for (n, a, pg, lis, badge), pack in zip(d['prices'], ['decouverte', 'session', 'annee']))}
       </div>
+      <p class="panel refer">{d['refer']}</p>
       <p class="muted small" style="margin-top:1rem">{d['price_note']}</p>
     </section>
 
@@ -319,6 +325,7 @@ document.getElementById('idea-form').addEventListener('submit', async (e) => {{
   btn.disabled = false;
 }});
 </script>
+<script>try {{ const r = JSON.parse(localStorage.getItem('ce.ref') || 'null'); if (r && Date.now() - r.at < 60 * 86400000) document.getElementById('ref-banner').hidden = false; }} catch (e) {{}}</script>
 <script>fetch('/api/geo').then((r) => r.json()).then((g) => {{ if (g.country === 'CA') document.getElementById('made-ca').hidden = false; }}).catch(() => {{}});</script>
 </body>
 </html>
