@@ -339,7 +339,7 @@ const EN = {
   'Retirer toutes les pages ?': 'Remove all pages?',
   'Acheter des pages · dès 14 $': 'Buy pages · from $14', 'Acheter': 'Buy',
   '🤝 Inviter un collègue': '🤝 Invite a colleague', 'Inviter un collègue': 'Invite a colleague', 'Votre lien': 'Your link',
-  'Message à envoyer (modifiez-le à votre goût)': 'Message to send (edit it as you like)', 'Copier le message': 'Copy the message', 'Copier seulement le lien': 'Copy only the link', '✓ Copié': '✓ Copied',
+  'Message à envoyer (modifiez-le à votre goût)': 'Message to send (edit it as you like)', 'Copier le message': 'Copy the message', 'Copier seulement le lien': 'Copy only the link', '✓ Copié': '✓ Copied', 'Jusqu\'à 5 collègues par prof.': 'Up to 5 colleagues per teacher.',
   'Un collègue vous a invité : 100 pages offertes en plus de votre premier forfait.': 'A colleague invited you: 100 free pages on top of your first pack.',
 };
 

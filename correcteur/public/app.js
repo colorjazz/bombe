@@ -2428,8 +2428,12 @@ $('invite-open').addEventListener('click', async () => {
     const r = await api('/api/referral');
     $('invite-link').value = r.link;
     if (!$('invite-text').dataset.edited) $('invite-text').value = inviteText(r.link);
-    $('invite-stats').textContent = r.count ? L(`Merci ! ${r.count} collègue${r.count > 1 ? 's ont' : ' a'} acheté grâce à vous : ${r.pages} pages gagnées.`, `Thank you! ${r.count} colleague${r.count > 1 ? 's' : ''} bought through you: ${r.pages} pages earned.`)
-      : L('Personne encore : votre premier parrainage vous donnera 200 pages.', 'No one yet: your first referral earns you 200 pages.');
+    $('invite-stats').textContent = [
+      r.count ? L(`Merci ! ${r.count} collègue${r.count > 1 ? 's' : ''} parrainé${r.count > 1 ? 's' : ''} : ${r.pages} pages gagnées.`, `Thank you! ${r.count} colleague${r.count > 1 ? 's' : ''} referred: ${r.pages} pages earned.`) : '',
+      r.pending ? L(`En attente : ${r.pending} collègue${r.pending > 1 ? 's' : ''} (vos 200 pages arrivent dès ${r.pending > 1 ? 'qu’ils auront' : 'qu’il aura'} corrigé 30 pages).`, `Pending: ${r.pending} colleague${r.pending > 1 ? 's' : ''} (your 200 pages arrive once they have marked 30 pages).`) : '',
+      !r.count && !r.pending ? L('Personne encore : votre premier parrainage vous donnera 200 pages.', 'No one yet: your first referral earns you 200 pages.') : '',
+      r.left < r.reward.max ? L(`Encore ${r.left} parrainage${r.left > 1 ? 's' : ''} possible${r.left > 1 ? 's' : ''}.`, `${r.left} referral${r.left > 1 ? 's' : ''} left.`) : '',
+    ].filter(Boolean).join(' ');
   } catch (err) { $('invite-stats').textContent = err.message; }
 });
 $('invite-text').addEventListener('input', () => { $('invite-text').dataset.edited = '1'; });

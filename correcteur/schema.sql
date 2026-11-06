@@ -85,5 +85,8 @@ CREATE TABLE IF NOT EXISTS referrals (
   referee_key    TEXT NOT NULL,
   referrer_pages INTEGER NOT NULL,
   referee_pages  INTEGER NOT NULL,
-  created_at     INTEGER NOT NULL
+  created_at     INTEGER NOT NULL,
+  referrer_paid  INTEGER NOT NULL DEFAULT 0,  -- 1 quand le filleul a corrigé ses 30 premières pages
+  paid_at        INTEGER
 );
+CREATE INDEX IF NOT EXISTS referrals_referee ON referrals (referee_key, referrer_paid);
