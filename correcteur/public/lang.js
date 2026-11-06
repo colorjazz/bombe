@@ -20,6 +20,12 @@
   }
   if (!html.dataset.lang) html.lang = lang === 'en' ? 'en-CA' : 'fr-CA';
 
+  // Lien de parrainage (brulelapile.ca/?ref=CODE) : le code est gardé 60 jours, pour le bonus du premier achat.
+  try {
+    var ref = (new URLSearchParams(location.search).get('ref') || '').toUpperCase();
+    if (/^[A-Z0-9]{6,12}$/.test(ref)) localStorage.setItem('ce.ref', JSON.stringify({ code: ref, at: Date.now() }));
+  } catch (e) { /* navigation privée */ }
+
   // Sélecteur FR | EN : <a data-set-lang="en" href="index-en.html"> ou bouton sans lien (recharge la page).
   document.addEventListener('click', function (e) {
     var el = e.target.closest && e.target.closest('[data-set-lang]');

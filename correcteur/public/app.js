@@ -92,14 +92,14 @@ async function useKey(key) {
   state.qc = !!data.qc; $('qc-field').hidden = !state.qc; // option offerte seulement si le serveur a la clé Vertex
   $('gate').hidden = true;
   $('app').hidden = false;
-  $('buy-open').hidden = $('logout').hidden = false;
+  $('buy-open').hidden = $('logout').hidden = $('invite-open').hidden = false;
 }
 
 function showGate(msg = '') {
   state.key = null;
   $('gate').hidden = false;
   $('app').hidden = true;
-  $('balance').hidden = $('buy-open').hidden = $('logout').hidden = true;
+  $('balance').hidden = $('buy-open').hidden = $('logout').hidden = $('invite-open').hidden = true;
   $('gate-msg').textContent = msg;
 }
 
@@ -136,7 +136,7 @@ async function startTrial(force = false) {
 async function buy(pack) {
   $('buy-msg').textContent = '';
   try {
-    const { url } = await api('/api/checkout', { method: 'POST', auth: false, body: { pack, key: state.key || undefined } });
+    const { url } = await api('/api/checkout', { method: 'POST', auth: false, body: { pack, key: state.key || undefined, ref: referralCode() || undefined } });
     if (state.results.length && !state.exported && !confirm(tr('Vos résultats non téléchargés seront perdus en quittant la page. Continuer vers le paiement ?'))) return;
     state.exported = true;
     location.href = url;
@@ -2317,7 +2317,7 @@ document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape') return;
   if (adding && !$('viewer').hidden) { adding = null; renderViewer(); return; }
   if (!$('cam').hidden) { closeCamera(); return; }
-  for (const id of ['zoom', 'viewer', 'rel-help', 'buy']) {
+  for (const id of ['zoom', 'viewer', 'rel-help', 'buy', 'invite']) {
     if (!$(id).hidden) { $(id).hidden = true; if (id === 'viewer') viewing = null; return; }
   }
 });
@@ -2395,6 +2395,52 @@ $('logout').addEventListener('click', () => {
   store.del(); location.reload();
 });
 $('buy-open').addEventListener('click', () => { $('buy').hidden = false; });
+
+// ---------- Parrainage ----------
+// Code reçu par un lien d'invitation (gardé 60 jours par lang.js) : bonus du filleul à son premier achat.
+function referralCode() {
+  try {
+    const r = JSON.parse(localStorage.getItem('ce.ref') || 'null');
+    return r && Date.now() - r.at < 60 * 86400000 ? r.code : '';
+  } catch { return ''; }
+}
+new MutationObserver(() => { if (!$('buy').hidden) $('buy-ref').hidden = !referralCode(); }).observe($('buy'), { attributes: true, attributeFilter: ['hidden'] });
+// Message écrit à la première personne, sans émoji : le prof l'envoie tel quel, ou l'ajuste.
+const inviteText = (link) => L(`Salut,
+
+Je voulais te parler d'un outil que j'utilise pour corriger mes copies : Brûle la pile. Tu photographies les copies, même écrites à la main, et il propose une note, un commentaire pour l'élève et surligne les fautes de français. C'est toi qui relis et qui décides de la note. Ça me fait gagner beaucoup de temps.
+
+Tu peux l'essayer gratuitement avec 30 pages. Si tu prends un forfait en passant par mon lien, tu reçois 100 pages de plus :
+${link}
+
+Dis-moi ce que tu en penses !`, `Hi,
+
+I wanted to tell you about a tool I use to mark my papers: Burn the Pile. You take photos of the papers, even handwritten ones, and it suggests a mark, a comment for the student and highlights spelling and grammar errors. You review everything and decide on the mark. It saves me a lot of time.
+
+You can try it for free with 30 pages. If you buy a pack through my link, you get 100 extra pages:
+${link}
+
+Let me know what you think!`);
+$('invite-open').addEventListener('click', async () => {
+  $('invite').hidden = false;
+  $('invite-stats').textContent = '';
+  try {
+    const r = await api('/api/referral');
+    $('invite-link').value = r.link;
+    if (!$('invite-text').dataset.edited) $('invite-text').value = inviteText(r.link);
+    $('invite-stats').textContent = r.count ? L(`Merci ! ${r.count} collègue${r.count > 1 ? 's ont' : ' a'} acheté grâce à vous : ${r.pages} pages gagnées.`, `Thank you! ${r.count} colleague${r.count > 1 ? 's' : ''} bought through you: ${r.pages} pages earned.`)
+      : L('Personne encore : votre premier parrainage vous donnera 200 pages.', 'No one yet: your first referral earns you 200 pages.');
+  } catch (err) { $('invite-stats').textContent = err.message; }
+});
+$('invite-text').addEventListener('input', () => { $('invite-text').dataset.edited = '1'; });
+const copyFrom = async (btn, text) => {
+  const label = btn.textContent;
+  try { await navigator.clipboard.writeText(text); btn.textContent = tr('✓ Copié'); } catch { btn.textContent = '—'; }
+  setTimeout(() => { btn.textContent = label; }, 2200);
+};
+$('invite-copy').addEventListener('click', (e) => copyFrom(e.currentTarget, $('invite-text').value));
+$('invite-copy-link').addEventListener('click', (e) => copyFrom(e.currentTarget, $('invite-link').value));
+document.querySelectorAll('[data-close-invite]').forEach((b) => b.addEventListener('click', () => { $('invite').hidden = true; }));
 document.querySelectorAll('[data-open-buy]').forEach((b) => b.addEventListener('click', () => { $('buy').hidden = false; }));
 document.querySelectorAll('[data-close-buy]').forEach((b) => b.addEventListener('click', () => { $('buy').hidden = true; }));
 document.querySelectorAll('[data-pack]').forEach((b) => b.addEventListener('click', () => buy(b.dataset.pack)));

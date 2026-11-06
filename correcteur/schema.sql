@@ -71,3 +71,19 @@ CREATE TABLE IF NOT EXISTS ai_calls (
   created_at INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS ai_calls_time ON ai_calls (created_at);
+
+-- Parrainage : un code par clé (le lien ne montre jamais la clé) et une ligne par achat parrainé.
+CREATE TABLE IF NOT EXISTS referral_codes (
+  code       TEXT PRIMARY KEY,
+  key        TEXT NOT NULL UNIQUE,
+  created_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS referrals (
+  session_id     TEXT PRIMARY KEY,
+  code           TEXT NOT NULL,
+  referrer_key   TEXT NOT NULL,
+  referee_key    TEXT NOT NULL,
+  referrer_pages INTEGER NOT NULL,
+  referee_pages  INTEGER NOT NULL,
+  created_at     INTEGER NOT NULL
+);
