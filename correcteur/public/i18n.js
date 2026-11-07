@@ -137,7 +137,9 @@ const EN = {
   // Résultats
   'Résultats': 'Results',
   'Rechercher un élève…': 'Search for a student…',
-  'Télécharger les notes (Excel)': 'Download marks (Excel)',
+  'Télécharger les notes (Excel)': 'Download marks (Excel)', 'Télécharger le résumé des fautes (Excel)': 'Download the error summary (Excel)', 'Pas d’accord ? ': 'Disagree? ', 'changer les réglages': 'change the settings',
+  'Dans la copie annotée, le × retire une fausse faute et « + Ajouter une faute » en ajoute une. Pour une correction plus ou moins sévère, ou une autre année : ': 'In the annotated paper, × removes a wrong error and “+ Add an error” adds one. For stricter or looser marking, or another grade: ',
+  'Ouvrez une copie et touchez « Modifier les notes » : chaque point se change. Pour tout recorriger autrement (barème, demi-points, sévérité, double correction) : ': 'Open a paper and tap “Edit the marks”: every point can be changed. To mark everything differently (points, half points, strictness, double marking): ',
   'Terminer la session': 'End session',
   'Vos notes ne sont pas encore enregistrées : téléchargez-les ou imprimez-les d\'abord, car tout sera effacé.': 'Your marks are not saved yet: download or print them first, because everything will be erased.',
   'Tout effacer et garder ma clé': 'Erase everything and keep my key',
@@ -146,7 +148,7 @@ const EN = {
   "— le haut de la 1re page est caché avant l'envoi à l'IA (zone hachurée) ; vous inscrirez les noms vous-même.": '— the top of page 1 is covered before it is sent to the AI (hatched area); you will type the names yourself.',
   '80 – 89 %': '80–89%',
   'Les copies corrigées apparaîtront ici, avec le détail des points par question.': 'Graded papers will appear here, with a point-by-point breakdown.',
-  'Les notes sont des propositions : vérifiez-les, surtout les copies marquées ⚠. Tout est modifiable.': 'Grades are suggestions: review them, especially papers marked ⚠. Everything can be edited.',
+  'Les notes sont des propositions : vérifiez-les. Tout est modifiable.': 'Grades are suggestions: review them. Everything can be edited.',
   "Aucune copie ni note n'est conservée : téléchargez les notes avant de fermer la page.": 'No work or grades are stored: download your results before closing the page.',
   'copies': 'papers', 'moyenne': 'average', 'fiabilité moyenne': 'average reliability', 'à vérifier ⚠': 'to review ⚠',
   'Question': 'Question', 'Justification': 'Justification',
@@ -339,7 +341,11 @@ const EN = {
   'Retirer toutes les pages ?': 'Remove all pages?',
   'Acheter des pages · dès 14 $': 'Buy pages · from $14', 'Acheter': 'Buy',
   '🤝 Inviter un collègue': '🤝 Invite a colleague', 'Inviter un collègue': 'Invite a colleague', 'Votre lien': 'Your link',
-  'Message à envoyer (modifiez-le à votre goût)': 'Message to send (edit it as you like)', 'Copier le message': 'Copy the message', 'Copier seulement le lien': 'Copy only the link', '✓ Copié': '✓ Copied', 'Jusqu\'à 5 collègues par prof.': 'Up to 5 colleagues per teacher.',
+  'Message à envoyer (modifiez-le à votre goût)': 'Message to send (edit it as you like)', 'Copier le message': 'Copy the message', 'Copier seulement le lien': 'Copy only the link', '✓ Copié': '✓ Copied', 'Barème, demi-points, sévérité, double correction · ': 'Points, half points, strictness, double marking · ', 'Modifier les réglages': 'Change settings',
+  'Lire les noms': 'Read names', 'Masquer': 'Hide', 'Noms lus par l’IA': 'Names read by the AI', 'le nom de l’élève est envoyé avec sa copie': 'the student’s name is sent with their paper',
+  'sur votre appareil, avant l’envoi : vous tapez les noms après la correction': 'on your device, before sending: you type the names after marking',
+  'D’autres copies ? Déposez-les ici': 'More papers? Drop them here',
+  'Faire lire les noms par l’IA ?\n\nLe nom de chaque élève sera envoyé avec sa copie, et rempli automatiquement dans les résultats. Assurez-vous d’en avoir l’autorisation de votre école (Loi 25).': 'Let the AI read the names?\n\nEach student’s name will be sent with their paper and filled in automatically in the results. Make sure your school allows it (privacy law).', 'Jusqu\'à 5 collègues par prof.': 'Up to 5 colleagues per teacher.',
   'Un collègue vous a invité : 100 pages offertes en plus de votre premier forfait.': 'A colleague invited you: 100 free pages on top of your first pack.',
 };
 

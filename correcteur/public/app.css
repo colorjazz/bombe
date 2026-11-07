@@ -582,3 +582,7 @@ body.light .layout > .levelbar { grid-column: 1 / -1; }
 .zoom-nav[hidden] { display: none; }
 .zoom-nav .btn { width: 46px; height: 42px; padding: 0; font-size: 1.6rem; line-height: 1; }
 .zoom-nav .btn:disabled { opacity: .35; }
+
+/* « Pas d'accord ? » sous le message de fin : accès direct aux réglages */
+.adjust { margin: 0; padding: .6rem .8rem; border-radius: 10px; background: #fff7ed; border: 1px solid #fed7aa; color: #7c2d12; line-height: 1.45; }
+.adjust a { font-weight: 700; }

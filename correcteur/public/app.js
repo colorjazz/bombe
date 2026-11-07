@@ -655,6 +655,9 @@ function renderSummary() {
   $('export').disabled = $('end').disabled = state.running || !state.results.length;
   // Pas de gros bouton vert tant qu'il n'y a rien à télécharger.
   $('export').hidden = $('print-all').hidden = !state.results.length;
+  // Correction de la langue : pas d'impression groupée (chaque copie annotée s'imprime depuis sa vue), et un résumé plutôt que des notes.
+  if (state.kind === 'lang') $('print-all').hidden = true;
+  $('export').textContent = tr(state.kind === 'lang' ? 'Télécharger le résumé des fautes (Excel)' : 'Télécharger les notes (Excel)');
   $('print-all').disabled = state.running || !state.results.some((r) => r.kind !== 'lang');
   renderCalib();
 }
@@ -671,9 +674,9 @@ function renderReady(list, n, cost) {
   box.hidden = !simpleContent() || !(n || state.rubricPages.length);
   if (box.hidden) return;
   // ok : true (✓), false (!) ou 'wait' (en cours).
-  const line = (ok, title, sub, onSee) => h('div', { class: 'ready-line' }, ok === 'wait' ? h('span', { class: 'wait' }, h('i', { class: 'spinner' })) : h('span', { class: ok ? 'ok' : 'warn', textContent: ok ? '✓' : '!' }),
+  const line = (ok, title, sub, onSee, seeLabel = 'Voir') => h('div', { class: 'ready-line' }, ok === 'wait' ? h('span', { class: 'wait' }, h('i', { class: 'spinner' })) : h('span', { class: ok ? 'ok' : 'warn', textContent: ok ? '✓' : '!' }),
     h('div', {}, h('b', { textContent: tr(title) }), sub ? h('div', { class: 'muted small', textContent: tr(sub) }) : null),
-    onSee ? h('button', { class: 'link', type: 'button', textContent: tr('Voir'), onclick: onSee }) : null);
+    onSee ? h('button', { class: 'link', type: 'button', textContent: tr(seeLabel), onclick: onSee }) : null);
   const seeRubric = () => { setUiMode(true); setTimeout(() => ($('grid-editor').hidden ? $('rubric-thumbs') : $('grid-editor')).scrollIntoView({ behavior: 'smooth', block: 'start' }), 60); };
   const gridSum = state.grid ? state.grid.reduce((a, c) => a + (Number(c.max) || 0), 0) : 0;
   const key = state.reading ? line(true, 'Lecture de la grille…', `${pl(state.rubricPages.length, 'page', 'pages')}`)
@@ -684,9 +687,15 @@ function renderReady(list, n, cost) {
   const copiesLine = state.detecting ? line('wait', 'Je repère où commence chaque copie…', `${pl(n, 'page', 'pages')} · gratuit, quelques secondes`)
     : line(true, `${pl(list.length, 'copie trouvée', 'copies trouvées')}`, `${pl(n, 'page', 'pages')}${cost && state.pagesLeft != null && state.pagesLeft >= cost ? ` · il vous restera ${pl(state.pagesLeft - cost, 'page', 'pages')}` : ''}`,
       () => { state.showPages = !state.showPages; renderPages(); if (state.showPages) $('pages-zone').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
-  box.replaceChildren(h('b', { class: 'ready-title', textContent: tr(!n ? 'Déposez maintenant les copies' : state.detecting ? 'Un instant…' : 'C’est prêt') }), key,
-    n ? copiesLine : null,
-    n && anonymous() ? line(true, 'Noms masqués', 'sur votre appareil, avant l’envoi') : null);
+  // Noms : masqués par défaut (Loi 25) ; c'est l'enseignant qui choisit de les faire lire par l'IA, en connaissance de cause.
+  const setAnon = (on) => { $('anon').checked = on; $('anon').dispatchEvent(new Event('change')); renderSummary(); };
+  const names = !n ? null : anonymous()
+    ? line(true, 'Noms masqués', 'sur votre appareil, avant l’envoi : vous tapez les noms après la correction', () => {
+      if (confirm(tr('Faire lire les noms par l’IA ?\n\nLe nom de chaque élève sera envoyé avec sa copie, et rempli automatiquement dans les résultats. Assurez-vous d’en avoir l’autorisation de votre école (Loi 25).'))) setAnon(false);
+    }, 'Lire les noms')
+    : line(false, 'Noms lus par l’IA', 'le nom de l’élève est envoyé avec sa copie', () => setAnon(true), 'Masquer');
+  box.replaceChildren(...[h('b', { class: 'ready-title', textContent: tr(!n ? (state.results.length ? 'D’autres copies ? Déposez-les ici' : 'Déposez maintenant les copies') : state.detecting ? 'Un instant…' : 'C’est prêt') }), key,
+    n ? copiesLine : null, names].filter(Boolean)); // replaceChildren afficherait « null »
 }
 
 // Dépôt unique (mode simple) : chaque fichier est classé grille, corrigé ou copie (gratuit), d'après sa 1re page.
@@ -988,7 +997,7 @@ async function runAll(only, calibrating = false) {
   $('stop-run').textContent = tr('Arrêter');
   keepAwake(true);
   list.forEach((b) => { state.status[b[0].id] = null; });
-  $('done-msg').hidden = true;
+  $('done-msg').hidden = true; $('adjust').hidden = true;
   banner();
   renderPages();
 
@@ -1120,11 +1129,11 @@ async function runAll(only, calibrating = false) {
   if (stop) banner('err', stop);
   else if (state.stopping) banner('info', `Correction arrêtée : ${pl(done, 'copie corrigée', 'copies corrigées')}. Les ${list.length - done} autres restent dans la liste : relancez quand vous voulez.`);
   else if (failed) banner('err', `${pl(done, 'copie corrigée', 'copies corrigées')}, ${failed} en erreur : elles restent dans la liste, relancez pour réessayer.`);
-  else if (state.kind === 'lang') banner('ok', `${pl(done, 'copie analysée', 'copies analysées')}. Vérifiez en priorité les copies marquées ⚠.`);
+  else if (state.kind === 'lang') banner('ok', `${pl(done, 'copie analysée', 'copies analysées')}.${state.results.some((r) => r.flags?.length) ? ' Vérifiez en priorité les copies marquées ⚠.' : ''}`);
   else if (calibrating) banner('ok', `${pl(done, 'copie corrigée', 'copies corrigées')} pour le calibrage. Relisez-les et changez les notes qui ne vous conviennent pas (la raison est facultative), puis cliquez sur « Corriger » : vos ajustements guideront le reste de la pile.`);
   else if (!hasKey && simpleContent()) banner(); // dit sous les résultats (done-msg)
   else if (!hasKey) banner('info', `${pl(done, 'copie corrigée', 'copies corrigées')} sans votre corrigé : les notes risquent d’être un peu généreuses. Relisez-les, ou ajoutez votre corrigé pour des notes plus justes.`);
-  else banner('ok', `${pl(done, 'copie corrigée', 'copies corrigées')}. Vérifiez en priorité les copies marquées ⚠.`);
+  else banner('ok', `${pl(done, 'copie corrigée', 'copies corrigées')}.${state.results.some((r) => r.flags?.length) ? ' Vérifiez en priorité les copies marquées ⚠.' : ''}`);
   // Les résultats sont dans l'autre colonne (ou plus bas sur téléphone) : on y emmène l'enseignant, 1re copie ouverte.
   if (done && !stop) {
     const first = state.results.find((r) => list.some((b) => b[0].id === r.id));
@@ -1135,6 +1144,13 @@ async function runAll(only, calibrating = false) {
       : byGrid() && renderMode() === 'letters' ? `✓ ${pl(done, 'copie corrigée', 'copies corrigées')}. Ouvrez une copie pour voir et modifier ses niveaux. En rose : les critères sous le niveau le plus élevé.`
       : byGrid() ? `✓ ${pl(done, 'copie corrigée', 'copies corrigées')}. Ouvrez une copie pour voir et modifier ses niveaux. En rose : les critères où des points ont été retirés.`
       : `✓ ${pl(done, 'copie corrigée', 'copies corrigées')}. Ouvrez une copie pour voir et modifier sa note. En rose : les questions où des points ont été retirés.${hasKey ? '' : ' Sans votre corrigé, les notes risquent d’être un peu généreuses : relisez-les.'}`;
+    // Pas d'accord : dire tout de suite qu'on peut corriger l'IA ou changer les réglages (sinon on conclut « ça corrige mal »).
+    const toSettings = (e) => { e.preventDefault(); setUiMode(true); $('app').querySelector('.s1').scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+    $('adjust').replaceChildren(h('b', { textContent: tr('Pas d’accord ? ') }),
+      tr(state.kind === 'lang' ? 'Dans la copie annotée, le × retire une fausse faute et « + Ajouter une faute » en ajoute une. Pour une correction plus ou moins sévère, ou une autre année : '
+        : 'Ouvrez une copie et touchez « Modifier les notes » : chaque point se change. Pour tout recorriger autrement (barème, demi-points, sévérité, double correction) : '),
+      h('a', { href: '#', textContent: tr('changer les réglages'), onclick: toSettings }), '.');
+    $('adjust').hidden = false;
     $('done-msg').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 }
@@ -1242,6 +1258,7 @@ function openZoom(urls, title, nav = null) {
     $('zoom-next').disabled = nav.i === nav.list.length - 1;
   }
   $('zoom').hidden = false;
+  modalOpened('zoom');
 }
 async function openCorrected(r) {
   const list = shownResults().filter((x) => x.pageUrls && x.kind !== 'lang');
@@ -1805,7 +1822,7 @@ function categoryChips(errors) {
 
 // Primaire : « 214 mots · 7 fautes comptées · 3,3 % → B ».
 const greyCount = (r) => r.pages.reduce((a, p) => a + p.errors.filter((e) => e.grey).length, 0);
-const pdaLine = (r, n) => `${r.words == null ? L('mots non comptés', 'words not counted') : plural(r.words, 'mot', 'mots', 'word', 'words')} · ${plural(n, 'faute retenue', 'fautes retenues', 'error counted', 'errors counted')}${r.pct == null ? '' : ` · ${pctText(fmt(Math.round(r.pct * 10) / 10))}`}`;
+const pdaLine = (r, n) => `${!r.words ? L('mots non comptés', 'words not counted') : plural(r.words, 'mot', 'mots', 'word', 'words')} · ${plural(n, 'faute retenue', 'fautes retenues', 'error counted', 'errors counted')}${r.pct == null ? '' : ` · ${pctText(fmt(Math.round(r.pct * 10) / 10))}`}`;
 function langCard(r) {
   const errors = r.pages.flatMap((p) => p.errors);
   const n = r.pda ? langGrade(r) : counted(errors).length;
@@ -1840,7 +1857,18 @@ let viewing = null;
 let adding = null; // ajout d'une faute oubliée : { stage: 'draw' } puis { stage: 'form', page, box }
 // Dernière faute retirée de la copie ouverte : « Annuler » la remet à sa place.
 let removed = null;
+// « Retour » du téléphone ou du navigateur : ferme la copie ouverte au lieu de quitter l'appli (et de perdre les résultats).
+function modalOpened(id) { if (history.state?.modal !== id) history.pushState({ modal: id }, ''); }
+function modalClose(id) {
+  if (history.state?.modal === id) { history.back(); return; } // repasse par popstate, qui ferme
+  $(id).hidden = true; if (id === 'viewer') viewing = null;
+}
+window.addEventListener('popstate', () => {
+  for (const id of ['zoom', 'viewer']) if (!$(id).hidden) { $(id).hidden = true; if (id === 'viewer') viewing = null; }
+});
+
 function openViewer(r) {
+  modalOpened('viewer');
   viewing = r;
   adding = null;
   removed = null;
@@ -2318,10 +2346,10 @@ document.addEventListener('keydown', (e) => {
   if (adding && !$('viewer').hidden) { adding = null; renderViewer(); return; }
   if (!$('cam').hidden) { closeCamera(); return; }
   for (const id of ['zoom', 'viewer', 'rel-help', 'buy', 'invite']) {
-    if (!$(id).hidden) { $(id).hidden = true; if (id === 'viewer') viewing = null; return; }
+    if (!$(id).hidden) { if (id === 'zoom' || id === 'viewer') modalClose(id); else $(id).hidden = true; return; }
   }
 });
-$('zoom-close').addEventListener('click', () => { $('zoom').hidden = true; });
+$('zoom-close').addEventListener('click', () => modalClose('zoom'));
 $('zoom-prev').addEventListener('click', () => zoomStep(-1));
 $('zoom-next').addEventListener('click', () => zoomStep(1));
 document.addEventListener('keydown', (e) => { if (zoomNav && !$('zoom').hidden && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) zoomStep(e.key === 'ArrowLeft' ? -1 : 1); });
@@ -2335,7 +2363,7 @@ document.addEventListener('keydown', (e) => { if (zoomNav && !$('zoom').hidden &
     if (Math.abs(dx) > 70 && Math.abs(dy) < 50 && (window.visualViewport?.scale ?? 1) <= 1.05) zoomStep(dx < 0 ? 1 : -1);
   }, { passive: true });
 }
-document.querySelectorAll('[data-close-viewer]').forEach((b) => b.addEventListener('click', () => { $('viewer').hidden = true; viewing = null; }));
+document.querySelectorAll('[data-close-viewer]').forEach((b) => b.addEventListener('click', () => modalClose('viewer')));
 $('grid-remove').addEventListener('click', () => { state.grid = null; state.gridFolded = false; renderGrid(); });
 $('grid-fold').addEventListener('click', () => { state.gridFolded = !state.gridFolded; renderGrid(); });
 $('deep').addEventListener('change', renderSummary);
