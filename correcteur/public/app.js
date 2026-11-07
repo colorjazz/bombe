@@ -650,6 +650,7 @@ function renderSummary() {
     : n && !gridOk ? `La grille totalise ${fmt(gridSum)} points au lieu de ${fmt(Number($('total').value))}`
     : n ? `${state.kind === 'lang' ? 'Analyser la langue de' : 'Corriger'} ${pl(list.length, 'copie', 'copies')}` : 'Corriger';
   renderReady(list, n, cost);
+  $('demo-btn').hidden = !!(state.results.length || n || state.running);
   // Pas de résultats : ni recherche ni « Terminer » ; sur téléphone, la section entière attend la 1re copie corrigée.
   $('app').classList.toggle('no-results', !state.results.length && !state.running);
   $('export').disabled = $('end').disabled = state.running || !state.results.length;
@@ -998,6 +999,7 @@ async function runAll(only, calibrating = false) {
   keepAwake(true);
   list.forEach((b) => { state.status[b[0].id] = null; });
   $('done-msg').hidden = true; $('adjust').hidden = true;
+  if (state.results.some((r) => r.demo)) state.results = state.results.filter((r) => !r.demo); // l'exemple laisse la place aux vraies copies
   banner();
   renderPages();
 
@@ -1248,6 +1250,7 @@ const copyLabel = (r) => [r.no ? `Copie ${r.no}` : '', r.file, r.exam, pl(r.page
 let zoomNav = null;
 function openZoom(urls, title, nav = null) {
   zoomNav = nav;
+  $('zoom-pages').classList.remove('big');
   $('zoom-title').textContent = title;
   $('zoom-pages').replaceChildren(...urls.map((url, i) => h('img', { src: url, alt: `Page ${i + 1}` })));
   $('zoom-pages').scrollTop = 0;
@@ -1522,8 +1525,10 @@ function card(r) {
 
   // Mode simple : un résumé des notes ; le tableau complet (modifiable) s'ouvre avec « Modifier les notes ».
   const simple = simpleContent(), compact = simple && !r.showTable;
+  // Avec l'explication de chaque question : c'est elle qui montre que la note est raisonnée (et qu'on peut ne pas être d'accord).
   const summary = compact ? h('div', { class: 'qsum' }, r.questions.map((q, i) => h('div', { class: q.points < q.max ? 'lost' : '' },
-    h('span', { textContent: q.question }), h('b', { textContent: qMarkText(r, q, i) })))) : null;
+    h('div', { class: 'qrow' }, h('span', { textContent: q.question }), h('b', { textContent: qMarkText(r, q, i) })),
+    q.justification ? h('p', { class: 'qwhy', textContent: q.justification }) : null))) : null;
   const body = h('div', { class: 'card-body' },
     r.flags.length ? h('div', { class: 'flags' }, r.flags.map((f) => h('div', { textContent: `⚠ ${f}` }))) : null,
     summary,
@@ -2350,6 +2355,7 @@ document.addEventListener('keydown', (e) => {
   }
 });
 $('zoom-close').addEventListener('click', () => modalClose('zoom'));
+$('zoom-pages').addEventListener('click', (e) => { if (e.target.tagName === 'IMG') $('zoom-pages').classList.toggle('big'); });
 $('zoom-prev').addEventListener('click', () => zoomStep(-1));
 $('zoom-next').addEventListener('click', () => zoomStep(1));
 document.addEventListener('keydown', (e) => { if (zoomNav && !$('zoom').hidden && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) zoomStep(e.key === 'ArrowLeft' ? -1 : 1); });
@@ -2424,6 +2430,38 @@ $('logout').addEventListener('click', () => {
 });
 $('buy-open').addEventListener('click', () => { $('buy').hidden = false; });
 
+// ---------- Exemple corrigé ----------
+// Pour qui n'a pas ses copies sous la main : 3 copies fictives déjà corrigées (aucune IA, aucune page décomptée),
+// affichées comme de vrais résultats, dans l'onglet en cours (copies d'histoire ou textes de 3e année).
+async function loadDemo() {
+  const d = await (await fetch('exemple/demo.json')).json();
+  const ex = L(' (exemple)', ' (example)');
+  if (state.kind === 'lang') {
+    for (const c of [...d.lang].reverse()) {
+      const url = `exemple/${c.img}`;
+      const res = { kind: 'lang', id: uid(), file: 'exemple', exam: '', group: '', name: c.name + ex, pageCount: 1, band: 0, demo: true,
+        pages: [{ url, errors: c.errors.map((e) => ({ ...e, grey: false })), failed: false, reread: false, sent: url, words: c.words, text: '' }],
+        scoring: langScoring(), pda: pdaScoring(), flags: [] };
+      langGrade(res);
+      state.results.unshift(res);
+    }
+  } else {
+    for (const c of [...d.content].reverse()) {
+      const grade = c.questions.reduce((a, q) => a + q.points, 0);
+      state.results.unshift({ id: uid(), file: 'exemple', pageUrls: [`exemple/${c.img}`], band: 0, exam: '', group: c.group, name: c.name + ex, reliability: null,
+        grade, total: c.total, unit: 0.5, questions: c.questions.map((q) => ({ ...q, ai: q.points })), examKey: 'exemple', lang, grid: null, render: 'points',
+        comment: c.comment, pageCount: 1, illegible: false, flags: [], noKey: false, demo: true });
+    }
+  }
+  state.open.add(state.results[0].id);
+  renderResults();
+  banner('ok', tr(state.kind === 'lang' ? 'Voici 3 textes d’exemple corrigés (rien n’a été décompté). Touchez « Voir la copie annotée » : les fautes sont surlignées sur l’écriture de l’élève. À votre tour : déposez les textes de vos élèves.'
+    : 'Voici 3 copies d’exemple corrigées avec leur corrigé (rien n’a été décompté). Touchez « Voir la copie corrigée » pour voir les annotations. À votre tour : déposez vos copies.'));
+  setTimeout(() => $('cards').scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+}
+$('demo-btn').addEventListener('click', () => loadDemo().catch((e) => banner('err', e.message)));
+$('newkey-demo').addEventListener('click', () => { $('newkey').hidden = true; try { localStorage.setItem('ce.welcome', '1'); } catch { /* ignoré */ } loadDemo().catch((e) => banner('err', e.message)); });
+
 // ---------- Parrainage ----------
 // Code reçu par un lien d'invitation (gardé 60 jours par lang.js) : bonus du filleul à son premier achat.
 function referralCode() {
@@ -2479,6 +2517,7 @@ document.querySelectorAll('[data-pack]').forEach((b) => b.addEventListener('clic
 document.querySelectorAll('[data-close-rel]').forEach((b) => b.addEventListener('click', () => { $('rel-help').hidden = true; }));
 // La fenêtre de la clé contient l'essentiel de l'accueil : pas de 2e fenêtre juste après.
 document.querySelector('[data-close-newkey]').addEventListener('click', () => { $('newkey').hidden = true; try { localStorage.setItem('ce.welcome', '1'); } catch { /* ignoré */ } });
+$('welcome-demo').addEventListener('click', () => { $('welcome').hidden = true; try { localStorage.setItem('ce.welcome', '1'); } catch { /* ignoré */ } loadDemo().catch((e) => banner('err', e.message)); });
 $('welcome-ok').addEventListener('click', () => { $('welcome').hidden = true; try { localStorage.setItem('ce.welcome', '1'); } catch { /* ignoré */ } });
 $('newkey-copy').addEventListener('click', () => navigator.clipboard?.writeText($('newkey-value').textContent));
 

@@ -1,0 +1,306 @@
+{
+ "content": [
+  {
+   "img": "histoire-1.jpg",
+   "name": "Zoé Lavoie",
+   "group": "541",
+   "comment": "Bonne compréhension des causes de la crise. Développe davantage tes conséquences et revois la chronologie : Hitler devient chancelier en 1933.",
+   "total": 10,
+   "questions": [
+    {
+     "question": "Q1 Cause du krach",
+     "points": 3,
+     "max": 3,
+     "justification": "Spéculation et achat d’actions à crédit : cause bien identifiée.",
+     "page": 1,
+     "box": [
+      0.177,
+      0.094,
+      0.217,
+      0.771
+     ]
+    },
+    {
+     "question": "Q2 Conséquence au Canada",
+     "points": 2,
+     "max": 3,
+     "justification": "Conséquence nommée (pertes d’emploi), mais pas expliquée.",
+     "page": 1,
+     "box": [
+      0.255,
+      0.095,
+      0.293,
+      0.565
+     ]
+    },
+    {
+     "question": "Q3 Hitler chancelier",
+     "points": 0,
+     "max": 1,
+     "justification": "Écrit 1939, attendu 1933.",
+     "page": 1,
+     "box": [
+      0.335,
+      0.096,
+      0.37,
+      0.203
+     ]
+    },
+    {
+     "question": "Q4 Décolonisation",
+     "points": 2,
+     "max": 3,
+     "justification": "Définition juste ; l’exemple de l’Inde n’est pas daté (1947).",
+     "page": 1,
+     "box": [
+      0.406,
+      0.097,
+      0.446,
+      0.805
+     ]
+    }
+   ]
+  },
+  {
+   "img": "histoire-2.jpg",
+   "name": "Samuel Côté",
+   "group": "541",
+   "comment": "Très bonnes explications sur la crise ! Pour la décolonisation, appuie ta définition sur un exemple précis (pays et année).",
+   "total": 10,
+   "questions": [
+    {
+     "question": "Q1 Cause du krach",
+     "points": 3,
+     "max": 3,
+     "justification": "Cause bien expliquée : prêts excessifs et chute de la bourse.",
+     "page": 1,
+     "box": [
+      0.176,
+      0.101,
+      0.216,
+      0.894
+     ]
+    },
+    {
+     "question": "Q2 Conséquence au Canada",
+     "points": 3,
+     "max": 3,
+     "justification": "Soupes populaires : conséquence précise et concrète.",
+     "page": 1,
+     "box": [
+      0.253,
+      0.101,
+      0.292,
+      0.827
+     ]
+    },
+    {
+     "question": "Q3 Hitler chancelier",
+     "points": 1,
+     "max": 1,
+     "justification": "Bonne réponse : 1933.",
+     "page": 1,
+     "box": [
+      0.329,
+      0.1,
+      0.364,
+      0.164
+     ]
+    },
+    {
+     "question": "Q4 Décolonisation",
+     "points": 1,
+     "max": 3,
+     "justification": "Définition trop vague, et aucun exemple.",
+     "page": 1,
+     "box": [
+      0.406,
+      0.099,
+      0.443,
+      0.494
+     ]
+    }
+   ]
+  },
+  {
+   "img": "histoire-3.jpg",
+   "name": "Noah Bouchard",
+   "group": "541",
+   "comment": "Excellent travail, complet et précis. Bravo !",
+   "total": 10,
+   "questions": [
+    {
+     "question": "Q1 Cause du krach",
+     "points": 3,
+     "max": 3,
+     "justification": "Deux causes justes : surproduction et spéculation.",
+     "page": 1,
+     "box": [
+      0.178,
+      0.096,
+      0.215,
+      0.808
+     ]
+    },
+    {
+     "question": "Q2 Conséquence au Canada",
+     "points": 3,
+     "max": 3,
+     "justification": "Sécheresse dans l’Ouest : très bon exemple canadien.",
+     "page": 1,
+     "box": [
+      0.254,
+      0.097,
+      0.292,
+      0.797
+     ]
+    },
+    {
+     "question": "Q3 Hitler chancelier",
+     "points": 1,
+     "max": 1,
+     "justification": "Bonne réponse : 1933.",
+     "page": 1,
+     "box": [
+      0.334,
+      0.097,
+      0.368,
+      0.161
+     ]
+    },
+    {
+     "question": "Q4 Décolonisation",
+     "points": 3,
+     "max": 3,
+     "justification": "Définition et exemple (Algérie, 1962) exacts.",
+     "page": 1,
+     "box": [
+      0.407,
+      0.098,
+      0.445,
+      0.836
+     ]
+    }
+   ]
+  }
+ ],
+ "lang": [
+  {
+   "img": "francais-1.jpg",
+   "name": "Léa",
+   "words": 29,
+   "errors": [
+    {
+     "text": "allé",
+     "correction": "allés",
+     "category": "accord",
+     "explanation": "Avec « être », le participe passé s’accorde avec le sujet : ma famille et moi, donc allés.",
+     "box": [
+      157,
+      500,
+      196,
+      547
+     ]
+    },
+    {
+     "text": "vache",
+     "correction": "vaches",
+     "category": "accord",
+     "explanation": "« des » veut dire plusieurs : on ajoute un s.",
+     "box": [
+      201,
+      92,
+      240,
+      167
+     ]
+    },
+    {
+     "text": "amuzant",
+     "correction": "amusant",
+     "category": "orthographe",
+     "explanation": "Entre deux voyelles, le son « z » s’écrit souvent avec un s.",
+     "box": [
+      243,
+      179,
+      282,
+      289
+     ]
+    }
+   ]
+  },
+  {
+   "img": "francais-2.jpg",
+   "name": "Félix",
+   "words": 28,
+   "errors": [
+    {
+     "text": "baton",
+     "correction": "bâton",
+     "category": "orthographe",
+     "explanation": "Le mot « bâton » prend un accent circonflexe sur le a.",
+     "box": [
+      198,
+      218,
+      237,
+      296
+     ]
+    },
+    {
+     "text": "jouer",
+     "correction": "joué",
+     "category": "conjugaison",
+     "explanation": "Après « avons », on écrit le participe passé : joué.",
+     "box": [
+      199,
+      449,
+      238,
+      514
+     ]
+    },
+    {
+     "text": "fatiguer",
+     "correction": "fatigué",
+     "category": "accord",
+     "explanation": "Après « je suis », on écrit l’adjectif : fatigué.",
+     "box": [
+      239,
+      97,
+      278,
+      200
+     ]
+    }
+   ]
+  },
+  {
+   "img": "francais-3.jpg",
+   "name": "Rosalie",
+   "words": 23,
+   "errors": [
+    {
+     "text": "devienne",
+     "correction": "deviennent",
+     "category": "accord",
+     "explanation": "Le sujet « les feuilles » est au pluriel : le verbe se termine par -nt.",
+     "box": [
+      157,
+      639,
+      196,
+      747
+     ]
+    },
+    {
+     "text": "feuille",
+     "correction": "feuilles",
+     "category": "accord",
+     "explanation": "« les tas de » : il y a plusieurs feuilles, on ajoute un s.",
+     "box": [
+      199,
+      537,
+      238,
+      611
+     ]
+    }
+   ]
+  }
+ ]
+}

@@ -255,10 +255,11 @@
       <p id="drop-done" class="added adv" hidden></p>
       <p id="cam-hint" class="muted small adv" style="margin:0" hidden>Photographiez chaque page avec votre téléphone, puis vérifiez les photos et lancez la correction.</p>
       <div class="opts">
+  <button id="demo-btn" class="btn ghost block demo-btn" type="button">Pas de copies sous la main ? <b>Voir un exemple corrigé</b> (gratuit)</button>
   <button id="cam-open" class="btn" type="button" hidden><svg class="ic cam-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg> Prendre les copies en photo</button>
         <label class="toggle adv-content"><input id="anon" type="checkbox" checked><span>Masquer le nom de l'élève avant l'envoi <span class="tip" title="La ligne « Nom : » est repérée sur votre appareil et cachée avant l'envoi à l'IA (zone hachurée sur les miniatures). Si elle n'est pas trouvée, le haut de la page est caché (hachures orange : vérifiez qu'aucune réponse ne s'y trouve). Le nom reste visible pour vous dans chaque fiche.">ⓘ</span></span></label>
       </div>
-      <p class="muted small" style="margin:0"><a id="consent-link" href="consentement.html" target="_blank" rel="noopener">Lettre de consentement pour les parents</a> · à remplir et à imprimer</p>
+      <p class="muted small adv" style="margin:0"><a id="consent-link" href="consentement.html" target="_blank" rel="noopener">Lettre de consentement pour les parents</a> · à remplir et à imprimer</p>
       <div id="anon-opts" class="mode adv" hidden>
         <span>Si « Nom » n’est pas repéré, masquer le haut :</span>
         <select id="anon-h"><option value="0.08">8 % de la page</option><option value="0.14" selected>14 %</option><option value="0.2">20 %</option><option value="0.3">30 %</option></select>
@@ -385,8 +386,9 @@
           <span id="zoom-pos" class="muted small"></span>
           <button id="zoom-next" class="btn" type="button" aria-label="Copie suivante">›</button>
         </div>
-        <button id="zoom-close" class="icon-btn" type="button" aria-label="Fermer">×</button>
+        <button id="zoom-close" class="btn close-btn" type="button" aria-label="Fermer">Fermer ✕</button>
       </div>
+      <p class="muted small zoom-hint">Touchez la copie pour l’agrandir, retouchez pour revenir.</p>
       <div id="zoom-pages" class="zoom-pages"></div>
     </div>
   </div>
@@ -397,7 +399,7 @@
       <div class="stack" style="gap:.5rem">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap">
         <h2 id="viewer-title" style="margin:0"></h2>
-        <div style="display:flex;gap:.5rem"><button id="viewer-add" class="btn" type="button">+ Ajouter une faute</button><button id="viewer-print" class="btn" type="button"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9V3h12v6"/><rect x="4" y="9" width="16" height="8" rx="2"/><path d="M7 14h10v7H7z"/></svg> Imprimer / PDF</button><button class="icon-btn" type="button" data-close-viewer aria-label="Fermer">×</button></div>
+        <div style="display:flex;gap:.5rem"><button id="viewer-add" class="btn" type="button">+ Ajouter une faute</button><button id="viewer-print" class="btn" type="button"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9V3h12v6"/><rect x="4" y="9" width="16" height="8" rx="2"/><path d="M7 14h10v7H7z"/></svg> Imprimer / PDF</button><button class="btn close-btn" type="button" data-close-viewer aria-label="Fermer">Fermer ✕</button></div>
       </div>
       <p id="viewer-hint" class="banner info" hidden style="margin:0">Tracez un cadre sur la copie autour du mot fautif.</p>
       </div>
@@ -458,6 +460,7 @@
         </ul>
       </div>
       <div style="display:flex;gap:.5rem;flex-wrap:wrap"><a class="btn" href="guide.html" target="_blank" rel="noopener">Ouvrir le guide complet</a><button id="welcome-ok" class="btn primary" type="button" style="flex:1">Commencer</button></div>
+      <button id="welcome-demo" class="btn ghost block demo-btn" type="button">Voir d’abord un exemple corrigé</button>
     </div>
   </div>
   <div id="end-modal" class="modal" hidden>
@@ -482,18 +485,16 @@
   </div>
   <div id="newkey" class="modal" hidden>
     <div class="panel">
-      <h2 style="margin:0">Votre clé d'accès</h2>
+      <h2 style="margin:0">C’est parti : 30 pages offertes</h2>
       <div id="newkey-value" class="keybox"></div>
-      <p class="muted small" style="margin:0">Notez-la ou copiez-la : elle vous permet d'utiliser vos pages sur un autre appareil et de recharger votre compte.</p>
-      <div class="welcome-warn">
-        <b>Comment ça marche</b>
-        <ul>
-          <li><b>1. Paramètres</b> : le nombre de points, les pages par élève, et votre corrigé (non facturé). <b>Pour l'orthographe et la grammaire</b>, choisissez plutôt l'onglet « Correction de la langue » (au primaire : selon la Progression des apprentissages).</li>
-          <li><b>2. Les copies</b> : un PDF, des photos, ou votre téléphone. Puis « Corriger ».</li>
-          <li><b>3. Les résultats</b> : relisez, ajustez, puis téléchargez ou imprimez. <b>Rien n'est sauvegardé</b> : faites-le avant de fermer la page.</li>
-        </ul>
-      </div>
-      <div style="display:flex;gap:.5rem"><button id="newkey-copy" class="btn" type="button">Copier</button><button class="btn primary" type="button" data-close-newkey style="flex:1">C'est noté, commencer</button></div>
+      <p class="muted small" style="margin:0">Votre clé d’accès est gardée sur cet appareil. Pour l’utiliser ailleurs (ordinateur, autre téléphone), copiez-la.</p>
+      <ol class="welcome-steps">
+        <li>Déposez vos copies (photos ou PDF), et votre corrigé si vous en avez.</li>
+        <li>Touchez « Corriger ».</li>
+        <li>Relisez, ajustez, téléchargez les notes.</li>
+      </ol>
+      <div style="display:flex;gap:.5rem"><button id="newkey-copy" class="btn" type="button">Copier la clé</button><button class="btn primary" type="button" data-close-newkey style="flex:1">Commencer</button></div>
+      <button id="newkey-demo" class="btn ghost" type="button">Voir d’abord un exemple corrigé</button>
     </div>
   </div>
 </body>
