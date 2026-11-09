@@ -1862,6 +1862,7 @@ function renderOrtho() {
   $('kind-ortho').hidden = !three;
   document.querySelector('.kind').classList.toggle('three', three);
   $('ortho-focus-field').hidden = !(ortho && state.kind === 'lang');
+  $('pda-cote-field').hidden = ortho && state.kind === 'lang'; // l'orthopédagogue établit un profil, pas une cote
   $('app').classList.toggle('ortho', ortho && state.kind === 'lang');
 }
 const profileErrors = (r) => r.pages.flatMap((p) => p.errors).filter((e) => !e.doubtful);
@@ -2051,7 +2052,7 @@ function openViewer(r) {
 function renderViewer(focus) {
   const r = viewing;
   const count = langGrade(r);
-  $('viewer-title').textContent = r.pda ? `${copyTitle(r) || 'Élève'} · ${pdaLine(r, count)}${r.cote ? ` → ${r.cote}` : ''}`
+  $('viewer-title').textContent = r.pda ? `${copyTitle(r) || 'Élève'} · ${pdaLine(r, count)}${r.cote && !r.ortho ? ` → ${r.cote}` : ''}`
     : `${copyTitle(r) || 'Élève'} · ${count} faute(s)${r.grade != null ? ` · ${fmt(r.grade)} / ${fmt(r.total)}` : ''}`;
   let n = 0;
   const numbered = r.pages.map((p) => p.errors.map((e) => ({ e, p, n: ++n })));
