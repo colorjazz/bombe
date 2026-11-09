@@ -666,7 +666,7 @@ function renderSummary() {
   // Correction de la langue : pas d'impression groupée (chaque copie annotée s'imprime depuis sa vue), et un résumé plutôt que des notes.
   if (state.kind === 'lang') $('print-all').hidden = true;
   $('export-fiches').hidden = !state.results.some((r) => r.ortho && r.profile);
-  const toDo = state.results.filter((r) => r.ortho && !r.profile && !r.profileBusy).length;
+  const toDo = state.results.filter((r) => r.ortho && r.evo !== 'prev' && !r.profile && !r.profileBusy).length; // un texte précédent n'a pas besoin de profil
   $('profile-all').hidden = toDo < 2 || orthoIntent === 'evolution'; // un seul élève : son bouton dans la carte suffit ; évolution : le profil s'établit seul
   $('profile-all').textContent = `Établir les ${toDo} profils`;
   $('export').textContent = tr(state.kind === 'lang' ? 'Télécharger le résumé des fautes (Excel)' : 'Télécharger les notes (Excel)');
@@ -2250,11 +2250,13 @@ function renderDash() {
     el.replaceChildren(...[intentsView(), mine.length ? h('button', { class: 'btn small ghost', type: 'button', textContent: '← Revenir au tableau de bord', onclick: () => { showIntents = false; renderDash(); } }) : null].filter(Boolean));
     return;
   }
-  const rows = [...mine].sort((a, b) => (a.no ?? 0) - (b.no ?? 0)).map(dashRow);
-  const done = mine.filter((r) => r.profile).length;
+  const previous = mine.filter((r) => r.evo === 'prev').length;
+  const group = mine.filter((r) => r.evo !== 'prev'); // un texte précédent (suivi de l'évolution) n'est pas un élève de plus
+  const rows = [...group].sort((a, b) => (a.no ?? 0) - (b.no ?? 0)).map(dashRow);
+  const done = group.filter((r) => r.profile).length;
   const rates = rows.filter((x) => x.r.words).map((x) => (100 * x.total) / x.r.words).sort((a, b) => a - b);
   const median = rates.length ? (rates.length % 2 ? rates[(rates.length - 1) / 2] : (rates[rates.length / 2 - 1] + rates[rates.length / 2]) / 2) : null;
-  const alerts = mine.filter((r) => r.profile?.alert);
+  const alerts = group.filter((r) => r.profile?.alert);
   const year = levelText(mine[0]);
   const tile = (big, small, warn) => h('div', { class: `kpi${warn ? ' warn' : ''}` }, h('b', { textContent: big }), h('span', { textContent: small }));
   // Vue d'ensemble : U, G, P, S, V pour 100 mots (case plus foncée = plus d'erreurs).
@@ -2296,7 +2298,7 @@ function renderDash() {
   ];
   // Types d'erreurs les plus fréquents du groupe (une seule série : une seule couleur).
   const tally = new Map();
-  for (const r of mine) for (const g of recurrent(r)) { const k = g.n - g.grey; if (k) tally.set(g.label, (tally.get(g.label) || 0) + k); }
+  for (const r of group) for (const g of recurrent(r)) { const k = g.n - g.grey; if (k) tally.set(g.label, (tally.get(g.label) || 0) + k); }
   const bars = [...tally.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8);
   const max = Math.max(1, ...bars.map(([, n]) => n));
   const barsEl = bars.length ? h('div', { class: 'bars' }, bars.map(([label, n]) => h('div', { class: 'brow', title: `${label} : ${n} erreur${n > 1 ? 's' : ''}` },
@@ -2304,12 +2306,13 @@ function renderDash() {
     h('div', { class: 'track' }, h('div', { class: 'fill', style: `width:${(100 * n) / max}%` }), h('span', { class: 'val', style: `left:${(100 * n) / max}%`, textContent: String(n) }))))) : h('p', { class: 'muted small', textContent: 'Aucune erreur retenue.' });
   el.replaceChildren(...[
     h('div', { class: 'dash-head' }, h('div', {}, h('h3', { textContent: `Vue d’ensemble${year ? ` · ${year.replace(/^(\d+\w+) /, '$1 ')}` : ''}` }),
-      h('p', { class: 'muted small', textContent: `${pl(mine.length, 'texte analysé', 'textes analysés')}${$('ortho-focus').value.trim() ? ` · observer : ${$('ortho-focus').value.trim()}` : ''} · aucun texte conservé` })),
-      h('button', { class: 'btn small ghost', type: 'button', textContent: 'Changer de tâche', onclick: () => { showIntents = true; renderDash(); } })),
-    h('div', { class: 'kpis' }, tile(String(mine.length), pl(mine.length, 'élève', 'élèves').replace(/^\d+ /, '')), tile(`${done} / ${mine.length}`, 'profils établis'),
+      h('p', { class: 'muted small', textContent: `${pl(group.length, 'élève', 'élèves')}${previous ? ` (+ ${pl(previous, 'texte précédent', 'textes précédents')}, pour l’évolution)` : ''}${$('ortho-focus').value.trim() ? ` · observer : ${$('ortho-focus').value.trim()}` : ''} · aucun texte conservé` })),
+      h('div', { class: 'dash-btns' }, h('button', { class: 'btn small', type: 'button', textContent: 'Suivre l’évolution d’un élève', onclick: () => setIntent('evolution') }),
+        h('button', { class: 'btn small ghost', type: 'button', textContent: 'Changer de tâche', onclick: () => { showIntents = true; renderDash(); } }))),
+    h('div', { class: 'kpis' }, tile(String(group.length), pl(group.length, 'élève', 'élèves').replace(/^\d+ /, '')), tile(`${done} / ${group.length}`, 'profils établis'),
       tile(median != null ? fmt(Math.round(median * 10) / 10) : '—', 'erreurs pour 100 mots (médiane)'), tile(String(alerts.length), alerts.length > 1 ? 'élèves à examiner en priorité' : 'élève à examiner en priorité', alerts.length > 0)),
     h('div', { class: 'dash-card' }, h('h4', { textContent: 'Vue d’ensemble du groupe' }), table, legend, h('p', { class: 'muted small', style: 'margin:.4rem 0 0', textContent: 'Touchez un élève pour ouvrir son profil, sa copie annotée et son évolution.' })),
-    mine.length > 1 ? h('div', { class: 'dash-two' },
+    group.length > 1 ? h('div', { class: 'dash-two' },
       h('div', { class: 'dash-card' }, h('h4', { textContent: 'Sous-groupes de besoins suggérés' }), subgroups.length ? subgroups : h('p', { class: 'muted small', textContent: 'Pas encore de type d’erreur commun à plusieurs élèves (au moins 2 erreurs chacun).' })),
       h('div', { class: 'dash-card' }, h('h4', { textContent: 'Types d’erreurs les plus fréquents du groupe' }), barsEl, h('p', { class: 'muted small', style: 'margin:.4rem 0 0', textContent: 'Nombre d’erreurs, tous les textes de la séance.' }))) : null].filter(Boolean));
 }
@@ -2359,7 +2362,8 @@ function evoView(cur, prev) {
   return h('div', { class: 'ortho-dash' },
     h('div', { class: 'dash-head' }, h('div', {}, h('h3', { textContent: `Suivi de l’évolution${levelText(cur) ? ` · ${levelText(cur)}` : ''}` }),
       h('p', { class: 'muted small', textContent: prev ? `Texte précédent : ${copyLabel(prev)} · Nouveau texte : ${copyLabel(cur)}` : docName ? `Évaluation précédente : votre fiche « ${docName} » · Nouveau texte : ${copyLabel(cur)}` : 'Aucun texte précédent : déposez-le pour comparer.' })),
-      h('button', { class: 'btn small ghost', type: 'button', textContent: 'Changer de tâche', onclick: () => { showIntents = true; renderDash(); } })),
+      h('div', { class: 'dash-btns' }, h('button', { class: 'btn small', type: 'button', textContent: '← Tableau du groupe', onclick: () => setIntent('groupe') }),
+        h('button', { class: 'btn small ghost', type: 'button', textContent: 'Changer de tâche', onclick: () => { showIntents = true; renderDash(); } }))),
     h('div', { class: 'dash-card' }, h('h4', { textContent: g ? 'Suivi terminé' : 'Suivi en cours' }), steps,
       busy ? h('p', { class: 'muted small', style: 'margin:.4rem 0 0', textContent: 'Tout s’enchaîne seul, en 1 à 3 minutes environ. Gardez l’écran allumé et restez sur cette page.' }) : null),
     cmp, result);
@@ -2408,11 +2412,11 @@ function evoTick() {
   cur.evoDone = true;
   runProgress(cur, prev || null, prev ? '' : cur.evoDoc.text, prev ? '' : cur.evoDoc.name);
 }
-$('profile-all').addEventListener('click', () => state.results.filter((r) => r.ortho && !r.profile && !r.profileBusy && !r.rereading).forEach(queueProfile));
+$('profile-all').addEventListener('click', () => state.results.filter((r) => r.ortho && r.evo !== 'prev' && !r.profile && !r.profileBusy && !r.rereading).forEach(queueProfile));
 $('export-fiches').addEventListener('click', async () => {
   const btn = $('export-fiches');
   const mine = state.results.filter((r) => r.ortho);
-  mine.filter((r) => !r.profile && !r.profileBusy && !r.rereading).forEach(queueProfile);
+  mine.filter((r) => r.evo !== 'prev' && !r.profile && !r.profileBusy && !r.rereading).forEach(queueProfile);
   if (mine.some((r) => r.profileBusy || r.rereading)) {
     btn.disabled = true; btn.textContent = 'Préparation des profils…';
     await new Promise((res) => { const t = setInterval(() => { if (!mine.some((r) => r.profileBusy || r.rereading)) { clearInterval(t); res(); } }, 500); });

@@ -765,3 +765,4 @@ body.light .layout > .levelbar { grid-column: 1 / -1; }
 .evo-cmp .up { color: var(--green, #0f9f6e); font-weight: 700; }
 .evo-cmp .down { color: #b45309; font-weight: 700; }
 @media (max-width: 560px) { .evo-cmp td, .evo-cmp th { padding: .3rem .25rem; font-size: .78rem; } }
+.dash-btns { display: flex; gap: .4rem; flex-wrap: wrap; }
