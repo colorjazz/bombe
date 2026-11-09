@@ -1,0 +1,28 @@
+TÂCHE : Rassembler des modèles de grilles d'évaluation utilisées au Québec, pour en faire des gabarits de départ dans un logiciel de correction.
+
+CONTEXTE
+Mon logiciel permet aux enseignants de corriger des copies manuscrites selon une grille. Je veux offrir des gabarits de grilles prêts à adapter, conformes au Cadre d'évaluation des apprentissages du ministère de l'Éducation du Québec.
+
+CHERCHE (primaire en priorité, puis secondaire)
+1. Grilles d'évaluation de la production écrite en français, par cycle (1er, 2e, 3e cycle), y compris celles des épreuves obligatoires du Ministère de 4e et 6e année.
+2. Grilles de la compétence Lire (compréhension, interprétation, réaction, appréciation), par cycle.
+3. Grilles de résolution de situation-problème en mathématique (compétence 1), par cycle.
+4. Les codes de correction de l'orthographe et de la grammaire couramment utilisés dans les écoles du Québec (symboles ou couleurs pour les accords, l'orthographe d'usage, la ponctuation, la syntaxe).
+5. Les échelles de cotes utilisées (A, B, C, D, E ; niveaux 1 à 5) et leur correspondance en pourcentage.
+
+POUR CHAQUE GRILLE
+- Source (Ministère, centre de services, RÉCIT, éditeur), lien, date.
+- Critères, niveaux et descriptions de niveaux, recopiés exactement.
+- Points ou pondération de chaque critère.
+- Lien avec les critères du Cadre d'évaluation (par exemple « Adaptation à la situation d'écriture »).
+
+RÈGLES
+- Ne recopie pas un document protégé en entier : résume la structure (critères, niveaux, pondérations) et cite la source.
+- N'invente aucune grille. Indique clairement ce qui est officiel (Ministère) et ce qui est local (une école, un éditeur).
+
+FORMAT
+Réponds en JSON valide uniquement :
+[
+  { "titre": "", "discipline": "", "competence": "", "cycle": "", "source": "", "url": "", "date": "", "officiel": true,
+    "criteres": [ { "texte": "", "critere_cadre": "", "points": 0, "niveaux": [ { "cote": "A", "description": "" } ] } ] }
+]

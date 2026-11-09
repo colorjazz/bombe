@@ -87,13 +87,14 @@
 - [x] AWS SES à Montréal : disponible, retenu
 - [x] Le point d'accès Gemini « global » **ne garantit pas** la résidence des données. Il faut le point d'accès régional.
 - [x] **Gemini répond à Montréal (northamerica-northeast1)**. Testé. Toute la correction peut rester au Québec.
-- [ ] Confirmer que **les deux modèles** (3.5-flash et 3.7-flash) répondent à Montréal
-- [ ] Vérifier où pointe le **modèle de secours** de la 1.0 (il ne doit pas sortir de la région)
+- [x] Modèles à Montréal : **seul gemini-3.5-flash** y est offert (constat de la 1.0, 28 octobre 2026). 3.7-flash non. Surlignages exacts : 75 % à Montréal contre 84 % ailleurs.
+- [x] La 1.0 appelle **Google AI Studio par défaut** (sans garantie de pays). Montréal est une option (`X-Region: qc`), sans repli ailleurs quand elle est cochée.
 - [ ] Dans la 2.0 : **forcer le point d'accès régional de Montréal** partout. Plus d'API compatible OpenAI ni de point d'accès global pour le circuit de correction.
 
 ## À faire maintenant
 - [x] Lancer la **recherche 4** dans Gemini (vérifications techniques)
-- [ ] Vérifier le **point d'accès Gemini** utilisé par la 1.0 (global ou Montréal ?)
+- [x] Point d'accès de la 1.0 vérifié : AI Studio par défaut, Vertex Montréal en option
+- [x] Spécification technique v0.1 : `docs/specification-technique.md`
 - [ ] Essayer **Examino** et **Scolaro**, et comparer avec la 1.0 sur les mêmes copies
 - [ ] Lancer la **recherche 3** (Loi 25) avant le café avec la conseillère pédagogique
 - [ ] Plus tard : recherches 2, 5 et 6

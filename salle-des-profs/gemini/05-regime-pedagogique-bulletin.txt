@@ -1,0 +1,23 @@
+TÂCHE : Décrire précisément les règles du bulletin scolaire et de l'évaluation au Québec (primaire et secondaire, secteur public), pour concevoir le tableau de bord d'un logiciel d'évaluation.
+
+CONTEXTE
+Je développe un logiciel québécois de correction et de suivi des résultats des élèves. Il calcule les résultats par compétence et par étape. Je dois connaître les règles officielles pour que nos calculs soient conformes au bulletin unique.
+
+QUESTIONS
+1. Les étapes de l'année : combien, leurs pondérations (par exemple 20 %, 20 %, 60 %), les dates limites de remise des bulletins et de la première communication.
+2. Comment se calcule le résultat d'une compétence à une étape, puis le résultat disciplinaire, puis le résultat final de l'année.
+3. Au primaire : quelles compétences sont communiquées au bulletin dans chaque discipline et à chaque cycle ? Lesquelles sont regroupées (par exemple Lire et Apprécier) ?
+4. Au secondaire : la même chose, et le rôle des épreuves ministérielles et des épreuves obligatoires dans le résultat final (pondérations).
+5. Les exigences sur le nombre de résultats : une compétence doit-elle être évaluée à chaque étape ? Que se passe-t-il si elle ne l'est pas ?
+6. Les commentaires au bulletin : obligatoires ou non, et sur quoi (compétences transversales, etc.).
+7. Les arrondis : à l'unité ? Les règles de présentation des moyennes de groupe.
+8. Les changements récents (2020 à 2026) apportés au régime pédagogique sur ces sujets.
+
+RÈGLES
+- Cite les articles du Régime pédagogique de l'éducation préscolaire, de l'enseignement primaire et de l'enseignement secondaire, et les documents du ministère de l'Éducation, avec liens (legisquebec.gouv.qc.ca, quebec.ca).
+- Indique la date de la version que tu cites.
+- Signale clairement ce qui n'est pas confirmé ou qui peut varier selon le centre de services.
+
+FORMAT
+- Une section par question, réponse courte d'abord.
+- À la fin, un tableau récapitulatif : discipline | ordre | compétences au bulletin | pondérations.

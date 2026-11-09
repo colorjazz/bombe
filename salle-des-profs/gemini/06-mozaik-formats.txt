@@ -1,0 +1,24 @@
+TÂCHE : Documenter comment importer et exporter des listes d'élèves et des résultats avec les systèmes de gestion scolaire du Québec (Mozaïk-Portail, Mozaïk-Inscription, GPI).
+
+CONTEXTE
+Je développe un logiciel de correction pour les enseignants québécois. Je veux :
+(a) que l'enseignant importe sa liste d'élèves à partir d'un fichier exporté de Mozaïk ou de GPI ;
+(b) que l'enseignant importe ensuite ses résultats dans Mozaïk-Portail sans les ressaisir à la main.
+
+QUESTIONS
+1. Depuis Mozaïk-Portail (volet enseignant), peut-on exporter la liste des élèves d'un groupe ? Dans quel format (Excel, CSV) ? Quelles colonnes (nom, prénom, fiche, groupe, code permanent…) ?
+2. Même question pour GPI (GPI-Internet).
+3. Mozaïk-Portail permet-il d'importer des résultats d'évaluation à partir d'un fichier ? Si oui : format exact, colonnes, identifiant de l'élève utilisé (numéro de fiche ?), séparateur, encodage, procédure étape par étape.
+4. Existe-t-il une API publique ou un programme de partenaires chez GRICS (éditeur de Mozaïk) pour les fournisseurs de logiciels ?
+5. Microsoft School Data Sync : est-il utilisé par les centres de services du Québec pour synchroniser les groupes de Mozaïk vers Teams ?
+6. Quelles sont les erreurs fréquentes signalées par les enseignants dans ces importations ou exportations (accents, encodage, ordre des colonnes) ?
+
+RÈGLES
+- Sources à privilégier : documentation officielle de GRICS et des centres de services (guides pour enseignants publiés en ligne), tutoriels du RÉCIT, vidéos de formation.
+- Donne les liens et la date de chaque source.
+- Si tu trouves un exemple de fichier ou de capture d'écran décrivant les colonnes, recopie les noms de colonnes exactement.
+- N'invente aucun format. Si l'information n'est pas publique, dis-le clairement.
+
+FORMAT
+- Une section par question.
+- À la fin : le format de fichier recommandé pour (a) et pour (b), si tu as pu le confirmer, avec un exemple de 3 lignes fictives.
