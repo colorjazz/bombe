@@ -1003,6 +1003,8 @@ async function runAll(only, calibrating = false) {
   const list = only || bundles();
   if (!list.length) return;
   state.running = true;
+  // Textes déposés sans choisir de tâche : groupe s'il y en a plusieurs, sinon un élève (les options du haut suivent).
+  if (ortho && state.kind === 'lang' && !orthoIntent) { orthoIntent = bundles().length > 1 ? 'groupe' : 'eleve'; try { localStorage.setItem('ce.orthoIntent', orthoIntent); } catch { /* ignoré */ } orthoTitles(); }
   state.evoBatch = (state.evoBatch || 0) + 1;
   const evoDoc = state.evoDoc; // ancienne fiche importée pour « Suivre l'évolution »
   renderDash();
@@ -1142,6 +1144,7 @@ async function runAll(only, calibrating = false) {
   clearInterval(timer);
   $('progress').hidden = true;
   state.running = false;
+  foldOpen.s2 = false; // l'ajout se replie : le tableau de bord prend la place
   if (state.evoDoc || $('evo-prev-name').textContent || $('evo-new-name').textContent) { // zones vidées pour l'élève suivant
     state.evoDoc = null; $('evo-prev-name').textContent = $('evo-new-name').textContent = $('evo-doc-name').textContent = '';
   }
@@ -1162,7 +1165,7 @@ async function runAll(only, calibrating = false) {
     $('done-msg').hidden = false;
     $('done-msg').textContent = ortho && state.kind === 'lang'
       ? orthoIntent === 'evolution' ? `✓ ${pl(done, 'texte analysé', 'textes analysés')}. Le suivi s’enchaîne seul (relecture, profil, comparaison) : suivez les étapes dans le tableau de bord.`
-        : `✓ ${pl(done, 'texte analysé', 'textes analysés')}. Relisez les erreurs dans chaque copie annotée (retirez les fausses, ajoutez les oubliées), puis établissez les profils.`
+        : `✓ ${pl(done, 'texte analysé', 'textes analysés')}. Relisez les erreurs dans ${done > 1 ? 'chaque copie annotée' : 'la copie annotée'} (retirez les fausses, ajoutez les oubliées), puis « ${{ groupe: 'Établir les profils du groupe', pi: 'Établir le bilan pour le PI' }[orthoIntent] || 'Établir le profil'} ».`
       : state.kind === 'lang'
       ? `✓ ${pl(done, 'copie analysée', 'copies analysées')}. Ouvrez une copie annotée pour voir les fautes surlignées ; retirez celles qui n'en sont pas, ajoutez celles qui manquent.`
       : byGrid() && renderMode() === 'letters' ? `✓ ${pl(done, 'copie corrigée', 'copies corrigées')}. Ouvrez une copie pour voir et modifier ses niveaux. En rose : les critères sous le niveau le plus élevé.`
@@ -1924,8 +1927,28 @@ function renderOrtho() {
   $('app').classList.toggle('ortho-evo', evo); // les photos passent par les deux zones (texte précédent, nouveau texte)
   $('drop').hidden = evo;
   $('res-foot-ortho').hidden = !orth; $('res-foot-main').hidden = orth;
-  if (typeof setUiMode === 'function' && $('step3-title')) { $('step3-title').textContent = orth ? 'Tableau de bord' : tr('Résultats'); if (orth) { $('step1-title').textContent = 'Réglages de la séance'; $('step2-title').textContent = 'Ajouter des textes'; } }
-  $('app').classList.toggle('ortho', ortho && state.kind === 'lang');
+  $('app').classList.toggle('ortho', orth);
+  arrangeOrtho(orth);
+  orthoTitles();
+}
+// Les sections changent de place en orthopédagogie : ajout et réglages à gauche, tableau de bord et élèves à droite
+// (sur téléphone : tableau de bord, ajout, élèves, réglages). Les déplacer garde leurs écouteurs.
+function arrangeOrtho(on) {
+  const cols = $('ortho-cols'), left = cols.querySelector('.left'), right = cols.querySelector('.right');
+  const [s1, s2, s3] = ['.s1', '.s2', '.s3'].map((c) => $('app').querySelector(`section${c}`));
+  if (on && s2.parentElement !== left) { left.append(s2, s1); right.append(s3); }
+  if (!on && s2.parentElement === left) cols.after(s1, s2, s3);
+  cols.hidden = !on;
+}
+const TASK_TITLES = { groupe: 'Ajouter les textes du groupe', eleve: 'Ajouter le texte de l’élève', evolution: 'Ajouter les deux textes', pi: 'Ajouter le texte de l’élève' };
+let camLabel = null;
+function orthoTitles() {
+  if (!$('step3-title')) return;
+  const orth = ortho && state.kind === 'lang';
+  $('step3-title').textContent = orth ? (orthoIntent === 'groupe' ? 'Élèves' : 'Textes analysés') : tr('Résultats');
+  if (orth) { $('step1-title').textContent = 'Réglages de la séance'; $('step2-title').textContent = TASK_TITLES[orthoIntent] || 'Ajouter des textes'; }
+  const cam = [...$('cam-open').childNodes].find((n) => n.nodeType === 3 && n.textContent.trim());
+  if (cam) { camLabel ??= cam.textContent; cam.textContent = orth ? (orthoIntent === 'groupe' ? ' Prendre les textes en photo' : ' Prendre le texte en photo') : camLabel; }
 }
 const profileErrors = (r) => r.pages.flatMap((p) => p.errors).filter((e) => !e.doubtful);
 // La fiche reflète les erreurs validées : si l'orthopédagogue en retire ou en ajoute, la fiche est marquée à refaire.
@@ -2182,7 +2205,8 @@ const INTENTS = {
 };
 let showIntents = false;
 function setIntent(k) {
-  orthoIntent = k; showIntents = false;
+  if (orthoIntent !== k) $('done-msg').hidden = true; // le message parlait de l'autre tâche
+  orthoIntent = k; showIntents = false; foldOpen = { s1: false, s2: k === 'evolution' };
   try { localStorage.setItem('ce.orthoIntent', k); } catch { /* ignoré */ }
   renderOrtho(); renderSummary(); renderDash();
 }
@@ -2217,6 +2241,8 @@ function openStudent(r) {
 }
 function intentsView() {
   const k = orthoIntent;
+  // Tâche choisie, rien d'analysé : seulement sa marche à suivre (« Changer de tâche » est dans la barre du haut).
+  if (k && !showIntents) return h('div', { class: 'dash-next' }, h('b', { textContent: `${INTENTS[k].ico} ${INTENTS[k].title} : la marche à suivre` }), h('ol', {}, INTENTS[k].steps.map((t) => h('li', { textContent: t }))));
   return h('div', { class: 'dash-hello' },
     h('h3', { textContent: 'Que voulez-vous faire aujourd’hui ?' }),
     h('p', { class: 'muted small', textContent: 'Choisissez une tâche : l’onglet se règle pour vous. Vous pourrez toujours faire le reste ensuite.' }),
@@ -2228,10 +2254,12 @@ function renderDash() {
   const el = $('ortho-dash');
   const orth = ortho && state.kind === 'lang';
   const mine = state.results.filter((r) => r.ortho);
-  el.hidden = !orth;
-  $('ortho-students').hidden = !orth || !mine.length;
-  $('ortho-students').textContent = orthoIntent === 'evolution' ? 'Textes analysés' : 'Élèves';
+  $('ortho-students').hidden = true; // le titre de la section le dit déjà
+  $('app').querySelector('section.s3').hidden = orth && !mine.length; // rien à lister avant le premier texte
   if (!orth) return;
+  renderBar(mine);
+  renderFolds(mine);
+  if (mine.length && mine.every((r) => r.evo === 'prev' || r.profile)) $('done-msg').hidden = true; // tout est établi : le rappel ne sert plus
   // Suivre l'évolution : un élève, deux textes. Pas de vue de groupe : le suivi pas à pas et l'avant / maintenant.
   const curEvo = orthoIntent === 'evolution' && !showIntents ? mine.filter((r) => r.evo === 'new').sort((a, b) => (b.evoBatch || 0) - (a.evoBatch || 0))[0] : null;
   // Nouveau suivi lancé : on n'affiche pas le précédent, terminé, pendant l'analyse des nouveaux textes.
@@ -2246,8 +2274,9 @@ function renderDash() {
     el.replaceChildren(evoView(curEvo, mine.find((r) => r.evo === 'prev' && r.evoBatch === curEvo.evoBatch) || null));
     return;
   }
+  if (orthoIntent === 'pi' && !showIntents && mine.some((r) => r.evo !== 'prev')) { el.replaceChildren(piView(mine.filter((r) => r.evo !== 'prev'))); return; }
   if (!mine.length || showIntents) {
-    el.replaceChildren(...[intentsView(), mine.length ? h('button', { class: 'btn small ghost', type: 'button', textContent: '← Revenir au tableau de bord', onclick: () => { showIntents = false; renderDash(); } }) : null].filter(Boolean));
+    el.replaceChildren(intentsView());
     return;
   }
   const previous = mine.filter((r) => r.evo === 'prev').length;
@@ -2307,8 +2336,7 @@ function renderDash() {
   el.replaceChildren(...[
     h('div', { class: 'dash-head' }, h('div', {}, h('h3', { textContent: `Vue d’ensemble${year ? ` · ${year.replace(/^(\d+\w+) /, '$1 ')}` : ''}` }),
       h('p', { class: 'muted small', textContent: `${pl(group.length, 'élève', 'élèves')}${previous ? ` (+ ${pl(previous, 'texte précédent', 'textes précédents')}, pour l’évolution)` : ''}${$('ortho-focus').value.trim() ? ` · observer : ${$('ortho-focus').value.trim()}` : ''} · aucun texte conservé` })),
-      h('div', { class: 'dash-btns' }, h('button', { class: 'btn small', type: 'button', textContent: 'Suivre l’évolution d’un élève', onclick: () => setIntent('evolution') }),
-        h('button', { class: 'btn small ghost', type: 'button', textContent: 'Changer de tâche', onclick: () => { showIntents = true; renderDash(); } }))),
+      h('div', { class: 'dash-btns' }, h('button', { class: 'btn small', type: 'button', textContent: 'Suivre l’évolution d’un élève', onclick: () => setIntent('evolution') }))),
     h('div', { class: 'kpis' }, tile(String(group.length), pl(group.length, 'élève', 'élèves').replace(/^\d+ /, '')), tile(`${done} / ${group.length}`, 'profils établis'),
       tile(median != null ? fmt(Math.round(median * 10) / 10) : '—', 'erreurs pour 100 mots (médiane)'), tile(String(alerts.length), alerts.length > 1 ? 'élèves à examiner en priorité' : 'élève à examiner en priorité', alerts.length > 0)),
     h('div', { class: 'dash-card' }, h('h4', { textContent: 'Vue d’ensemble du groupe' }), table, legend, h('p', { class: 'muted small', style: 'margin:.4rem 0 0', textContent: 'Touchez un élève pour ouvrir son profil, sa copie annotée et son évolution.' })),
@@ -2362,11 +2390,133 @@ function evoView(cur, prev) {
   return h('div', { class: 'ortho-dash' },
     h('div', { class: 'dash-head' }, h('div', {}, h('h3', { textContent: `Suivi de l’évolution${levelText(cur) ? ` · ${levelText(cur)}` : ''}` }),
       h('p', { class: 'muted small', textContent: prev ? `Texte précédent : ${copyLabel(prev)} · Nouveau texte : ${copyLabel(cur)}` : docName ? `Évaluation précédente : votre fiche « ${docName} » · Nouveau texte : ${copyLabel(cur)}` : 'Aucun texte précédent : déposez-le pour comparer.' })),
-      h('div', { class: 'dash-btns' }, h('button', { class: 'btn small', type: 'button', textContent: '← Tableau du groupe', onclick: () => setIntent('groupe') }),
-        h('button', { class: 'btn small ghost', type: 'button', textContent: 'Changer de tâche', onclick: () => { showIntents = true; renderDash(); } }))),
+      h('div', { class: 'dash-btns' }, h('button', { class: 'btn small', type: 'button', textContent: '← Tableau du groupe', onclick: () => setIntent('groupe') }))),
     h('div', { class: 'dash-card' }, h('h4', { textContent: g ? 'Suivi terminé' : 'Suivi en cours' }), steps,
       busy ? h('p', { class: 'muted small', style: 'margin:.4rem 0 0', textContent: 'Tout s’enchaîne seul, en 1 à 3 minutes environ. Gardez l’écran allumé et restez sur cette page.' }) : null),
     cmp, result);
+}
+
+
+// ---------- Barre du tableau de bord : la tâche en cours et ses options, toujours en haut ----------
+function renderBar(mine) {
+  const it = INTENTS[orthoIntent];
+  const group = mine.filter((r) => r.evo !== 'prev');
+  const missing = group.filter((r) => !r.profile && !r.profileBusy && !r.rereading);
+  const ready = group.filter((r) => r.profile);
+  const btn = (label, cls, fn, dis) => h('button', { class: `btn small ${cls || ''}`, type: 'button', disabled: !!dis, textContent: label, onclick: fn });
+  const many = (n, one, plural) => (n > 1 ? `${plural} (${n})` : one);
+  const a = [];
+  const pick = showIntents || !it;
+  if (!pick) {
+    if (orthoIntent === 'groupe' && missing.length) a.push(btn(`Établir les profils du groupe (${missing.length})`, 'primary', () => missing.forEach(queueProfile)));
+    if (orthoIntent === 'eleve' && missing.length) a.push(btn(many(missing.length, 'Établir le profil', 'Établir les profils'), 'primary', () => missing.forEach(queueProfile)));
+    if (orthoIntent === 'pi' && missing.length) a.push(btn(many(missing.length, 'Établir le bilan pour le PI', 'Établir les bilans pour le PI'), 'primary', () => missing.forEach(queueProfile)));
+    if (orthoIntent === 'pi' && ready.length) a.push(btn(many(ready.length, 'Imprimer le bilan pour le PI', 'Imprimer les bilans pour le PI'), ready.length && !missing.length ? 'primary' : '', () => printPi(ready)), btn('Bilan pour le PI (Word)', '', () => downloadPi(ready)));
+    if (orthoIntent === 'groupe' && ready.length) a.push(btn('Télécharger les profils du groupe (Word)', '', () => $('export-fiches').click()));
+    if (orthoIntent === 'eleve' && ready.length) a.push(btn(many(ready.length, 'Télécharger le profil (Word)', 'Télécharger les profils (Word)'), '', () => $('export-fiches').click()));
+    if (orthoIntent === 'evolution') {
+      const cur = mine.filter((r) => r.evo === 'new' && r.progress).sort((x, y) => (y.evoBatch || 0) - (x.evoBatch || 0))[0];
+      if (cur) a.push(btn('Télécharger le suivi de l’évolution (Word)', 'primary', () => downloadFiches([cur])));
+    }
+    if (mine.length) a.push(btn('Exporter les erreurs (Excel)', '', () => $('export').click(), state.running));
+    if (mine.length) a.push(btn('Terminer la séance', 'ghost', () => $('end').click(), state.running));
+  }
+  const change = pick ? (it && mine.length ? btn('← Retour au tableau de bord', '', () => { showIntents = false; renderDash(); }) : null)
+    : btn('Changer de tâche', 'ghost', () => { showIntents = true; renderDash(); });
+  $('ortho-bar').replaceChildren(...[h('div', { class: 'bar-task' }, h('span', { class: 'muted small', textContent: 'Tâche :' }), h('b', { textContent: it && !pick ? `${it.ico} ${it.title}` : 'à choisir' }), change),
+    a.length ? h('div', { class: 'bar-actions' }, a) : null].filter(Boolean));
+}
+
+// Une fois les textes analysés, l'ajout et les réglages se replient en une ligne (le tableau de bord prend la place).
+let foldOpen = { s1: false, s2: false };
+function renderFolds(mine) {
+  const s1 = $('app').querySelector('section.s1'), s2 = $('app').querySelector('section.s2');
+  const yearOk = !!$('pda-year').value;
+  const done = mine.length > 0 && !state.running && !state.pages.length;
+  s2.classList.toggle('folded', done && !foldOpen.s2);
+  s1.classList.toggle('folded', mine.length > 0 && yearOk && !foldOpen.s1);
+  const line = (sec, text, label, key) => {
+    let f = sec.querySelector(':scope > .fold-line');
+    if (!f) { f = h('div', { class: 'fold-line' }); sec.querySelector(':scope > .band, :scope > .step-head').after(f); }
+    f.replaceChildren(h('span', { class: 'muted small', textContent: text }), h('button', { class: 'btn small', type: 'button', textContent: label, onclick: () => { foldOpen[key] = true; renderDash(); } }));
+  };
+  const n = mine.filter((r) => r.evo !== 'prev').length;
+  line(s2, orthoIntent === 'evolution' ? 'Le suivi est lancé.' : `${pl(n, 'texte analysé', 'textes analysés')}.`,
+    orthoIntent === 'evolution' ? '+ Suivre un autre élève' : orthoIntent === 'groupe' ? '+ Ajouter d’autres textes' : '+ Ajouter un autre texte', 's2');
+  const conds = orthoConditions();
+  line(s1, [levelText({ pda: { year: Number($('pda-year').value) }, level: $('lang-level').value }), conds.length ? conds.join(', ') : 'conditions non précisées',
+    $('ortho-focus').value.trim() ? `observer : ${$('ortho-focus').value.trim()}` : ''].filter(Boolean).join(' · '), 'Modifier', 's1');
+}
+
+// ---------- Bilan pour le PI : un document court, dans l'ordre d'un plan d'intervention ----------
+function piSections(r) {
+  const p = r.profile, rec = recurrent(r).filter((g) => g.n - g.grey > 0).slice(0, 3), lever = leverage(r);
+  const per = (g) => (r.words ? `, ${fmt(Math.round((1000 * (g.n - g.grey)) / r.words) / 10)} pour 100 mots` : '');
+  return [
+    p.forces.length ? { title: 'Forces', items: p.forces } : null,
+    p.targets.length ? { title: 'Besoins prioritaires', ordered: true, items: p.targets.map((t) => `${t.target}${t.why ? ` — ${t.why}` : ''}`) } : null,
+    rec.length ? { title: 'Données (erreurs validées)', items: [...rec.map((g) => `${g.label} : ${pl(g.n - g.grey, 'erreur', 'erreurs')}${per(g)}`), ...(lever ? [lever] : [])] } : null,
+    p.smart ? { title: 'Objectif SMART suggéré', items: [p.smart] } : null,
+    p.activities.length ? { title: 'Moyens (pistes d’intervention)', items: p.activities } : null,
+    p.adaptations.length ? { title: 'Mesures d’adaptation à envisager', items: p.adaptations } : null,
+    p.pi ? { title: 'Bilan', items: [p.pi] } : null,
+  ].filter(Boolean);
+}
+const PI_NOTE = 'Bilan provisoire préparé à partir des erreurs validées d’une production : à valider et à compléter par l’orthopédagogue.';
+const piHead = (r) => [levelText(r), r.words ? `${r.words} mots` : '', r.conditions?.length ? `conditions : ${r.conditions.join(', ')}` : '', new Date().toLocaleDateString('fr-CA')].filter(Boolean).join(' · ');
+function piFullText(r) {
+  const out = [`BILAN POUR LE PLAN D’INTERVENTION — ${whoLine(r)}`, piHead(r), ''];
+  for (const sec of piSections(r)) { out.push(sec.title.toUpperCase(), ...sec.items.map((t, i) => (sec.ordered ? `${i + 1}. ${t}` : `- ${t}`)), ''); }
+  out.push(PI_NOTE);
+  return out.join('\n');
+}
+function downloadPi(list) {
+  const blocks = [];
+  list.forEach((r, i) => {
+    if (i) blocks.push({ pagebreak: true });
+    blocks.push({ title: 'Bilan pour le plan d’intervention' }, { p: whoLine(r), bold: true }, { p: piHead(r), muted: true }, { p: PI_NOTE, muted: true });
+    for (const sec of piSections(r)) { blocks.push({ h: sec.title }, ...sec.items.map((t, k) => ({ bullet: t, ...(sec.ordered ? { mark: `${k + 1}.` } : {}) }))); }
+    blocks.push({ h: 'Décision de l’équipe' }, { p: ' ' });
+  });
+  const url = URL.createObjectURL(buildDocx(blocks));
+  const base = list.length === 1 ? (list[0].name || copyLabel(list[0])) : 'eleves';
+  const a = h('a', { href: url, download: `bilan-PI_${base.replace(/[^\p{L}\p{N}_-]+/gu, '-')}_${new Date().toISOString().slice(0, 10)}.docx` });
+  document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+  state.exported = true;
+}
+function printPi(list) {
+  const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const w = window.open('', '_blank');
+  if (!w) { banner('err', 'La fenêtre d’impression a été bloquée : autorisez les fenêtres pour ce site, ou utilisez « Bilan pour le PI (Word) ».'); return; }
+  const body = list.map((r, i) => `<section class="sheet"${i ? ' style="break-before:page"' : ''}><h1>Bilan pour le plan d’intervention</h1><p class="who">${esc(whoLine(r))}</p><p class="meta">${esc(piHead(r))}</p><p class="note">${esc(PI_NOTE)}</p>
+    ${piSections(r).map((sec) => `<h2>${esc(sec.title)}</h2><${sec.ordered ? 'ol' : 'ul'}>${sec.items.map((t) => `<li>${esc(t)}</li>`).join('')}</${sec.ordered ? 'ol' : 'ul'}>`).join('')}
+    <h2>Décision de l’équipe</h2><div class="blank"></div></section>`).join('');
+  w.document.write(`<!doctype html><html lang="fr-CA"><head><meta charset="utf-8"><title>Bilan pour le PI</title><style>
+    body{font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;color:#111;margin:28px;max-width:760px}h1{font-size:20px;margin:0 0 4px}h2{font-size:15px;color:#1f3a8a;margin:18px 0 4px}
+    .who{font-weight:700;margin:0}.meta,.note{color:#555;font-size:12px;margin:2px 0}ul,ol{margin:0;padding-left:20px}.blank{border:1px solid #bbb;border-radius:6px;height:90px}
+    @media print{body{margin:0}}</style></head><body>${body}<script>window.onload=()=>setTimeout(()=>window.print(),200)<\/script></body></html>`);
+  w.document.close();
+  state.exported = true;
+}
+function piView(list) {
+  return h('div', { class: 'ortho-dash' }, list.map((r) => {
+    const head = h('div', { class: 'dash-head' }, h('div', {}, h('h3', { textContent: `Bilan pour le PI · ${r.name || `Copie ${r.no ?? ''}`}` }), h('p', { class: 'muted small', textContent: piHead(r) })));
+    if (!r.profile) {
+      return h('div', { class: 'dash-card' }, head, h('p', { class: 'small', style: 'margin:.5rem 0', textContent: r.rereading ? 'Relecture du texte en cours…' : r.profileBusy ? 'Bilan en préparation…'
+        : 'Relisez d’abord les erreurs dans la copie annotée (retirez les fausses, ajoutez les oubliées), puis établissez le bilan.' }),
+      r.profileErr ? h('p', { class: 'small', style: 'color:var(--danger,#b91c1c)', textContent: r.profileErr }) : null,
+      h('div', { class: 'prof-actions' }, h('button', { class: 'btn small', type: 'button', textContent: 'Voir la copie annotée', onclick: () => openViewer(r) }),
+        h('button', { class: 'btn small primary', type: 'button', disabled: !!r.rereading || !!r.profileBusy, textContent: 'Établir le bilan pour le PI', onclick: () => queueProfile(r) })));
+    }
+    return h('div', { class: 'dash-card' }, head,
+      r.profileSig !== profileSig(r) ? h('div', { class: 'prof-stale small' }, 'Vous avez modifié les erreurs depuis ce bilan. ', h('button', { class: 'btn small', type: 'button', textContent: 'Refaire le bilan', onclick: () => queueProfile(r) })) : null,
+      ...piSections(r).map((sec) => h('div', { class: 'prof-sec' }, h('h4', { textContent: sec.title }), h(sec.ordered ? 'ol' : 'ul', {}, sec.items.map((t) => h('li', { textContent: t }))))),
+      h('p', { class: 'faint small', style: 'margin:.4rem 0 0', textContent: PI_NOTE }),
+      h('div', { class: 'prof-actions' }, h('button', { class: 'btn small primary', type: 'button', textContent: 'Imprimer le bilan', onclick: () => printPi([r]) }),
+        h('button', { class: 'btn small', type: 'button', textContent: 'Copier le bilan', onclick: (ev) => copyFrom(ev.currentTarget, piFullText(r)) }),
+        h('button', { class: 'btn small', type: 'button', textContent: 'Word', onclick: () => downloadPi([r]) }),
+        h('button', { class: 'btn small ghost', type: 'button', textContent: 'Profil complet', onclick: () => openStudent(r) })));
+  }));
 }
 
 // ---------- Suivre l'évolution d'un élève : deux zones de dépôt, puis tout s'enchaîne ----------
@@ -3206,9 +3356,7 @@ function setUiMode(adv) {
   $('step3-no').textContent = simple ? '2' : '3';
   $('step1-title').textContent = tr(state.kind === 'lang' ? (adv ? 'Paramètres de la correction de la langue' : 'Vos élèves') : 'Paramètres de l’évaluation');
   $('step2-title').textContent = tr(simple ? 'Copies, corrigé ou grille' : state.kind === 'lang' ? 'Les copies' : 'Insérer les copies');
-  const orth = ortho && state.kind === 'lang'; // orthopédagogie : un tableau de bord plutôt que trois étapes
-  if (orth) { $('step1-title').textContent = 'Réglages de la séance'; $('step2-title').textContent = 'Ajouter des textes'; }
-  $('step3-title').textContent = orth ? 'Tableau de bord' : tr('Résultats');
+  orthoTitles(); // orthopédagogie : un tableau de bord plutôt que trois étapes, des titres selon la tâche
   $('ui-simple').setAttribute('aria-pressed', String(!adv));
   $('ui-adv').setAttribute('aria-pressed', String(adv));
   $('adv-note').hidden = adv || advControls().every(isDefault);

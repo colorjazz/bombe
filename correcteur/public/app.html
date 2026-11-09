@@ -107,8 +107,20 @@
         </button>
         <button id="kind-ortho" type="button" role="tab" aria-selected="false">
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M15.5 8.5h5M15.5 12h5M17.5 15.5h3"/></svg>
-          <span class="kind-long">Orthopédagogie</span><span class="kind-short">Ortho</span><small class="kind-sub">Profil du scripteur</small>
+          <span class="kind-long">Orthopédagogie</span><span class="kind-short">Ortho</span><span class="beta" title="En phase de test : vos commentaires sont les bienvenus">bêta</span><small class="kind-sub">Profil du scripteur</small>
         </button>
+      </div>
+    </div>
+    <!-- Orthopédagogie : deux colonnes (ajout et réglages à gauche, tableau de bord et élèves à droite) ; sur téléphone,
+         une seule colonne dans l'ordre de la tâche. Les sections y sont déplacées par l'appli (renderOrtho). -->
+    <div id="ortho-cols" class="ortho-cols" hidden>
+      <div class="ortho-col left"></div>
+      <div class="ortho-col right">
+        <section class="panel stack s0">
+          <div class="band"><h2 id="s0-title">Tableau de bord</h2></div>
+          <div id="ortho-bar" class="ortho-bar"></div>
+          <div id="ortho-dash" class="ortho-dash"></div>
+        </section>
       </div>
     </div>
     <section class="panel stack s1">
@@ -328,7 +340,6 @@
       </div>
       <div id="stats" class="stats" hidden></div>
       <details id="qstats" class="qstats" hidden><summary></summary><div id="qstats-rows" class="qstats-rows"></div></details>
-      <div id="ortho-dash" class="ortho-dash" hidden></div>
       <div id="empty" class="empty">
         <div class="empty-ico"><svg class="ic ic-lg" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M8 13h8M8 17h5"/></svg></div>
         <span id="empty-text">Les copies corrigées apparaîtront ici, avec le détail des points par question.</span>

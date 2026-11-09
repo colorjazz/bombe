@@ -747,7 +747,6 @@ body.light .layout > .levelbar { grid-column: 1 / -1; }
 }
 @media (min-width: 761px) { .ov .nm small { display: none; } }
 /* Orthopédagogie : l'accueil (« Que voulez-vous faire ? ») est dans la section du tableau de bord, visible même sans résultats. */
-@media (max-width: 960px) { #app.ortho.no-results .s3 { display: block; } }
 #app.ortho-evo #cam-open { display: none !important; }
 .evo-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: .35rem; font-size: .88rem; }
 .evo-step { display: flex; align-items: center; gap: .55rem; color: var(--muted); }
@@ -766,3 +765,28 @@ body.light .layout > .levelbar { grid-column: 1 / -1; }
 .evo-cmp .down { color: #b45309; font-weight: 700; }
 @media (max-width: 560px) { .evo-cmp td, .evo-cmp th { padding: .3rem .25rem; font-size: .78rem; } }
 .dash-btns { display: flex; gap: .4rem; flex-wrap: wrap; }
+
+/* Orthopédagogie : deux colonnes déplacées par l'appli ; sur téléphone, l'ordre de la tâche */
+.ortho-cols { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(290px, 340px) minmax(0, 1fr); gap: 1.3rem; align-items: start; width: 100%; }
+.ortho-col { display: grid; gap: 1.3rem; align-content: start; min-width: 0; }
+.ortho-col.left { order: 0; }
+@media (max-width: 1099px) {
+  .ortho-cols, .ortho-col { display: contents; }
+  #app.ortho section.s0 { order: 1; } #app.ortho section.s2 { order: 2; } #app.ortho section.s3 { order: 3; } #app.ortho section.s1 { order: 4; }
+}
+.s0 { --c: #10a36e; }
+.ortho-bar { display: grid; gap: .5rem; padding-bottom: .7rem; border-bottom: 1px solid var(--line); }
+.bar-task { display: flex; align-items: center; gap: .45rem; flex-wrap: wrap; }
+.bar-task b { font-size: 1rem; margin-right: auto; }
+.bar-actions { display: flex; flex-wrap: wrap; gap: .4rem; }
+#app.ortho .results-tools > :not(#search) { display: none !important; }
+#app.ortho section.s3 { --c: #475569; }
+.fold-line { display: none; }
+#app.ortho section.folded > .fold-line { display: flex; align-items: center; justify-content: space-between; gap: .6rem; flex-wrap: wrap; }
+#app.ortho section.s2.folded > :not(.band):not(.fold-line), #app.ortho section.s1.folded > :not(.step-head):not(.fold-line) { display: none !important; }
+#app.ortho section.s1.folded .step-head .seg { display: none; }
+body.light .s0 { border: 1px solid var(--line); border-radius: 18px; padding: 0 1.5rem 1.5rem; box-shadow: 0 4px 18px rgba(20,30,60,.06); overflow: hidden; background: #fff; }
+@media (max-width: 760px) { body.light .s0 { padding: 0 1rem 1.2rem; } }
+/* Onglet Orthopédagogie en phase de test */
+.beta { font-size: .58rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; background: #fde68a; color: #78350f; border-radius: 999px; padding: .08rem .38rem; line-height: 1.2; margin-left: -.15rem; }
+@media (max-width: 480px) { .beta { font-size: .52rem; padding: .05rem .3rem; } }
