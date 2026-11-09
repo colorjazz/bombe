@@ -1,0 +1,58 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><title>Salle des profs — Barre latérale</title>
+<style>
+:root{--nuit:#223040;--nuit2:#2c3d50;--fond:#f3f5f7;--carte:#fff;--encre:#263240;--doux:#7b8794;--ligne:#e3e8ec;--accent:#3f8f8a;--accent-p:#e5f1f0}
+*{box-sizing:border-box}body{margin:0;font-family:"Segoe UI",system-ui,sans-serif;font-size:14px;color:var(--encre);background:var(--fond);line-height:1.5}
+.app{display:grid;grid-template-columns:236px 1fr;min-height:100vh}
+aside{background:var(--nuit);color:#cfd8e1;padding:26px 16px;display:flex;flex-direction:column;gap:4px}
+.logo{color:#fff;font-size:17px;font-weight:600;padding:0 12px 26px}.logo span{color:#8fc9c4;font-weight:400}
+.nav{display:block;padding:10px 12px;border-radius:8px;color:#cfd8e1;text-decoration:none}
+.nav.on{background:var(--nuit2);color:#fff;box-shadow:inset 3px 0 0 #8fc9c4}
+.nav small{float:right;background:#8fc9c4;color:var(--nuit);border-radius:10px;padding:0 7px;font-size:11px;font-weight:600;margin-top:2px}
+.lab{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#7f91a3;margin:26px 12px 6px}
+.grp{padding:7px 12px;color:#cfd8e1;font-size:13px;display:flex;justify-content:space-between}.grp span{color:#7f91a3}
+.bas{margin-top:auto;font-size:12px;color:#7f91a3;padding:12px;line-height:1.6;border-top:1px solid var(--nuit2)}
+main{padding:30px 36px}
+.haut{display:flex;justify-content:space-between;align-items:center;margin-bottom:26px}
+.haut h1{margin:0;font-size:22px;font-weight:600}.haut p{margin:2px 0 0;color:var(--doux)}
+.sel{display:flex;gap:10px}.sel div{background:var(--carte);border:1px solid var(--ligne);border-radius:8px;padding:7px 12px;font-size:13px}.sel small{display:block;color:var(--doux);font-size:11px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:22px}
+.stat{background:var(--carte);border:1px solid var(--ligne);border-radius:10px;padding:18px}
+.stat .v{font-size:26px;font-weight:600}.stat .l{color:var(--doux);font-size:13px}.stat.acc{background:var(--accent);border-color:var(--accent);color:#fff}.stat.acc .l{color:#d6ecea}
+.grille{display:grid;grid-template-columns:1.3fr 1fr;gap:18px}
+.carte{background:var(--carte);border:1px solid var(--ligne);border-radius:10px}
+.carte h3{margin:0;padding:16px 20px;font-size:15px;border-bottom:1px solid var(--ligne);display:flex;justify-content:space-between}.carte h3 a{font-size:12px;color:var(--accent);font-weight:400;text-decoration:none}
+table{width:100%;border-collapse:collapse}td:nth-child(2),td:nth-child(4){white-space:nowrap}td,th{padding:13px 20px;text-align:left;border-bottom:1px solid var(--ligne);font-size:13px}th{color:var(--doux);font-weight:500;font-size:12px}
+.etat{white-space:nowrap;display:inline-block;padding:2px 9px;border-radius:10px;font-size:12px}.e1{background:#fdf1e3;color:#a86a1f}.e2{background:var(--accent-p);color:var(--accent)}.e3{background:#eef0f3;color:var(--doux)}
+.btn{border:0;background:var(--accent);color:#fff;border-radius:6px;padding:6px 12px;font-size:12px}.btn.l{background:#eef0f3;color:var(--encre)}
+.corps{padding:18px 20px}
+.comp{margin-bottom:16px}.comp .r{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px}.comp .r span{color:var(--doux)}
+.barre{display:flex;height:8px;border-radius:4px;overflow:hidden;gap:2px;background:var(--ligne)}.barre i{display:block}
+.k1{background:#e0b3a0}.k2{background:#ead49b}.k3{background:#9fcbc6}.k4{background:#3f8f8a}
+.alerte{margin-top:6px;background:var(--accent-p);border-radius:8px;padding:14px;font-size:13px}
+</style></head><body><div class="app">
+<aside><div class="logo">Salle des <span>profs</span></div>
+<a class="nav on" href="#">Accueil</a><a class="nav" href="#">Planifier</a><a class="nav" href="#">Créer</a><a class="nav" href="#">Évaluer <small>2</small></a><a class="nav" href="#">Observer</a>
+<div class="lab">Mes groupes</div><div class="grp">4e année, gr. 41 <span>24</span></div><div class="grp">4e année, gr. 42 <span>22</span></div>
+<div class="lab">Outils</div><a class="nav" href="#">Bibliothèque</a><a class="nav" href="#">Grilles</a><a class="nav" href="#">Paramètres</a>
+<div class="bas">Marie Gagnon<br>Noms chiffrés sur cet appareil<br>Données hébergées au Québec</div></aside>
+<main>
+<div class="haut"><div><h1>Bonjour Marie</h1><p>Vendredi 7 novembre · Étape 2, semaine 4</p></div>
+<div class="sel"><div><small>Groupe</small>4e année, gr. 41</div><div><small>Matière</small>Français</div><div><small>Étape</small>Étape 2</div></div></div>
+<div class="stats">
+<div class="stat acc"><div class="v">21</div><div class="l">copies à valider</div></div>
+<div class="stat"><div class="v">1</div><div class="l">pile à numériser</div></div>
+<div class="stat"><div class="v">68 %</div><div class="l">contenus de l'étape couverts</div></div>
+<div class="stat"><div class="v">5</div><div class="l">évaluations cette étape</div></div></div>
+<div class="grille">
+<div class="carte"><h3>Évaluations en cours <a href="#">Tout voir</a></h3>
+<table><tr><th>Évaluation</th><th>Date</th><th>État</th><th></th></tr>
+<tr><td>Dictée 6</td><td>7 nov.</td><td><span class="etat e1">À valider (21)</span></td><td><button class="btn">Valider</button></td></tr>
+<tr><td>Production écrite : le récit d'aventure</td><td>3 nov.</td><td><span class="etat e3">À numériser</span></td><td><button class="btn l">Numériser</button></td></tr>
+<tr><td>Lecture : le loup et l'agneau</td><td>28 oct.</td><td><span class="etat e2">Terminée</span></td><td><button class="btn l">Résultats</button></td></tr>
+<tr><td>Dictée 5</td><td>24 oct.</td><td><span class="etat e2">Terminée</span></td><td><button class="btn l">Résultats</button></td></tr></table></div>
+<div class="carte"><h3>Portrait du groupe <a href="#">Détails</a></h3><div class="corps">
+<div class="comp"><div class="r">Lire des textes variés<span>3 éval.</span></div><div class="barre"><i class="k1" style="width:8%"></i><i class="k2" style="width:25%"></i><i class="k3" style="width:42%"></i><i class="k4" style="width:25%"></i></div></div>
+<div class="comp"><div class="r">Écrire des textes variés<span>2 éval.</span></div><div class="barre"><i class="k1" style="width:17%"></i><i class="k2" style="width:38%"></i><i class="k3" style="width:33%"></i><i class="k4" style="width:12%"></i></div></div>
+<div class="comp"><div class="r">Communiquer oralement<span>à venir</span></div><div class="barre"></div></div>
+<div class="alerte">14 élèves sur 24 confondent <i>-er</i> et <i>-é</i> dans la dictée 6.<br><br><button class="btn">Préparer une activité de récupération</button></div>
+</div></div></div></main></div></body></html>

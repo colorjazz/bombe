@@ -1,0 +1,52 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><title>Salle des profs — Ma semaine</title>
+<style>
+:root{--fond:#f4f6f1;--carte:#fff;--encre:#2d3a2f;--doux:#7d877e;--ligne:#e2e7de;--sauge:#6f9277;--sauge-p:#e6eee6;--sable:#efe6d3;--ardoise:#5f7a91}
+*{box-sizing:border-box}body{margin:0;background:var(--fond);font-family:"Segoe UI",system-ui,sans-serif;color:var(--encre);font-size:14px;line-height:1.55}
+header{display:flex;align-items:center;gap:32px;padding:20px 48px}
+.logo{font-weight:600;font-size:16px}.logo span{color:var(--sauge)}
+nav{display:flex;gap:4px;background:var(--carte);border:1px solid var(--ligne);border-radius:30px;padding:4px}
+nav a{padding:7px 18px;border-radius:30px;color:var(--doux);text-decoration:none;font-size:13px}nav a.on{background:var(--sauge);color:#fff}
+.moi{margin-left:auto;font-size:13px;color:var(--doux)}
+main{max-width:1180px;margin:0 auto;padding:20px 48px 40px}
+.intro{display:flex;justify-content:space-between;align-items:flex-end;margin:20px 0 30px}
+.intro h1{font-size:40px;font-weight:300;margin:0;letter-spacing:-.01em}.intro h1 b{font-weight:600}
+.intro p{margin:4px 0 0;color:var(--doux);font-size:15px}
+.groupe{font-size:13px;color:var(--doux);text-align:right}.groupe b{display:block;color:var(--encre);font-size:15px;font-weight:500}
+.semaine{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:30px}
+.jour{background:var(--carte);border:1px solid var(--ligne);border-radius:16px;padding:16px;min-height:200px}
+.jour.auj{border:2px solid var(--sauge)}
+.jour h4{margin:0 0 12px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--doux);display:flex;justify-content:space-between}.jour h4 b{color:var(--encre);font-size:18px;letter-spacing:0}
+.ev{border-radius:10px;padding:9px 10px;font-size:12px;margin-bottom:8px;line-height:1.35}
+.ev small{display:block;color:var(--doux);margin-top:2px}
+.lecon{background:var(--sauge-p)}.eval{background:var(--sable)}.a-faire{background:#e7edf2}
+.ev .go{display:inline-block;margin-top:6px;font-size:11px;color:var(--sauge);font-weight:600}
+.bas{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.carte{background:var(--carte);border:1px solid var(--ligne);border-radius:16px;padding:22px}
+.carte h3{margin:0 0 4px;font-size:15px;font-weight:600}.carte .s{color:var(--doux);font-size:13px;margin-bottom:14px}
+.gros{font-size:44px;font-weight:300;line-height:1}.gros small{font-size:14px;color:var(--doux)}
+.btn{display:inline-block;margin-top:14px;border:0;border-radius:20px;padding:8px 16px;font-size:13px;background:var(--sauge);color:#fff}.btn.l{background:var(--sauge-p);color:var(--sauge)}
+.anneau{display:flex;align-items:center;gap:18px}
+.anneau .r{width:84px;height:84px;border-radius:50%;background:conic-gradient(var(--sauge) 0 68%,var(--ligne) 68% 100%);display:grid;place-items:center}
+.anneau .r div{width:64px;height:64px;border-radius:50%;background:#fff;display:grid;place-items:center;font-weight:600}
+footer{text-align:center;color:var(--doux);font-size:12px;padding:0 0 26px}
+</style></head><body>
+<header><div class="logo">Salle des <span>profs</span></div>
+<nav><a class="on" href="#">Ma semaine</a><a href="#">Planifier</a><a href="#">Créer</a><a href="#">Évaluer</a><a href="#">Observer</a></nav>
+<div class="moi">Marie Gagnon</div></header>
+<main>
+<div class="intro"><div><h1>Bonjour <b>Marie</b></h1><p>Il vous reste 21 copies à valider cette semaine.</p></div>
+<div class="groupe">Groupe affiché<b>4e année, groupe 41 · Français</b>Étape 2, semaine 4</div></div>
+<div class="semaine">
+<div class="jour"><h4>Lun. <b>3</b></h4><div class="ev lecon">Lecture : les indices du texte<small>Plan de leçon prêt</small></div><div class="ev eval">Production écrite : récit d'aventure<small>Imprimée</small><span class="go">Numériser</span></div></div>
+<div class="jour"><h4>Mar. <b>4</b></h4><div class="ev lecon">Le groupe du nom<small>Fiche d'exercices</small></div></div>
+<div class="jour"><h4>Mer. <b>5</b></h4><div class="ev lecon">Oral : présenter un livre<small>Grille prête</small></div></div>
+<div class="jour"><h4>Jeu. <b>6</b></h4><div class="ev lecon">Les homophones a / à<small>Présentation</small></div></div>
+<div class="jour auj"><h4>Ven. <b>7</b></h4><div class="ev eval">Dictée 6<small>21 copies corrigées par l'IA</small><span class="go">Valider</span></div><div class="ev a-faire">Semaine prochaine : accord du participe passé<small>Aucun matériel</small><span class="go">Préparer</span></div></div>
+</div>
+<div class="bas">
+<div class="carte"><h3>À valider</h3><div class="s">Dictée 6</div><div class="gros">21 <small>copies sur 24</small></div><button class="btn">Commencer la validation</button></div>
+<div class="carte"><h3>Progression de l'étape</h3><div class="s">Contenus de la PDA prévus à l'étape 2</div><div class="anneau"><div class="r"><div>68 %</div></div><div style="font-size:13px;color:var(--doux)">23 savoirs couverts<br>11 à venir</div></div></div>
+<div class="carte"><h3>Une tendance</h3><div class="s">Dictée 6</div><div style="font-size:14px">14 élèves sur 24 confondent <i>-er</i> et <i>-é</i>.</div><button class="btn l">Préparer une récupération</button></div>
+</div></main>
+<footer>Noms des élèves chiffrés sur cet appareil · Données hébergées au Québec</footer>
+</body></html>

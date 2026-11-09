@@ -1,0 +1,58 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><title>Salle des profs — Carnet</title>
+<style>
+:root{--papier:#faf7f1;--carte:#fffdf9;--encre:#33302b;--doux:#8a8278;--ligne:#ebe4d8;--terre:#b0704f;--sauge:#7d9a85;--ciel:#7b97b0;--lavande:#9a8fb5;--ble:#c9a35f}
+*{box-sizing:border-box}body{margin:0;background:var(--papier);color:var(--encre);font-family:"Segoe UI",system-ui,sans-serif;font-size:14px;line-height:1.55}
+.serif{font-family:Georgia,"DejaVu Serif","Times New Roman",serif}
+header{max-width:1120px;margin:0 auto;padding:28px 32px 0;display:flex;align-items:baseline;gap:36px;border-bottom:1px solid var(--ligne)}
+.logo{font-size:22px;padding-bottom:18px}.logo i{color:var(--terre);font-style:italic}
+nav{display:flex;gap:26px}nav a{padding-bottom:18px;color:var(--doux);text-decoration:none;border-bottom:2px solid transparent}nav a.on{color:var(--encre);border-color:var(--terre)}
+.moi{margin-left:auto;color:var(--doux);font-size:13px}
+main{max-width:1120px;margin:0 auto;padding:40px 32px}
+.salut{display:grid;grid-template-columns:1fr auto;align-items:end;margin-bottom:34px}
+.salut h1{font-size:34px;font-weight:400;margin:0}.salut p{margin:6px 0 0;color:var(--doux)}
+.filtre{display:flex;gap:8px}.filtre span{border:1px solid var(--ligne);background:var(--carte);border-radius:20px;padding:6px 14px;font-size:13px}
+.volets{display:grid;grid-template-columns:repeat(4,1fr);gap:0;background:var(--carte);border:1px solid var(--ligne);border-radius:14px;margin-bottom:30px}
+.volet{padding:24px 22px;border-right:1px solid var(--ligne)}.volet:last-child{border:0}
+.volet .n{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--c)}
+.volet h2{font-size:22px;font-weight:400;margin:6px 0 8px}.volet p{color:var(--doux);margin:0 0 14px;font-size:13px}
+.volet a{display:block;color:var(--encre);text-decoration:none;padding:5px 0;font-size:13px}.volet a:before{content:"— ";color:var(--c)}
+.deux{display:grid;grid-template-columns:1.25fr 1fr;gap:22px}
+.carte{background:var(--carte);border:1px solid var(--ligne);border-radius:14px;padding:26px}
+.carte h3{font-size:20px;font-weight:400;margin:0 0 16px}
+.tache{display:grid;grid-template-columns:70px 1fr auto;gap:16px;padding:14px 0;border-top:1px dashed var(--ligne);align-items:center}
+.date{font-size:13px;color:var(--doux);text-align:center;line-height:1.2}.date b{display:block;font-size:22px;color:var(--encre);font-weight:400}
+.tache .t{font-weight:500}.tache .s{font-size:12px;color:var(--doux)}
+.pastilles{display:flex;gap:4px;margin-top:6px}.pastilles i{width:28px;height:4px;border-radius:2px;background:var(--ligne)}.pastilles i.ok{background:var(--terre)}
+.btn{border:1px solid var(--encre);background:none;border-radius:20px;padding:7px 16px;font-size:13px;color:var(--encre)}.btn.plein{background:var(--encre);color:var(--papier)}
+.comp{margin:0 0 16px}.comp .l{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px}.comp .l span{color:var(--doux)}
+.barre{display:flex;height:10px;border-radius:5px;overflow:hidden;gap:2px}.barre i{display:block}
+.k1{background:#dcb9a4}.k2{background:#e6d3a8}.k3{background:#b6cbb9}.k4{background:#7d9a85}
+.note{margin-top:18px;padding:16px;border-left:3px solid var(--terre);background:#f6efe6;font-size:13px}
+footer{max-width:1120px;margin:0 auto;padding:0 32px 30px;color:var(--doux);font-size:12px}
+</style></head><body>
+<header><div class="logo serif">Salle des <i>profs</i></div>
+<nav><a class="on" href="#">Accueil</a><a href="#">Planifier</a><a href="#">Créer</a><a href="#">Évaluer</a><a href="#">Observer</a></nav>
+<div class="moi">Marie Gagnon</div></header>
+<main>
+<div class="salut"><div><h1 class="serif">Bonjour Marie</h1><p>Vendredi 7 novembre · Étape 2, semaine 4</p></div>
+<div class="filtre"><span>4e année, groupe 41</span><span>Français</span><span>Étape 2</span></div></div>
+<div class="volets">
+<div class="volet" style="--c:var(--sauge)"><div class="n">Un</div><h2 class="serif">Planifier</h2><p>Votre progression selon la PDA.</p><a href="#">Planification annuelle</a><a href="#">Plan de leçon</a><a href="#">Contenus à couvrir</a></div>
+<div class="volet" style="--c:var(--lavande)"><div class="n">Deux</div><h2 class="serif">Créer</h2><p>Du matériel prêt à imprimer.</p><a href="#">Fiche ou activité</a><a href="#">Présentation</a><a href="#">Évaluation imprimable</a></div>
+<div class="volet" style="--c:var(--terre)"><div class="n">Trois</div><h2 class="serif">Évaluer</h2><p>De la pile aux résultats validés.</p><a href="#">Numériser une pile</a><a href="#">Copies à valider (2)</a><a href="#">Grilles</a></div>
+<div class="volet" style="--c:var(--ciel)"><div class="n">Quatre</div><h2 class="serif">Observer</h2><p>La progression par compétence.</p><a href="#">Par élève</a><a href="#">Par groupe</a><a href="#">Exporter</a></div>
+</div>
+<div class="deux">
+<div class="carte"><h3 class="serif">À faire</h3>
+<div class="tache"><div class="date">ven.<b>7</b>nov.</div><div><div class="t">Dictée 6</div><div class="s">24 copies numérisées, 21 corrigées, aucune validée</div><div class="pastilles"><i class="ok"></i><i class="ok"></i><i class="ok"></i><i></i></div></div><button class="btn plein">Valider</button></div>
+<div class="tache"><div class="date">lun.<b>3</b>nov.</div><div><div class="t">Production écrite : le récit d'aventure</div><div class="s">Imprimée, en attente de numérisation</div><div class="pastilles"><i class="ok"></i><i></i><i></i><i></i></div></div><button class="btn">Numériser</button></div>
+<div class="tache"><div class="date">lun.<b>10</b>nov.</div><div><div class="t">L'accord du participe passé</div><div class="s">Prévu dans votre planification, aucun matériel</div></div><button class="btn">Préparer</button></div>
+</div>
+<div class="carte"><h3 class="serif">Portrait du groupe</h3>
+<div class="comp"><div class="l">Lire des textes variés<span>3 évaluations</span></div><div class="barre"><i class="k1" style="width:8%"></i><i class="k2" style="width:25%"></i><i class="k3" style="width:42%"></i><i class="k4" style="width:25%"></i></div></div>
+<div class="comp"><div class="l">Écrire des textes variés<span>2 évaluations</span></div><div class="barre"><i class="k1" style="width:17%"></i><i class="k2" style="width:38%"></i><i class="k3" style="width:33%"></i><i class="k4" style="width:12%"></i></div></div>
+<div class="comp"><div class="l">Communiquer oralement<span>Pas encore évalué</span></div><div class="barre" style="background:var(--ligne)"></div></div>
+<div class="note">14 élèves sur 24 confondent <i>-er</i> et <i>-é</i> dans la dictée 6.<br><br><button class="btn">Préparer une activité de récupération</button></div>
+</div></div></main>
+<footer>Noms des élèves chiffrés sur cet appareil · Données hébergées au Québec</footer>
+</body></html>
