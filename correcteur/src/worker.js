@@ -85,6 +85,7 @@ const ROUTES = {
   'POST /api/language': language,
   'POST /api/language-reread': languageReread,
   'POST /api/language-verify': languageVerify,
+  'POST /api/profil': writerProfile,
   // Pays du visiteur (fourni par Cloudflare), pour la mention « Fait au Canada » de l'accueil.
   'GET /api/geo': async (request) => json({ country: request.cf?.country || '' }),
 };
@@ -877,13 +878,44 @@ const NATIVE_LANG_SCHEMA = {
   },
 };
 
+// Orthopédagogie : chaque faute reçoit aussi un sous-type, qui sert à établir le profil du scripteur. Typologie inspirée
+// du Référentiel d'intervention en écriture (MEQ, 2017) et des travaux sur l'orthographe (unités phonologiques,
+// morphologiques, visuo-orthographiques, lexicales), complétée des homophones grammaticaux et de la segmentation.
+// Le sous-type précise la catégorie ; il ne la remplace pas (les cadres et la note restent ceux de la catégorie).
+export const ORTHO_TYPES = {
+  phonologique: { cat: 'orthographe', def: "le mot écrit ne se prononce plus comme le mot attendu : son oublié, ajouté, inversé ou confondu (« tadé » → « tardé », « tent » → « dent »)" },
+  morphologique: { cat: 'orthographe', def: "lettre muette ou partie du mot qu'on trouve par un mot de la même famille, préfixe ou suffixe (« gran » → « grand », grande ; « den » → « dent », dentiste)" },
+  visuo_orthographique: { cat: 'orthographe', def: "le mot se prononce bien, mais le choix des lettres est faux : an/en, o/au/eau, s/ss/c/ç, g/gu/ge, consonne double, m devant b et p, accent, lettre finale non dérivable (« drapo » → « drapeau », « tonbé » → « tombé »)" },
+  homophone_lexical: { cat: 'orthographe', def: "un autre mot de même prononciation a été écrit (« ver » → « verre », « dans » → « dent »)" },
+  homophone_grammatical: { cat: 'orthographe', def: "a/à, et/est, son/sont, on/ont, ce/se, ces/ses, c'est/s'est, ou/où, la/l'a/là, leur/leurs, peu/peut, mes/mais, ni/n'y, sans/s'en" },
+  segmentation: { cat: 'orthographe', def: "mots soudés ou coupés au mauvais endroit, apostrophe oubliée (« lami » → « l'ami », « a voir » → « avoir », « en suite » → « ensuite »)" },
+  majuscule_signes: { cat: 'orthographe', def: "majuscule d'un nom propre, trait d'union, abréviation" },
+  genre: { cat: 'accord', def: "marque du féminin absente ou fautive : déterminant, nom, adjectif, attribut, participe passé (« la dent jauni » → « jaunie »)" },
+  nombre: { cat: 'accord', def: "marque du pluriel absente ou fautive : déterminant, nom, adjectif, attribut, participe passé (« les dents propre » → « propres »)" },
+  accord_verbe: { cat: 'accord', def: "verbe mal accordé avec son sujet (« les dents grince » → « grincent »)" },
+  terminaison_verbale: { cat: 'conjugaison', def: "terminaison de personne ou de temps fautive, radical ou auxiliaire fautif (« il viens » → « il vient »)" },
+  homophone_verbal: { cat: 'conjugaison', def: "confusion entre formes du verbe qui se prononcent pareil : -é, -er, -ez, -ait, -ais, -ai (« il a manger » → « mangé »)" },
+  delimitation: { cat: 'ponctuation', def: "majuscule de début de phrase ou point final oubliés, phrases soudées ou coupées au mauvais endroit" },
+  virgule: { cat: 'ponctuation', def: "virgule oubliée ou fautive : énumération, complément de phrase ou organisateur en tête, coordonnant" },
+  ponctuation_autre: { cat: 'ponctuation', def: "deux-points, guillemets, tiret de dialogue, point d'interrogation ou d'exclamation" },
+  structure_phrase: { cat: 'syntaxe', def: "phrase incomplète, mot oublié, ordre des mots, construction calquée sur l'oral, sujet répété, subordonnée mal construite" },
+  negation: { cat: 'syntaxe', def: "« ne » oublié dans la négation" },
+  pronom_preposition: { cat: 'syntaxe', def: "pronom fautif ou ambigu, préposition fautive" },
+  vocabulaire: { cat: 'vocabulaire', def: "mot impropre, anglicisme, registre familier" },
+};
+const ORTHO_RULE = `\n\nANALYSE ORTHOPÉDAGOGIQUE : pour chaque faute, indique aussi « sous_type », le raisonnement probable de l'élève, parmi :\n${Object.entries(ORTHO_TYPES).map(([k, v]) => `   - ${k} (${v.cat}) : ${v.def}`).join('\n')}\n   Le sous-type doit correspondre à la catégorie de la faute (entre parenthèses).`;
+const orthoOn = (request, body) => body.ortho === true && !isEnglish(request);
+
 // Primaire : la notion de la Progression des apprentissages à laquelle se rattache chaque faute (voir public/pda.js).
 const NOT_YET = 'hors_annee';
-const langSchema = (pda) => (pda ? { ...NATIVE_LANG_SCHEMA, items: { ...NATIVE_LANG_SCHEMA.items,
+const langSchema = (pda, ortho) => {
+  const items = structuredClone(NATIVE_LANG_SCHEMA.items);
   // « hors_annee » : une faute d'une notion pas encore vue a sa case (sans elle, l'IA la rangeait ailleurs, ex. l'imparfait
   // en « orthographe d'usage ») ; langErrors la retire ensuite, comme toute notion absente des réglages.
-  properties: { ...NATIVE_LANG_SCHEMA.items.properties, notion: { type: 'STRING', enum: [...pda.notions.map((n) => n.id), ...(pda.ignored?.length ? [NOT_YET] : [])] } },
-  required: [...NATIVE_LANG_SCHEMA.items.required, 'notion'] } } : NATIVE_LANG_SCHEMA);
+  if (pda) { items.properties.notion = { type: 'STRING', enum: [...pda.notions.map((n) => n.id), ...(pda.ignored?.length ? [NOT_YET] : [])] }; items.required.push('notion'); }
+  if (ortho) { items.properties.sous_type = { type: 'STRING', enum: Object.keys(ORTHO_TYPES) }; items.required.push('sous_type'); }
+  return { ...NATIVE_LANG_SCHEMA, items };
+};
 
 // Réglages primaire envoyés par l'appli : { year: 1-6, notions: [{ id, label, cat, state: 'count' | 'grey' }] }.
 // Les notions ignorées ne sont pas envoyées : l'IA ne les relève pas.
@@ -931,6 +963,7 @@ function langErrors(fautes, cats, pda) {
     line: String(f.ligne || '').slice(0, 400), // recopier la ligne fait partie de la consigne avec laquelle les cadres ont été mesurés
     doubtful: !!f.lecture_douteuse, // lecture incertaine : affichée « à vérifier », non comptée dans la note
     ...(pda ? { notion: f.notion, grey: notion(f).state === 'grey' } : {}),
+    ...(ORTHO_TYPES[f.sous_type]?.cat === f.categorie ? { subtype: f.sous_type } : {}),
   })).filter((e, i, all) => !all.slice(0, i).some((o) => sameError(o, e)));
 }
 
@@ -991,7 +1024,7 @@ async function languageReread(request, env) {
   const known = (Array.isArray(body.known) ? body.known : []).slice(0, 200).map((f) => ({ texte: String(f.text || '').slice(0, 200), correction: String(f.correction || '').slice(0, 200), box: cleanBox(f.box) }));
   const list = known.map((f) => `- « ${f.texte} » → « ${f.correction} »`).join('\n') || '(aucune)';
   let raw;
-  try { raw = await geminiVision(env, langSystem(request, body, cats, pda) + REREAD[isEnglish(request) ? 'en' : 'fr'](list), body.page, pda); } catch (err) {
+  try { raw = await geminiVision(env, langSystem(request, body, cats, pda) + REREAD[isEnglish(request) ? 'en' : 'fr'](list), body.page, pda, orthoOn(request, body)); } catch (err) {
     console.error('Relecture impossible :', err.message);
     throw new HttpError(502, 'Relecture impossible');
   }
@@ -999,8 +1032,8 @@ async function languageReread(request, env) {
   return json({ errors: langErrors(raw.fautes.filter((g) => !known.some((f) => same(f, g))), cats, pda) });
 }
 
-async function geminiVision(env, prompt, dataUrl, pda) {
-  const list = await geminiNative(env, [{ text: prompt }, inlineImage(dataUrl)], langSchema(pda), env.LANG_MODEL, { thinking: env.LANG_THINKING, timeoutMs: 150_000 });
+async function geminiVision(env, prompt, dataUrl, pda, ortho = false) {
+  const list = await geminiNative(env, [{ text: ortho ? prompt + ORTHO_RULE : prompt }, inlineImage(dataUrl)], langSchema(pda, ortho), env.LANG_MODEL, { thinking: env.LANG_THINKING, timeoutMs: 150_000 });
   return { fautes: (Array.isArray(list) ? list : list.fautes || []).map((f) => ({ ...f, texte: f.mot_fautif ?? f.texte, box: f.box ?? f.box_2d })) };
 }
 
@@ -1227,7 +1260,7 @@ async function analyzeLanguagePages(request, env, key, body, cats, n, pay) {
   const identity = body.identify === false ? Promise.resolve({}) : geminiNative(env, [{ text: "Recopie le nom de l'élève et son groupe s'ils sont écrits sur cette copie (sinon chaînes vides)." }, inlineImage(body.pages[0])],
     { type: 'OBJECT', properties: { nom: { type: 'STRING' }, groupe: { type: 'STRING' } }, required: ['nom', 'groupe'] }, env.LANG_MODEL).catch(() => ({}));
   const counts = pda ? Promise.all(body.pages.map((url) => transcribe(env, url).catch(() => null))) : Promise.resolve([]);
-  const results = await Promise.allSettled(body.pages.map((url) => geminiVision(env, system, url, pda)));
+  const results = await Promise.allSettled(body.pages.map((url) => geminiVision(env, system, url, pda, orthoOn(request, body))));
   const failed = results.filter((x) => x.status === 'rejected').length;
   if (failed) {
     await pay.refund(failed);
@@ -1295,6 +1328,122 @@ ${before.map((t, i) => `${i + 1}. « ${t} »`).join('\n')}
     throw new HttpError(502, 'Le commentaire n\'a pas pu être réécrit. Réessayez.');
   }
   return json({ comment: String(raw.commentaire || '').trim().slice(0, 1500) });
+}
+
+// ---------- Fiche du scripteur (orthopédagogie) ----------
+// Gratuite (texte seulement, ~½ ¢) : établie à partir des erreurs VALIDÉES par l'orthopédagogue (fausses fautes retirées,
+// oublis ajoutés) et de la transcription du texte. L'IA ne revoit pas la copie. Rien n'est conservé.
+// Ce que la fiche ne fait pas, volontairement : juger la motivation (invisible sur une copie), la planification ou la
+// révision sans brouillon, ni décider du niveau d'intervention (RàI) : c'est le jugement de l'orthopédagogue.
+const PROFILE_ACTIVITIES = [
+  'Entretien métagraphique ciblé sur une erreur récurrente',
+  'Phrase dictée du jour (avec justification des choix orthographiques)',
+  'Dictée zéro faute (questions permises, réponses expliquées)',
+  'Chantier orthographique (découverte d’une régularité à partir d’un corpus)',
+  'Familles de mots et manipulation des morphèmes (préfixes, suffixes, radical)',
+  'Travail de conscience phonologique (segmentation en syllabes et en sons)',
+  'Combinaison de phrases (10 à 15 minutes en début de séance)',
+  'Analyse à partir du modèle de la phrase de base (sujet, prédicat, complément de phrase)',
+  'Manipulations syntaxiques : ajout, suppression, déplacement, remplacement',
+  'Lecture du texte à voix haute, seul ou à un pair, pour la ponctuation',
+  'Enseignement explicite d’une seule opération de révision à la fois',
+  'Grille de correction évolutive limitée à 1 ou 2 cibles',
+  'Justification écrite ou orale de quelques accords ciblés (flèches d’accord, donneur et receveur)',
+  'Remplacement par un mot témoin pour les homophones (avait/a, vendre/vendu)',
+];
+const PROFILE_ADAPTATIONS = [
+  'Dictionnaire phonologique ou prédicteur de mots',
+  'Organisateur graphique, ou enregistrement oral des idées avant d’écrire',
+  'Synthèse vocale pour la relecture, ou lecture du texte par un tiers',
+  'Réduire la longueur exigée ou limiter la correction à un paragraphe ou à une cible',
+];
+// Paliers (syntaxe et orthographe seulement), d'après les descripteurs du profil du scripteur.
+const PROFILE_LEVELS = {
+  1: 'Apprentissages non acquis : orthographie peu de mots fréquents, fait peu ou pas d’accords, phrases souvent incomplètes, ponctuation de base aléatoire',
+  2: 'Apprentissages peu acquis : orthographie plusieurs mots fréquents, quelques accords dans le GN et parfois du verbe, phrases complètes mais peu variées',
+  3: 'Apprentissages en voie d’acquisition : orthographie la majorité des mots fréquents, accords présents dans le GN et souvent dans le GV, structures variées avec des erreurs qui nuisent parfois à la compréhension',
+  4: 'Apprentissages presque acquis : orthographie la plupart des mots fréquents et précis, fait la plupart des accords, rares erreurs de syntaxe, bonne ponctuation',
+  5: 'Apprentissages acquis : maîtrise les règles syntaxiques et orthographiques attendues à son niveau',
+};
+const PROFILE_SCHEMA = { type: 'OBJECT', properties: {
+  forces: { type: 'ARRAY', items: { type: 'STRING' }, description: '1 à 3 forces observées dans ce texte, concrètes.' },
+  orthographe_usage: { type: 'STRING', description: "Tendance en orthographe d'usage, d'après les sous-types (ex. : surtout des erreurs morphologiques : lettres muettes non dérivées). Chaîne vide si rien à signaler." },
+  orthographe_grammaticale: { type: 'STRING', description: 'Tendance en orthographe grammaticale (accords, terminaisons, homophones verbaux).' },
+  syntaxe_ponctuation: { type: 'STRING', description: 'Bilan de la construction des phrases et de la ponctuation.' },
+  organisation: { type: 'STRING', description: "Observation sur l'organisation et la cohérence du texte (paragraphes, marqueurs de relation, reprise de l'information, temps verbaux). Chaîne vide si le texte est trop court ou absent." },
+  palier: { type: 'INTEGER', description: 'Palier provisoire en syntaxe et orthographe, de 1 à 5.' },
+  palier_raison: { type: 'STRING', description: 'Une phrase qui justifie le palier par des faits du texte.' },
+  cibles: { type: 'ARRAY', items: { type: 'OBJECT', properties: { cible: { type: 'STRING' }, raison: { type: 'STRING' } }, required: ['cible', 'raison'] }, description: '1 ou 2 cibles prioritaires, pas plus (éviter la surcharge).' },
+  questions: { type: 'ARRAY', items: { type: 'OBJECT', properties: { extrait: { type: 'STRING' }, question: { type: 'STRING' } }, required: ['extrait', 'question'] }, description: "2 ou 3 questions d'entretien métagraphique, chacune sur une erreur représentative." },
+  activites: { type: 'ARRAY', items: { type: 'STRING', enum: PROFILE_ACTIVITIES }, description: '2 à 4 pistes, en lien avec les cibles.' },
+  adaptations: { type: 'ARRAY', items: { type: 'STRING', enum: PROFILE_ADAPTATIONS }, description: "0 à 2 mesures, seulement si le texte en donne un indice clair." },
+}, required: ['forces', 'orthographe_usage', 'orthographe_grammaticale', 'syntaxe_ponctuation', 'organisation', 'palier', 'palier_raison', 'cibles', 'questions', 'activites', 'adaptations'] };
+
+async function writerProfile(request, env) {
+  await getKey(env, bearer(request));
+  const body = await readJson(request);
+  const level = body.level === 'primaire' ? 'primaire' : 'secondaire';
+  const year = Number(body.year);
+  const who = year >= 1 && year <= (level === 'primaire' ? 6 : 5)
+    ? (level === 'primaire' ? `${year}${year === 1 ? 're' : 'e'} année du primaire` : `${year}${year === 1 ? 're' : 'e'} secondaire`)
+    : level;
+  const errors = (Array.isArray(body.errors) ? body.errors : []).slice(0, 200).map((e) => ({
+    text: String(e?.text || '').slice(0, 120), correction: String(e?.correction || '').slice(0, 120),
+    category: LANG_CATEGORIES[e?.category] ? e.category : '', subtype: ORTHO_TYPES[e?.subtype] ? e.subtype : '',
+    why: String(e?.explanation || '').slice(0, 200), grey: !!e?.grey,
+  })).filter((e) => e.text || e.correction);
+  const text = String(body.text || '').slice(0, 8000);
+  const words = Number(body.words) || countWords(text);
+  const focus = String(body.focus || '').trim().slice(0, 500);
+  if (!errors.length && !text) throw new HttpError(400, 'Rien à analyser');
+  // Les nombres viennent du code, pas de l'IA : toujours exacts et vérifiables dans la fiche.
+  const by = {};
+  for (const e of errors.filter((x) => !x.grey)) { const k = e.subtype || e.category || 'autre'; by[k] = (by[k] || 0) + 1; }
+  const usage = Object.entries(by).filter(([k]) => ORTHO_TYPES[k]?.cat === 'orthographe').reduce((a, [, n]) => a + n, 0);
+  // Alerte : des erreurs phonologiques fréquentes à partir du 2e cycle du primaire (3e année) sont un signal prioritaire.
+  const late = level === 'secondaire' || year >= 3;
+  const alert = late && (by.phonologique || 0) >= 3 && (by.phonologique || 0) >= 0.2 * usage
+    ? `Erreurs phonologiques fréquentes (${by.phonologique}) pour un élève de ${who} : à examiner en priorité (conscience phonologique, accès au dictionnaire phonologique).` : '';
+  const system = [
+    "Tu assistes une orthopédagogue québécoise. À partir d'UNE production écrite d'un élève et de la liste de ses erreurs, déjà validée par l'orthopédagogue, prépare une fiche du scripteur PROVISOIRE, qu'elle complétera par ses propres observations.",
+    "Principes : chaque erreur est un indice du raisonnement orthographique ou syntaxique actuel de l'élève, pas une faute à comptabiliser. Cherche les régularités (ce qui revient), distingue ce qui semble acquis de ce qui ne l'est pas, et repère une règle qui semble connue mais non appliquée (surcharge cognitive : elle est réussie à un endroit et ratée ailleurs).",
+    "Les erreurs marquées « en apprentissage » portent sur des notions pas encore attendues à son année : ce ne sont pas des difficultés, mentionne-les seulement comme des notions en cours.",
+    "Interdits : ne juge pas la motivation, l'attitude ou les émotions de l'élève (rien ne le montre sur une copie) ; ne juge pas la planification ni la révision (pas de brouillon fourni) ; ne recommande aucun niveau d'intervention ni diagnostic. N'invente aucun exemple : cite seulement des extraits réels de la liste ou du texte. N'écris jamais le nom de l'élève : « l'élève ».",
+    `Palier (syntaxe et orthographe), indice provisoire de 1 à 5, en tenant compte de ce qui est attendu en ${who} :\n${Object.entries(PROFILE_LEVELS).map(([k, v]) => `${k}. ${v}`).join('\n')}`,
+    "Questions d'entretien métagraphique : courtes, au tutoiement, chacune sur une erreur précise de l'élève, pour faire expliciter son raisonnement sans donner la réponse. Modèles : « Comment as-tu fait pour écrire « [mot] » ? Connais-tu un mot de la même famille qui pourrait t'aider ? » ; « Dans « [extrait] », quel est le mot qui donne son accord ? » ; « Comment as-tu trouvé la terminaison du verbe « [verbe] » ? Quel est son sujet ? » ; « Lis-moi cette phrase à voix haute : où ton lecteur doit-il s'arrêter ? »",
+    "Rédige en français, phrases courtes et précises, vocabulaire de l'orthopédagogie (donneur d'accord, GN, morphogramme, homophones, marqueurs de relation).",
+    focus ? `L'orthopédagogue veut observer en particulier : ${focus}. Fais une place à ces aspects dans les tendances et les cibles (sans inventer d'erreurs).` : '',
+    alert ? `Signal à mentionner dans les cibles : ${alert}` : '',
+  ].filter(Boolean).join('\n\n');
+  const content = `ÉLÈVE : ${who}. Texte de ${words || '?'} mots.
+
+ERREURS VALIDÉES (${errors.length}) — « écrit » → « attendu » [catégorie / sous-type] :
+${errors.map((e) => `- « ${e.text} » → « ${e.correction} » [${e.category || '?'}${e.subtype ? ` / ${e.subtype}` : ''}]${e.grey ? ' (notion en apprentissage)' : ''}${e.why ? ` — ${e.why}` : ''}`).join('\n') || '(aucune)'}
+
+NOMBRE PAR SOUS-TYPE (hors notions en apprentissage) : ${Object.entries(by).map(([k, n]) => `${k} ${n}`).join(', ') || 'aucune erreur'}
+
+TEXTE DE L'ÉLÈVE (transcription, sans correction) :
+${text || '(non disponible)'}`;
+  let raw;
+  try {
+    raw = await geminiNative(env, [{ text: `${system}\n\n${content}` }], PROFILE_SCHEMA, env.LANG_MODEL, { timeoutMs: 90_000 });
+  } catch (err) {
+    console.error('Fiche du scripteur impossible :', err.message);
+    throw new HttpError(502, "La fiche n'a pas pu être établie. Réessayez.");
+  }
+  const str = (v, n = 600) => String(v || '').trim().slice(0, n);
+  const list = (v, n, len = 300) => (Array.isArray(v) ? v : []).map((x) => str(x, len)).filter(Boolean).slice(0, n);
+  const palier = Math.min(5, Math.max(1, Math.round(Number(raw.palier) || 0))) || null;
+  return json({
+    forces: list(raw.forces, 3), usage: str(raw.orthographe_usage), grammar: str(raw.orthographe_grammaticale),
+    syntax: str(raw.syntaxe_ponctuation), organisation: str(raw.organisation),
+    level: palier, levelLabel: palier ? PROFILE_LEVELS[palier].split(' : ')[0] : '', levelWhy: str(raw.palier_raison),
+    targets: (Array.isArray(raw.cibles) ? raw.cibles : []).slice(0, 2).map((c) => ({ target: str(c?.cible, 200), why: str(c?.raison, 300) })).filter((c) => c.target),
+    questions: (Array.isArray(raw.questions) ? raw.questions : []).slice(0, 3).map((q) => ({ excerpt: str(q?.extrait, 150), question: str(q?.question, 300) })).filter((q) => q.question),
+    activities: list(raw.activites, 4).filter((a) => PROFILE_ACTIVITIES.includes(a)),
+    adaptations: list(raw.adaptations, 2).filter((a) => PROFILE_ADAPTATIONS.includes(a)),
+    alert,
+  });
 }
 
 // ---------- Grille détaillée ----------

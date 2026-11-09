@@ -600,3 +600,34 @@ body.light .layout > .levelbar { grid-column: 1 / -1; }
 .zoom-pages img { cursor: zoom-in; }
 .zoom-hint { margin: 0; text-align: center; }
 #zoom-pos { white-space: nowrap; }
+
+/* Orthopédagogie : 4e choix du niveau, niveau des élèves, fiche du scripteur */
+.ortho-row { margin-top: -.2rem; }
+.ortho-row .lvl-seg button { padding: .28rem .8rem; font-size: .8rem; }
+@media (max-width: 480px) {
+  .levelbar .lvl-seg button { padding: .35rem .5rem; font-size: .8rem; }
+}
+.ortho-focus textarea { min-height: 3rem; }
+.profile { border: 1px solid var(--line); border-radius: 12px; background: #fbfaff; padding: .5rem .7rem; }
+.profile > summary { cursor: pointer; padding: .15rem 0; }
+.profile[open] > summary { margin-bottom: .4rem; }
+.prof-body { display: grid; gap: .55rem; }
+.prof-sec h4 { margin: 0 0 .2rem; font-size: .86rem; color: var(--primary); }
+.prof-sec ul, .prof-sec ol { margin: 0; padding-left: 1.2rem; font-size: .88rem; }
+.prof-sec li { margin: .1rem 0; }
+.prof-sec dl { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: .15rem .6rem; font-size: .88rem; }
+.prof-sec dt { font-weight: 700; }
+.prof-sec dd { margin: 0; }
+.prof-sec.warn { background: #fff7ed; border-left: 4px solid #ea580c; padding: .4rem .6rem; border-radius: 8px; }
+.prof-table { width: 100%; border-collapse: collapse; font-size: .84rem; }
+.prof-table th, .prof-table td { text-align: left; vertical-align: top; padding: .25rem .35rem; border-bottom: 1px solid var(--line); }
+.prof-table th { font-weight: 700; width: 38%; }
+.prof-table td:nth-child(2) { white-space: nowrap; }
+.prof-actions { display: flex; gap: .4rem; flex-wrap: wrap; margin-top: .5rem; }
+.prof-stale { background: #fef3c7; border-radius: 8px; padding: .35rem .5rem; margin-bottom: .4rem; display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.prof-wait { margin: 0; }
+@media (max-width: 560px) {
+  .prof-sec dl { grid-template-columns: 1fr; }
+  .prof-sec dd { margin-bottom: .3rem; }
+  .prof-table th { width: auto; }
+}

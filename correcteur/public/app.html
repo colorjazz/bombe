@@ -92,7 +92,11 @@
   <main id="app" class="wrap layout" hidden>
     <div class="levelbar" role="group" aria-label="Vous enseignez au">
       <span>Vous enseignez au :</span>
-      <div class="lvl-seg"><button type="button" data-niveau="primaire">Primaire</button><button type="button" data-niveau="secondaire">Secondaire</button><button type="button" data-niveau="cegep">Cégep</button></div>
+      <div class="lvl-seg"><button type="button" data-niveau="primaire">Primaire</button><button type="button" data-niveau="secondaire">Secondaire</button><button type="button" data-niveau="cegep">Cégep</button><button type="button" data-niveau="ortho">Orthopédagogie</button></div>
+    </div>
+    <div id="ortho-row" class="levelbar ortho-row" role="group" aria-label="Vos élèves sont au" hidden>
+      <span>Vos élèves sont au :</span>
+      <div class="lvl-seg"><button type="button" data-ortho="primaire">Primaire</button><button type="button" data-ortho="secondaire">Secondaire</button></div>
     </div>
     <div class="kindbar">
       <div class="kind" role="tablist" data-active="content">
@@ -171,6 +175,10 @@
             <span class="muted small">Seuils d'exemple : remplacez-les par ceux de votre école.</span>
           </div>
         </div>
+        <label id="ortho-focus-field" class="field ortho-focus" hidden><span>Ce que je veux observer <span class="muted small">(facultatif)</span></span>
+          <textarea id="ortho-focus" rows="2" placeholder="Ex. : homophones grammaticaux, accords dans le GN, délimitation des phrases"></textarea>
+          <span class="muted small">Chaque texte reçoit une <b>fiche du scripteur</b> provisoire : forces, erreurs récurrentes par type, cibles prioritaires, questions d’entretien métagraphique et pistes. Vous la copiez ou la téléchargez en Word, sans rien retranscrire.</span>
+        </label>
         <p class="lang-simple-only set-line"><span id="lang-set-txt"></span> · <a href="#" id="lang-to-adv">Modifier</a></p>
         <div class="field adv" id="lang-cats-field">Fautes à relever
           <div class="cats" id="lang-cats">
@@ -301,6 +309,7 @@
       <div class="results-head">
         <div class="results-tools">
           <input id="search" type="search" placeholder="Rechercher un élève…" style="width:12rem">
+          <button id="export-fiches" class="btn primary" type="button" hidden>Télécharger les fiches (Word)</button>
           <button id="export" class="btn green" type="button" disabled hidden>Télécharger les notes (Excel)</button>
           <button id="print-all" class="btn" type="button" disabled>Imprimer toutes les copies…</button>
           <button id="end" class="btn ghost" type="button" disabled>Terminer la session</button>

@@ -23,7 +23,7 @@ T = {
   og_title='Brûle la pile fait le premier jet. Vous avez le dernier mot.',
   og_desc="Brûle la pile propose la note et la rétroaction, et surligne les fautes de français. Vous gardez le dernier mot. 30 pages gratuites.",
   made='Fait au Québec', flag=QC_FLAG, nav_prices='Tarifs', nav_guide='Guide', guide_href='guide.html', nav_key='J’ai déjà une clé', nav_key_short='J’ai une clé', key_line='Vous avez déjà une clé d’accès ? Entrez-la ici →', nav_try='Essayer gratuitement', nav_try_short='Essayer', anchor_prices='tarifs',
-  eyebrow='Fait par un prof, pour des profs · Primaire, secondaire et cégep',
+  eyebrow='Fait par un prof, pour des profs · Primaire, secondaire, cégep et orthopédagogie',
   h1='Brûle la pile fait <em>le premier jet de correction</em>. Vous avez le dernier mot.',
   lead="Photographiez vos copies, même écrites à la main : une note proposée et son explication pour chaque question, les fautes surlignées sur la copie. Vous relisez et vous ajustez.",
   later='Pas devant vos copies en ce moment ? <a href="mailto:?subject=Br%C3%BBle%20la%20pile%20%C3%A0%20essayer&amp;body=%C3%80%20essayer%20sur%20ma%20prochaine%20pile%20de%20copies%20%3A%20https%3A%2F%2Fbrulelapile.ca">Envoyez-vous le lien par courriel</a>',
@@ -60,6 +60,7 @@ T = {
        ("Ça fonctionne avec l'écriture à la main ?", "Oui, avec des numérisations ou des photos nettes. Si un passage est difficile à lire, la copie est marquée à vérifier. Si la photo est illisible, aucune note n'est inventée : la copie est marquée « Illisible » et n'est pas facturée."),
        ("Puis-je cacher le nom des élèves ?", "Oui. Cochez « Masquer le nom de l'élève avant l'envoi » : le haut de la première page de chaque copie est blanchi dans votre navigateur avant l'envoi. Un nom écrit ailleurs n'est pas masqué : un code d'élève reste le plus sûr. Vous voyez toujours la copie complète et inscrivez les noms vous-même."),
        ('Quels formats de copies ?', "PDF numérisés (une ou plusieurs copies par fichier), photos prises au téléphone (y compris les photos d'iPhone), documents Word (.docx) et fichiers texte. Les copies d'une même numérisation sont séparées automatiquement par élève."),
+       ('Et en orthopédagogie ?', "Oui. Choisissez « Orthopédagogie », puis le niveau de vos élèves (primaire ou secondaire) et leur année. Chaque erreur est classée par type, et chaque texte reçoit une fiche du scripteur provisoire : forces, erreurs récurrentes avec exemples, tendances, palier provisoire, cibles prioritaires, questions d’entretien métagraphique et pistes. Vous la copiez ou la téléchargez en Word. La fiche est gratuite : seule l’analyse du texte compte (1 page = 1 page)."),
        ('Ça fonctionne pour le primaire ?', "Oui. Dans « Correction de la langue », choisissez « Primaire », l’année et l’étape : seules les fautes prévues à cette année par la Progression des apprentissages comptent, et vous obtenez le nombre de mots, le pourcentage de fautes et la cote. Vous pouvez aussi corriger avec votre propre grille d’évaluation (critères et niveaux)."),
        ('Quelles matières ?', 'Toutes celles où un corrigé ou une grille permet de juger les réponses : histoire, sciences, mathématiques (réponses et démarches), français, langues, questions à développement court. Plus votre corrigé est précis, plus la correction l’est.'),
        ('Qu’est-ce qu’une « page » ?', 'Une page de copie d’élève (une face numérisée ou une photo). En mode rapide et en correction de la langue, une page de copie compte pour 1 page ; en mode approfondi (double correction et fiabilité), pour 2 pages. Le corrigé n’est pas compté. Une correction qui échoue n’est pas décomptée.'),
@@ -67,10 +68,22 @@ T = {
        ('Et les parents ? Faut-il leur demander la permission ?', 'Le guide du ministère sur l’IA générative (2026) recommande d’abord que l’outil soit autorisé par votre organisme scolaire, et que les copies ne contiennent pas de renseignements personnels : c’est pourquoi le nom est masqué par défaut. Pour informer les parents et obtenir leur accord, utilisez notre <a href="consentement.html">modèle de lettre de consentement</a>, à remplir et à imprimer.'),
        ('Dois-je créer un compte ?', 'Non. Vous recevez une clé d’accès qui contient votre solde de pages. Notez-la pour l’utiliser sur un autre appareil ou recharger votre compte.'), ("Y a-t-il un programme de parrainage ?", "Oui. Dans l’appli, le bouton « Inviter un collègue » vous donne votre lien personnel et un message prêt à envoyer. Quand un collègue achète son premier forfait avec ce lien, il reçoit 100 pages de plus ; vous recevez 200 pages dès qu’il a corrigé ses 30 premières pages. Jusqu’à 5 collègues par prof.")],
   end_h='Votre prochaine pile de copies, en quelques minutes', end_sub='30 pages gratuites, sans carte de crédit.', end_cta='Essayer maintenant',
-  lvl_q='Vous enseignez au :', lvls=[('primaire', 'Primaire'), ('secondaire', 'Secondaire'), ('cegep', 'Cégep')],
+  lvl_q='Vous enseignez au :', lvls=[('primaire', 'Primaire'), ('secondaire', 'Secondaire'), ('cegep', 'Cégep'), ('ortho', 'Orthopédagogie')],
   lead_by={'primaire': "Photographiez les textes de vos élèves, même manuscrits : Brûle la pile surligne les fautes selon la Progression des apprentissages de leur année, calcule le pourcentage de fautes et propose la cote. Vous relisez et gardez le dernier mot.",
            'secondaire': "Photographiez ou numérisez les copies, même manuscrites : chaque question reçoit une note proposée selon votre corrigé ou votre grille, et les fautes sont surlignées selon la Progression des apprentissages du secondaire. Vous relisez, ajustez et exportez.",
-           'cegep': "Dissertations, analyses, examens à développement : Brûle la pile applique votre grille critère par critère, justifie chaque note et surligne les fautes de français. Vous relisez, ajustez et exportez."},
+           'cegep': "Dissertations, analyses, examens à développement : Brûle la pile applique votre grille critère par critère, justifie chaque note et surligne les fautes de français. Vous relisez, ajustez et exportez.",
+           'ortho': "Photographiez les textes de vos élèves, même manuscrits : Brûle la pile classe chaque erreur par type (phonologique, morphologique, homophones, accords…) et prépare une fiche du scripteur provisoire, avec cibles et questions d’entretien. Vous la validez, puis la copiez ou la téléchargez en Word."},
+  ortho=dict(
+    h='En orthopédagogie : le profil du scripteur, sans tout retranscrire',
+    sub="Vous n’évaluez pas avec une grille, mais selon le profil de l’élève. Brûle la pile relève les erreurs sur le texte manuscrit, selon la Progression des apprentissages de son année, et prépare une fiche que vous complétez.",
+    img='ortho-fiche.jpg', alt='Exemple de fiche du scripteur pour un texte fictif de 3e année : forces, erreurs récurrentes par type, tendances, palier provisoire et cibles',
+    note='Exemple de fiche pour un texte fictif d’une élève de 3e année.',
+    points=[('<b>Les erreurs classées par type</b>', 'Phonologiques, morphologiques, visuo-orthographiques, homophones lexicaux et grammaticaux, segmentation, genre, nombre, accord du verbe, homophones verbaux, délimitation des phrases…'),
+            ('<b>Les erreurs récurrentes, avec de vrais exemples</b>', 'Comptées par type, avec les mots tirés du texte de l’élève.'),
+            ('<b>Des cibles et des questions d’entretien</b>', '1 ou 2 cibles prioritaires, des questions d’entretien métagraphique sur ses propres erreurs et des pistes d’intervention.'),
+            ('<b>Copier ou Word, rien à retranscrire</b>', 'Collez la fiche dans le dossier de l’élève, ou téléchargez toutes les fiches de la séance dans un document Word modifiable.'),
+            ('<b>Votre jugement d’abord</b>', 'Le palier est un indice provisoire. La fiche ne juge ni la motivation ni le niveau d’intervention : c’est votre rôle. Retirez une fausse erreur, et la fiche se refait.')],
+    cta='Essayer avec les textes de mes élèves'),
   prim=dict(
     h='Au primaire : seules les fautes vues en classe comptent',
     sub="Choisissez l’année de vos élèves : Brûle la pile surligne les fautes sur le texte manuscrit et ne compte que les notions prévues à cette année par la Progression des apprentissages.",
@@ -158,6 +171,20 @@ def prim_section(d):
       </div>
     </section>'''
 
+# Section « En orthopédagogie » (site français seulement), cachée sauf si ce niveau est choisi.
+def ortho_section(d):
+    p = d.get('ortho')
+    if not p: return ''
+    pts = ''.join(f'<li>{h} : {t}</li>' for h, t in p['points'])
+    return f'''<section class="block prim ortho" id="orthopedagogie" hidden>
+      <h2>{p['h']}</h2>
+      <p class="sub">{p['sub']}</p>
+      <div class="prim-grid">
+        <figure class="prim-shot"><img src="{p['img']}" alt="{p['alt']}" width="1296" height="1268" loading="lazy"><figcaption>{p['note']}</figcaption></figure>
+        <div><ul class="points prim-points">{pts}</ul><a class="btn primary big" href="app.html">{p['cta']}</a></div>
+      </div>
+    </section>'''
+
 def page(L, d):
     other = 'en' if L == 'fr' else 'fr'
     sw = (f'<div class="lang-switch" role="group" aria-label="Langue / Language">'
@@ -215,6 +242,7 @@ def page(L, d):
     </section>
 
     {prim_section(d)}
+    {ortho_section(d)}
 
     <section class="creator"><div class="creator-card"><span class="creator-mark" aria-hidden="true">✍</span><div><b>{d['creator_h']}</b><p>{d['creator_p']}</p></div></div></section>
 
@@ -298,11 +326,14 @@ def page(L, d):
     const prim = document.querySelector('.demo-prim'), main = document.querySelector('.demo-main'), sec = document.getElementById('primaire');
     if (prim) {{ prim.hidden = n !== 'primaire'; main.hidden = n === 'primaire'; }}
     if (sec) sec.hidden = n !== 'primaire';
-    if (save) try {{ localStorage.setItem('ce.niveau', n); }} catch {{}}
+    const orth = document.getElementById('orthopedagogie');
+    if (orth) orth.hidden = n !== 'ortho';
+    // L'appli retient l'orthopédagogie à part (ce.ortho) et le niveau des élèves dans ce.niveau.
+    if (save) try {{ localStorage.setItem('ce.ortho', n === 'ortho' ? '1' : '0'); if (n !== 'ortho') localStorage.setItem('ce.niveau', n); }} catch {{}}
   }};
   document.querySelectorAll('.lvl-btns button').forEach((b) => b.addEventListener('click', () => pick(b.dataset.niveau, true)));
   let n = new URLSearchParams(location.search).get('niveau');
-  if (n) pick(n, true); else {{ try {{ n = localStorage.getItem('ce.niveau'); }} catch {{}} if (n) pick(n, false); }}
+  if (n) pick(n, true); else {{ try {{ n = localStorage.getItem('ce.ortho') === '1' ? 'ortho' : localStorage.getItem('ce.niveau'); }} catch {{}} if (n) pick(n, false); }}
 }})();
 </script>
 <script>
