@@ -654,3 +654,98 @@ body.light .layout > .levelbar { grid-column: 1 / -1; }
   .prof-table:not(.cmp) td:nth-child(3):not(:empty)::after { content: " pour 100 mots"; color: var(--muted); }
   .prof-table:not(.cmp) td:nth-child(4) { grid-column: 1 / -1; color: var(--muted); white-space: normal; }
 }
+
+/* ---------- Orthopédagogie : tableau de bord plutôt que trois étapes ---------- */
+#app.ortho .step, #app.ortho #adjust, #app.ortho #stats, #app.ortho #qstats { display: none !important; }
+#app.ortho .s1 { grid-template-columns: minmax(0, 1fr) !important; }
+#app.ortho .s1 > *, #app.ortho .s1 #lang-settings > * { grid-column: 1 !important; }
+@media (min-width: 1100px) {
+  body.light #app.ortho.layout { grid-template-columns: minmax(290px, 340px) minmax(0, 1fr); max-width: 1500px; }
+  body.light #app.ortho > .s2 { grid-column: 1; grid-row: 3; }
+  body.light #app.ortho > .s1 { grid-column: 1; grid-row: 4; }
+  body.light #app.ortho > .s3 { grid-column: 2; grid-row: 3 / span 3; }
+}
+/* Téléphone et tablette : à l'arrivée, les tâches d'abord ; ensuite, l'ajout de textes puis le tableau de bord. */
+@media (max-width: 1099px) {
+  body.light #app.ortho > .s3 { order: 1; } body.light #app.ortho > .s2 { order: 2; } body.light #app.ortho > .s1 { order: 3; }
+  body.light.has-results #app.ortho > .s2 { order: 1; } body.light.has-results #app.ortho > .s3 { order: 2; }
+}
+.evo-zones { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
+.evo-drop { padding: 1rem .6rem !important; min-height: 0 !important; text-align: center; display: grid; gap: .2rem; justify-items: center; cursor: pointer; }
+.evo-name { font-size: .78rem; font-weight: 600; color: var(--green, #0f9f6e); word-break: break-word; }
+.evo-doc, #evo-doc-name { grid-column: 1 / -1; cursor: pointer; color: var(--muted); }
+.ortho-dash { display: grid; gap: 1rem; }
+.dash-hello h3 { margin: 0; font-size: 1.25rem; }
+.dash-hello > p { margin: .2rem 0 .9rem; }
+.intents { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .7rem; }
+.intent { display: grid; grid-template-columns: 2.7rem 1fr; gap: .7rem; align-items: start; text-align: left; border: 2px solid var(--line); background: #fff; border-radius: 14px; padding: .8rem; font: inherit; color: var(--text); cursor: pointer; }
+.intent .ico { width: 2.7rem; height: 2.7rem; border-radius: 12px; background: #eef0ff; display: grid; place-items: center; font-size: 1.3rem; }
+.intent b { display: block; font-size: .95rem; margin-bottom: .15rem; }
+.intent span span { color: var(--muted); font-size: .82rem; line-height: 1.4; }
+.intent:hover { border-color: #c7cbff; }
+.intent.on { border-color: var(--primary); background: #fbfbff; box-shadow: 0 6px 18px -10px rgba(79, 70, 229, .6); }
+.dash-next { margin-top: .9rem; border-radius: 14px; background: #f7f8ff; border: 1px solid #dfe2ff; padding: .8rem 1rem; }
+.dash-next b { color: #3730a3; }
+.dash-next ol { margin: .4rem 0 0; padding-left: 1.2rem; font-size: .88rem; line-height: 1.6; }
+.dash-head { display: flex; justify-content: space-between; align-items: start; gap: .6rem; flex-wrap: wrap; }
+.dash-head h3 { margin: 0; font-size: 1.1rem; }
+.dash-head p { margin: .15rem 0 0; }
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .6rem; }
+.kpi { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: .6rem .8rem; }
+.kpi b { display: block; font-size: 1.5rem; font-weight: 800; letter-spacing: -.02em; }
+.kpi span { color: var(--muted); font-size: .78rem; }
+.kpi.warn b::before { content: "⚠ "; font-size: 1.15rem; }
+.dash-card { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: .8rem .9rem; min-width: 0; }
+.dash-card h4 { margin: 0 0 .5rem; font-size: .95rem; }
+.dash-two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1rem; }
+.dash-scroll { overflow-x: auto; }
+.ov { border-collapse: separate; border-spacing: 0; width: 100%; }
+.ov th { font-size: .72rem; color: var(--muted); font-weight: 700; text-align: left; padding: .3rem .4rem; border-bottom: 2px solid var(--line); white-space: nowrap; }
+.ov th.c { text-align: center; }
+.ov td { padding: .25rem .4rem; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.ov tbody tr { cursor: pointer; }
+.ov tbody tr:hover td { background: #fafbff; }
+.ov .nm b { display: block; white-space: nowrap; }
+.ov .nm small { display: block; color: var(--muted); font-size: .72rem; white-space: nowrap; }
+.hcell { width: 3rem; padding: 0 !important; text-align: center; }
+.hcell div { height: 1.9rem; line-height: 1.9rem; margin: 2px; border-radius: 6px; font-weight: 700; font-size: .78rem; color: var(--text); }
+.hcell div.dark { color: #fff; }
+.ov .pal { font-weight: 800; color: var(--primary); white-space: nowrap; }
+.todo { font: inherit; font-size: .75rem; font-weight: 700; color: var(--primary); background: #fff; border: 1px dashed #b9bdf7; border-radius: 8px; padding: .15rem .45rem; cursor: pointer; }
+.ov .tgt { font-size: .8rem; white-space: nowrap; }
+.ov .warn-txt { font-weight: 700; font-size: .78rem; }
+.ov .up { color: var(--green, #0f9f6e); font-weight: 700; }
+.code { display: inline-block; font-weight: 800; font-size: .72rem; background: #eef0f6; border-radius: 5px; padding: 0 .35rem; color: var(--text); }
+.legend { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .5rem; font-size: .75rem; color: var(--muted); margin-top: .5rem; }
+.ramp { display: inline-flex; gap: 2px; }
+.ramp i { width: 1.3rem; height: .7rem; border-radius: 3px; display: inline-block; }
+.legend .badge { border: 1px solid var(--line-2); border-radius: 999px; padding: .05rem .5rem; font-weight: 600; }
+.grp { border: 1px solid var(--line); border-radius: 12px; padding: .55rem .7rem; margin-bottom: .5rem; }
+.grp:last-child { margin-bottom: 0; }
+.grp .t { display: flex; justify-content: space-between; gap: .5rem; font-weight: 700; font-size: .88rem; }
+.grp .t em { font-style: normal; color: var(--muted); font-weight: 600; font-size: .75rem; white-space: nowrap; }
+.grp .whos { display: flex; flex-wrap: wrap; gap: .3rem; margin: .4rem 0 .3rem; }
+.grp .who { font: inherit; font-size: .75rem; font-weight: 600; background: #eef0ff; color: #3730a3; border: 0; border-radius: 999px; padding: .15rem .55rem; cursor: pointer; }
+.grp .act { font-size: .8rem; color: var(--muted); }
+.grp.warn { border-color: #f5c56b; background: #fffaf0; }
+.bars { display: grid; gap: .45rem; }
+.brow { display: grid; grid-template-columns: minmax(0, 12rem) minmax(0, 1fr); align-items: center; gap: .5rem; font-size: .8rem; }
+.brow .lab { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.track { position: relative; height: 1.1rem; border-left: 1px solid #c9ccd6; margin-right: 2rem; }
+.fill { height: 1.1rem; background: #2a78d6; border-radius: 0 4px 4px 0; }
+.val { position: absolute; top: 0; line-height: 1.1rem; font-weight: 700; font-size: .75rem; padding-left: .35rem; }
+.ortho-students { margin: .4rem 0 0; font-size: 1rem; }
+@media (max-width: 760px) {
+  .intents, .dash-two { grid-template-columns: minmax(0, 1fr); }
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ov .hide-m { display: none; }
+  .hcell { width: 2rem; } .hcell div { font-size: .7rem; margin: 1px; }
+  .ov td, .ov th { padding: .25rem .2rem; }
+  .ov .nm small { white-space: normal; }
+  .brow { grid-template-columns: minmax(0, 8.5rem) minmax(0, 1fr); }
+  .evo-zones { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+}
+@media (min-width: 761px) { .ov .nm small { display: none; } }
+/* Orthopédagogie : l'accueil (« Que voulez-vous faire ? ») est dans la section du tableau de bord, visible même sans résultats. */
+@media (max-width: 960px) { #app.ortho.no-results .s3 { display: block; } }
+#app.ortho-evo #cam-open { display: none !important; }

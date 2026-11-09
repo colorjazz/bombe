@@ -178,7 +178,7 @@
         <label id="ortho-focus-field" class="field ortho-focus" hidden><span>Ce que je veux observer <span class="muted small">(facultatif)</span></span>
           <textarea id="ortho-focus" rows="2" placeholder="Ex. : homophones grammaticaux, accords dans le GN, délimitation des phrases"></textarea>
           <div id="ortho-conds" class="cond-chips" role="group" aria-label="Conditions de rédaction"><span class="muted small">Conditions de rédaction :</span><button type="button" class="cond" data-cond="Sans aide" aria-pressed="false">Sans aide</button><button type="button" class="cond" data-cond="WordQ" aria-pressed="false">WordQ</button><button type="button" class="cond" data-cond="Lexibar" aria-pressed="false">Lexibar</button><button type="button" class="cond" data-cond="Antidote" aria-pressed="false">Antidote</button><button type="button" class="cond" data-cond="Synthèse vocale" aria-pressed="false">Synthèse vocale</button><button type="button" class="cond" data-cond="Dictée vocale" aria-pressed="false">Dictée vocale</button></div>
-          <span class="muted small">Les erreurs sont classées par type. Après votre relecture, « Établir le profil du scripteur » prépare un profil provisoire : forces, erreurs récurrentes, cibles, questions d’entretien métagraphique et pistes. « Comparer la progression » le compare à une évaluation précédente. Copier ou Word : rien à retranscrire.</span>
+          <span class="muted small">Les erreurs sont classées par type. Après votre relecture, « Établir le profil du scripteur » prépare un profil provisoire : forces, erreurs récurrentes, cibles, questions d’entretien métagraphique et pistes. « Suivre l’évolution » le compare à une évaluation précédente. Copier ou Word : rien à retranscrire.</span>
         </label>
         <p class="lang-simple-only set-line"><span id="lang-set-txt"></span> · <a href="#" id="lang-to-adv">Modifier</a></p>
         <div class="field adv" id="lang-cats-field">Fautes à relever
@@ -254,6 +254,15 @@
 
     <section class="panel stack s2">
       <div class="band"><h2><span class="step" id="step2-no">2</span> <span id="step2-title">Insérer les copies</span> <span class="req adv" aria-hidden="true">*</span></h2></div>
+      <!-- Orthopédagogie, « Suivre l'évolution d'un élève » : le texte d'avant (ou l'ancienne fiche) et le nouveau texte. -->
+      <div id="evo-zones" class="evo-zones" hidden>
+        <label id="evo-prev" class="drop evo-drop"><input id="evo-prev-files" type="file" accept="image/*,.heic,.heif,application/pdf,.docx,.txt" multiple hidden>
+          <b>Texte précédent</b><span class="muted small">de l’élève : photo, PDF, Word</span><span id="evo-prev-name" class="evo-name"></span></label>
+        <label id="evo-new" class="drop evo-drop"><input id="evo-new-files" type="file" accept="image/*,.heic,.heif,application/pdf,.docx,.txt" multiple hidden>
+          <b>Nouveau texte</b><span class="muted small">photo, PDF, Word</span><span id="evo-new-name" class="evo-name"></span></label>
+        <label class="evo-doc small">ou, comme évaluation précédente, <u>importer votre ancienne fiche</u> (Word, PDF ou texte)<input id="evo-doc" type="file" accept=".docx,.pdf,.txt" hidden></label>
+        <span id="evo-doc-name" class="muted small"></span>
+      </div>
       <label id="drop" class="drop">
         <input id="files" type="file" accept="image/*,.heic,.heif,application/pdf,.docx,.txt" multiple hidden>
         <span class="ico"><svg class="ic ic-lg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg></span>
@@ -306,7 +315,7 @@
     </section>
 
     <section class="panel s3">
-      <div class="band"><h2><span class="step" id="step3-no">3</span> Résultats</h2></div>
+      <div class="band"><h2><span class="step" id="step3-no">3</span> <span id="step3-title">Résultats</span></h2></div>
       <div class="results-head">
         <div class="results-tools">
           <input id="search" type="search" placeholder="Rechercher un élève…" style="width:12rem">
@@ -319,14 +328,17 @@
       </div>
       <div id="stats" class="stats" hidden></div>
       <details id="qstats" class="qstats" hidden><summary></summary><div id="qstats-rows" class="qstats-rows"></div></details>
+      <div id="ortho-dash" class="ortho-dash" hidden></div>
       <div id="empty" class="empty">
         <div class="empty-ico"><svg class="ic ic-lg" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M8 13h8M8 17h5"/></svg></div>
         <span id="empty-text">Les copies corrigées apparaîtront ici, avec le détail des points par question.</span>
       </div>
       <p id="done-msg" class="banner ok small" style="margin:0" hidden></p>
       <p id="adjust" class="small adjust" hidden></p>
+      <h3 id="ortho-students" class="ortho-students" hidden>Élèves</h3>
       <div id="cards" class="cards"></div>
-      <p class="muted small res-foot">Les notes sont des propositions : vérifiez-les. Tout est modifiable.<br>
+      <p id="res-foot-ortho" class="muted small res-foot" hidden>Profils provisoires : relisez les erreurs avant d’établir un profil. Aucun texte ni profil n’est conservé : téléchargez les profils (Word) avant de fermer la page.</p>
+      <p id="res-foot-main" class="muted small res-foot">Les notes sont des propositions : vérifiez-les. Tout est modifiable.<br>
       <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> Aucune copie ni note n'est conservée : téléchargez les notes avant de fermer la page.</p>
     </section>
   </main>
@@ -476,7 +488,7 @@
   </div>
   <div id="progression" class="modal" hidden>
     <div class="panel stack" style="max-width:560px">
-      <h2 id="progress-title" style="margin:0">Comparer la progression</h2>
+      <h2 id="progress-title" style="margin:0">Suivre l’évolution</h2>
       <label class="field"><span><b>Un autre texte de cet élève</b>, analysé dans cette séance</span>
         <select id="progress-copy"></select>
         <span class="muted small">Pour comparer avec un ancien texte, déposez-le avec les autres copies et analysez-le : la comparaison sera chiffrée, par 100 mots.</span>
