@@ -1,0 +1,18 @@
+TÂCHE : Documenter l'usage de l'IA générative non encadrée par le personnel enseignant pour corriger des travaux d'élèves.
+
+CONTEXTE
+Je prépare un argumentaire pour des centres de services scolaires du Québec. Mon message : "Les enseignants utilisent déjà l'IA pour corriger, souvent avec des comptes personnels (ChatGPT, Gemini, Copilot), en y mettant des copies d'élèves avec leurs noms. Vous ne pouvez pas l'empêcher ; vous pouvez l'encadrer."
+J'ai besoin de faits vérifiables pour appuyer ou nuancer ce message.
+
+CHERCHE
+1. Sondages et études (2024-2026) sur l'usage de l'IA par les enseignants : Québec en priorité, puis Canada, France, États-Unis. Pourcentages d'enseignants qui utilisent l'IA, et pour quelles tâches (correction, rétroaction, planification).
+2. Données sur l'usage de comptes personnels ou d'outils non approuvés ("shadow AI") en éducation.
+3. Incidents ou cas réels de fuite de données d'élèves liés à l'IA ou à des outils non approuvés dans des écoles.
+4. Positions officielles : ministère de l'Éducation du Québec, centres de services, Commission d'accès à l'information, syndicats (FSE-CSQ, FAE, FQDE), Conseil supérieur de l'éducation, sur l'IA en correction et la protection des données des élèves.
+5. Ce que les conditions d'utilisation des versions gratuites de ChatGPT, Gemini et Copilot disent sur l'utilisation des données pour l'entraînement et sur les utilisateurs mineurs.
+
+FORMAT
+- Pour chaque fait : la phrase, le chiffre exact, la source, le lien, la date, le pays.
+- Classe les faits en : "très solide" (étude ou sondage avec méthodologie), "solide" (média reconnu), "faible" (blogue, opinion).
+- Termine par 5 phrases prêtes à utiliser dans une présentation, chacune avec sa source.
+- N'invente aucun chiffre. Si tu ne trouves rien pour le Québec, dis-le clairement.

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Salle des profs — maquette</title>
+<style>
+  :root{
+    --bg:#f5f6f4; --card:#ffffff; --ink:#2c3440; --muted:#7a828c; --line:#e7e9e6;
+    --accent:#4a7396; --accent-soft:#eaf0f5;
+    --plan:#7fa38d; --cree:#8e8bb8; --eval:#c9a27a; --obs:#7c9cb8;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif;color:var(--ink);background:var(--bg);font-size:14px;line-height:1.5}
+  a{color:inherit;text-decoration:none}
+
+  /* En-tête */
+  header{background:var(--card);border-bottom:1px solid var(--line);height:60px;display:flex;align-items:center;padding:0 32px;gap:40px}
+  .logo{font-size:17px;font-weight:600;letter-spacing:.01em}
+  .logo span{color:var(--accent);font-weight:400}
+  nav{display:flex;gap:6px;height:100%}
+  nav a{display:flex;align-items:center;padding:0 16px;color:var(--muted);border-bottom:2px solid transparent;font-weight:500}
+  nav a.active{color:var(--ink);border-bottom-color:var(--accent)}
+  .user{margin-left:auto;display:flex;align-items:center;gap:12px;color:var(--muted);font-size:13px}
+  .avatar{width:32px;height:32px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-weight:600;font-size:13px}
+
+  /* Page */
+  .page{max-width:1120px;margin:0 auto;padding:36px 32px 48px}
+  .hello{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:28px}
+  .hello h1{font-size:24px;font-weight:400;margin:0}
+  .hello p{margin:4px 0 0;color:var(--muted)}
+  .filters{display:flex;gap:10px}
+  .select{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 14px;font-size:13px;color:var(--ink);min-width:120px}
+  .select small{display:block;font-size:11px;color:var(--muted)}
+
+  /* Tuiles des quatre volets */
+  .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-bottom:32px}
+  .tile{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:22px 20px;border-top:3px solid var(--c)}
+  .tile h2{margin:0 0 6px;font-size:16px;font-weight:600}
+  .tile p{margin:0 0 16px;color:var(--muted);font-size:13px}
+  .tile ul{list-style:none;margin:0;padding:0}
+  .tile li{padding:7px 0;border-top:1px solid var(--line);font-size:13px;color:var(--accent)}
+
+  /* Deux colonnes */
+  .cols{display:grid;grid-template-columns:1.2fr 1fr;gap:18px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:24px}
+  .card h3{margin:0 0 4px;font-size:15px;font-weight:600}
+  .card .sub{color:var(--muted);font-size:13px;margin-bottom:18px}
+
+  .task{display:flex;align-items:center;gap:16px;padding:16px 0;border-top:1px solid var(--line)}
+  .task .info{flex:1}
+  .task .t{font-weight:500}
+  .task .s{color:var(--muted);font-size:12px}
+  .steps{display:flex;gap:6px;margin-top:10px;font-size:11px;color:var(--muted)}
+  .steps span{flex:1;padding-top:6px;border-top:3px solid var(--line)}
+  .steps span.done{border-top-color:var(--accent);color:var(--ink)}
+  .btn{border:1px solid var(--line);background:var(--card);border-radius:8px;padding:8px 16px;font-size:13px;color:var(--ink)}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+
+  .comp{margin-bottom:18px}
+  .comp .row{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px}
+  .comp .row span{color:var(--muted)}
+  .bar{height:8px;border-radius:4px;background:var(--line);display:flex;overflow:hidden;gap:2px}
+  .bar i{display:block;height:100%}
+  .n1{background:#d9b8a8}.n2{background:#e3cf9f}.n3{background:#aac5b2}.n4{background:#7fa38d}
+  .legend{display:flex;gap:16px;font-size:11px;color:var(--muted);margin:6px 0 20px}
+  .legend b{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+  .obs-note{background:var(--accent-soft);border-radius:10px;padding:16px;font-size:13px}
+  .obs-note .btn{margin-top:12px}
+
+  footer{max-width:1120px;margin:0 auto;padding:0 32px 32px;color:var(--muted);font-size:12px;display:flex;justify-content:space-between}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Salle des <span>profs</span></div>
+  <nav>
+    <a class="active" href="#">Accueil</a>
+    <a href="#">Planifier</a>
+    <a href="#">Créer</a>
+    <a href="#">Évaluer</a>
+    <a href="#">Observer</a>
+  </nav>
+  <div class="user">Marie Gagnon<div class="avatar">MG</div></div>
+</header>
+
+<div class="page">
+
+  <div class="hello">
+    <div>
+      <h1>Bonjour Marie</h1>
+      <p>Vendredi 7 novembre · Étape 2, semaine 4</p>
+    </div>
+    <div class="filters">
+      <div class="select"><small>Groupe</small>4e année, groupe 41</div>
+      <div class="select"><small>Matière</small>Français</div>
+      <div class="select"><small>Étape</small>Étape 2</div>
+    </div>
+  </div>
+
+  <div class="tiles">
+    <div class="tile" style="--c:var(--plan)">
+      <h2>Planifier</h2>
+      <p>Votre progression selon la PDA.</p>
+      <ul><li>Planification annuelle</li><li>Plan de leçon</li><li>Contenus à couvrir</li></ul>
+    </div>
+    <div class="tile" style="--c:var(--cree)">
+      <h2>Créer</h2>
+      <p>Du matériel prêt à imprimer ou à projeter.</p>
+      <ul><li>Fiche ou activité</li><li>Présentation PowerPoint</li><li>Évaluation imprimable</li></ul>
+    </div>
+    <div class="tile" style="--c:var(--eval)">
+      <h2>Évaluer</h2>
+      <p>De la pile de copies aux résultats validés.</p>
+      <ul><li>Numériser une pile</li><li>Copies à valider (2)</li><li>Grilles d'évaluation</li></ul>
+    </div>
+    <div class="tile" style="--c:var(--obs)">
+      <h2>Observer</h2>
+      <p>La progression, compétence par compétence.</p>
+      <ul><li>Par élève</li><li>Par groupe</li><li>Exporter les résultats</li></ul>
+    </div>
+  </div>
+
+  <div class="cols">
+    <div class="card">
+      <h3>À faire</h3>
+      <div class="sub">Vos évaluations en cours</div>
+
+      <div class="task">
+        <div class="info">
+          <div class="t">Dictée 6</div>
+          <div class="s">24 copies numérisées, 21 corrigées, aucune validée</div>
+          <div class="steps"><span class="done">Imprimée</span><span class="done">Numérisée</span><span class="done">Corrigée</span><span>Validée</span></div>
+        </div>
+        <button class="btn primary">Valider</button>
+      </div>
+
+      <div class="task">
+        <div class="info">
+          <div class="t">Production écrite : le récit d'aventure</div>
+          <div class="s">Imprimée le 3 novembre</div>
+          <div class="steps"><span class="done">Imprimée</span><span>Numérisée</span><span>Corrigée</span><span>Validée</span></div>
+        </div>
+        <button class="btn">Numériser</button>
+      </div>
+
+      <div class="task">
+        <div class="info">
+          <div class="t">Semaine prochaine : l'accord du participe passé</div>
+          <div class="s">Prévu dans votre planification, aucun matériel préparé</div>
+        </div>
+        <button class="btn">Préparer</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Portrait du groupe</h3>
+      <div class="sub">Français, étape 2, 24 élèves</div>
+
+      <div class="comp">
+        <div class="row">Lire des textes variés <span>3 évaluations</span></div>
+        <div class="bar"><i class="n1" style="width:8%"></i><i class="n2" style="width:25%"></i><i class="n3" style="width:42%"></i><i class="n4" style="width:25%"></i></div>
+      </div>
+      <div class="comp">
+        <div class="row">Écrire des textes variés <span>2 évaluations</span></div>
+        <div class="bar"><i class="n1" style="width:17%"></i><i class="n2" style="width:38%"></i><i class="n3" style="width:33%"></i><i class="n4" style="width:12%"></i></div>
+      </div>
+      <div class="comp">
+        <div class="row">Communiquer oralement <span>Pas encore évalué</span></div>
+        <div class="bar"></div>
+      </div>
+      <div class="legend"><span><b class="n1"></b>Difficulté</span><span><b class="n2"></b>En progression</span><span><b class="n3"></b>Atteint</span><span><b class="n4"></b>Dépassé</span></div>
+
+      <div class="obs-note">
+        14 élèves sur 24 confondent les terminaisons <i>-er</i> et <i>-é</i> dans la dictée 6.
+        <br><button class="btn">Préparer une activité de récupération</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <span>Noms des élèves chiffrés sur cet appareil · Données hébergées à Montréal</span>
+  <span>Maquette statique</span>
+</footer>
+
+</body>
+</html>

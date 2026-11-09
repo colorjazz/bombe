@@ -1,0 +1,67 @@
+TÂCHE : Transformer la Progression des apprentissages (PDA) et le Cadre d'évaluation des apprentissages du ministère de l'Éducation du Québec en données structurées JSON.
+
+CONTEXTE
+Je développe un logiciel québécois pour les enseignants du primaire et du secondaire. Il a besoin de la liste exacte des compétences, des critères d'évaluation et des savoirs de la PDA, année par année, pour relier chaque question d'évaluation à un savoir et à une compétence.
+
+DOCUMENTS SOURCES
+Je te fournis en pièces jointes les documents officiels du Ministère (PDA et Cadre d'évaluation) pour la discipline et l'ordre d'enseignement indiqués ci-dessous.
+DISCIPLINE : [à remplir, par exemple Mathématique]
+ORDRE : [primaire ou secondaire]
+
+RÈGLES STRICTES
+1. Utilise SEULEMENT le contenu des documents fournis. N'invente rien, ne complète rien de mémoire.
+2. Recopie le texte officiel mot pour mot. Ne reformule pas.
+3. Si un élément est ambigu ou illisible, mets "a_verifier": true et explique dans "note".
+4. Pour chaque savoir, indique la page du document source.
+5. Réponds UNIQUEMENT avec du JSON valide, sans texte avant ni après, sans bloc de commentaires.
+6. Si le résultat est trop long, découpe par domaine (un JSON par domaine) et indique "partie": "2 de 5". J'enverrai "continue" pour la suite.
+
+LÉGENDE DE LA PDA À CONVERTIR
+Dans les tableaux de la PDA, chaque année a un symbole. Convertis-le ainsi :
+- flèche (l'élève apprend avec l'intervention de l'enseignant) -> "apprentissage"
+- étoile (l'élève réalise la tâche par lui-même à la fin de l'année) -> "maitrise"
+- case grisée ou ombrée (l'élève réutilise ce savoir) -> "reinvestissement"
+- case vide -> null
+
+FORMAT ATTENDU (respecte exactement les noms de champs)
+{
+  "discipline": "Mathématique",
+  "ordre": "primaire",
+  "partie": "1 de 1",
+  "sources": [
+    { "titre": "Progression des apprentissages au primaire, Mathématique", "date_version": "2009", "url": "" }
+  ],
+  "annees": ["1", "2", "3", "4", "5", "6"],
+  "competences": [
+    {
+      "code": "MAT-C1",
+      "nom": "Résoudre une situation-problème mathématique",
+      "ponderation": { "description": "", "a_verifier": false },
+      "criteres_evaluation": [
+        { "code": "MAT-C1-CR1", "texte": "Manifestation, oralement ou par écrit, d'une compréhension adéquate de la situation-problème", "page": 0 }
+      ]
+    }
+  ],
+  "savoirs": [
+    {
+      "id": "MAT-ARI-001",
+      "domaine": "Arithmétique",
+      "sous_domaine": "Sens et écriture des nombres naturels",
+      "texte": "Dénombrer des collections réelles ou dessinées",
+      "exemples": [],
+      "progression": { "1": "apprentissage", "2": "maitrise", "3": "reinvestissement", "4": "reinvestissement", "5": "reinvestissement", "6": "reinvestissement" },
+      "competences_liees": ["MAT-C1", "MAT-C2"],
+      "page": 0,
+      "a_verifier": false,
+      "note": ""
+    }
+  ]
+}
+
+IDENTIFIANTS
+- Compétences : CODE-DISCIPLINE-C1, -C2, etc. (MAT, FRA, ANG, SCI, US pour univers social, CCQ pour culture et citoyenneté québécoise, ART...)
+- Savoirs : CODE-DISCIPLINE-DOMAINE(3 lettres)-numéro à 3 chiffres, dans l'ordre du document.
+- Au secondaire, les années sont "S1" à "S5" ; indique la séquence (CST, TS, SN) dans "sous_domaine" si elle s'applique.
+
+À LA FIN (dans la dernière partie seulement), ajoute un champ "bilan" :
+{ "nombre_savoirs": 0, "nombre_a_verifier": 0, "sections_non_traitees": [] }

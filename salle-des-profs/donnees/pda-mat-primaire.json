@@ -1,0 +1,4289 @@
+{
+  "discipline": "Mathématique",
+  "code_discipline": "MAT",
+  "ordre": "primaire",
+  "source": "pda-mat-prim.pdf",
+  "annees": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6"
+  ],
+  "pages_avec_grandes_images": [],
+  "bilan": {
+    "nombre_savoirs": 199,
+    "a_verifier": 5,
+    "prioritaires": 2
+  },
+  "savoirs": [
+    {
+      "id": "MAT-SEN-001",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "A. Nombres naturels inférieurs à…",
+        "1. Compter ou réciter la comptine des nombres naturels"
+      ],
+      "texte": "a. par ordre croissant à partir d’un nombre donné",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "maitrise",
+        "3": null,
+        "4": null,
+        "5": null,
+        "6": null
+      },
+      "page": 5,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-002",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "A. Nombres naturels inférieurs à…",
+        "1. Compter ou réciter la comptine des nombres naturels"
+      ],
+      "texte": "b. par ordre croissant ou décroissant",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "maitrise",
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 5,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-003",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "A. Nombres naturels inférieurs à…",
+        "1. Compter ou réciter la comptine des nombres naturels"
+      ],
+      "texte": "c. par bonds",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "maitrise",
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 5,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-004",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "A. Nombres naturels inférieurs à…",
+        "2. Dénombrer des collections réelles ou dessinées"
+      ],
+      "texte": "a. coordonner le geste et le nombre correspondant (mot); reconnaître l’aspect cardinal d’un nombre et sa conservation dans différents arrangements",
+      "prioritaire": false,
+      "progression": {
+        "1": "maitrise",
+        "2": null,
+        "3": null,
+        "4": null,
+        "5": null,
+        "6": null
+      },
+      "page": 5,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-005",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "A. Nombres naturels inférieurs à…",
+        "2. Dénombrer des collections réelles ou dessinées"
+      ],
+      "texte": "b. dénombrer à partir d’un nombre donné",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "maitrise",
+        "3": null,
+        "4": null,
+        "5": null,
+        "6": null
+      },
+      "page": 5,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-006",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "A. Nombres naturels inférieurs à…",
+        "2. Dénombrer des collections réelles ou dessinées"
+      ],
+      "texte": "c. dénombrer une collection en groupant ou en regroupant",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "maitrise",
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 5,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-007",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "A. Nombres naturels inférieurs à…",
+        "2. Dénombrer des collections réelles ou dessinées"
+      ],
+      "texte": "d. dénombrer une collection déjà groupée",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 5,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-008",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "A. Nombres naturels inférieurs à…"
+      ],
+      "texte": "3. Lire et écrire tout nombre naturel",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "maitrise",
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 5,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-009",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "A. Nombres naturels inférieurs à…",
+        "4. Représenter des nombres naturels de différentes façons ou associer un nombre à un dessins"
+      ],
+      "texte": "a. accent mis sur le groupement en utilisant du matériel aux groupements apparents et accessibles ou des dessins (matériel non structuré; ex. : jetons, cubes emboîtables, objets divers groupés par dix dans un sac et dix de ces sacs placés dans un autre contenant)",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "maitrise",
+        "3": null,
+        "4": null,
+        "5": null,
+        "6": null
+      },
+      "page": 5,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-010",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "A. Nombres naturels inférieurs à…",
+        "4. Représenter des nombres naturels de différentes façons ou associer un nombre à un dessins"
+      ],
+      "texte": "b. accent mis sur l’échange en utilisant du matériel aux groupements apparents et non accessibles (matériel structuré; ex. : blocs base 10, tableau de numération)",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": "apprentissage",
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": null,
+        "6": null
+      },
+      "page": 5,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-011",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "A. Nombres naturels inférieurs à…",
+        "4. Représenter des nombres naturels de différentes façons ou associer un nombre à un dessins"
+      ],
+      "texte": "c. accent mis sur la valeur de position en utilisant un matériel aux groupements non apparents et non accessibles (matériel pour lequel les groupements sont symboliques; ex. : abaque, boulier, argent)",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "apprentissage",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 5,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-012",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "A. Nombres naturels inférieurs à…"
+      ],
+      "texte": "5. Composer et décomposer un nombre naturel de différentes façons (ex. : 123 = 100 + 23 123 = 100 + 20 + 3 123 = 50 + 50 + 20 + 3 123 = 2 × 50 + 30 − 7 123 = 2 × 60 + 3)",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "maitrise",
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 6,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-013",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "A. Nombres naturels inférieurs à…"
+      ],
+      "texte": "6. Reconnaître des expressions équivalentes (ex. : 52 = 40 + 12, 25 + 27 = 40 + 12, 52 = 104 ÷ 2)",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "maitrise",
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 6,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-014",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "A. Nombres naturels inférieurs à…"
+      ],
+      "texte": "7. Comparer entre eux des nombres naturels",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "maitrise",
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 6,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-015",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "A. Nombres naturels inférieurs à…"
+      ],
+      "texte": "8. Ordonner des nombres naturels par ordre croissant ou décroissant",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "maitrise",
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 6,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-016",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "A. Nombres naturels inférieurs à…"
+      ],
+      "texte": "9. Décrire dans ses mots et avec un vocabulaire mathématique approprié des régularités numériques (ex. : nombres pairs, nombres impairs, nombres carrés, nombres triangulaires, nombres premiers, nombres composés)",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "maitrise",
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 6,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-017",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "A. Nombres naturels inférieurs à…"
+      ],
+      "texte": "10. Situer des nombres naturels à l’aide de différents supports (ex. : grille de nombres, bande de nombres, axe de nombres [droite numérique])",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "maitrise",
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 6,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-018",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "A. Nombres naturels inférieurs à…",
+        "11. Reconnaître les propriétés des nombres naturels"
+      ],
+      "texte": "a. nombre pair ou impair",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "maitrise",
+        "3": "reinvestissement",
+        "4": "reinvestissement",
+        "5": "reinvestissement",
+        "6": "reinvestissement"
+      },
+      "page": 6,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-019",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "A. Nombres naturels inférieurs à…",
+        "11. Reconnaître les propriétés des nombres naturels"
+      ],
+      "texte": "b. nombre carré, premier ou composé",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "reinvestissement",
+        "6": "reinvestissement"
+      },
+      "page": 6,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-020",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "A. Nombres naturels inférieurs à…"
+      ],
+      "texte": "12. Classifier des nombres naturels de différentes façons selon leurs propriétés (ex. : nombres pairs, nombres composés)",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "maitrise",
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 6,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-021",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "A. Nombres naturels inférieurs à…"
+      ],
+      "texte": "13. Faire une approximation d’une collection réelle ou dessinée (estimer, arrondir à un ordre de grandeur donné, etc.)",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "maitrise",
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 6,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-022",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "A. Nombres naturels inférieurs à…"
+      ],
+      "texte": "14. Représenter la puissance d’un nombre naturel Vocabulaire Groupement, chiffre, nombre, unité, dizaine, centaine Nombre naturel, nombre pair, nombre impair Est égal à ; est plus grand que ( est supérieur à ); est plus petit que ( est inférieur à ) Ordre croissant, ordre décroissant Droite numérique Symboles 0 à 9, <, >, =, nombres écrits en chiffres Vocabulaire Base dix, position, valeur de position, millier, unité de mille, dizaine de mille Est différent de ; est supérieur à ; est inférieur à Nombre carré, nombre composé, nombre premier Symboles ≠ , nombres écrits en chiffres Vocabulaire Centaine de mille, million Exposant, puissance, carré de (le), cube de (le) Parenthèse Symboles ( ), nombres écrits en chiffres, notation exponentielle",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "maitrise",
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 6,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-023",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "B. Fractions (à l’aide de matériel concret ou de schémas)"
+      ],
+      "texte": "1. Reconnaître des fractions se rapportant à des éléments du quotidien (représentations concrètes ou imagées)",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "maitrise",
+        "3": null,
+        "4": null,
+        "5": null,
+        "6": null
+      },
+      "page": 6,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-024",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "B. Fractions (à l’aide de matériel concret ou de schémas)"
+      ],
+      "texte": "2. Représenter une fraction de différentes façons à partir d’un tout ou d’une collection",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "apprentissage",
+        "3": "apprentissage",
+        "4": "apprentissage",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 6,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-025",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "B. Fractions (à l’aide de matériel concret ou de schémas)"
+      ],
+      "texte": "3. Associer une fraction à une partie d’un tout (parties isométriques ou parties équivalentes) ou d’un groupe d’objets et vice versa",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "reinvestissement",
+        "6": "reinvestissement"
+      },
+      "page": 6,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-026",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "B. Fractions (à l’aide de matériel concret ou de schémas)"
+      ],
+      "texte": "4. Reconnaître différents sens de la fraction (partage, division, rapport)",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "apprentissage",
+        "5": "apprentissage",
+        "6": "apprentissage"
+      },
+      "page": 6,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-027",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "B. Fractions (à l’aide de matériel concret ou de schémas)"
+      ],
+      "texte": "5. Distinguer le rôle du numérateur de celui du dénominateur",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "reinvestissement",
+        "6": "reinvestissement"
+      },
+      "page": 6,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-028",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "B. Fractions (à l’aide de matériel concret ou de schémas)"
+      ],
+      "texte": "6. Lire et écrire une fraction",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "reinvestissement",
+        "6": "reinvestissement"
+      },
+      "page": 7,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-029",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "B. Fractions (à l’aide de matériel concret ou de schémas)"
+      ],
+      "texte": "7. Comparer une fraction à 0, à ½ ou à 1",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "reinvestissement",
+        "6": "reinvestissement"
+      },
+      "page": 7,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-030",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "B. Fractions (à l’aide de matériel concret ou de schémas)"
+      ],
+      "texte": "8. Vérifier l’équivalence de deux fractions",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "apprentissage",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 7,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-031",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "B. Fractions (à l’aide de matériel concret ou de schémas)"
+      ],
+      "texte": "9. Associer un nombre décimal ou un pourcentage à une fraction",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": "apprentissage",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 7,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-032",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "B. Fractions (à l’aide de matériel concret ou de schémas)"
+      ],
+      "texte": "10. Ordonner des fractions ayant un même dénominateur",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": "apprentissage",
+        "5": "maitrise",
+        "6": "reinvestissement"
+      },
+      "page": 7,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-033",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "B. Fractions (à l’aide de matériel concret ou de schémas)"
+      ],
+      "texte": "11. Ordonner des fractions, le dénominateur de l’une étant un multiple de l’autre (ou des autres)",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": null,
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 7,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-034",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "B. Fractions (à l’aide de matériel concret ou de schémas)"
+      ],
+      "texte": "12. Ordonner des fractions ayant un même numérateur",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": null,
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 7,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-035",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "B. Fractions (à l’aide de matériel concret ou de schémas)"
+      ],
+      "texte": "13. Situer des fractions sur un axe de nombres (droite numérique) Vocabulaire Fraction, demi, tiers, quart Vocabulaire Numérateur, dénominateur Entier, partie équivalente, fraction équivalente Symbole Notation fractionnaire",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "maitrise",
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 7,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-036",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "C. Nombres décimaux jusqu’à l’ordre des…"
+      ],
+      "texte": "1. Représenter des nombres décimaux de différentes façons (concrètes ou imagées)",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 7,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-037",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "C. Nombres décimaux jusqu’à l’ordre des…"
+      ],
+      "texte": "2. Reconnaître des représentations équivalentes (concrètes ou imagées)",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 7,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-038",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "C. Nombres décimaux jusqu’à l’ordre des…"
+      ],
+      "texte": "3. Lire et écrire des nombres écrits en notation décimale",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 7,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-039",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "C. Nombres décimaux jusqu’à l’ordre des…"
+      ],
+      "texte": "4. Comprendre le rôle de la virgule",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": null,
+        "6": null
+      },
+      "page": 7,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-040",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "C. Nombres décimaux jusqu’à l’ordre des…"
+      ],
+      "texte": "5. Composer et décomposer un nombre décimal écrit en notation décimale",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 7,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-041",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "C. Nombres décimaux jusqu’à l’ordre des…"
+      ],
+      "texte": "6. Reconnaître des expressions équivalentes (ex. : 12 dixièmes est équivalent à 1 unité et 2 dixièmes; 0,5 est équivalent à 0,50)",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 7,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-042",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "C. Nombres décimaux jusqu’à l’ordre des…",
+        "7. Situer des nombres décimaux sur un axe de nombres (droite numérique)"
+      ],
+      "texte": "a. entre deux nombres naturels consécutifs",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 7,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-043",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "C. Nombres décimaux jusqu’à l’ordre des…",
+        "7. Situer des nombres décimaux sur un axe de nombres (droite numérique)"
+      ],
+      "texte": "b. entre deux nombres décimaux",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": "apprentissage",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 7,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-044",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "C. Nombres décimaux jusqu’à l’ordre des…"
+      ],
+      "texte": "8. Comparer entre eux des nombres décimaux",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 7,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-045",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "C. Nombres décimaux jusqu’à l’ordre des…"
+      ],
+      "texte": "9. Faire une approximation (estimer, arrondir à un ordre de grandeur donné, tronquer, etc.)",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 7,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-046",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "C. Nombres décimaux jusqu’à l’ordre des…"
+      ],
+      "texte": "10. Ordonner des nombres décimaux par ordre croissant ou décroissant",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 7,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-047",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "C. Nombres décimaux jusqu’à l’ordre des…",
+        "11. Associer"
+      ],
+      "texte": "a. une fraction à un nombre décimal",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "reinvestissement",
+        "6": "reinvestissement"
+      },
+      "page": 7,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-048",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "C. Nombres décimaux jusqu’à l’ordre des…",
+        "11. Associer"
+      ],
+      "texte": "b. une fraction ou un pourcentage à un nombre décimal Vocabulaire Nombre décimal, dixième, centième Symbole Notation décimale",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 7,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-049",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "C. Nombres décimaux jusqu’à l’ordre des…",
+        "11. Associer"
+      ],
+      "texte": "Vocabulaire Millième Symbole Notation décimale",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": null,
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 8,
+      "a_verifier": true,
+      "note": "Ligne sans marqueur de liste : vérifier le découpage."
+    },
+    {
+      "id": "MAT-SEN-050",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "D. Nombres entiers"
+      ],
+      "texte": "1. Représenter des nombres entiers de différentes façons (concrètes ou imagées) (ex. : jetons de deux couleurs différentes, droite numérique, thermomètre, terrain de football, ascenseur, montgolfière)",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": "apprentissage",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 8,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-051",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "D. Nombres entiers"
+      ],
+      "texte": "2. Lire et écrire des nombres entiers",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": null,
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 8,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-052",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "D. Nombres entiers"
+      ],
+      "texte": "3. Situer des nombres entiers sur un axe de nombres (droite numérique, plan cartésien)",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": null,
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 8,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-053",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "D. Nombres entiers"
+      ],
+      "texte": "4. Comparer entre eux des nombres entiers",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": null,
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 8,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-054",
+      "competence": "Arithmétique",
+      "section": "Sens et écriture des nombres",
+      "chemin": [
+        "D. Nombres entiers"
+      ],
+      "texte": "5. Ordonner des nombres entiers par ordre croissant ou décroissant Vocabulaire Nombre entier Nombre négatif, nombre positif Symboles Notation d’un nombre entier, touche +/– sur la calculatrice",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": null,
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 8,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-055",
+      "competence": "Arithmétique",
+      "section": "Sens des opérations sur des nombres",
+      "chemin": [
+        "A. Nombres naturels inférieurs à…"
+      ],
+      "texte": "1. Reconnaître l’opération ou les opérations à effectuer dans une situation",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "maitrise",
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 9,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-056",
+      "competence": "Arithmétique",
+      "section": "Sens des opérations sur des nombres",
+      "chemin": [
+        "A. Nombres naturels inférieurs à…",
+        "2. Traduire une situation à l’aide de matériel concret, de schémas ou d’équations et vice différents sens de l’addition et de la soustraction)"
+      ],
+      "texte": "a. transformation (ajout, retrait), réunion, comparaison",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "maitrise",
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 9,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-057",
+      "competence": "Arithmétique",
+      "section": "Sens des opérations sur des nombres",
+      "chemin": [
+        "A. Nombres naturels inférieurs à…",
+        "2. Traduire une situation à l’aide de matériel concret, de schémas ou d’équations et vice différents sens de l’addition et de la soustraction)"
+      ],
+      "texte": "b. composition de transformations : positive, négative",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 9,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-058",
+      "competence": "Arithmétique",
+      "section": "Sens des opérations sur des nombres",
+      "chemin": [
+        "A. Nombres naturels inférieurs à…",
+        "2. Traduire une situation à l’aide de matériel concret, de schémas ou d’équations et vice différents sens de l’addition et de la soustraction)"
+      ],
+      "texte": "c. composition de transformations : mixte",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": null,
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 9,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-059",
+      "competence": "Arithmétique",
+      "section": "Sens des opérations sur des nombres",
+      "chemin": [
+        "A. Nombres naturels inférieurs à…",
+        "3. Traduire une situation à l’aide de matériel concret, de schémas ou d’équations et vice différents sens de la multiplication et de la division)"
+      ],
+      "texte": "a. disposition rectangulaire, addition répétée, produit cartésien, partage et contenance (à l’aide de matériel et de schémas)",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "maitrise",
+        "3": null,
+        "4": null,
+        "5": null,
+        "6": null
+      },
+      "page": 9,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-060",
+      "competence": "Arithmétique",
+      "section": "Sens des opérations sur des nombres",
+      "chemin": [
+        "A. Nombres naturels inférieurs à…",
+        "3. Traduire une situation à l’aide de matériel concret, de schémas ou d’équations et vice différents sens de la multiplication et de la division)"
+      ],
+      "texte": "b. disposition rectangulaire, addition répétée, produit cartésien, aire, volume, soustraction répétée, partage, contenance et comparaison (à l’aide de matériel concret, de schémas ou d’équations)",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 9,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-061",
+      "competence": "Arithmétique",
+      "section": "Sens des opérations sur des nombres",
+      "chemin": [
+        "A. Nombres naturels inférieurs à…"
+      ],
+      "texte": "4. Établir la relation d’égalité entre des expressions numériques (ex. : 3 + 2 = 6 – 1)",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "maitrise",
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 9,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-062",
+      "competence": "Arithmétique",
+      "section": "Sens des opérations sur des nombres",
+      "chemin": [
+        "A. Nombres naturels inférieurs à…",
+        "5. Déterminer des équivalences numériques à l’aide de relations entre"
+      ],
+      "texte": "a. les opérations (addition et soustraction) et la commutativité de l’addition",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "maitrise",
+        "3": null,
+        "4": null,
+        "5": null,
+        "6": null
+      },
+      "page": 9,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-063",
+      "competence": "Arithmétique",
+      "section": "Sens des opérations sur des nombres",
+      "chemin": [
+        "A. Nombres naturels inférieurs à…",
+        "5. Déterminer des équivalences numériques à l’aide de relations entre"
+      ],
+      "texte": "b. les opérations (les 4 opérations), la commutativité de l’addition et de la multiplication et l’associativité",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": null,
+        "6": null
+      },
+      "page": 9,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-064",
+      "competence": "Arithmétique",
+      "section": "Sens des opérations sur des nombres",
+      "chemin": [
+        "A. Nombres naturels inférieurs à…",
+        "5. Déterminer des équivalences numériques à l’aide de relations entre"
+      ],
+      "texte": "c. les opérations (les 4 opérations), la commutativité de l’addition et de la multiplication, l’associativité et la distributivité de la multiplication sur l’addition ou la soustraction",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": null,
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 9,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-065",
+      "competence": "Arithmétique",
+      "section": "Sens des opérations sur des nombres",
+      "chemin": [
+        "A. Nombres naturels inférieurs à…"
+      ],
+      "texte": "6. Traduire une situation à l’aide d’une chaîne d’opérations en respectant la priorité des opérations",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": null,
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 9,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-066",
+      "competence": "Arithmétique",
+      "section": "Sens des opérations sur des nombres",
+      "chemin": [
+        "A. Nombres naturels inférieurs à…",
+        "5. Déterminer des équivalences numériques à l’aide de relations entre"
+      ],
+      "texte": "Vocabulaire Plus, moins, de moins, de plus Addition, soustraction, somme, différence Symboles +, – Vocabulaire Au moins, au plus, terme, terme manquant Multiplication, facteur, produit Division, diviseur, dividende, quotient, reste, partage Égalité, inégalité, équation, opération inverse, multiple Symboles ×, ÷",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "maitrise",
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "reinvestissement",
+        "6": "reinvestissement"
+      },
+      "page": 10,
+      "a_verifier": true,
+      "note": "Ligne sans marqueur de liste : vérifier le découpage."
+    },
+    {
+      "id": "MAT-SEN-067",
+      "competence": "Arithmétique",
+      "section": "Sens des opérations sur des nombres",
+      "chemin": [
+        "B. Nombres décimaux jusqu’à l’ordre des…",
+        "1. Traduire une situation à l’aide de matériel concret, de schémas ou d’équations et vice différents sens de l’addition et de la soustraction)"
+      ],
+      "texte": "a. transformation (ajout, retrait), réunion, comparaison",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 10,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-068",
+      "competence": "Arithmétique",
+      "section": "Sens des opérations sur des nombres",
+      "chemin": [
+        "B. Nombres décimaux jusqu’à l’ordre des…",
+        "1. Traduire une situation à l’aide de matériel concret, de schémas ou d’équations et vice différents sens de l’addition et de la soustraction)"
+      ],
+      "texte": "b. composition de transformations : positive, négative",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 10,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-069",
+      "competence": "Arithmétique",
+      "section": "Sens des opérations sur des nombres",
+      "chemin": [
+        "B. Nombres décimaux jusqu’à l’ordre des…",
+        "1. Traduire une situation à l’aide de matériel concret, de schémas ou d’équations et vice différents sens de l’addition et de la soustraction)"
+      ],
+      "texte": "c. composition de transformations : mixte",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": null,
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 10,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-070",
+      "competence": "Arithmétique",
+      "section": "Sens des opérations sur des nombres",
+      "chemin": [
+        "B. Nombres décimaux jusqu’à l’ordre des…"
+      ],
+      "texte": "2. Traduire une situation à l’aide de matériel concret, de schémas ou d’équations et vice versa (exploitation des différents sens de la multiplication et de la division : disposition rectangulaire, produit cartésien, aire, volume, partage, contenance et comparaison)",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 10,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-071",
+      "competence": "Arithmétique",
+      "section": "Sens des opérations sur des nombres",
+      "chemin": [
+        "B. Nombres décimaux jusqu’à l’ordre des…",
+        "3. Déterminer des équivalences numériques à l’aide"
+      ],
+      "texte": "a. de la relation entre les opérations (addition et soustraction), la commutativité de l’addition et l’associativité",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": null,
+        "6": null
+      },
+      "page": 10,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-072",
+      "competence": "Arithmétique",
+      "section": "Sens des opérations sur des nombres",
+      "chemin": [
+        "B. Nombres décimaux jusqu’à l’ordre des…",
+        "3. Déterminer des équivalences numériques à l’aide"
+      ],
+      "texte": "b. des relations entre les opérations (les 4 opérations), la commutativité de et de la multiplication, l’associativité et la distributivité de la multiplication sur l’addition ou la soustraction",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": null,
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 10,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-073",
+      "competence": "Arithmétique",
+      "section": "Sens des opérations sur des nombres",
+      "chemin": [
+        "B. Nombres décimaux jusqu’à l’ordre des…"
+      ],
+      "texte": "4. Traduire une situation à l’aide d’une chaîne d’opérations en respectant la priorité des opérations",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": null,
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 10,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-SEN-074",
+      "competence": "Arithmétique",
+      "section": "Sens des opérations sur des nombres",
+      "chemin": [
+        "C. Fractions"
+      ],
+      "texte": "1. Traduire une situation à l’aide de matériel concret, de schémas ou par une opération et vice versa (exploitation des différents sens de l’addition, de la soustraction et de la multiplication par un nombre naturel)",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": null,
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 10,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-OPE-001",
+      "competence": "Arithmétique",
+      "section": "Opérations sur des nombres",
+      "chemin": [
+        "A. Nombres naturels (selon les balises de chaque cycle)",
+        "1. Faire une approximation du résultat"
+      ],
+      "texte": "a. d’une addition ou d’une soustraction de nombres naturels",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "maitrise",
+        "3": "reinvestissement",
+        "4": "reinvestissement",
+        "5": "reinvestissement",
+        "6": "reinvestissement"
+      },
+      "page": 11,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-OPE-002",
+      "competence": "Arithmétique",
+      "section": "Opérations sur des nombres",
+      "chemin": [
+        "A. Nombres naturels (selon les balises de chaque cycle)",
+        "1. Faire une approximation du résultat"
+      ],
+      "texte": "b. de l’une ou l’autre des opérations sur des nombres naturels 1",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "apprentissage",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 11,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-OPE-003",
+      "competence": "Arithmétique",
+      "section": "Opérations sur des nombres",
+      "chemin": [
+        "A. Nombres naturels (selon les balises de chaque cycle)",
+        "2. Développer le répertoire mémorisé de l’addition et de la soustraction 2"
+      ],
+      "texte": "a. Construire les faits numériques de l’addition (0 + 0 à 10 + 10) et les soustractions correspondantes à l’aide de matériel, de dessins, d’une grille ou d’une table",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "maitrise",
+        "3": null,
+        "4": null,
+        "5": null,
+        "6": null
+      },
+      "page": 11,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-OPE-004",
+      "competence": "Arithmétique",
+      "section": "Opérations sur des nombres",
+      "chemin": [
+        "A. Nombres naturels (selon les balises de chaque cycle)",
+        "2. Développer le répertoire mémorisé de l’addition et de la soustraction 2"
+      ],
+      "texte": "b. Développer diverses stratégies favorisant la maîtrise des faits numériques et les lier aux propriétés de l’addition",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "apprentissage",
+        "3": "maitrise",
+        "4": "reinvestissement",
+        "5": "reinvestissement",
+        "6": "reinvestissement"
+      },
+      "page": 11,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-OPE-005",
+      "competence": "Arithmétique",
+      "section": "Opérations sur des nombres",
+      "chemin": [
+        "A. Nombres naturels (selon les balises de chaque cycle)",
+        "2. Développer le répertoire mémorisé de l’addition et de la soustraction 2"
+      ],
+      "texte": "c. Maîtriser l’ensemble des faits numériques de l’addition (0 + 0 à 10 + 10) et les soustractions correspondantes",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "apprentissage",
+        "3": "maitrise",
+        "4": "reinvestissement",
+        "5": "reinvestissement",
+        "6": "reinvestissement"
+      },
+      "page": 11,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-OPE-006",
+      "competence": "Arithmétique",
+      "section": "Opérations sur des nombres",
+      "chemin": [
+        "A. Nombres naturels (selon les balises de chaque cycle)",
+        "3. Développer des processus de calcul mental"
+      ],
+      "texte": "a. À l’aide de processus personnels, déterminer la somme ou la différence de deux nombres naturels",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "maitrise",
+        "3": "reinvestissement",
+        "4": "reinvestissement",
+        "5": "reinvestissement",
+        "6": "reinvestissement"
+      },
+      "page": 11,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-OPE-007",
+      "competence": "Arithmétique",
+      "section": "Opérations sur des nombres",
+      "chemin": [
+        "A. Nombres naturels (selon les balises de chaque cycle)",
+        "3. Développer des processus de calcul mental"
+      ],
+      "texte": "b. À l’aide de processus personnels, déterminer le produit ou le quotient de deux nombres naturels",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "apprentissage",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 11,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-OPE-008",
+      "competence": "Arithmétique",
+      "section": "Opérations sur des nombres",
+      "chemin": [
+        "A. Nombres naturels (selon les balises de chaque cycle)",
+        "4. Développer des processus de calcul écrit (addition et soustraction)"
+      ],
+      "texte": "a. À l’aide de processus personnels , en utilisant du matériel ou des dessins, déterminer la somme ou la différence de deux nombres naturels inférieurs à 1000",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "maitrise",
+        "3": null,
+        "4": null,
+        "5": null,
+        "6": null
+      },
+      "page": 11,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-OPE-009",
+      "competence": "Arithmétique",
+      "section": "Opérations sur des nombres",
+      "chemin": [
+        "A. Nombres naturels (selon les balises de chaque cycle)",
+        "4. Développer des processus de calcul écrit (addition et soustraction)"
+      ],
+      "texte": "b. À l’aide de processus conventionnels, déterminer la somme de deux nombres naturels ayant au plus 4 chiffres",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "reinvestissement",
+        "6": "reinvestissement"
+      },
+      "page": 11,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-OPE-010",
+      "competence": "Arithmétique",
+      "section": "Opérations sur des nombres",
+      "chemin": [
+        "A. Nombres naturels (selon les balises de chaque cycle)",
+        "4. Développer des processus de calcul écrit (addition et soustraction)"
+      ],
+      "texte": "c. À l’aide de processus conventionnels, déterminer la différence de deux nombres naturels ayant au plus 4 chiffres dont le résultat est supérieur à 0",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "reinvestissement",
+        "6": "reinvestissement"
+      },
+      "page": 11,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-OPE-011",
+      "competence": "Arithmétique",
+      "section": "Opérations sur des nombres",
+      "chemin": [
+        "A. Nombres naturels (selon les balises de chaque cycle)"
+      ],
+      "texte": "5. Déterminer un terme manquant dans une équation (relations entre les opérations) : a + b = □ , a + □ = c , □ + b = c, a – b = □ , a – □ = c , □ – b = c",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "maitrise",
+        "3": "reinvestissement",
+        "4": "reinvestissement",
+        "5": "reinvestissement",
+        "6": "reinvestissement"
+      },
+      "page": 12,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-OPE-012",
+      "competence": "Arithmétique",
+      "section": "Opérations sur des nombres",
+      "chemin": [
+        "A. Nombres naturels (selon les balises de chaque cycle)",
+        "6. Développer le répertoire mémorisé de la multiplication et de la division"
+      ],
+      "texte": "a. Construire les faits numériques de la multiplication (0 × 0 à 10 × 10) et les divisions correspondantes à l’aide de matériel, de dessins, d’une grille ou d’une table",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": null,
+        "6": null
+      },
+      "page": 12,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-OPE-013",
+      "competence": "Arithmétique",
+      "section": "Opérations sur des nombres",
+      "chemin": [
+        "A. Nombres naturels (selon les balises de chaque cycle)",
+        "6. Développer le répertoire mémorisé de la multiplication et de la division"
+      ],
+      "texte": "b. Développer diverses stratégies favorisant la maîtrise des faits numériques et les lier aux propriétés de la multiplication",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "apprentissage",
+        "5": "maitrise",
+        "6": "reinvestissement"
+      },
+      "page": 12,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-OPE-014",
+      "competence": "Arithmétique",
+      "section": "Opérations sur des nombres",
+      "chemin": [
+        "A. Nombres naturels (selon les balises de chaque cycle)",
+        "6. Développer le répertoire mémorisé de la multiplication et de la division"
+      ],
+      "texte": "c. Maîtriser l’ensemble des faits numériques de la multiplication (0 × 0 à 10 × 10) et les divisions correspondantes",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "apprentissage",
+        "5": "maitrise",
+        "6": "reinvestissement"
+      },
+      "page": 12,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-OPE-015",
+      "competence": "Arithmétique",
+      "section": "Opérations sur des nombres",
+      "chemin": [
+        "A. Nombres naturels (selon les balises de chaque cycle)",
+        "7. Développer des processus de calcul écrit (multiplication et division)"
+      ],
+      "texte": "a. À l’aide de processus personnels, en utilisant du matériel ou des dessins, déterminer le produit ou le quotient d’un nombre naturel à 3 chiffres par un nombre naturel à 1 chiffre, exprimer le reste de la division sous forme de fraction, selon le contexte",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": null,
+        "6": null
+      },
+      "page": 12,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-OPE-016",
+      "competence": "Arithmétique",
+      "section": "Opérations sur des nombres",
+      "chemin": [
+        "A. Nombres naturels (selon les balises de chaque cycle)",
+        "7. Développer des processus de calcul écrit (multiplication et division)"
+      ],
+      "texte": "b. À l’aide de processus conventionnels, déterminer le produit d’un nombre naturel à 3 chiffres par un nombre naturel à 2 chiffres",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": null,
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 12,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-OPE-017",
+      "competence": "Arithmétique",
+      "section": "Opérations sur des nombres",
+      "chemin": [
+        "A. Nombres naturels (selon les balises de chaque cycle)",
+        "7. Développer des processus de calcul écrit (multiplication et division)"
+      ],
+      "texte": "c. À l’aide de processus conventionnels, déterminer le quotient d’un nombre naturel à 4 chiffres par un nombre naturel à 2 chiffres, exprimer le reste de la division sous la forme d’un nombre en écriture décimale sans dépasser la position des centièmes",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": null,
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 12,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-OPE-018",
+      "competence": "Arithmétique",
+      "section": "Opérations sur des nombres",
+      "chemin": [
+        "A. Nombres naturels (selon les balises de chaque cycle)"
+      ],
+      "texte": "8. Déterminer un terme manquant dans une équation (relations entre les opérations) : a × b = □ , a × □ = c , □ × b = c, a ÷ b = □ , a ÷ □ = c , □ ÷ b = c",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "apprentissage",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 12,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-OPE-019",
+      "competence": "Arithmétique",
+      "section": "Opérations sur des nombres",
+      "chemin": [
+        "A. Nombres naturels (selon les balises de chaque cycle)"
+      ],
+      "texte": "9. Décomposer un nombre en facteurs premiers",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": "apprentissage",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 12,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-OPE-020",
+      "competence": "Arithmétique",
+      "section": "Opérations sur des nombres",
+      "chemin": [
+        "A. Nombres naturels (selon les balises de chaque cycle)"
+      ],
+      "texte": "10. Calculer la puissance d’un nombre",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": null,
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 12,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-OPE-021",
+      "competence": "Arithmétique",
+      "section": "Opérations sur des nombres",
+      "chemin": [
+        "A. Nombres naturels (selon les balises de chaque cycle)"
+      ],
+      "texte": "11. Déterminer la divisibilité d’un nombre par 2, 3, 4, 5, 6, 8, 9, 10",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": null,
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 12,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-OPE-022",
+      "competence": "Arithmétique",
+      "section": "Opérations sur des nombres",
+      "chemin": [
+        "A. Nombres naturels (selon les balises de chaque cycle)"
+      ],
+      "texte": "12. Effectuer une chaîne d’opérations en respectant la priorité des opérations",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": null,
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 12,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-OPE-023",
+      "competence": "Arithmétique",
+      "section": "Opérations sur des nombres",
+      "chemin": [
+        "A. Nombres naturels (selon les balises de chaque cycle)",
+        "13. Décrire, dans ses mots et à l’aide du langage mathématique propre à son cycle,"
+      ],
+      "texte": "a. des régularités non numériques (ex. : suite de couleurs, de formes, de sons, de gestes)",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "maitrise",
+        "3": "reinvestissement",
+        "4": "reinvestissement",
+        "5": "reinvestissement",
+        "6": "reinvestissement"
+      },
+      "page": 12,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-OPE-024",
+      "competence": "Arithmétique",
+      "section": "Opérations sur des nombres",
+      "chemin": [
+        "A. Nombres naturels (selon les balises de chaque cycle)",
+        "13. Décrire, dans ses mots et à l’aide du langage mathématique propre à son cycle,"
+      ],
+      "texte": "b. des régularités numériques (ex. : comptine des nombres, tableaux et grilles de nombres)",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "maitrise",
+        "3": "reinvestissement",
+        "4": "reinvestissement",
+        "5": "reinvestissement",
+        "6": "reinvestissement"
+      },
+      "page": 12,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-OPE-025",
+      "competence": "Arithmétique",
+      "section": "Opérations sur des nombres",
+      "chemin": [
+        "A. Nombres naturels (selon les balises de chaque cycle)",
+        "13. Décrire, dans ses mots et à l’aide du langage mathématique propre à son cycle,"
+      ],
+      "texte": "c. des suites de nombres et famille d’opérations",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "apprentissage",
+        "3": "apprentissage",
+        "4": "apprentissage",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 12,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-OPE-026",
+      "competence": "Arithmétique",
+      "section": "Opérations sur des nombres",
+      "chemin": [
+        "A. Nombres naturels (selon les balises de chaque cycle)"
+      ],
+      "texte": "14. Ajouter de nouveaux termes à une suite dont au moins les 3 premiers termes sont donnés",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "apprentissage",
+        "3": "apprentissage",
+        "4": "apprentissage",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 12,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-OPE-027",
+      "competence": "Arithmétique",
+      "section": "Opérations sur des nombres",
+      "chemin": [
+        "A. Nombres naturels (selon les balises de chaque cycle)",
+        "15. Utiliser la calculatrice en"
+      ],
+      "texte": "a. s’appropriant les fonctions simples de la calculatrice (+, –, =, touches numériques de à 9, touches de correction totale ou partielle)",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "maitrise",
+        "3": "reinvestissement",
+        "4": "reinvestissement",
+        "5": "reinvestissement",
+        "6": "reinvestissement"
+      },
+      "page": 12,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-OPE-028",
+      "competence": "Arithmétique",
+      "section": "Opérations sur des nombres",
+      "chemin": [
+        "A. Nombres naturels (selon les balises de chaque cycle)",
+        "15. Utiliser la calculatrice en"
+      ],
+      "texte": "b. s’appropriant les fonctions × et ÷ de la calculatrice",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "reinvestissement",
+        "6": "reinvestissement"
+      },
+      "page": 12,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-OPE-029",
+      "competence": "Arithmétique",
+      "section": "Opérations sur des nombres",
+      "chemin": [
+        "A. Nombres naturels (selon les balises de chaque cycle)",
+        "15. Utiliser la calculatrice en"
+      ],
+      "texte": "c. s’appropriant les touches pour les mémoires et pour le changement de signe (+/–) Vocabulaire Régularité, suite Symboles Touches de la calculatrice",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "maitrise",
+        "3": "reinvestissement",
+        "4": "reinvestissement",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 12,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-OPE-030",
+      "competence": "Arithmétique",
+      "section": "Opérations sur des nombres",
+      "chemin": [
+        "B. Fractions (à l’aide de matériel concret ou de schémas)"
+      ],
+      "texte": "1. Construire un ensemble de fractions équivalentes",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "apprentissage",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 12,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-OPE-031",
+      "competence": "Arithmétique",
+      "section": "Opérations sur des nombres",
+      "chemin": [
+        "B. Fractions (à l’aide de matériel concret ou de schémas)"
+      ],
+      "texte": "2. Réduire une fraction à sa plus simple expression",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": null,
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 12,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-OPE-032",
+      "competence": "Arithmétique",
+      "section": "Opérations sur des nombres",
+      "chemin": [
+        "B. Fractions (à l’aide de matériel concret ou de schémas)"
+      ],
+      "texte": "3. Additionner et soustraire des fractions dont le dénominateur de l’une est un multiple de l’autre",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": null,
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 12,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-OPE-033",
+      "competence": "Arithmétique",
+      "section": "Opérations sur des nombres",
+      "chemin": [
+        "B. Fractions (à l’aide de matériel concret ou de schémas)"
+      ],
+      "texte": "4. Multiplier un nombre naturel par une fraction Vocabulaire Fraction irréductible",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": null,
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 12,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-OPE-034",
+      "competence": "Arithmétique",
+      "section": "Opérations sur des nombres",
+      "chemin": [
+        "C. Nombres décimaux",
+        "1. Faire une approximation"
+      ],
+      "texte": "a. du résultat d’une addition ou d’une soustraction",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "apprentissage",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 13,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-OPE-035",
+      "competence": "Arithmétique",
+      "section": "Opérations sur des nombres",
+      "chemin": [
+        "C. Nombres décimaux",
+        "1. Faire une approximation"
+      ],
+      "texte": "b. du résultat d’une multiplication ou d’une division",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": null,
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 13,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-OPE-036",
+      "competence": "Arithmétique",
+      "section": "Opérations sur des nombres",
+      "chemin": [
+        "C. Nombres décimaux",
+        "2. Développer des processus de calcul mental"
+      ],
+      "texte": "a. Additionner et soustraire des nombres décimaux",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "apprentissage",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 13,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-OPE-037",
+      "competence": "Arithmétique",
+      "section": "Opérations sur des nombres",
+      "chemin": [
+        "C. Nombres décimaux",
+        "2. Développer des processus de calcul mental"
+      ],
+      "texte": "b. Effectuer des opérations sur des nombres décimaux (multiplication, division par un nombre naturel)",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": null,
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 13,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-OPE-038",
+      "competence": "Arithmétique",
+      "section": "Opérations sur des nombres",
+      "chemin": [
+        "C. Nombres décimaux",
+        "2. Développer des processus de calcul mental"
+      ],
+      "texte": "c. Multiplier et diviser par 10, 100, 1000",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": null,
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 13,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-OPE-039",
+      "competence": "Arithmétique",
+      "section": "Opérations sur des nombres",
+      "chemin": [
+        "C. Nombres décimaux",
+        "3. Développer des processus de calcul écrit"
+      ],
+      "texte": "a. Additionner et soustraire des nombres décimaux dont le résultat ne dépasse pas la position des centièmes",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "reinvestissement",
+        "6": "reinvestissement"
+      },
+      "page": 13,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-OPE-040",
+      "competence": "Arithmétique",
+      "section": "Opérations sur des nombres",
+      "chemin": [
+        "C. Nombres décimaux",
+        "3. Développer des processus de calcul écrit"
+      ],
+      "texte": "b. Multiplier des nombres décimaux dont le produit ne dépasse pas la position des centièmes",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": null,
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 13,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-OPE-041",
+      "competence": "Arithmétique",
+      "section": "Opérations sur des nombres",
+      "chemin": [
+        "C. Nombres décimaux",
+        "3. Développer des processus de calcul écrit"
+      ],
+      "texte": "c. Diviser un nombre décimal par un nombre naturel inférieur à 11 Symboles $, ¢",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 13,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-OPE-042",
+      "competence": "Arithmétique",
+      "section": "Opérations sur des nombres",
+      "chemin": [
+        "D. Utilisation des nombres"
+      ],
+      "texte": "1. Exprimer en notation fractionnaire un nombre exprimé en notation décimale et vice versa",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": null,
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 13,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-OPE-043",
+      "competence": "Arithmétique",
+      "section": "Opérations sur des nombres",
+      "chemin": [
+        "D. Utilisation des nombres"
+      ],
+      "texte": "2. Exprimer par un pourcentage un nombre exprimé en notation décimale et vice versa",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": null,
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 13,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-OPE-044",
+      "competence": "Arithmétique",
+      "section": "Opérations sur des nombres",
+      "chemin": [
+        "D. Utilisation des nombres"
+      ],
+      "texte": "3. Exprimer par un pourcentage un nombre exprimé en notation fractionnaire et vice versa",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": null,
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 13,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-OPE-045",
+      "competence": "Arithmétique",
+      "section": "Opérations sur des nombres",
+      "chemin": [
+        "D. Utilisation des nombres"
+      ],
+      "texte": "4. Choisir une forme d’écriture appropriée selon le contexte Vocabulaire Pourcentage Symbole %",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": null,
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 13,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-GEO-001",
+      "competence": "Géométrie",
+      "section": null,
+      "chemin": [
+        "A. Espace"
+      ],
+      "texte": "1. Se repérer et repérer des objets dans l’espace (relations spatiales)",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "maitrise",
+        "3": null,
+        "4": null,
+        "5": null,
+        "6": null
+      },
+      "page": 14,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-GEO-002",
+      "competence": "Géométrie",
+      "section": null,
+      "chemin": [
+        "A. Espace"
+      ],
+      "texte": "2. Effectuer des activités de repérage dans un plan",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "apprentissage",
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": null,
+        "6": null
+      },
+      "page": 14,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-GEO-003",
+      "competence": "Géométrie",
+      "section": null,
+      "chemin": [
+        "A. Espace"
+      ],
+      "texte": "3. Effectuer des activités de repérage sur un axe (selon les types de nombres à l’étude)",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "maitrise",
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 14,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-GEO-004",
+      "competence": "Géométrie",
+      "section": null,
+      "chemin": [
+        "A. Espace",
+        "4. Repérer des points dans le plan cartésien er"
+      ],
+      "texte": "a. dans le 1 quadrant",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "apprentissage",
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": null,
+        "6": null
+      },
+      "page": 14,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-GEO-005",
+      "competence": "Géométrie",
+      "section": null,
+      "chemin": [
+        "A. Espace",
+        "4. Repérer des points dans le plan cartésien er"
+      ],
+      "texte": "b. dans les 4 quadrants Vocabulaire Système de repérage, plan, plan cartésien, couple Symboles Écriture d’un couple ( a , b )",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "apprentissage",
+        "3": "apprentissage",
+        "4": "apprentissage",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 14,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-GEO-006",
+      "competence": "Géométrie",
+      "section": null,
+      "chemin": [
+        "B. Solides"
+      ],
+      "texte": "1. Comparer des objets ou des parties d’objets de l’environnement aux solides à l’étude (boule, cône, cube, cylindre, prisme, pyramide)",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "maitrise",
+        "3": "reinvestissement",
+        "4": "reinvestissement",
+        "5": "reinvestissement",
+        "6": "reinvestissement"
+      },
+      "page": 14,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-GEO-007",
+      "competence": "Géométrie",
+      "section": null,
+      "chemin": [
+        "B. Solides"
+      ],
+      "texte": "2. Comparer et construire des solides (boule, cône, cube, cylindre, prisme, pyramide)",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "maitrise",
+        "3": null,
+        "4": null,
+        "5": null,
+        "6": null
+      },
+      "page": 14,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-GEO-008",
+      "competence": "Géométrie",
+      "section": null,
+      "chemin": [
+        "B. Solides"
+      ],
+      "texte": "3. Identifier les principaux solides (boule, cône, cube, cylindre, prisme, pyramide) Vocabulaire Solide, base d’un solide, face, surface plane, surface courbe Boule, cône, cube, cylindre, prisme, pyramide",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "maitrise",
+        "3": "reinvestissement",
+        "4": "reinvestissement",
+        "5": "reinvestissement",
+        "6": "reinvestissement"
+      },
+      "page": 14,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-GEO-009",
+      "competence": "Géométrie",
+      "section": null,
+      "chemin": [
+        "B. Solides"
+      ],
+      "texte": "4. Identifier et représenter les différentes faces d’un prisme ou d’une pyramide",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "maitrise",
+        "3": "reinvestissement",
+        "4": "reinvestissement",
+        "5": "reinvestissement",
+        "6": "reinvestissement"
+      },
+      "page": 15,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-GEO-010",
+      "competence": "Géométrie",
+      "section": null,
+      "chemin": [
+        "B. Solides"
+      ],
+      "texte": "5. Décrire des prismes et des pyramides à l’aide de faces, de sommets, d’arêtes",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "reinvestissement",
+        "6": "reinvestissement"
+      },
+      "page": 15,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-GEO-011",
+      "competence": "Géométrie",
+      "section": null,
+      "chemin": [
+        "B. Solides"
+      ],
+      "texte": "6. Classifier des prismes et des pyramides",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "reinvestissement",
+        "6": "reinvestissement"
+      },
+      "page": 15,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-GEO-012",
+      "competence": "Géométrie",
+      "section": null,
+      "chemin": [
+        "B. Solides"
+      ],
+      "texte": "7. Développer un prisme ou une pyramide",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "reinvestissement",
+        "6": "reinvestissement"
+      },
+      "page": 15,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-GEO-013",
+      "competence": "Géométrie",
+      "section": null,
+      "chemin": [
+        "B. Solides",
+        "8. Associer le développement de la surface"
+      ],
+      "texte": "a. d’un prisme au prisme correspondant et vice versa",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": "apprentissage",
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": null,
+        "6": null
+      },
+      "page": 15,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-GEO-014",
+      "competence": "Géométrie",
+      "section": null,
+      "chemin": [
+        "B. Solides",
+        "8. Associer le développement de la surface"
+      ],
+      "texte": "b. d’une pyramide à la pyramide correspondante et vice versa",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": "apprentissage",
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": null,
+        "6": null
+      },
+      "page": 15,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-GEO-015",
+      "competence": "Géométrie",
+      "section": null,
+      "chemin": [
+        "B. Solides",
+        "8. Associer le développement de la surface"
+      ],
+      "texte": "c. d’un polyèdre convexe au polyèdre convexe correspondant Vocabulaire Sommet, arête, développement d’un solide",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 15,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-GEO-016",
+      "competence": "Géométrie",
+      "section": null,
+      "chemin": [
+        "B. Solides"
+      ],
+      "texte": "9. Expérimenter la relation d’Euler sur des polyèdres convexes Vocabulaire Polyèdre, polyèdre convexe",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": null,
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 15,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-GEO-017",
+      "competence": "Géométrie",
+      "section": null,
+      "chemin": [
+        "C. Figures planes"
+      ],
+      "texte": "1. Comparer et construire des figures composées de lignes courbes fermées ou de lignes brisées fermées",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "maitrise",
+        "3": null,
+        "4": null,
+        "5": null,
+        "6": null
+      },
+      "page": 15,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-GEO-018",
+      "competence": "Géométrie",
+      "section": null,
+      "chemin": [
+        "C. Figures planes"
+      ],
+      "texte": "2. Identifier des figures planes : carré, rectangle, triangle, losange, cercle",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "maitrise",
+        "3": "reinvestissement",
+        "4": "reinvestissement",
+        "5": "reinvestissement",
+        "6": "reinvestissement"
+      },
+      "page": 15,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-GEO-019",
+      "competence": "Géométrie",
+      "section": null,
+      "chemin": [
+        "C. Figures planes"
+      ],
+      "texte": "3. Décrire des figures planes : carré, rectangle, triangle, losange Vocabulaire Ligne brisée, ligne brisée fermée, ligne courbe Figure plane, côté Carré, cercle, rectangle, triangle, losange",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "maitrise",
+        "3": "reinvestissement",
+        "4": "reinvestissement",
+        "5": "reinvestissement",
+        "6": "reinvestissement"
+      },
+      "page": 15,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-GEO-020",
+      "competence": "Géométrie",
+      "section": null,
+      "chemin": [
+        "C. Figures planes"
+      ],
+      "texte": "4. Décrire des polygones convexes et non convexes",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "reinvestissement",
+        "6": "reinvestissement"
+      },
+      "page": 15,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-GEO-021",
+      "competence": "Géométrie",
+      "section": null,
+      "chemin": [
+        "C. Figures planes"
+      ],
+      "texte": "5. Identifier et construire des droites parallèles et des droites perpendiculaires",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "reinvestissement",
+        "6": "reinvestissement"
+      },
+      "page": 15,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-GEO-022",
+      "competence": "Géométrie",
+      "section": null,
+      "chemin": [
+        "C. Figures planes"
+      ],
+      "texte": "6. Décrire des quadrilatères (parallélisme, perpendicularité, angle droit, angle aigu, angle obtus, etc.)",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "reinvestissement",
+        "6": "reinvestissement"
+      },
+      "page": 15,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-GEO-023",
+      "competence": "Géométrie",
+      "section": null,
+      "chemin": [
+        "C. Figures planes"
+      ],
+      "texte": "7. Classifier des quadrilatères Vocabulaire Quadrilatère, parallélogramme, trapèze, polygone Polygone convexe, polygone non convexe, segment Est parallèle à ; est perpendiculaire à Symboles //, ⊥",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "reinvestissement",
+        "6": "reinvestissement"
+      },
+      "page": 15,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-GEO-024",
+      "competence": "Géométrie",
+      "section": null,
+      "chemin": [
+        "C. Figures planes"
+      ],
+      "texte": "8. Décrire des triangles : triangle scalène, triangle rectangle, triangle isocèle, triangle équilatéral",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": null,
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 15,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-GEO-025",
+      "competence": "Géométrie",
+      "section": null,
+      "chemin": [
+        "C. Figures planes"
+      ],
+      "texte": "9. Classifier des triangles",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": null,
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 15,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-GEO-026",
+      "competence": "Géométrie",
+      "section": null,
+      "chemin": [
+        "C. Figures planes"
+      ],
+      "texte": "10. Décrire le cercle Vocabulaire Triangle équilatéral, triangle isocèle, triangle rectangle, triangle scalène Disque, angle au centre, diamètre, rayon, circonférence",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": null,
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 15,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-GEO-027",
+      "competence": "Géométrie",
+      "section": null,
+      "chemin": [
+        "D. Frises et dallages"
+      ],
+      "texte": "1. Identifier des figures isométriques",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "maitrise",
+        "3": "reinvestissement",
+        "4": "reinvestissement",
+        "5": "reinvestissement",
+        "6": "reinvestissement"
+      },
+      "page": 16,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-GEO-028",
+      "competence": "Géométrie",
+      "section": null,
+      "chemin": [
+        "D. Frises et dallages"
+      ],
+      "texte": "2. Observer et produire des régularités à l’aide de figures géométriques",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "apprentissage",
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": null,
+        "6": null
+      },
+      "page": 16,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-GEO-029",
+      "competence": "Géométrie",
+      "section": null,
+      "chemin": [
+        "D. Frises et dallages",
+        "3. Observer et produire des frises et des dallages"
+      ],
+      "texte": "a. à l’aide de la réflexion",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "reinvestissement",
+        "6": "reinvestissement"
+      },
+      "page": 16,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-GEO-030",
+      "competence": "Géométrie",
+      "section": null,
+      "chemin": [
+        "D. Frises et dallages",
+        "3. Observer et produire des frises et des dallages"
+      ],
+      "texte": "b. à l’aide de la translation Vocabulaire Frise, dallage Réflexion, axe de réflexion, figure symétrique Vocabulaire Translation, flèche de translation",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 16,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-MES-001",
+      "competence": "Mesure",
+      "section": null,
+      "chemin": [
+        "A. Longueurs"
+      ],
+      "texte": "1. Comparer des longueurs",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "maitrise",
+        "3": null,
+        "4": null,
+        "5": null,
+        "6": null
+      },
+      "page": 17,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-MES-002",
+      "competence": "Mesure",
+      "section": null,
+      "chemin": [
+        "A. Longueurs"
+      ],
+      "texte": "2. Construire des règles",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "maitrise",
+        "3": null,
+        "4": null,
+        "5": null,
+        "6": null
+      },
+      "page": 17,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-MES-003",
+      "competence": "Mesure",
+      "section": null,
+      "chemin": [
+        "A. Longueurs"
+      ],
+      "texte": "3. Estimer et mesurer les dimensions d’un objet à l’aide d’unités non conventionnelles",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "maitrise",
+        "3": null,
+        "4": null,
+        "5": null,
+        "6": null
+      },
+      "page": 17,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-MES-004",
+      "competence": "Mesure",
+      "section": null,
+      "chemin": [
+        "A. Longueurs",
+        "4. Estimer et mesurer les dimensions d’un objet à l’aide d’unités conventionnelles"
+      ],
+      "texte": "a. mètre, décimètre et centimètre",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "maitrise",
+        "3": null,
+        "4": null,
+        "5": null,
+        "6": null
+      },
+      "page": 17,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-MES-005",
+      "competence": "Mesure",
+      "section": null,
+      "chemin": [
+        "A. Longueurs",
+        "4. Estimer et mesurer les dimensions d’un objet à l’aide d’unités conventionnelles"
+      ],
+      "texte": "b. mètre, décimètre, centimètre et millimètre",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": null,
+        "6": null
+      },
+      "page": 17,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-MES-006",
+      "competence": "Mesure",
+      "section": null,
+      "chemin": [
+        "A. Longueurs",
+        "4. Estimer et mesurer les dimensions d’un objet à l’aide d’unités conventionnelles"
+      ],
+      "texte": "c. mètre, décimètre, centimètre, millimètre et kilomètre",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": null,
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 17,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-MES-007",
+      "competence": "Mesure",
+      "section": null,
+      "chemin": [
+        "A. Longueurs",
+        "5. Établir des relations entre les unités de mesure de longueur"
+      ],
+      "texte": "a. mètre, décimètre, centimètre et millimètre",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": null,
+        "6": null
+      },
+      "page": 17,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-MES-008",
+      "competence": "Mesure",
+      "section": null,
+      "chemin": [
+        "A. Longueurs",
+        "5. Établir des relations entre les unités de mesure de longueur"
+      ],
+      "texte": "b. mètre, décimètre, centimètre, millimètre et kilomètre",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": null,
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 17,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-MES-009",
+      "competence": "Mesure",
+      "section": null,
+      "chemin": [
+        "A. Longueurs"
+      ],
+      "texte": "6. Calculer le périmètre de figures planes Vocabulaire Largeur, longueur, hauteur, profondeur Unité de mesure, centimètre, décimètre, mètre Symboles m, dm, cm Vocabulaire Périmètre, millimètre Symbole mm",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "maitrise",
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "reinvestissement",
+        "6": "reinvestissement"
+      },
+      "page": 17,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-MES-010",
+      "competence": "Mesure",
+      "section": null,
+      "chemin": [
+        "A. Longueurs",
+        "5. Établir des relations entre les unités de mesure de longueur"
+      ],
+      "texte": "Vocabulaire Kilomètre Symbole km",
+      "prioritaire": true,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": null,
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 18,
+      "a_verifier": true,
+      "note": "Ligne sans marqueur de liste : vérifier le découpage."
+    },
+    {
+      "id": "MAT-MES-011",
+      "competence": "Mesure",
+      "section": null,
+      "chemin": [
+        "B. Surfaces",
+        "1. Estimer et mesurer l’aire de surfaces"
+      ],
+      "texte": "a. à l’aide d’unités non conventionnelles",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": null,
+        "6": null
+      },
+      "page": 18,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-MES-012",
+      "competence": "Mesure",
+      "section": null,
+      "chemin": [
+        "B. Surfaces",
+        "1. Estimer et mesurer l’aire de surfaces"
+      ],
+      "texte": "b. à l’aide d’unités conventionnelles Vocabulaire Surface, aire Vocabulaire Centimètre carré, décimètre carré, mètre carré Symboles 2 2 2 m , dm , cm",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 18,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-MES-013",
+      "competence": "Mesure",
+      "section": null,
+      "chemin": [
+        "C. Volumes",
+        "1. Estimer et mesurer des volumes"
+      ],
+      "texte": "a. à l’aide d’unités non conventionnelles",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": null,
+        "6": null
+      },
+      "page": 18,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-MES-014",
+      "competence": "Mesure",
+      "section": null,
+      "chemin": [
+        "C. Volumes",
+        "1. Estimer et mesurer des volumes"
+      ],
+      "texte": "b. à l’aide d’unités conventionnelles Vocabulaire Volume Vocabulaire Centimètre cube, décimètre cube, mètre cube Symboles 3 3 3 m , dm , cm",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 18,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-MES-015",
+      "competence": "Mesure",
+      "section": null,
+      "chemin": [
+        "D. Angles"
+      ],
+      "texte": "1. Comparer des angles Vocabulaire Angle, angle droit, angle aigu, angle obtus",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "reinvestissement",
+        "6": "reinvestissement"
+      },
+      "page": 18,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-MES-016",
+      "competence": "Mesure",
+      "section": null,
+      "chemin": [
+        "D. Angles"
+      ],
+      "texte": "2. Estimer et mesurer des angles en degrés Vocabulaire Degré, rapporteur d’angles Symboles ∠ , °",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": null,
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 18,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-MES-017",
+      "competence": "Mesure",
+      "section": null,
+      "chemin": [
+        "E. Capacités"
+      ],
+      "texte": "1. Estimer et mesurer des capacités à l’aide d’unités non conventionnelles",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "apprentissage",
+        "5": "maitrise",
+        "6": "reinvestissement"
+      },
+      "page": 18,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-MES-018",
+      "competence": "Mesure",
+      "section": null,
+      "chemin": [
+        "E. Capacités"
+      ],
+      "texte": "2. Estimer et mesurer des capacités à l’aide d’unités conventionnelles",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "apprentissage",
+        "5": "maitrise",
+        "6": "reinvestissement"
+      },
+      "page": 18,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-MES-019",
+      "competence": "Mesure",
+      "section": null,
+      "chemin": [
+        "E. Capacités"
+      ],
+      "texte": "3. Établir des relations entre les unités de mesure (ex. : 1 L = 1000 mL, ½ L = 500 mL) Vocabulaire Capacité, litre, millilitre",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": "apprentissage",
+        "5": "maitrise",
+        "6": "reinvestissement"
+      },
+      "page": 18,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-MES-020",
+      "competence": "Mesure",
+      "section": null,
+      "chemin": [
+        "E. Capacités"
+      ],
+      "texte": "Symboles L, mL",
+      "prioritaire": true,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": null,
+        "5": null,
+        "6": "reinvestissement"
+      },
+      "page": 19,
+      "a_verifier": true,
+      "note": "Ligne sans marqueur de liste : vérifier le découpage."
+    },
+    {
+      "id": "MAT-MES-021",
+      "competence": "Mesure",
+      "section": null,
+      "chemin": [
+        "F. Masses"
+      ],
+      "texte": "1. Estimer et mesurer des masses à l’aide d’unités non conventionnelles",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "apprentissage",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 19,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-MES-022",
+      "competence": "Mesure",
+      "section": null,
+      "chemin": [
+        "F. Masses"
+      ],
+      "texte": "2. Estimer et mesurer des masses à l’aide d’unités conventionnelles",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "apprentissage",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 19,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-MES-023",
+      "competence": "Mesure",
+      "section": null,
+      "chemin": [
+        "F. Masses"
+      ],
+      "texte": "3. Établir des relations entre les unités de mesure (ex. : 1 kg = 1000 g, ½ kg = 500 g) Vocabulaire Masse, gramme, kilogramme Symboles g, kg",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": null,
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 19,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-MES-024",
+      "competence": "Mesure",
+      "section": null,
+      "chemin": [
+        "G. Temps"
+      ],
+      "texte": "1. Estimer et mesurer le temps à l’aide d’unités conventionnelles",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "apprentissage",
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "reinvestissement",
+        "6": "reinvestissement"
+      },
+      "page": 19,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-MES-025",
+      "competence": "Mesure",
+      "section": null,
+      "chemin": [
+        "G. Temps"
+      ],
+      "texte": "2. Établir des relations entre les unités de mesure Vocabulaire Jour, heure, minute, seconde Symboles h, min, s, codage de l’heure : 3 h, 3 h 25 min, 03 : 25 Vocabulaire Cycle quotidien, cycle hebdomadaire, cycle annuel",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "apprentissage",
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 19,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-MES-026",
+      "competence": "Mesure",
+      "section": null,
+      "chemin": [
+        "H. Températures"
+      ],
+      "texte": "1. Estimer et mesurer des températures à l’aide d’unités conventionnelles Vocabulaire Degré Celsius Symbole °C",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "maitrise",
+        "3": "apprentissage",
+        "4": "apprentissage",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 19,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-STA-001",
+      "competence": "Statistique",
+      "section": null,
+      "chemin": [
+        "H. Températures"
+      ],
+      "texte": "1. Formuler des questions d’enquête (selon les sujets appropriés à la maturité de l’élève, l’évolution des apprentissages en français, etc.)",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "apprentissage",
+        "3": "apprentissage",
+        "4": "apprentissage",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 20,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-STA-002",
+      "competence": "Statistique",
+      "section": null,
+      "chemin": [
+        "H. Températures"
+      ],
+      "texte": "2. Collecter, décrire et organiser des données (classifier ou catégoriser) à l’aide de tableaux",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "apprentissage",
+        "3": "apprentissage",
+        "4": "apprentissage",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 20,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-STA-003",
+      "competence": "Statistique",
+      "section": null,
+      "chemin": [
+        "H. Températures",
+        "3. Interpréter des données à l’aide"
+      ],
+      "texte": "a. d’un tableau, d’un diagramme à bandes et d’un diagramme à pictogrammes",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "maitrise",
+        "3": null,
+        "4": null,
+        "5": null,
+        "6": null
+      },
+      "page": 20,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-STA-004",
+      "competence": "Statistique",
+      "section": null,
+      "chemin": [
+        "H. Températures",
+        "3. Interpréter des données à l’aide"
+      ],
+      "texte": "b. d’un tableau, d’un diagramme à bandes, d’un diagramme à pictogrammes et d’un diagramme à ligne brisée",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": null,
+        "6": null
+      },
+      "page": 20,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-STA-005",
+      "competence": "Statistique",
+      "section": null,
+      "chemin": [
+        "H. Températures",
+        "3. Interpréter des données à l’aide"
+      ],
+      "texte": "c. d’un tableau, d’un diagramme à bandes, d’un diagramme à pictogrammes, d’un diagramme à ligne brisée et d’un diagramme circulaire",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": null,
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 20,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-STA-006",
+      "competence": "Statistique",
+      "section": null,
+      "chemin": [
+        "H. Températures",
+        "4. Représenter des données à l’aide"
+      ],
+      "texte": "a. d’un tableau, d’un diagramme à bandes, d’un diagramme à pictogrammes",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "maitrise",
+        "3": null,
+        "4": null,
+        "5": null,
+        "6": null
+      },
+      "page": 20,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-STA-007",
+      "competence": "Statistique",
+      "section": null,
+      "chemin": [
+        "H. Températures",
+        "4. Représenter des données à l’aide"
+      ],
+      "texte": "b. d’un tableau, d’un diagramme à bandes, d’un diagramme à pictogrammes et d’un diagramme à ligne brisée",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "reinvestissement",
+        "6": "reinvestissement"
+      },
+      "page": 20,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-STA-008",
+      "competence": "Statistique",
+      "section": null,
+      "chemin": [
+        "H. Températures"
+      ],
+      "texte": "5. Comprendre et calculer la moyenne arithmétique Vocabulaire Enquête, tableau Diagramme à bandes, diagramme à pictogrammes Vocabulaire Diagramme à ligne brisée Vocabulaire Diagramme circulaire, moyenne arithmétique",
+      "prioritaire": false,
+      "progression": {
+        "1": "maitrise",
+        "2": "reinvestissement",
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 20,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-PRO-001",
+      "competence": "Probabilité",
+      "section": null,
+      "chemin": [
+        "H. Températures"
+      ],
+      "texte": "1. Reconnaître, quand elle s’applique, la variabilité des résultats possibles (incertitude)",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "apprentissage",
+        "3": "apprentissage",
+        "4": "apprentissage",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 21,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-PRO-002",
+      "competence": "Probabilité",
+      "section": null,
+      "chemin": [
+        "H. Températures"
+      ],
+      "texte": "2. Reconnaître, quand elle s’applique, l’équiprobabilité (ex. : quantité, symétrie d’un objet [cube])",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "apprentissage",
+        "3": "apprentissage",
+        "4": "apprentissage",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 21,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-PRO-003",
+      "competence": "Probabilité",
+      "section": null,
+      "chemin": [
+        "H. Températures"
+      ],
+      "texte": "3. Prendre conscience, quand elle s’applique, de l’indépendance entre les tours lors d’une expérimentation",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "apprentissage",
+        "3": "apprentissage",
+        "4": "apprentissage",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 21,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-PRO-004",
+      "competence": "Probabilité",
+      "section": null,
+      "chemin": [
+        "H. Températures"
+      ],
+      "texte": "4. Expérimenter des activités liées au hasard en utilisant du matériel varié (ex. : roulettes, prismes à base rectangulaire, verres, billes, punaises, dés à 6, 8 ou 12 faces)",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "apprentissage",
+        "3": "apprentissage",
+        "4": "apprentissage",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 21,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-PRO-005",
+      "competence": "Probabilité",
+      "section": null,
+      "chemin": [
+        "H. Températures",
+        "5. Prédire qualitativement un résultat ou plusieurs événements en utilisant, entre autres, une"
+      ],
+      "texte": "a. résultat certain, résultat possible ou résultat impossible",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "apprentissage",
+        "3": "apprentissage",
+        "4": "apprentissage",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 21,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-PRO-006",
+      "competence": "Probabilité",
+      "section": null,
+      "chemin": [
+        "H. Températures",
+        "5. Prédire qualitativement un résultat ou plusieurs événements en utilisant, entre autres, une"
+      ],
+      "texte": "b. événement plus probable, événement également probable, événement moins probable",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "apprentissage",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 21,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-PRO-007",
+      "competence": "Probabilité",
+      "section": null,
+      "chemin": [
+        "H. Températures"
+      ],
+      "texte": "6. Distinguer la prédiction du résultat obtenu",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "apprentissage",
+        "3": "apprentissage",
+        "4": "apprentissage",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 21,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-PRO-008",
+      "competence": "Probabilité",
+      "section": null,
+      "chemin": [
+        "H. Températures"
+      ],
+      "texte": "7. Utiliser des tableaux ou des diagrammes pour colliger et mettre en évidence les résultats de l’expérimentation",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "apprentissage",
+        "3": "apprentissage",
+        "4": "apprentissage",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 21,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-PRO-009",
+      "competence": "Probabilité",
+      "section": null,
+      "chemin": [
+        "H. Températures",
+        "8. Dénombrer les résultats possibles"
+      ],
+      "texte": "a. d’une expérience aléatoire simple",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "maitrise",
+        "3": null,
+        "4": null,
+        "5": null,
+        "6": null
+      },
+      "page": 21,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-PRO-010",
+      "competence": "Probabilité",
+      "section": null,
+      "chemin": [
+        "H. Températures",
+        "8. Dénombrer les résultats possibles"
+      ],
+      "texte": "b. d’une expérience aléatoire à l’aide d’un tableau, d’un diagramme en arbre",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "apprentissage",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 21,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-PRO-011",
+      "competence": "Probabilité",
+      "section": null,
+      "chemin": [
+        "H. Températures"
+      ],
+      "texte": "9. Comparer qualitativement la probabilité théorique ou fréquentielle que des événements produisent",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": "apprentissage",
+        "4": "apprentissage",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 21,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-PRO-012",
+      "competence": "Probabilité",
+      "section": null,
+      "chemin": [
+        "H. Températures"
+      ],
+      "texte": "10. Reconnaître qu’une probabilité se situe entre 0 et 1",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": null,
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 21,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-PRO-013",
+      "competence": "Probabilité",
+      "section": null,
+      "chemin": [
+        "H. Températures"
+      ],
+      "texte": "11. Utiliser la notation fractionnaire, la notation décimale ou le pourcentage pour quantifier une probabilité",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": null,
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 21,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-PRO-014",
+      "competence": "Probabilité",
+      "section": null,
+      "chemin": [
+        "H. Températures"
+      ],
+      "texte": "12. Comparer des résultats d’une expérience aléatoire aux résultats théoriques connus",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": null,
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 21,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-PRO-015",
+      "competence": "Probabilité",
+      "section": null,
+      "chemin": [
+        "H. Températures"
+      ],
+      "texte": "13. Simuler des expériences aléatoires avec ou sans l’aide de la technologie Vocabulaire Hasard, expérience aléatoire, chance, dénombrement, diagramme en arbre Résultat certain, résultat possible, résultat impossible Événement, événement probable, également probable, plus probable, moins probable,",
+      "prioritaire": false,
+      "progression": {
+        "1": "apprentissage",
+        "2": "apprentissage",
+        "3": "apprentissage",
+        "4": "maitrise",
+        "5": "apprentissage",
+        "6": "maitrise"
+      },
+      "page": 21,
+      "a_verifier": false,
+      "note": ""
+    },
+    {
+      "id": "MAT-PRO-016",
+      "competence": "Probabilité",
+      "section": null,
+      "chemin": [
+        "H. Températures",
+        "8. Dénombrer les résultats possibles"
+      ],
+      "texte": "probabilité",
+      "prioritaire": false,
+      "progression": {
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": null,
+        "5": "reinvestissement",
+        "6": "reinvestissement"
+      },
+      "page": 22,
+      "a_verifier": true,
+      "note": "Ligne sans marqueur de liste : vérifier le découpage."
+    }
+  ]
+}

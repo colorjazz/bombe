@@ -1,0 +1,342 @@
+{
+  "discipline": "Mathématique",
+  "code_discipline": "MAT",
+  "ordre": "primaire",
+  "source": {
+    "titre": "Cadre d'évaluation des apprentissages, Mathématique, Enseignement primaire",
+    "date_version": "2011-04-21",
+    "url": ""
+  },
+  "note_bulletin": "Un critère avec bulletin=false doit faire l'objet d'une rétroaction à l'élève, mais ne doit pas être considéré dans les résultats communiqués à l'intérieur des bulletins.",
+  "cycles": {
+    "1": [
+      "1",
+      "2"
+    ],
+    "2": [
+      "3",
+      "4"
+    ],
+    "3": [
+      "5",
+      "6"
+    ]
+  },
+  "competences": [
+    {
+      "code": "MAT-C1",
+      "nom": "Résoudre une situation-problème mathématique",
+      "ponderation_par_cycle": {
+        "1": 20,
+        "2": 30,
+        "3": 30
+      },
+      "sections_pda": [
+        "Arithmétique",
+        "Géométrie",
+        "Mesure",
+        "Statistique",
+        "Probabilité"
+      ],
+      "page": 4,
+      "note": "L'évaluation de la maîtrise des connaissances est prise en compte dans Raisonner à l'aide de concepts et de processus mathématiques.",
+      "criteres": [
+        {
+          "code": "MAT-C1-CR1",
+          "texte": "Manifestation, oralement ou par écrit, de la compréhension de la situation-problème",
+          "bulletin": true,
+          "elements": [
+            {
+              "texte": "Planification des étapes à franchir",
+              "cycles": [
+                1,
+                2,
+                3
+              ],
+              "retroaction_seulement_cycles": []
+            },
+            {
+              "texte": "Identification des données pertinentes",
+              "cycles": [
+                1,
+                2,
+                3
+              ],
+              "retroaction_seulement_cycles": []
+            },
+            {
+              "texte": "Prise en compte des contraintes de la situation-problème",
+              "cycles": [
+                1,
+                2,
+                3
+              ],
+              "retroaction_seulement_cycles": []
+            }
+          ]
+        },
+        {
+          "code": "MAT-C1-CR2",
+          "texte": "Mobilisation correcte des concepts et processus requis pour produire une solution appropriée",
+          "bulletin": true,
+          "elements": [
+            {
+              "texte": "Sélection des concepts et processus mathématiques requis",
+              "cycles": [
+                1,
+                2,
+                3
+              ],
+              "retroaction_seulement_cycles": []
+            },
+            {
+              "texte": "Application correcte des concepts et processus requis",
+              "cycles": [
+                1,
+                2,
+                3
+              ],
+              "retroaction_seulement_cycles": []
+            }
+          ]
+        },
+        {
+          "code": "MAT-C1-CR3",
+          "texte": "Explicitation (orale ou écrite) des éléments pertinents de la solution",
+          "bulletin": true,
+          "elements": [
+            {
+              "texte": "Traces claires et complètes de la solution (oralement ou par écrit)",
+              "cycles": [
+                1,
+                2,
+                3
+              ],
+              "retroaction_seulement_cycles": []
+            }
+          ]
+        },
+        {
+          "code": "MAT-C1-CR4",
+          "texte": "Explicitation adéquate (orale ou écrite) de la validation de la solution",
+          "bulletin": false,
+          "elements": [
+            {
+              "texte": "Validation de la solution et rectification au besoin",
+              "cycles": [
+                1,
+                2,
+                3
+              ],
+              "retroaction_seulement_cycles": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "code": "MAT-C2",
+      "nom": "Raisonner à l'aide de concepts et de processus mathématiques",
+      "ponderation_par_cycle": {
+        "1": 80,
+        "2": 70,
+        "3": 70
+      },
+      "sections_pda": [
+        "Arithmétique",
+        "Géométrie",
+        "Mesure",
+        "Statistique",
+        "Probabilité"
+      ],
+      "page": 4,
+      "criteres": [
+        {
+          "code": "MAT-C2-CR0",
+          "texte": "Maîtrise des connaissances ciblées par la progression des apprentissages",
+          "bulletin": true,
+          "elements": [],
+          "note": "Correspond au critère Maîtrise des concepts et des processus mathématiques de la version antérieure du cadre. Inclut aussi la maîtrise des connaissances liée aux compétences 1 et 3."
+        },
+        {
+          "code": "MAT-C2-CR1",
+          "texte": "Analyse adéquate de la situation d'application",
+          "bulletin": true,
+          "elements": [
+            {
+              "texte": "Identification des éléments et des actions permettant de répondre aux exigences de la situation",
+              "cycles": [
+                1,
+                2,
+                3
+              ],
+              "retroaction_seulement_cycles": []
+            },
+            {
+              "texte": "Choix des concepts et des processus mathématiques requis",
+              "cycles": [
+                1,
+                2,
+                3
+              ],
+              "retroaction_seulement_cycles": []
+            }
+          ]
+        },
+        {
+          "code": "MAT-C2-CR2",
+          "texte": "Application adéquate des processus requis",
+          "bulletin": true,
+          "elements": [
+            {
+              "texte": "Application des concepts et des processus mathématiques requis",
+              "cycles": [
+                1,
+                2,
+                3
+              ],
+              "retroaction_seulement_cycles": []
+            }
+          ]
+        },
+        {
+          "code": "MAT-C2-CR3",
+          "texte": "Justification correcte d'actions ou d'énoncés à l'aide de concepts et de processus mathématiques",
+          "bulletin": true,
+          "elements": [
+            {
+              "texte": "Traces claires et complètes justifiant les actions, les conclusions ou les résultats",
+              "cycles": [
+                1,
+                2,
+                3
+              ],
+              "retroaction_seulement_cycles": []
+            },
+            {
+              "texte": "Utilisation, au besoin, d'arguments mathématiques pour appuyer des actions, des conclusions ou des résultats",
+              "cycles": [
+                1,
+                2,
+                3
+              ],
+              "retroaction_seulement_cycles": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "code": "MAT-C3",
+      "nom": "Communiquer à l'aide du langage mathématique",
+      "ponderation_par_cycle": null,
+      "bulletin": false,
+      "sections_pda": [
+        "Arithmétique",
+        "Géométrie",
+        "Mesure",
+        "Statistique",
+        "Probabilité"
+      ],
+      "page": 5,
+      "note": "Compétence évaluée en rétroaction seulement, non considérée dans les résultats du bulletin. L'évaluation de la maîtrise des connaissances est prise en compte dans Raisonner à l'aide de concepts et de processus mathématiques.",
+      "criteres": [
+        {
+          "code": "MAT-C3-CR1",
+          "texte": "Interprétation correcte d'un message (oral ou écrit) à l'aide du langage mathématique",
+          "bulletin": false,
+          "elements": [
+            {
+              "texte": "Identification des éléments importants d'un message",
+              "cycles": [
+                1,
+                2,
+                3
+              ],
+              "retroaction_seulement_cycles": []
+            },
+            {
+              "texte": "Identification des informations pertinentes",
+              "cycles": [
+                1,
+                2,
+                3
+              ],
+              "retroaction_seulement_cycles": []
+            },
+            {
+              "texte": "Sélection de concepts et de processus mathématiques pertinents",
+              "cycles": [
+                1,
+                2,
+                3
+              ],
+              "retroaction_seulement_cycles": []
+            },
+            {
+              "texte": "Traduction d'un message intégrant des éléments du langage mathématique et du langage courant",
+              "cycles": [
+                1,
+                2,
+                3
+              ],
+              "retroaction_seulement_cycles": []
+            }
+          ]
+        },
+        {
+          "code": "MAT-C3-CR2",
+          "texte": "Production correcte d'un message (oral ou écrit) à l'aide du langage mathématique",
+          "bulletin": false,
+          "elements": [
+            {
+              "texte": "Élaboration d'un message dont les idées sont pertinentes",
+              "cycles": [
+                1,
+                2,
+                3
+              ],
+              "retroaction_seulement_cycles": []
+            },
+            {
+              "texte": "Utilisation de concepts et de processus mathématiques pertinents",
+              "cycles": [
+                1,
+                2,
+                3
+              ],
+              "retroaction_seulement_cycles": []
+            },
+            {
+              "texte": "Formulation d'arguments mathématiques appropriés",
+              "cycles": [
+                1,
+                2,
+                3
+              ],
+              "retroaction_seulement_cycles": []
+            },
+            {
+              "texte": "Utilisation appropriée du langage mathématique et du langage courant",
+              "cycles": [
+                1,
+                2,
+                3
+              ],
+              "retroaction_seulement_cycles": []
+            },
+            {
+              "texte": "Respect des règles et des conventions propres au langage mathématique",
+              "cycles": [
+                1,
+                2,
+                3
+              ],
+              "retroaction_seulement_cycles": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

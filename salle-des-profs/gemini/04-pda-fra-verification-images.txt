@@ -1,0 +1,56 @@
+TÂCHE : Vérifier visuellement la progression de 28 savoirs de la PDA de français au primaire.
+
+CONTEXTE
+J'ai extrait automatiquement la Progression des apprentissages (PDA), Français, langue d'enseignement, primaire, du ministère de l'Éducation du Québec. Sur certaines pages, les flèches, les étoiles et les tirets sont dessinés dans une image : mon programme n'a pas pu les lire. J'ai besoin que tu les lises visuellement dans le PDF que je te joins.
+
+PIÈCES JOINTES
+Le PDF officiel de la PDA. Traite SEULEMENT les pages 22, 30, 33, 85, 86, 87, 88, 89 et 90 (numéros de page du fichier PDF).
+
+LÉGENDE (en haut de chaque tableau)
+- flèche : l'élève apprend avec l'intervention de l'enseignant -> "apprentissage"
+- étoile : l'élève le fait par lui-même à la fin de l'année -> "maitrise"
+- case bleue : l'élève réutilise cette connaissance -> "reinvestissement"
+- case vide -> null
+Les six colonnes de droite sont, de gauche à droite : 1re, 2e, 3e, 4e, 5e, 6e année.
+
+RÈGLES
+1. Ne fais aucune recherche web. Lis uniquement le PDF joint, en regardant les pages comme des images.
+2. Traite CHAQUE ligne du tableau qui porte au moins un symbole ou une case bleue, y compris les lignes précédées d'un tiret.
+3. Recopie le texte de la ligne mot pour mot.
+4. Si tu n'es pas certain d'un symbole, mets "certain": false.
+5. Réponds UNIQUEMENT avec du JSON valide, sans texte avant ni après.
+
+FORMAT (exemple fictif, les valeurs ne sont pas réelles)
+[
+  { "page": 0, "texte": "texte de la ligne", "parent": "texte de la ligne parente (i., ii., etc.)", "progression": { "1": null, "2": "apprentissage", "3": "maitrise", "4": "reinvestissement", "5": "reinvestissement", "6": "reinvestissement" }, "certain": true }
+]
+
+POUR T'AIDER, voici les lignes que mon programme a repérées sur ces pages (souvent fusionnées à tort ; découpe-les selon le tableau) :
+- page 30 | FRA-ACC-022 | après le verbe être après un verbe attributif
+- page 30 | FRA-ACC-023 | ii. l’adjectif sert à décrire ou à préciser un nom un pronom
+- page 30 | FRA-ACC-024 | iii. l’adjectif est receveur d’accord : il reçoit le genre et le nombre du nom du pronom
+- page 33 | FRA-ACC-078 | ajout d’un x ( –au/–aux , –eau/–eaux ; – eu/–eux et de certains noms
+- page 33 | FRA-ACC-079 | – ou ) transformation de la finale ( –al/–aux ; – ail/–aux ) aucun ajout à la finale –s , –x ou –z
+- page 85 | FRA-COM-027 | ii. organisation des idées enchaînement des propos avec ce qui précède ajout d’idées nouvelles pour faire avancer le propos reprise d’idées émises (ex. : adhésion, rejet)
+- page 85 | FRA-COM-030 | iii. choix du vocabulaire effet, sur les interlocuteurs, du vocabulaire utilisé richesse du vocabulaire (variété, justesse ou précision des mots, 7 présence d’expressions figées ) créativité lexicale (présence de néologismes ou de mots inventés)
+- page 85 | FRA-COM-031 | iv. perception des marques de l’oralité liaisons souhaitables (ex. : les élèves, un enfant) marqueurs de relation (ex. : et, puis) variations audibles du genre et du nombre (ex. : heureux/heureuse, cheval/chevaux) emploi de l’auxiliaire approprié (ex. : je suis resté, je suis allé) participe passé des verbes fréquents (ex. : entendu, répondu)
+- page 87 | FRA-COM-050 | ii. Dire tout ce qui semble lié au sujet évoquer ce que l’on connaît oser proposer des idées nouvelles pousser plus loin les idées émises
+- page 87 | FRA-COM-051 | iii. Chercher à préciser sa pensée recourir au paraverbal et à l’intonation pour compléter ses propos expliciter ses idées, apporter des exemples, évoquer des faits confronter les idées entre elles
+- page 87 | FRA-COM-052 | iv. Recourir à des objets, des illustrations et des gestes pour appuyer ses paroles se servir de divers objets diversifier les supports (ex. : illustrations, schémas) choisir ses gestes et ses mouvements
+- page 87 | FRA-COM-053 | v. Expérimenter l’emploi de nouveaux mots ou de nouvelles expressions ayant émergé en classe issus d’œuvres de littérature jeunesse provenant des autres disciplines scolaires
+- page 87 | FRA-COM-054 | vi. Essayer diverses formulations effectuer des tentatives même s’il peut y avoir des répétitions, des maladresses, des hésitations accepter d’utiliser provisoirement un vocabulaire approximatif ou le même mot pour exprimer diverses choses oser s’exprimer en dépit des maladresses syntaxiques
+- page 87 | FRA-COM-055 | i. Clarifier ses propos ou ses réactions appuyer ses propos et ses réactions (ex. : exemples, faits, témoignages) apporter des nuances ou des précisions faire des liens entre ses idées
+- page 88 | FRA-COM-056 | trouver des questions possibles formuler des questions diversifier ses questions
+- page 88 | FRA-COM-057 | iii. Adapter sa manière de dire quelque chose à ses interlocuteurs choisir des mots appropriés construire ses énoncés de façon appropriée choisir un registre de langue approprié
+- page 88 | FRA-COM-058 | iv. Revenir au sujet lorsqu’on s’éloigne constater que l’on s’éloigne du sujet rappeler ce qui a été dit pour recentrer le sujet
+- page 88 | FRA-COM-059 | v. Soutenir ou valoriser les propos d’autrui acquiescer (ex. : mimique, sourire, signe de tête) prononcer des mots ou émettre des sons d’encouragement recourir à des gestes d’appui
+- page 88 | FRA-COM-060 | vi. Recourir à des éléments prosodiques pour appuyer ses propos prononcer clairement ajuster le volume de sa voix adopter un débit compréhensible choisir son intonation
+- page 88 | FRA-COM-061 | vii. Ajuster ses paroles en cas de bris de communication (autorégulation) chercher à susciter l’intérêt expliquer ou expliciter son propos reformuler (dire autrement)
+- page 88 | FRA-COM-062 | i. Adopter une attitude d’ouverture exprimer verbalement son accueil recourir au langage non verbal (ex. : mimique, sourire, geste d’encouragement)
+- page 88 | FRA-COM-063 | ii. Prendre une posture d’écoute se préparer à l’écoute (ex. : intention d’écoute, connaissances antérieures) recourir à des conduites qui favorisent la communication (ex. : attente, silence, geste) porter attention au langage non verbal des autres (ex. : regard dirigé) explorer des moyens pour organiser et retenir l’information
+- page 89 | FRA-COM-067 | vi. Déduire le sens des expressions ou des mots nouveaux à partir du contexte se servir d’éléments visuels (ex. : geste, image, schéma) recourir à ses connaissances personnelles tenir compte de ce qui précède ou de ce qui suit
+- page 89 | FRA-COM-068 | vii. Vérifier sa compréhension des propos entendus se demander si l’on a bien compris dire ce que l’on a compris ou ce que l’on n’a pas saisi s’assurer de la justesse de sa compréhension (ex. : question, reformulation)
+- page 89 | FRA-COM-069 | i. Réfléchir à la qualité de son écoute et de ses interventions se questionner sur l’effet produit par ses gestes et ses paroles se questionner sur la pertinence de ses interventions se questionner sur la suffisance et l’organisation de ses idées se questionner sur la qualité de son écoute
+- page 89 | FRA-COM-070 | ii. Effectuer un retour sur l’ensemble de la situation de communication se demander si l’intention de communication a été respectée expliciter les stratégies utilisées (prise de parole et écoute) choisir de nouvelles stratégies à adopter (ex. : en s’inspirant de celles utilisées par les pairs) trouver des défis raisonnables à relever
+- page 90 | FRA-COM-071 | cerner ce qui n’a pas été bien saisi (bris de communication) nuancer les propos énoncés (ex. : précisions, reformulations, ajouts) commenter les blocages survenus réfléchir à des facilitateurs de communication
+- page 90 | FRA-COM-072 | iv. Gérer son anxiété (ex. : trac, timidité, pensées négatives) respirer, se détendre préparer sa prise de parole se donner le droit à l’erreur, dédramatiser se visualiser en situation de prise de parole, se voir réussir

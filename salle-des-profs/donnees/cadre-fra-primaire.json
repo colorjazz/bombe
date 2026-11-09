@@ -1,0 +1,490 @@
+{
+  "discipline": "Français, langue d'enseignement",
+  "code_discipline": "FRA",
+  "ordre": "primaire",
+  "source": {
+    "titre": "Cadre d'évaluation des apprentissages, Français, langue d'enseignement, Enseignement primaire, 1er, 2e et 3e cycle",
+    "date_version": "2011-04-21",
+    "url": "https://cdn-contenu.quebec.ca/cdn-contenu/education/pfeq/cadres-evaluation/primaire/francais/PFEQ-cadre-evaluation-francais-langue-enseignement-primaire.pdf"
+  },
+  "note_bulletin": "Un critère avec bulletin=false doit faire l'objet d'une rétroaction à l'élève, mais ne doit pas être considéré dans les résultats communiqués à l'intérieur des bulletins.",
+  "cycles": {
+    "1": [
+      "1",
+      "2"
+    ],
+    "2": [
+      "3",
+      "4"
+    ],
+    "3": [
+      "5",
+      "6"
+    ]
+  },
+  "competences": [
+    {
+      "code": "FRA-LIRE",
+      "nom": "Lire des textes variés ET Apprécier des œuvres littéraires",
+      "ponderation_par_cycle": {
+        "1": 50,
+        "2": 50,
+        "3": 40
+      },
+      "sections_pda": [
+        "Lire des textes variés",
+        "Apprécier des œuvres littéraires"
+      ],
+      "page": 4,
+      "criteres": [
+        {
+          "code": "FRA-LIRE-CR0",
+          "texte": "Maîtrise des connaissances ciblées par la progression des apprentissages",
+          "bulletin": true,
+          "elements": []
+        },
+        {
+          "code": "FRA-LIRE-CR1",
+          "texte": "Compréhension des éléments significatifs d'un texte",
+          "bulletin": true,
+          "intro_elements": "Extraction d'éléments d'information :",
+          "elements": [
+            {
+              "texte": "explicites",
+              "cycles": [
+                1
+              ],
+              "retroaction_seulement_cycles": []
+            },
+            {
+              "texte": "explicites et implicites",
+              "cycles": [
+                2,
+                3
+              ],
+              "retroaction_seulement_cycles": []
+            }
+          ]
+        },
+        {
+          "code": "FRA-LIRE-CR2",
+          "texte": "Interprétation plausible d'un texte",
+          "bulletin": true,
+          "elements": [
+            {
+              "texte": "Formulation d'une interprétation personnelle s'appuyant sur le texte et sur des repères culturels",
+              "cycles": [
+                3
+              ],
+              "retroaction_seulement_cycles": []
+            }
+          ]
+        },
+        {
+          "code": "FRA-LIRE-CR3",
+          "texte": "Justification pertinente des réactions à un texte",
+          "bulletin": true,
+          "intro_elements": "Justification des réactions au moyen :",
+          "elements": [
+            {
+              "texte": "d'éléments issus du texte ou d'exemples tirés de l'expérience personnelle",
+              "cycles": [
+                1,
+                2,
+                3
+              ],
+              "retroaction_seulement_cycles": []
+            },
+            {
+              "texte": "d'exemples tirés d'autres œuvres",
+              "cycles": [
+                3
+              ],
+              "retroaction_seulement_cycles": []
+            }
+          ]
+        },
+        {
+          "code": "FRA-LIRE-CR4",
+          "texte": "Jugement critique sur des textes littéraires",
+          "bulletin": true,
+          "elements": [
+            {
+              "texte": "Expression d'une opinion sur une œuvre à partir des premières impressions",
+              "cycles": [
+                1
+              ],
+              "retroaction_seulement_cycles": []
+            },
+            {
+              "texte": "Appréciation de certaines caractéristiques d'une œuvre",
+              "cycles": [
+                2
+              ],
+              "retroaction_seulement_cycles": []
+            },
+            {
+              "texte": "Appréciation de l'œuvre dans son ensemble, à l'aide d'exemples pertinents",
+              "cycles": [
+                3
+              ],
+              "retroaction_seulement_cycles": []
+            }
+          ]
+        },
+        {
+          "code": "FRA-LIRE-CR5",
+          "texte": "Recours à des stratégies appropriées",
+          "bulletin": false,
+          "intro_elements": "Stratégies :",
+          "elements": [
+            {
+              "texte": "ayant fait l'objet d'un apprentissage systématique",
+              "cycles": [
+                1,
+                2,
+                3
+              ],
+              "retroaction_seulement_cycles": []
+            },
+            {
+              "texte": "adaptées aux différents types de textes et à l'intention de lecture",
+              "cycles": [
+                3
+              ],
+              "retroaction_seulement_cycles": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "code": "FRA-ECRIRE",
+      "nom": "Écrire des textes variés",
+      "ponderation_par_cycle": {
+        "1": 30,
+        "2": 30,
+        "3": 40
+      },
+      "sections_pda": [
+        "Lexique",
+        "Orthographe d'usage",
+        "Conjugaison",
+        "Accords",
+        "Syntaxe et ponctuation",
+        "Organisation et cohérence du texte"
+      ],
+      "page": 4,
+      "criteres": [
+        {
+          "code": "FRA-ECRIRE-CR0",
+          "texte": "Maîtrise des connaissances ciblées par la progression des apprentissages",
+          "bulletin": true,
+          "elements": []
+        },
+        {
+          "code": "FRA-ECRIRE-CR1",
+          "texte": "Adaptation à la situation d'écriture",
+          "bulletin": true,
+          "intro_elements": "Prise en compte :",
+          "elements": [
+            {
+              "texte": "du sujet",
+              "cycles": [
+                1,
+                2,
+                3
+              ],
+              "retroaction_seulement_cycles": []
+            },
+            {
+              "texte": "de l'intention d'écriture",
+              "cycles": [
+                2,
+                3
+              ],
+              "retroaction_seulement_cycles": []
+            },
+            {
+              "texte": "du destinataire",
+              "cycles": [
+                3
+              ],
+              "retroaction_seulement_cycles": []
+            }
+          ]
+        },
+        {
+          "code": "FRA-ECRIRE-CR2",
+          "texte": "Cohérence du texte",
+          "bulletin": true,
+          "elements": [
+            {
+              "texte": "Présentation des idées selon un ordre logique, chronologique ou séquentiel",
+              "cycles": [
+                1,
+                2,
+                3
+              ],
+              "retroaction_seulement_cycles": [
+                1
+              ]
+            },
+            {
+              "texte": "Regroupement des idées en paragraphes",
+              "cycles": [
+                2,
+                3
+              ],
+              "retroaction_seulement_cycles": []
+            },
+            {
+              "texte": "Utilisation des marqueurs de relation et des termes substituts appropriés",
+              "cycles": [
+                3
+              ],
+              "retroaction_seulement_cycles": []
+            }
+          ]
+        },
+        {
+          "code": "FRA-ECRIRE-CR3",
+          "texte": "Utilisation d'un vocabulaire approprié",
+          "bulletin": true,
+          "elements": [
+            {
+              "texte": "Conformité à la norme et à l'usage",
+              "cycles": [
+                1,
+                2,
+                3
+              ],
+              "retroaction_seulement_cycles": [
+                1
+              ]
+            },
+            {
+              "texte": "Justesse",
+              "cycles": [
+                3
+              ],
+              "retroaction_seulement_cycles": []
+            },
+            {
+              "texte": "Variété",
+              "cycles": [
+                2,
+                3
+              ],
+              "retroaction_seulement_cycles": []
+            }
+          ]
+        },
+        {
+          "code": "FRA-ECRIRE-CR4",
+          "texte": "Construction des phrases et ponctuation appropriées",
+          "bulletin": true,
+          "elements": [
+            {
+              "texte": "Selon les apprentissages effectués pendant le cycle",
+              "cycles": [
+                1,
+                2,
+                3
+              ],
+              "retroaction_seulement_cycles": []
+            }
+          ]
+        },
+        {
+          "code": "FRA-ECRIRE-CR5",
+          "texte": "Respect des normes relatives à l'orthographe d'usage et à l'orthographe grammaticale",
+          "bulletin": true,
+          "elements": [
+            {
+              "texte": "Selon les apprentissages effectués pendant le cycle",
+              "cycles": [
+                1,
+                2,
+                3
+              ],
+              "retroaction_seulement_cycles": []
+            }
+          ]
+        },
+        {
+          "code": "FRA-ECRIRE-CR6",
+          "texte": "Qualité de la présentation",
+          "bulletin": false,
+          "elements": [
+            {
+              "texte": "Calligraphie",
+              "cycles": [
+                1,
+                2,
+                3
+              ],
+              "retroaction_seulement_cycles": []
+            },
+            {
+              "texte": "Mise en page et disposition",
+              "cycles": [
+                3
+              ],
+              "retroaction_seulement_cycles": []
+            }
+          ]
+        },
+        {
+          "code": "FRA-ECRIRE-CR7",
+          "texte": "Recours à des stratégies appropriées",
+          "bulletin": false,
+          "elements": [
+            {
+              "texte": "Stratégies ayant fait l'objet d'un apprentissage systématique",
+              "cycles": [
+                1,
+                2,
+                3
+              ],
+              "retroaction_seulement_cycles": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "code": "FRA-ORAL",
+      "nom": "Communiquer oralement",
+      "ponderation_par_cycle": {
+        "1": 20,
+        "2": 20,
+        "3": 20
+      },
+      "sections_pda": [
+        "Communiquer oralement"
+      ],
+      "page": 5,
+      "criteres": [
+        {
+          "code": "FRA-ORAL-CR0",
+          "texte": "Maîtrise des connaissances ciblées par la progression des apprentissages",
+          "bulletin": true,
+          "elements": []
+        },
+        {
+          "code": "FRA-ORAL-CR1",
+          "texte": "Réaction témoignant d'une écoute efficace",
+          "bulletin": true,
+          "elements": [
+            {
+              "texte": "Expression verbale ou non verbale de ses réactions",
+              "cycles": [
+                1,
+                2,
+                3
+              ],
+              "retroaction_seulement_cycles": []
+            },
+            {
+              "texte": "Formulation de propos pertinents",
+              "cycles": [
+                2,
+                3
+              ],
+              "retroaction_seulement_cycles": []
+            },
+            {
+              "texte": "Prise en compte des idées des autres",
+              "cycles": [
+                3
+              ],
+              "retroaction_seulement_cycles": []
+            }
+          ]
+        },
+        {
+          "code": "FRA-ORAL-CR2",
+          "texte": "Adaptation à la situation de communication",
+          "bulletin": true,
+          "elements": [
+            {
+              "texte": "Ajustement du volume de la voix",
+              "cycles": [
+                1,
+                2,
+                3
+              ],
+              "retroaction_seulement_cycles": [
+                1
+              ]
+            },
+            {
+              "texte": "Ajustement du débit et du rythme",
+              "cycles": [
+                3
+              ],
+              "retroaction_seulement_cycles": []
+            },
+            {
+              "texte": "Recours au registre de langue approprié",
+              "cycles": [
+                3
+              ],
+              "retroaction_seulement_cycles": []
+            }
+          ]
+        },
+        {
+          "code": "FRA-ORAL-CR3",
+          "texte": "Utilisation des formulations appropriées (syntaxe et vocabulaire)",
+          "bulletin": true,
+          "elements": [
+            {
+              "texte": "Clarté des propos",
+              "cycles": [
+                1,
+                2,
+                3
+              ],
+              "retroaction_seulement_cycles": []
+            },
+            {
+              "texte": "Choix du vocabulaire",
+              "cycles": [
+                1,
+                2,
+                3
+              ],
+              "retroaction_seulement_cycles": []
+            }
+          ]
+        },
+        {
+          "code": "FRA-ORAL-CR4",
+          "texte": "Recours à des stratégies appropriées",
+          "bulletin": false,
+          "intro_elements": "Stratégies :",
+          "elements": [
+            {
+              "texte": "ayant fait l'objet d'un apprentissage systématique",
+              "cycles": [
+                1,
+                2,
+                3
+              ],
+              "retroaction_seulement_cycles": []
+            },
+            {
+              "texte": "adaptées aux différents contextes d'interaction",
+              "cycles": [
+                3
+              ],
+              "retroaction_seulement_cycles": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+TÂCHE : Analyse juridique pratique de la Loi 25 pour un fournisseur de logiciel scolaire québécois.
+
+CONTEXTE
+Je développe "Salle des profs", un logiciel québécois de correction de copies d'élèves (mineurs, primaire et secondaire) assistée par l'IA, destiné aux enseignants et aux centres de services scolaires (organismes publics).
+Architecture prévue :
+- Les noms des élèves sont chiffrés dans le navigateur de l'enseignante ; le serveur ne voit que des codes pseudonymes.
+- Les copies sont photographiées ; la zone du nom est rognée avant l'envoi à l'IA.
+- L'IA (Google Gemini, Vertex AI, région Montréal) propose une correction ; l'enseignante la valide toujours.
+- Les résultats (liés aux codes) sont stockés dans une base Postgres à Montréal (Supabase, AWS ca-central-1).
+- Les copies, listes de noms et exportations sont stockées dans le OneDrive Microsoft 365 du centre de services.
+- Courriels de connexion envoyés par AWS SES Montréal. Paiement par Stripe. Hébergement web par Cloudflare (aucune donnée d'élève).
+
+QUESTIONS (réponds à chacune séparément, avec les articles de loi)
+1. Quelles lois s'appliquent : Loi sur la protection des renseignements personnels dans le secteur privé (pour moi) et Loi sur l'accès aux documents des organismes publics (pour le centre de services) ? Comment s'articulent-elles quand un organisme public confie des renseignements à un fournisseur ?
+2. Qui est responsable des données dans trois scénarios : (a) l'enseignante s'abonne seule avec sa carte de crédit, (b) l'école achète une licence, (c) le centre de services signe une entente ?
+3. Les codes pseudonymes et les résultats sans nom sont-ils encore des renseignements personnels ? Différence entre pseudonymisation et anonymisation selon la loi et le règlement sur l'anonymisation.
+4. EFVP : quand est-elle obligatoire, qui la fait (moi ou le centre de services), et que doit-elle contenir ? Le traitement par Google à Montréal et par Cloudflare (hors Canada, sans donnée d'élève) exige-t-il une EFVP de transfert hors Québec ?
+5. Article 12.1 (décision fondée exclusivement sur un traitement automatisé) : la validation par l'enseignante suffit-elle à l'éviter ? Que faut-il documenter ?
+6. Consentement pour les élèves de moins de 14 ans : est-il nécessaire quand c'est l'école qui utilise l'outil dans le cadre de sa mission éducative ?
+7. Obligations concrètes pour moi : responsable de la protection des renseignements personnels, politique de gouvernance, registre des incidents, notification à la CAI, conservation et destruction, portabilité.
+8. Ce que doit contenir un contrat entre un centre de services et un fournisseur (clauses habituelles, article 67.2 de la Loi sur l'accès).
+9. Publications de la Commission d'accès à l'information sur l'IA, les outils numériques en milieu scolaire ou la biométrie (l'écriture manuscrite est-elle une donnée biométrique ?).
+
+FORMAT
+- Une section par question, réponse courte et concrète d'abord, puis détails.
+- Cite les articles et les sources officielles (legisquebec.gouv.qc.ca, cai.gouv.qc.ca) avec liens.
+- Termine par une liste de vérification des obligations, classées : "avant le lancement", "avant le premier contrat avec un centre de services", "en continu".
+- Signale clairement les zones grises. Ce n'est pas un avis juridique.
