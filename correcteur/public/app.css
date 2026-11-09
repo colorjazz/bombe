@@ -634,3 +634,23 @@ body.light .layout > .levelbar { grid-column: 1 / -1; }
 .prof-cta { display: grid; gap: .35rem; justify-items: start; }
 .prof-table.cmp th, .prof-table.cmp td { width: auto; }
 .prof-table.cmp thead th { font-weight: 700; color: var(--muted); border-bottom: 2px solid var(--line); }
+.cond-chips { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem; margin: .35rem 0; }
+.cond { font: inherit; font-size: .78rem; font-weight: 600; padding: .2rem .6rem; border-radius: 999px; border: 1px solid var(--line-2); background: #fff; color: var(--muted); cursor: pointer; }
+.cond[aria-pressed="true"] { background: var(--primary); border-color: var(--primary); color: #fff; }
+.sub-pick { font-size: .78rem; padding: .15rem .3rem; max-width: 15rem; margin-right: .35rem; border-radius: 6px; }
+.prof-scroll { overflow-x: auto; }
+.prof-table thead th { font-weight: 700; color: var(--muted); border-bottom: 2px solid var(--line); font-size: .78rem; }
+.prof-table td:nth-child(3) { white-space: nowrap; }
+.prof-table thead th { width: auto; }
+.prof-table tbody th { width: 32%; }
+.prof-table:not(.cmp) td:nth-child(2), .prof-table:not(.cmp) td:nth-child(3), .prof-table:not(.cmp) thead th:nth-child(2), .prof-table:not(.cmp) thead th:nth-child(3) { width: 1%; white-space: nowrap; }
+@media (max-width: 560px) {
+  .prof-table:not(.cmp) thead { display: none; }
+  .prof-table:not(.cmp) tr { display: grid; grid-template-columns: auto 1fr; gap: 0 .5rem; border-bottom: 1px solid var(--line); padding: .35rem 0; }
+  .prof-table:not(.cmp) th, .prof-table:not(.cmp) td { border: 0; padding: .05rem 0; width: auto !important; }
+  .prof-table:not(.cmp) tbody th { grid-column: 1 / -1; }
+  .prof-table:not(.cmp) td:nth-child(2)::before { content: "Nombre : "; color: var(--muted); }
+  .prof-table:not(.cmp) td:nth-child(3):not(:empty)::before { content: "· "; color: var(--muted); }
+  .prof-table:not(.cmp) td:nth-child(3):not(:empty)::after { content: " pour 100 mots"; color: var(--muted); }
+  .prof-table:not(.cmp) td:nth-child(4) { grid-column: 1 / -1; color: var(--muted); white-space: normal; }
+}

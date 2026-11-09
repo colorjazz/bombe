@@ -1077,7 +1077,7 @@ async function runAll(only, calibrating = false) {
         setBalance(r.pagesLeft);
         const res = { kind: 'lang', id, no: b[0].no, file: b[0].file, exam: settings.exam, group: r.group || settings.group, name: r.name, pageCount: b.length, band: anonymous() ? maskFrac() : 0,
           pages: b.map((p, i) => ({ url: p.url, errors: r.pages[i].errors, failed: !!r.pages[i].failed, reread: r.pages[i].reread, sent: r.urls[i], words: r.pages[i].words, text: r.pages[i].text })),
-          scoring: langScoring(), pda: pdaScoring(), ortho: isOrtho(), level: $('lang-level').value,
+          scoring: langScoring(), pda: pdaScoring(), ortho: isOrtho(), level: $('lang-level').value, conditions: isOrtho() ? orthoConditions() : [],
           flags: r.failedPages ? [`${r.failedPages} page(s) n'ont pas pu être analysées (non décomptées).`] : [] };
         langGrade(res);
         state.results.unshift(res);
@@ -1845,16 +1845,52 @@ const pdaLine = (r, n) => `${!r.words ? L('mots non comptés', 'words not counte
 const SUBTYPES = {
   phonologique: 'Phonologique (son modifié)', morphologique: 'Morphologique (lettre muette, famille de mots)',
   visuo_orthographique: 'Visuo-orthographique (choix des lettres)', homophone_lexical: 'Homophones lexicaux',
-  homophone_grammatical: 'Homophones grammaticaux', segmentation: 'Segmentation (mots soudés ou coupés)',
-  majuscule_signes: 'Majuscules et signes', genre: 'Accord en genre', nombre: 'Accord en nombre', accord_verbe: 'Accord du verbe',
-  terminaison_verbale: 'Terminaisons verbales', homophone_verbal: 'Homophones verbaux (-é, -er, -ait)',
-  delimitation: 'Délimitation des phrases', virgule: 'Virgule', ponctuation_autre: 'Autre ponctuation',
-  structure_phrase: 'Construction de la phrase', negation: 'Négation', pronom_preposition: 'Pronoms et prépositions', vocabulaire: 'Vocabulaire',
+  segmentation: 'Segmentation (mots soudés ou coupés)', majuscule_signes: 'Majuscules et signes',
+  homophone_grammatical: 'Homophones grammaticaux', accord_gn: 'Accord dans le GN', accord_attribut: 'Accord de l’attribut',
+  accord_sv_simple: 'Accord sujet-verbe simple', accord_sv_complexe: 'Accord sujet-verbe complexe (inversé, éloigné, écran)',
+  pp_etre: 'Participe passé avec être', pp_avoir: 'Participe passé avec avoir', pp_seul: 'Participe passé sans auxiliaire',
+  morphologie_verbale: 'Morphologie verbale (conjugaison)', homophone_verbal: 'Homophones verbaux (-é, -er, -ait)',
+  delimitation: 'Délimitation des phrases', virgule_detachement: 'Virgule de détachement (complément en tête)', virgule: 'Autre virgule',
+  ponctuation_autre: 'Autre ponctuation', structure_phrase: 'Structure de la phrase de base', subordination: 'Subordination',
+  negation: 'Négation', pronom_preposition: 'Pronoms et prépositions', vocabulaire: 'Vocabulaire',
 };
 const SUB_CAT = { phonologique: 'orthographe', morphologique: 'orthographe', visuo_orthographique: 'orthographe', homophone_lexical: 'orthographe',
-  homophone_grammatical: 'orthographe', segmentation: 'orthographe', majuscule_signes: 'orthographe', genre: 'accord', nombre: 'accord',
-  accord_verbe: 'accord', terminaison_verbale: 'conjugaison', homophone_verbal: 'conjugaison', delimitation: 'ponctuation', virgule: 'ponctuation',
-  ponctuation_autre: 'ponctuation', structure_phrase: 'syntaxe', negation: 'syntaxe', pronom_preposition: 'syntaxe', vocabulaire: 'vocabulaire' };
+  segmentation: 'orthographe', majuscule_signes: 'orthographe', homophone_grammatical: 'orthographe', accord_gn: 'accord', accord_attribut: 'accord',
+  accord_sv_simple: 'accord', accord_sv_complexe: 'accord', pp_etre: 'accord', pp_avoir: 'accord', pp_seul: 'accord', morphologie_verbale: 'conjugaison',
+  homophone_verbal: 'conjugaison', delimitation: 'ponctuation', virgule_detachement: 'ponctuation', virgule: 'ponctuation', ponctuation_autre: 'ponctuation',
+  structure_phrase: 'syntaxe', subordination: 'syntaxe', negation: 'syntaxe', pronom_preposition: 'syntaxe', vocabulaire: 'vocabulaire' };
+// Codes du ministère (S, P, U, G, V) et étiquettes courtes, comme sur les copies (« G-GN », « U-phono »).
+const SUB_CODE = { phonologique: 'U-phono', morphologique: 'U-morpho', visuo_orthographique: 'U-visuo', homophone_lexical: 'U-homo', segmentation: 'U-segm',
+  majuscule_signes: 'U-maj', homophone_grammatical: 'G-homo', accord_gn: 'G-GN', accord_attribut: 'G-attr', accord_sv_simple: 'G-SV', accord_sv_complexe: 'G-SV+',
+  pp_etre: 'G-PP être', pp_avoir: 'G-PP avoir', pp_seul: 'G-PP seul', morphologie_verbale: 'G-conj', homophone_verbal: 'G-é/er', delimitation: 'P-délim',
+  virgule_detachement: 'P-vir CP', virgule: 'P-vir', ponctuation_autre: 'P-autre', structure_phrase: 'S-P', subordination: 'S-sub', negation: 'S-nég',
+  pronom_preposition: 'S-pron', vocabulaire: 'V' };
+const CAT_CODE = { orthographe: 'U', accord: 'G', conjugaison: 'G', ponctuation: 'P', syntaxe: 'S', vocabulaire: 'V' };
+const CODE_NAMES = { U: 'U · Orthographe d’usage', G: 'G · Orthographe grammaticale', P: 'P · Ponctuation', S: 'S · Syntaxe', V: 'V · Vocabulaire' };
+const subLabel = (k) => `${SUB_CODE[k]} · ${SUBTYPES[k]}`;
+// Conditions de rédaction (outils d'aide) : notées dans le profil et prises en compte dans la comparaison.
+const CONDITIONS = ['Sans aide', 'WordQ', 'Lexibar', 'Antidote', 'Synthèse vocale', 'Dictée vocale'];
+function conditionChips(r, onChange) {
+  const on = new Set(r.conditions || []);
+  return h('div', { class: 'cond-chips', role: 'group', 'aria-label': 'Conditions de rédaction' }, h('span', { class: 'muted small', textContent: 'Conditions de rédaction :' }),
+    ...CONDITIONS.map((c) => h('button', { type: 'button', class: 'cond', 'aria-pressed': String(on.has(c)), textContent: c, onclick: () => {
+      if (on.has(c)) on.delete(c); else { on.add(c); if (c === 'Sans aide') CONDITIONS.slice(1).forEach((x) => on.delete(x)); else on.delete('Sans aide'); }
+      r.conditions = CONDITIONS.filter((x) => on.has(x)); onChange?.(); renderResults();
+    } })));
+}
+// Indices calculés sur la transcription (indicatifs) : phrases selon la ponctuation de l'élève, longueur moyenne,
+// diversité du vocabulaire, subordonnants. Un élève qui fait peu d'erreurs avec des phrases très courtes évite peut-être la difficulté.
+function textIndices(r) {
+  const text = r.pages.map((p) => p.text || '').join('\n').trim();
+  if (!text) return null;
+  const tokens = (text.toLowerCase().match(/[\p{L}\p{N}]+(?:-[\p{L}\p{N}]+)*/gu) || []);
+  if (tokens.length < 20) return null;
+  const sentences = text.split(/[.!?…]+(?:\s|$)/u).filter((x) => /\p{L}/u.test(x)).length || 1;
+  const distinct = new Set(tokens).size;
+  const subord = tokens.filter((w) => ['qui', 'que', 'qu', 'dont', 'où', 'quand', 'lorsque', 'lorsqu', 'puisque', 'puisqu', 'si'].includes(w)).length;
+  return { words: tokens.length, sentences, avgLen: Math.round((10 * tokens.length) / sentences) / 10, distinct, diversity: Math.round((100 * distinct) / tokens.length), subord };
+}
+
 // Onglet Orthopédagogie : en français, au primaire et au secondaire (selon la Progression des apprentissages).
 function orthoAvailable() { return lang !== 'en' && $('lang-level').value !== 'cegep'; }
 function isOrtho() { return ortho && state.kind === 'lang' && orthoAvailable() && isPda(); }
@@ -1868,13 +1904,14 @@ function renderOrtho() {
 }
 const profileErrors = (r) => r.pages.flatMap((p) => p.errors).filter((e) => !e.doubtful);
 // La fiche reflète les erreurs validées : si l'orthopédagogue en retire ou en ajoute, la fiche est marquée à refaire.
-const profileSig = (r) => JSON.stringify(profileErrors(r).map((e) => [e.text, e.correction, e.subtype || e.category, !!e.grey]));
+const profileSig = (r) => JSON.stringify([profileErrors(r).map((e) => [e.text, e.correction, e.subtype || e.category, !!e.grey]), r.conditions || []]);
+const codeOf = (e) => (e.subtype ? SUB_CODE[e.subtype] : CAT_CODE[e.category] || '');
 // Erreurs récurrentes : comptées par le code (exactes), avec de vrais exemples tirés de la copie.
 function recurrent(r) {
   const groups = new Map();
   for (const e of profileErrors(r)) {
     const k = e.subtype || `cat:${e.category}`;
-    if (!groups.has(k)) groups.set(k, { label: e.subtype ? SUBTYPES[e.subtype] : CATS[e.category]?.label || '—', cat: e.subtype ? SUB_CAT[e.subtype] : e.category, n: 0, grey: 0, ex: [] });
+    if (!groups.has(k)) groups.set(k, { code: codeOf(e), label: `${codeOf(e)} · ${e.subtype ? SUBTYPES[e.subtype] : CATS[e.category]?.label || '—'}`, cat: e.subtype ? SUB_CAT[e.subtype] : e.category, n: 0, grey: 0, ex: [] });
     const g = groups.get(k);
     g.n++; if (e.grey) g.grey++;
     const ex = `« ${e.text} » → « ${e.correction} »`;
@@ -1882,34 +1919,51 @@ function recurrent(r) {
   }
   return [...groups.values()].sort((a, b) => (b.n - b.grey) - (a.n - a.grey) || b.n - a.n);
 }
+// Effet de levier : les 2 (ou 3) types qui regroupent le plus d'erreurs, et la part du total qu'ils représentent.
+function leverage(r) {
+  const rec = recurrent(r).map((g) => ({ ...g, k: g.n - g.grey })).filter((g) => g.k > 0);
+  const total = rec.reduce((a, g) => a + g.k, 0);
+  // Seulement des types qui reviennent (au moins 2 erreurs) : avec une erreur de chaque, il n'y a pas de levier.
+  const rep = rec.filter((g) => g.k >= 2);
+  if (total < 4 || !rep.length) return '';
+  const pick = rep.slice(0, rep[2] && rep[2].k >= 0.15 * total ? 3 : 2);
+  const sum = pick.reduce((a, g) => a + g.k, 0);
+  return `Travailler ${pick.map((g) => g.code).join(', ').replace(/, ([^,]*)$/, ' et $1')} toucherait ${sum} erreurs sur ${total} (${Math.round((100 * sum) / total)} %).`;
+}
 const whoLine = (r) => [r.name || copyLabel(r), r.group, r.exam].filter(Boolean).join(' · ');
 const levelText = (r) => (r.pda?.year ? `${r.pda.year}${r.pda.year === 1 ? 're' : 'e'} ${r.level === 'primaire' ? 'année du primaire' : 'secondaire'}` : '');
 const PROFILE_NOTE = 'Profil provisoire établi à partir des erreurs validées : à compléter par vos observations.';
-// Contenu de la fiche, commun à l'écran, au texte copié et au document Word.
+const REC_HEAD = ['Type d’erreur', 'Nombre', 'Pour 100 mots', 'Exemples tirés du texte'];
+// Contenu du profil, commun à l'écran, au texte copié et au document Word.
 function profileSections(r) {
-  const p = r.profile, rec = recurrent(r);
+  const p = r.profile, rec = recurrent(r), ix = textIndices(r), lever = leverage(r);
   return [
     p.alert ? { title: 'À examiner en priorité', items: [p.alert], warn: true } : null,
     p.forces.length ? { title: 'Forces observées', items: p.forces } : null,
-    { title: 'Erreurs récurrentes', table: rec.map((g) => [g.label, `${g.n - g.grey}${g.grey ? ` (+${g.grey} en apprentissage)` : ''}`, g.ex.join(' ; ')]) },
+    { title: 'Erreurs récurrentes', head: REC_HEAD, table: rec.map((g) => [g.label, `${g.n - g.grey}${g.grey ? ` (+${g.grey} en apprentissage)` : ''}`, r.words ? fmt(Math.round((1000 * (g.n - g.grey)) / r.words) / 10) : '', g.ex.join(' ; ')]) },
+    lever ? { title: 'Effet de levier', items: [lever] } : null,
+    ix ? { title: 'Indices du texte (calculés, indicatifs)', lines: [['Phrases', `${ix.sentences}, selon la ponctuation de l’élève`], ['Longueur moyenne', `${fmt(ix.avgLen)} mots par phrase`],
+      ['Mots différents', `${ix.distinct} sur ${ix.words} (${ix.diversity} %)`], ['Subordonnants', `${ix.subord} (qui, que, dont, où, quand, si…)`]] } : null,
     { title: 'Tendances', lines: [['Orthographe d’usage', p.usage], ['Orthographe grammaticale', p.grammar], ['Syntaxe et ponctuation', p.syntax], ['Organisation du texte', p.organisation]].filter(([, v]) => v) },
+    p.tools ? { title: 'Outils d’aide', items: [p.tools] } : null,
     p.level ? { title: 'Palier provisoire (syntaxe et orthographe)', items: [`${p.level} / 5 — ${p.levelLabel}${p.levelWhy ? `. ${p.levelWhy}` : ''}`] } : null,
     p.targets.length ? { title: 'Cibles prioritaires', ordered: true, items: p.targets.map((t) => `${t.target}${t.why ? ` — ${t.why}` : ''}`) } : null,
     p.questions.length ? { title: 'Questions pour l’entretien métagraphique', items: p.questions.map((q) => (q.excerpt ? `À propos de « ${q.excerpt} » : ${q.question}` : q.question)) } : null,
     p.activities.length ? { title: 'Pistes d’intervention', items: p.activities } : null,
     p.adaptations.length ? { title: 'Mesures d’adaptation à envisager', items: p.adaptations } : null,
+    p.pi ? { title: 'Bilan pour le plan d’intervention', items: [p.pi, ...(p.smart ? [`Objectif SMART suggéré : ${p.smart}`] : [])], pi: true } : null,
     ...progressSections(r),
   ].filter(Boolean);
 }
-const profileHead = (r) => [levelText(r), r.words ? `${r.words} mots` : '', `${profileErrors(r).filter((e) => !e.grey).length} erreurs retenues`].filter(Boolean).join(' · ');
+const piText = (r) => [r.profile.pi, r.profile.smart ? `Objectif : ${r.profile.smart}` : ''].filter(Boolean).join('\n');
+const profileHead = (r) => [levelText(r), r.words ? `${r.words} mots` : '', `${profileErrors(r).filter((e) => !e.grey).length} erreurs retenues`, r.conditions?.length ? `conditions : ${r.conditions.join(', ')}` : ''].filter(Boolean).join(' · ');
 function profileText(r) {
   const out = [`PROFIL DU SCRIPTEUR (provisoire) — ${whoLine(r)}`, profileHead(r), ''];
   for (const sec of profileSections(r)) {
     out.push(sec.title.toUpperCase());
     if (sec.items) out.push(...sec.items.map((t, i) => (sec.ordered ? `${i + 1}. ${t}` : `- ${t}`)));
     if (sec.lines) out.push(...sec.lines.map(([k, v]) => `${k} : ${v}`));
-    if (sec.table) out.push(...(sec.table.length ? sec.table.map(([a, b, c]) => `- ${a} : ${b}${c ? ` (ex. ${c})` : ''}`) : ['- Aucune erreur retenue.']));
-    if (sec.table3) out.push(...sec.table3.map(([a, b, c]) => `- ${a} : avant ${b} ; maintenant ${c}`));
+    if (sec.table) out.push(...(sec.table.length ? sec.table.map((row) => `- ${row[0]} : ${row.slice(1).map((c, i) => (c ? `${sec.head[i + 1].toLowerCase()} ${c}` : '')).filter(Boolean).join(' ; ')}`) : ['- Aucune erreur retenue.']));
     out.push('');
   }
   out.push(PROFILE_NOTE);
@@ -1920,9 +1974,9 @@ function profileView(r) {
     ...profileSections(r).map((sec) => h('div', { class: `prof-sec${sec.warn ? ' warn' : ''}` }, h('h4', { textContent: sec.title }),
       sec.items ? h(sec.ordered ? 'ol' : 'ul', {}, sec.items.map((t) => h('li', { textContent: t }))) : null,
       sec.lines ? h('dl', {}, sec.lines.flatMap(([k, v]) => [h('dt', { textContent: k }), h('dd', { textContent: v })])) : null,
-      sec.table3 ? h('table', { class: 'prof-table cmp' }, h('thead', {}, h('tr', {}, ['Type d’erreur', 'Avant', 'Maintenant'].map((t) => h('th', { textContent: t })))),
-        h('tbody', {}, sec.table3.map((row) => h('tr', {}, row.map((c, i) => h(i ? 'td' : 'th', { textContent: c })))))) : null,
-      sec.table ? (sec.table.length ? h('table', { class: 'prof-table' }, h('tbody', {}, sec.table.map((row) => h('tr', {}, row.map((c, i) => h(i ? 'td' : 'th', { textContent: c })))))) : h('p', { class: 'small', textContent: 'Aucune erreur retenue.' })) : null)),
+      sec.table ? (sec.table.length ? h('div', { class: 'prof-scroll' }, h('table', { class: `prof-table${sec.head.length === 3 ? ' cmp' : ''}` }, h('thead', {}, h('tr', {}, sec.head.map((t) => h('th', { textContent: t })))),
+        h('tbody', {}, sec.table.map((row) => h('tr', {}, row.map((c, i) => h(i ? 'td' : 'th', { textContent: c }))))))) : h('p', { class: 'small', textContent: 'Aucune erreur retenue.' })) : null,
+      sec.pi && r.profile?.pi ? h('button', { class: 'btn small', type: 'button', style: 'margin-top:.3rem', textContent: 'Copier le bilan', onclick: (ev) => copyFrom(ev.currentTarget, piText(r)) }) : null)),
     h('p', { class: 'faint small', style: 'margin:0', textContent: PROFILE_NOTE }));
 }
 // File d'attente : 3 fiches à la fois (une classe entière ne part pas d'un coup).
@@ -1939,17 +1993,30 @@ function pumpProfiles() {
     profileActive++;
     const sig = profileSig(r);
     api('/api/profil', { method: 'POST', body: { level: r.level, year: r.pda?.year, words: r.words, text: r.pages.map((p) => p.text || '').join('\n\n'),
-      focus: $('ortho-focus').value, errors: profileErrors(r).map(({ text, correction, category, subtype, explanation, grey }) => ({ text, correction, category, subtype, explanation, grey })) } })
+      focus: $('ortho-focus').value, conditions: r.conditions || [], indices: textIndices(r) || {}, errors: profileErrors(r).map(({ text, correction, category, subtype, explanation, grey }) => ({ text, correction, category, subtype, explanation, grey })) } })
       .then((p) => { r.profile = p; r.profileSig = sig; })
       .catch((e) => { r.profileErr = e.message || 'Le profil n’a pas pu être établi.'; })
       .finally(() => { r.profileBusy = false; profileActive--; renderResults(); pumpProfiles(); });
   }
 }
+// Type d'erreur modifiable en un clic dans la copie annotée (orthopédagogie). Changer de type peut changer la catégorie
+// (ex. une « orthographe » qui est en fait un accord dans le GN) : le surlignage suit.
+function subtypeSelect(r, e) {
+  const sel = h('select', { class: 'sub-pick', title: 'Type d’erreur', onclick: (ev) => ev.stopPropagation(), onchange: (ev) => {
+    const v = ev.target.value;
+    if (v) { e.subtype = v; e.category = SUB_CAT[v]; } else delete e.subtype;
+    state.exported = false; renderViewer(e); renderResults();
+  } }, h('option', { value: '', textContent: `${CAT_CODE[e.category] || ''} · ${CATS[e.category]?.label || ''} (type à préciser)` }),
+  ...Object.entries(CODE_NAMES).map(([c, name]) => h('optgroup', { label: name }, Object.keys(SUBTYPES).filter((k) => SUB_CODE[k].startsWith(c)).map((k) => h('option', { value: k, textContent: subLabel(k), selected: e.subtype === k })))));
+  return sel;
+}
+function orthoConditions() { return CONDITIONS.filter((c) => document.querySelector(`#ortho-conds [data-cond="${c}"]`)?.getAttribute('aria-pressed') === 'true'); }
 function profileBlock(r) {
   if (r.profileBusy) return h('p', { class: 'muted small prof-wait', textContent: 'Profil du scripteur en préparation…' });
   if (!r.profile) {
     // Établi à la demande : l'orthopédagogue relit d'abord les erreurs (fausses fautes retirées, oublis ajoutés).
     return h('div', { class: 'prof-cta' }, r.profileErr ? h('p', { class: 'small', style: 'margin:0;color:var(--danger,#b91c1c)', textContent: r.profileErr }) : null,
+      conditionChips(r),
       h('button', { class: 'btn primary', type: 'button', disabled: !!r.rereading, textContent: r.rereading ? 'Relecture en cours…' : 'Établir le profil du scripteur', onclick: () => queueProfile(r) }),
       h('span', { class: 'muted small', textContent: 'Relisez d’abord les erreurs dans la copie annotée : le profil part des erreurs que vous avez validées. Gratuit.' }));
   }
@@ -1959,6 +2026,7 @@ function profileBlock(r) {
     h('summary', {}, h('b', { textContent: 'Profil du scripteur' }), h('span', { class: 'muted small', textContent: ` · ${[r.profile.level ? `palier ${r.profile.level}/5` : '', first ? `cible : ${first}` : '', r.progress ? 'progression comparée' : ''].filter(Boolean).join(' · ')}` })),
     stale ? h('div', { class: 'prof-stale small' }, 'Vous avez modifié les erreurs depuis ce profil. ',
       h('button', { class: 'btn small', type: 'button', textContent: 'Refaire le profil', onclick: () => queueProfile(r) })) : null,
+    conditionChips(r),
     profileView(r),
     r.progressBusy ? h('p', { class: 'muted small prof-wait', textContent: 'Comparaison en cours…' }) : null,
     r.progressErr ? h('p', { class: 'small', style: 'margin:.3rem 0 0;color:var(--danger,#b91c1c)', textContent: r.progressErr }) : null,
@@ -1979,7 +2047,7 @@ function progressSections(r) {
   const rows = g.table?.map(([label, a, b]) => [label, a, b]) || [];
   return [
     { title: `Progression depuis : ${g.from}`, items: [g.summary, ...(g.caution ? [`Prudence : ${g.caution}`] : [])].filter(Boolean) },
-    rows.length ? { title: 'Avant / maintenant', table3: rows } : null,
+    rows.length ? { title: 'Avant / maintenant', head: ['Type d’erreur', 'Avant', 'Maintenant'], table: rows } : null,
     g.progress.length ? { title: 'Progrès', items: g.progress } : null,
     g.persistent.length ? { title: 'Difficultés persistantes', items: g.persistent } : null,
     g.fresh.length ? { title: 'Nouvelles difficultés', items: g.fresh } : null,
@@ -2042,8 +2110,8 @@ $('progress-run').addEventListener('click', () => {
   r.progressBusy = true; r.progressErr = ''; r.profileOpen = true; renderResults();
   api('/api/progression', { method: 'POST', body: {
     level: r.level, year: r.pda?.year,
-    current: { words: r.words, errors: errs(r), profile: { usage: r.profile.usage, grammar: r.profile.grammar, syntax: r.profile.syntax, targets: r.profile.targets } },
-    previous: prevRes ? { label: from, words: prevRes.words, errors: errs(prevRes) } : { label: from, text: doc },
+    current: { words: r.words, conditions: r.conditions || [], errors: errs(r), profile: { usage: r.profile.usage, grammar: r.profile.grammar, syntax: r.profile.syntax, targets: r.profile.targets } },
+    previous: prevRes ? { label: from, words: prevRes.words, conditions: prevRes.conditions || [], errors: errs(prevRes) } : { label: from, text: doc },
   } })
     .then((g) => { r.progress = { ...g, from, table }; })
     .catch((e) => { r.progressErr = e.message || 'La comparaison n’a pas pu être faite.'; })
@@ -2059,8 +2127,7 @@ function downloadFiches(list) {
       blocks.push({ h: sec.title });
       if (sec.items) blocks.push(...sec.items.map((t, i) => ({ bullet: t, ...(sec.ordered ? { mark: `${i + 1}.` } : {}) })));
       if (sec.lines) blocks.push(...sec.lines.map(([k, v]) => ({ bullet: `${k} : ${v}` })));
-      if (sec.table) blocks.push(sec.table.length ? { table: [['Type d’erreur', 'Nombre', 'Exemples tirés du texte'], ...sec.table], widths: [3000, 1500, 5580] } : { p: 'Aucune erreur retenue.' });
-      if (sec.table3) blocks.push({ table: [['Type d’erreur', 'Avant', 'Maintenant'], ...sec.table3], widths: [3600, 3240, 3240] });
+      if (sec.table) blocks.push(sec.table.length ? { table: [sec.head, ...sec.table], widths: sec.head.length === 4 ? [3000, 1100, 1300, 4680] : [3600, 3240, 3240] } : { p: 'Aucune erreur retenue.' });
     }
     blocks.push({ h: 'Mes observations' }, { p: ' ' });
   });
@@ -2175,7 +2242,7 @@ function renderViewer(focus) {
     items.length ? categoryChips(items.map((i) => i.e)) : h('p', { class: 'muted', textContent: 'Aucune faute relevée.' }),
     ...items.map(({ e, p, n: k }) => {
       const el = h('div', { class: `err ${CATS[e.category].cls} ${e.grey ? 'grey' : ''} ${focus === e ? 'focus' : ''}`, onclick: () => renderViewer(e) },
-        h('div', { class: 'err-head' }, h('b', { textContent: `${k}. ${CATS[e.category].label}${e.subtype ? ` · ${SUBTYPES[e.subtype]}` : ''}${e.box ? '' : ' (non localisée)'}${e.doubtful ? ' · à vérifier' : ''}${e.grey ? L(' · notion en apprentissage : ne compte pas', ' · being learned: not counted') : ''}${r.dup?.includes(e) ? L(' · répétée : retenue une seule fois', ' · repeated: counted once') : ''}` }),
+        h('div', { class: 'err-head' }, h('b', { textContent: `${k}. ${r.ortho ? '' : CATS[e.category].label}${e.box ? '' : ' (non localisée)'}${e.doubtful ? ' · à vérifier' : ''}${e.grey ? L(' · notion en apprentissage : ne compte pas', ' · being learned: not counted') : ''}${r.dup?.includes(e) ? L(' · répétée : retenue une seule fois', ' · repeated: counted once') : ''}` }), r.ortho ? subtypeSelect(r, e) : null,
           h('button', { class: 'icon-btn', type: 'button', textContent: '×', title: "Ce n'est pas une faute : retirer", onclick: (ev) => {
             ev.stopPropagation();
             removed = { r, p, e, at: p.errors.indexOf(e) };
@@ -2225,7 +2292,7 @@ function addErrorForm() {
   // Orthopédagogie : le type d'erreur (pour la fiche du scripteur), limité à ceux de la catégorie choisie.
   const sub = h('select', {});
   const fillSub = () => sub.replaceChildren(h('option', { value: '', textContent: '— Type (facultatif) —' }),
-    ...Object.entries(SUBTYPES).filter(([k]) => SUB_CAT[k] === cat.value).map(([k, v]) => h('option', { value: k, textContent: v })));
+    ...Object.keys(SUBTYPES).filter((k) => SUB_CAT[k] === cat.value).map((k) => h('option', { value: k, textContent: subLabel(k) })));
   fillSub(); cat.addEventListener('change', fillSub);
   const save = async () => {
     if (!text.value.trim() || !fix.value.trim()) { text.focus(); return; }
@@ -2904,6 +2971,21 @@ function setNiveau(n, fromChoice) {
 }
 document.querySelectorAll('.lvl-seg button').forEach((b) => b.addEventListener('click', () => setNiveau(b.dataset.niveau, true)));
 try { $('ortho-focus').value = localStorage.getItem('ce.orthoFocus') || ''; } catch { /* ignoré */ }
+// Conditions de rédaction de la séance : cochées d'avance sur chaque texte analysé, modifiables élève par élève.
+{
+  const btns = [...document.querySelectorAll('#ortho-conds [data-cond]')];
+  let saved = [];
+  try { saved = JSON.parse(localStorage.getItem('ce.orthoConds') || '[]'); } catch { /* ignoré */ }
+  const paint = (on) => btns.forEach((b) => b.setAttribute('aria-pressed', String(on.includes(b.dataset.cond))));
+  paint(saved);
+  btns.forEach((b) => b.addEventListener('click', () => {
+    let on = orthoConditions();
+    const c = b.dataset.cond;
+    on = on.includes(c) ? on.filter((x) => x !== c) : c === 'Sans aide' ? ['Sans aide'] : [...on.filter((x) => x !== 'Sans aide'), c];
+    paint(on);
+    try { localStorage.setItem('ce.orthoConds', JSON.stringify(on)); } catch { /* ignoré */ }
+  }));
+}
 $('ortho-focus').addEventListener('input', () => { try { localStorage.setItem('ce.orthoFocus', $('ortho-focus').value); } catch { /* ignoré */ } });
 {
   const asked = new URLSearchParams(location.search).get('niveau');
