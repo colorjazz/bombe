@@ -749,3 +749,19 @@ body.light .layout > .levelbar { grid-column: 1 / -1; }
 /* Orthopédagogie : l'accueil (« Que voulez-vous faire ? ») est dans la section du tableau de bord, visible même sans résultats. */
 @media (max-width: 960px) { #app.ortho.no-results .s3 { display: block; } }
 #app.ortho-evo #cam-open { display: none !important; }
+.evo-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: .35rem; font-size: .88rem; }
+.evo-step { display: flex; align-items: center; gap: .55rem; color: var(--muted); }
+.evo-step .dot { width: 1.4rem; height: 1.4rem; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: .8rem; background: #eef0f6; color: var(--muted); flex: none; }
+.evo-step.ok { color: var(--text); } .evo-step.ok .dot { background: #dcfce7; color: #15803d; }
+.evo-step.run { color: var(--text); font-weight: 600; } .evo-step.run .dot { background: #e0e7ff; color: var(--primary); animation: evo-pulse 1.2s ease-in-out infinite; }
+.evo-step.err .dot { background: #fee2e2; color: #b91c1c; }
+@keyframes evo-pulse { 50% { opacity: .45; } }
+@media (prefers-reduced-motion: reduce) { .evo-step.run .dot { animation: none; } }
+.evo-cmp td { font-size: .85rem; padding: .35rem .5rem; }
+.evo-cmp td:nth-child(2), .evo-cmp td:nth-child(3) { font-variant-numeric: tabular-nums; text-align: center; font-weight: 700; }
+.evo-cmp th:nth-child(2), .evo-cmp th:nth-child(3) { text-align: center; }
+.evo-cmp tbody tr { cursor: default; }
+.evo-cmp tr.tot td { border-top: 2px solid var(--line); font-weight: 800; }
+.evo-cmp .up { color: var(--green, #0f9f6e); font-weight: 700; }
+.evo-cmp .down { color: #b45309; font-weight: 700; }
+@media (max-width: 560px) { .evo-cmp td, .evo-cmp th { padding: .3rem .25rem; font-size: .78rem; } }

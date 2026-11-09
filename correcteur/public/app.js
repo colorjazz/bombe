@@ -2229,6 +2229,12 @@ function renderDash() {
   el.hidden = !orth;
   $('ortho-students').hidden = !orth || !mine.length;
   if (!orth) return;
+  // Suivre l'évolution : un élève, deux textes. Pas de vue de groupe : le suivi pas à pas et l'avant / maintenant.
+  const curEvo = orthoIntent === 'evolution' && !showIntents ? mine.filter((r) => r.evo === 'new').sort((a, b) => (b.evoBatch || 0) - (a.evoBatch || 0))[0] : null;
+  if (curEvo) {
+    el.replaceChildren(evoView(curEvo, mine.find((r) => r.evo === 'prev' && r.evoBatch === curEvo.evoBatch) || null));
+    return;
+  }
   if (!mine.length || showIntents) {
     el.replaceChildren(...[intentsView(), mine.length ? h('button', { class: 'btn small ghost', type: 'button', textContent: '← Revenir au tableau de bord', onclick: () => { showIntents = false; renderDash(); } }) : null].filter(Boolean));
     return;
@@ -2295,6 +2301,57 @@ function renderDash() {
     mine.length > 1 ? h('div', { class: 'dash-two' },
       h('div', { class: 'dash-card' }, h('h4', { textContent: 'Sous-groupes de besoins suggérés' }), subgroups.length ? subgroups : h('p', { class: 'muted small', textContent: 'Pas encore de type d’erreur commun à plusieurs élèves (au moins 2 erreurs chacun).' })),
       h('div', { class: 'dash-card' }, h('h4', { textContent: 'Types d’erreurs les plus fréquents du groupe' }), barsEl, h('p', { class: 'muted small', style: 'margin:.4rem 0 0', textContent: 'Nombre d’erreurs, tous les textes de la séance.' }))) : null].filter(Boolean));
+}
+
+
+// Vue « Suivre l'évolution » : les étapes en direct, l'avant / maintenant (calculé dès l'analyse), puis la comparaison.
+function evoView(cur, prev) {
+  const who = (r) => r.name || `Copie ${r.no ?? ''}`;
+  const rr = cur.rereading || prev?.rereading;
+  const state1 = (ok, run, err) => (ok ? 'ok' : run ? 'run' : err ? 'err' : 'wait');
+  const sProfile = state1(cur.profile, cur.profileBusy, cur.profileErr);
+  const sCompare = state1(cur.progress, cur.progressBusy, cur.progressErr);
+  const step = (label, st, extra) => h('li', { class: `evo-step ${st}` }, h('span', { class: 'dot', textContent: { ok: '✓', run: '…', err: '!', wait: '·' }[st] }), h('span', {}, label, extra || null));
+  const retry = (fn) => h('button', { class: 'btn small', type: 'button', style: 'margin-left:.5rem', textContent: 'Réessayer', onclick: fn });
+  const docName = cur.evoDoc?.name;
+  const steps = h('ol', { class: 'evo-steps' },
+    step(`Analyse des textes${prev ? ` : ${who(prev)} (précédent) et ${who(cur)} (nouveau)` : ''}`, 'ok'),
+    step('Relecture des textes (gratuite)', rr ? 'run' : 'ok'),
+    step('Profil du nouveau texte', rr ? 'wait' : sProfile, sProfile === 'err' ? retry(() => { cur.profileErr = ''; queueProfile(cur); }) : null),
+    step(`Comparaison avec ${prev ? 'le texte précédent' : docName ? `votre fiche « ${docName} »` : 'l’évaluation précédente'}`, cur.profile ? sCompare : 'wait',
+      sCompare === 'err' ? retry(() => runProgress(cur, prev, prev ? '' : cur.evoDoc?.text, prev ? '' : docName)) : null));
+  const busy = rr || cur.profileBusy || cur.progressBusy;
+  // Avant / maintenant, par critère, pour 100 mots (seulement avec un texte précédent analysé).
+  const rate = (r, c) => { if (!r?.words) return null; const errs = profileErrors(r).filter((e) => !e.grey && (!c || codeOf(e)[0] === c)); return (100 * errs.length) / r.words; };
+  const fmtR = (v) => (v == null ? '—' : fmt(Math.round(v * 10) / 10));
+  const trend = (a, b) => (a == null || b == null ? '' : b < a * 0.9 ? '↗ moins d’erreurs' : b > a * 1.1 ? '↘ plus d’erreurs' : '= stable');
+  const cmp = prev ? h('div', { class: 'dash-card' }, h('h4', { textContent: 'Avant / maintenant (erreurs pour 100 mots)' }),
+    h('div', { class: 'dash-scroll' }, h('table', { class: 'ov evo-cmp' },
+      h('thead', {}, h('tr', {}, ['Critère', 'Avant', 'Maintenant', 'Évolution'].map((t) => h('th', { textContent: t })))),
+      h('tbody', {}, [...CRITS.map((c) => [`${c} · ${{ U: 'usage', G: 'grammaire', P: 'ponctuation', S: 'syntaxe', V: 'vocabulaire' }[c]}`, rate(prev, c), rate(cur, c)]), ['Total', rate(prev), rate(cur)]].map(([label, a, b]) => {
+        const t = trend(a, b);
+        return h('tr', { class: label === 'Total' ? 'tot' : '' }, h('td', { textContent: label }), h('td', { textContent: fmtR(a) }), h('td', { textContent: fmtR(b) }),
+          h('td', { class: t.startsWith('↗') ? 'up' : t.startsWith('↘') ? 'down' : '', textContent: (a === 0 && b === 0) ? '—' : t || '—' }));
+      })))),
+    h('p', { class: 'muted small', style: 'margin:.4rem 0 0', textContent: `Avant : ${who(prev)}, ${prev.words ? `${prev.words} mots` : 'mots non comptés'}. Maintenant : ${who(cur)}, ${cur.words ? `${cur.words} mots` : 'mots non comptés'}. ${rr ? 'Les chiffres peuvent changer pendant la relecture.' : 'Vous avez retiré ou ajouté des erreurs ? Les chiffres suivent.'}` }))
+    : null;
+  const g = cur.progress;
+  const list = (title, items) => (items?.length ? h('div', { class: 'prof-sec' }, h('h4', { textContent: title }), h('ul', {}, items.map((t) => h('li', { textContent: t })))) : null);
+  const result = g ? h('div', { class: 'dash-card' }, h('h4', { textContent: `Évolution depuis : ${g.from}` }),
+    h('p', { style: 'margin:0 0 .5rem', textContent: g.summary }),
+    list('Progrès', g.progress), list('Difficultés persistantes', g.persistent), list('Nouvelles difficultés', g.fresh),
+    g.targets.length ? h('div', { class: 'prof-sec' }, h('h4', { textContent: 'Cibles ajustées' }), h('ol', {}, g.targets.map((t) => h('li', { textContent: `${t.target}${t.why ? ` — ${t.why}` : ''}` })))) : null,
+    g.caution ? h('p', { class: 'muted small', textContent: `Prudence : ${g.caution}` }) : null,
+    h('div', { class: 'prof-actions' }, h('button', { class: 'btn small primary', type: 'button', textContent: 'Ouvrir le profil complet', onclick: () => openStudent(cur) }),
+      h('button', { class: 'btn small', type: 'button', textContent: 'Copier le profil et l’évolution', onclick: (ev) => copyFrom(ev.currentTarget, profileText(cur)) }),
+      h('button', { class: 'btn small', type: 'button', textContent: 'Word', onclick: () => downloadFiches([cur]) }))) : null;
+  return h('div', { class: 'ortho-dash' },
+    h('div', { class: 'dash-head' }, h('div', {}, h('h3', { textContent: `Suivi de l’évolution${levelText(cur) ? ` · ${levelText(cur)}` : ''}` }),
+      h('p', { class: 'muted small', textContent: prev ? `Texte précédent : ${copyLabel(prev)} · Nouveau texte : ${copyLabel(cur)}` : docName ? `Évaluation précédente : votre fiche « ${docName} » · Nouveau texte : ${copyLabel(cur)}` : 'Aucun texte précédent : déposez-le pour comparer.' })),
+      h('button', { class: 'btn small ghost', type: 'button', textContent: 'Changer de tâche', onclick: () => { showIntents = true; renderDash(); } })),
+    h('div', { class: 'dash-card' }, h('h4', { textContent: g ? 'Suivi terminé' : 'Suivi en cours' }), steps,
+      busy ? h('p', { class: 'muted small', style: 'margin:.4rem 0 0', textContent: 'Tout s’enchaîne seul, en 1 à 3 minutes environ. Gardez l’écran allumé et restez sur cette page.' }) : null),
+    cmp, result);
 }
 
 // ---------- Suivre l'évolution d'un élève : deux zones de dépôt, puis tout s'enchaîne ----------
