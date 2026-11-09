@@ -147,6 +147,10 @@ button.rel { cursor: pointer; font-family: inherit; }
   transition: transform .28s cubic-bezier(.4, 0, .2, 1);
 }
 .kind[data-active="lang"] .kind-pill { transform: translateX(100%); }
+/* Trois onglets (copies, langue, orthopédagogie) ; deux au cégep et en anglais. */
+.kind.three { grid-template-columns: 1fr 1fr 1fr; }
+.kind.three .kind-pill { width: calc((100% - 8px) / 3); }
+.kind.three[data-active="ortho"] .kind-pill { transform: translateX(200%); }
 .kind button {
   position: relative; z-index: 1; display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
   font: inherit; font-size: .85rem; font-weight: 600; letter-spacing: -.005em; border: 0; border-radius: 10px;
@@ -336,7 +340,7 @@ body.light .thumb { border-color: var(--line-2); }
 /* Mise en page : une colonne, aérée. */
 body.light .layout { display: flex; flex-direction: column; gap: 1.4rem; max-width: 800px; }
 body.light .layout > section { width: 100%; }
-.kindbar { display: flex; justify-content: center; } .kindbar .kind { width: 100%; max-width: 520px; }
+.kindbar { display: flex; justify-content: center; } .kindbar .kind { width: 100%; max-width: 620px; }
 body.light .s1 { --c: #4f46e5; --t: #eef0ff; } body.light .s2 { --c: #e07b00; --t: #fff6e8; } body.light .s3 { --c: #0f9f6e; --t: #e9f8f1; }
 body.light .s1, body.light .s2, body.light .s3 { border: 1px solid var(--line); border-radius: 18px; padding: 0 1.5rem 1.5rem; box-shadow: 0 4px 18px rgba(20,30,60,.06); overflow: hidden; }
 .band { display: flex; justify-content: space-between; align-items: center; gap: .7rem; flex-wrap: wrap; margin: 0 -1.5rem 1.1rem; padding: .9rem 1.5rem; background: var(--c); color: #fff; }
@@ -600,3 +604,30 @@ body.light .layout > .levelbar { grid-column: 1 / -1; }
 .zoom-pages img { cursor: zoom-in; }
 .zoom-hint { margin: 0; text-align: center; }
 #zoom-pos { white-space: nowrap; }
+
+/* Orthopédagogie : 4e choix du niveau, niveau des élèves, fiche du scripteur */
+@media (max-width: 480px) { .kind.three button { padding: .6rem .35rem; gap: .3rem; } }
+.ortho-focus textarea { min-height: 3rem; }
+.profile { border: 1px solid var(--line); border-radius: 12px; background: #fbfaff; padding: .5rem .7rem; }
+.profile > summary { cursor: pointer; padding: .15rem 0; }
+.profile[open] > summary { margin-bottom: .4rem; }
+.prof-body { display: grid; gap: .55rem; }
+.prof-sec h4 { margin: 0 0 .2rem; font-size: .86rem; color: var(--primary); }
+.prof-sec ul, .prof-sec ol { margin: 0; padding-left: 1.2rem; font-size: .88rem; }
+.prof-sec li { margin: .1rem 0; }
+.prof-sec dl { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: .15rem .6rem; font-size: .88rem; }
+.prof-sec dt { font-weight: 700; }
+.prof-sec dd { margin: 0; }
+.prof-sec.warn { background: #fff7ed; border-left: 4px solid #ea580c; padding: .4rem .6rem; border-radius: 8px; }
+.prof-table { width: 100%; border-collapse: collapse; font-size: .84rem; }
+.prof-table th, .prof-table td { text-align: left; vertical-align: top; padding: .25rem .35rem; border-bottom: 1px solid var(--line); }
+.prof-table th { font-weight: 700; width: 38%; }
+.prof-table td:nth-child(2) { white-space: nowrap; }
+.prof-actions { display: flex; gap: .4rem; flex-wrap: wrap; margin-top: .5rem; }
+.prof-stale { background: #fef3c7; border-radius: 8px; padding: .35rem .5rem; margin-bottom: .4rem; display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.prof-wait { margin: 0; }
+@media (max-width: 560px) {
+  .prof-sec dl { grid-template-columns: 1fr; }
+  .prof-sec dd { margin-bottom: .3rem; }
+  .prof-table th { width: auto; }
+}

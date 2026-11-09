@@ -99,11 +99,15 @@
         <span class="kind-pill" aria-hidden="true"></span>
         <button id="kind-content" class="active" type="button" role="tab" aria-selected="true">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>
-          <span class="kind-long">Correction de copies</span><span class="kind-short">Copies</span><small class="kind-sub">Notes et commentaires selon votre corrigé</small>
+          <span class="kind-long">Correction de copies</span><span class="kind-short">Copies</span><small class="kind-sub">Notes selon votre corrigé</small>
         </button>
         <button id="kind-lang" type="button" role="tab" aria-selected="false">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7V5h16v2"/><path d="M9 19h6"/><path d="M12 5v14"/></svg>
-          <span class="kind-long">Correction de la langue</span><span class="kind-short">Langue</span><small class="kind-sub">Fautes d’orthographe et de grammaire surlignées</small>
+          <span class="kind-long">Correction de la langue</span><span class="kind-short">Langue</span><small class="kind-sub">Fautes surlignées</small>
+        </button>
+        <button id="kind-ortho" type="button" role="tab" aria-selected="false">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M15.5 8.5h5M15.5 12h5M17.5 15.5h3"/></svg>
+          <span class="kind-long">Orthopédagogie</span><span class="kind-short">Ortho</span><small class="kind-sub">Profil du scripteur</small>
         </button>
       </div>
     </div>
@@ -171,6 +175,10 @@
             <span class="muted small">Seuils d'exemple : remplacez-les par ceux de votre école.</span>
           </div>
         </div>
+        <label id="ortho-focus-field" class="field ortho-focus" hidden><span>Ce que je veux observer <span class="muted small">(facultatif)</span></span>
+          <textarea id="ortho-focus" rows="2" placeholder="Ex. : homophones grammaticaux, accords dans le GN, délimitation des phrases"></textarea>
+          <span class="muted small">Chaque texte reçoit une <b>fiche du scripteur</b> provisoire : forces, erreurs récurrentes par type, cibles prioritaires, questions d’entretien métagraphique et pistes. Vous la copiez ou la téléchargez en Word, sans rien retranscrire.</span>
+        </label>
         <p class="lang-simple-only set-line"><span id="lang-set-txt"></span> · <a href="#" id="lang-to-adv">Modifier</a></p>
         <div class="field adv" id="lang-cats-field">Fautes à relever
           <div class="cats" id="lang-cats">
@@ -301,6 +309,7 @@
       <div class="results-head">
         <div class="results-tools">
           <input id="search" type="search" placeholder="Rechercher un élève…" style="width:12rem">
+          <button id="export-fiches" class="btn primary" type="button" hidden>Télécharger les fiches (Word)</button>
           <button id="export" class="btn green" type="button" disabled hidden>Télécharger les notes (Excel)</button>
           <button id="print-all" class="btn" type="button" disabled>Imprimer toutes les copies…</button>
           <button id="end" class="btn ghost" type="button" disabled>Terminer la session</button>

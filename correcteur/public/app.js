@@ -15,8 +15,14 @@ import { refineToInk } from './boxes.js';
 import { looksSideways, rotateDataUrl } from './orient.js';
 import { startCamera } from './camera.js';
 import { PDA_NOTIONS, PDA_SEC_NOTIONS, notionsFor, pdaDefault, cote } from './pda.js';
+import { buildDocx } from './docx.js';
 
 const $ = (id) => document.getElementById(id);
+// Orthopédagogie (4e choix de « Vous enseignez au ») : correction de la langue + fiche du scripteur. Déclarée ici :
+// setKind, appelée tôt au démarrage, s'en sert.
+let ortho = false;
+try { ortho = localStorage.getItem('ce.ortho') === '1'; } catch { /* ignoré */ }
+
 const state = {
   key: null,
   pagesLeft: null,
@@ -658,6 +664,7 @@ function renderSummary() {
   $('export').hidden = $('print-all').hidden = !state.results.length;
   // Correction de la langue : pas d'impression groupée (chaque copie annotée s'imprime depuis sa vue), et un résumé plutôt que des notes.
   if (state.kind === 'lang') $('print-all').hidden = true;
+  $('export-fiches').hidden = !state.results.some((r) => r.ortho);
   $('export').textContent = tr(state.kind === 'lang' ? 'Télécharger le résumé des fautes (Excel)' : 'Télécharger les notes (Excel)');
   $('print-all').disabled = state.running || !state.results.some((r) => r.kind !== 'lang');
   renderCalib();
@@ -1067,7 +1074,8 @@ async function runAll(only, calibrating = false) {
         setBalance(r.pagesLeft);
         const res = { kind: 'lang', id, no: b[0].no, file: b[0].file, exam: settings.exam, group: r.group || settings.group, name: r.name, pageCount: b.length, band: anonymous() ? maskFrac() : 0,
           pages: b.map((p, i) => ({ url: p.url, errors: r.pages[i].errors, failed: !!r.pages[i].failed, reread: r.pages[i].reread, sent: r.urls[i], words: r.pages[i].words, text: r.pages[i].text })),
-          scoring: langScoring(), pda: pdaScoring(), flags: r.failedPages ? [`${r.failedPages} page(s) n'ont pas pu être analysées (non décomptées).`] : [] };
+          scoring: langScoring(), pda: pdaScoring(), ortho: isOrtho(), level: $('lang-level').value,
+          flags: r.failedPages ? [`${r.failedPages} page(s) n'ont pas pu être analysées (non décomptées).`] : [] };
         langGrade(res);
         state.results.unshift(res);
         reread(res);
@@ -1641,6 +1649,7 @@ async function analyzeLanguage(bundle) {
 function reread(res) {
   const todo = res.pages.filter((p) => p.reread && p.sent);
   res.rereading = todo.length;
+  if (!todo.length && res.ortho) queueProfile(res);
   const refresh = () => { langGrade(res); state.exported = false; renderResults(); if (viewing === res) renderViewer(); };
   for (const p of todo) {
     const first = verifyErrors(p, p.errors).then(refresh);
@@ -1652,6 +1661,7 @@ function reread(res) {
       delete p.sent; // libère la mémoire : l'image envoyée n'est plus utile
       res.rereading--;
       refresh();
+      if (!res.rereading && res.ortho) queueProfile(res); // la fiche part de la liste complète (après la relecture)
     });
   }
 }
@@ -1699,14 +1709,14 @@ async function pageData(url) {
   return g.getImageData(0, 0, c.width, c.height);
 }
 
-const langSettings = () => (isPda() ? {
+const langSettings = () => ({ ...(isOrtho() ? { ortho: true } : {}), ...(isPda() ? {
   level: 'primaire', categories: Object.keys(CATS),
   pda: { level: $('lang-level').value, year: Number($('pda-year').value), notions: notions().map((n) => ({ id: n.id, cat: n.cat, label: n.label, state: pdaState(n) })).filter((n) => n.state !== 'ignore'),
     ignored: notions().filter((n) => pdaState(n) === 'ignore').map((n) => n.label) },
 } : {
   level: $('lang-level').value,
   categories: [...document.querySelectorAll('#lang-cats input:checked')].map((i) => i.value),
-});
+}) });
 
 // Primaire : les fautes qui comptent selon l'année et l'étape (Progression des apprentissages, voir pda.js),
 // modifiables notion par notion. Une modification tient jusqu'au changement d'année ou d'étape.
@@ -1828,6 +1838,160 @@ function categoryChips(errors) {
 // Primaire : « 214 mots · 7 fautes comptées · 3,3 % → B ».
 const greyCount = (r) => r.pages.reduce((a, p) => a + p.errors.filter((e) => e.grey).length, 0);
 const pdaLine = (r, n) => `${!r.words ? L('mots non comptés', 'words not counted') : plural(r.words, 'mot', 'mots', 'word', 'words')} · ${plural(n, 'faute retenue', 'fautes retenues', 'error counted', 'errors counted')}${r.pct == null ? '' : ` · ${pctText(fmt(Math.round(r.pct * 10) / 10))}`}`;
+
+// ---------- Orthopédagogie : fiche du scripteur ----------
+// Sous-types renvoyés par l'analyse en orthopédagogie (voir ORTHO_TYPES dans le serveur).
+const SUBTYPES = {
+  phonologique: 'Phonologique (son modifié)', morphologique: 'Morphologique (lettre muette, famille de mots)',
+  visuo_orthographique: 'Visuo-orthographique (choix des lettres)', homophone_lexical: 'Homophones lexicaux',
+  homophone_grammatical: 'Homophones grammaticaux', segmentation: 'Segmentation (mots soudés ou coupés)',
+  majuscule_signes: 'Majuscules et signes', genre: 'Accord en genre', nombre: 'Accord en nombre', accord_verbe: 'Accord du verbe',
+  terminaison_verbale: 'Terminaisons verbales', homophone_verbal: 'Homophones verbaux (-é, -er, -ait)',
+  delimitation: 'Délimitation des phrases', virgule: 'Virgule', ponctuation_autre: 'Autre ponctuation',
+  structure_phrase: 'Construction de la phrase', negation: 'Négation', pronom_preposition: 'Pronoms et prépositions', vocabulaire: 'Vocabulaire',
+};
+const SUB_CAT = { phonologique: 'orthographe', morphologique: 'orthographe', visuo_orthographique: 'orthographe', homophone_lexical: 'orthographe',
+  homophone_grammatical: 'orthographe', segmentation: 'orthographe', majuscule_signes: 'orthographe', genre: 'accord', nombre: 'accord',
+  accord_verbe: 'accord', terminaison_verbale: 'conjugaison', homophone_verbal: 'conjugaison', delimitation: 'ponctuation', virgule: 'ponctuation',
+  ponctuation_autre: 'ponctuation', structure_phrase: 'syntaxe', negation: 'syntaxe', pronom_preposition: 'syntaxe', vocabulaire: 'vocabulaire' };
+// Onglet Orthopédagogie : en français, au primaire et au secondaire (selon la Progression des apprentissages).
+function orthoAvailable() { return lang !== 'en' && $('lang-level').value !== 'cegep'; }
+function isOrtho() { return ortho && state.kind === 'lang' && orthoAvailable() && isPda(); }
+function renderOrtho() {
+  const three = orthoAvailable();
+  $('kind-ortho').hidden = !three;
+  document.querySelector('.kind').classList.toggle('three', three);
+  $('ortho-focus-field').hidden = !(ortho && state.kind === 'lang');
+  $('app').classList.toggle('ortho', ortho && state.kind === 'lang');
+}
+const profileErrors = (r) => r.pages.flatMap((p) => p.errors).filter((e) => !e.doubtful);
+// La fiche reflète les erreurs validées : si l'orthopédagogue en retire ou en ajoute, la fiche est marquée à refaire.
+const profileSig = (r) => JSON.stringify(profileErrors(r).map((e) => [e.text, e.correction, e.subtype || e.category, !!e.grey]));
+// Erreurs récurrentes : comptées par le code (exactes), avec de vrais exemples tirés de la copie.
+function recurrent(r) {
+  const groups = new Map();
+  for (const e of profileErrors(r)) {
+    const k = e.subtype || `cat:${e.category}`;
+    if (!groups.has(k)) groups.set(k, { label: e.subtype ? SUBTYPES[e.subtype] : CATS[e.category]?.label || '—', cat: e.subtype ? SUB_CAT[e.subtype] : e.category, n: 0, grey: 0, ex: [] });
+    const g = groups.get(k);
+    g.n++; if (e.grey) g.grey++;
+    const ex = `« ${e.text} » → « ${e.correction} »`;
+    if (g.ex.length < 3 && !g.ex.includes(ex)) g.ex.push(ex);
+  }
+  return [...groups.values()].sort((a, b) => (b.n - b.grey) - (a.n - a.grey) || b.n - a.n);
+}
+const whoLine = (r) => [r.name || copyLabel(r), r.group, r.exam].filter(Boolean).join(' · ');
+const levelText = (r) => (r.pda?.year ? `${r.pda.year}${r.pda.year === 1 ? 're' : 'e'} ${r.level === 'primaire' ? 'année du primaire' : 'secondaire'}` : '');
+const PROFILE_NOTE = 'Fiche provisoire établie à partir d’une seule production et des erreurs validées : à compléter par vos observations.';
+// Contenu de la fiche, commun à l'écran, au texte copié et au document Word.
+function profileSections(r) {
+  const p = r.profile, rec = recurrent(r);
+  return [
+    p.alert ? { title: 'À examiner en priorité', items: [p.alert], warn: true } : null,
+    p.forces.length ? { title: 'Forces observées', items: p.forces } : null,
+    { title: 'Erreurs récurrentes', table: rec.map((g) => [g.label, `${g.n - g.grey}${g.grey ? ` (+${g.grey} en apprentissage)` : ''}`, g.ex.join(' ; ')]) },
+    { title: 'Tendances', lines: [['Orthographe d’usage', p.usage], ['Orthographe grammaticale', p.grammar], ['Syntaxe et ponctuation', p.syntax], ['Organisation du texte', p.organisation]].filter(([, v]) => v) },
+    p.level ? { title: 'Palier provisoire (syntaxe et orthographe)', items: [`${p.level} / 5 — ${p.levelLabel}${p.levelWhy ? `. ${p.levelWhy}` : ''}`] } : null,
+    p.targets.length ? { title: 'Cibles prioritaires', ordered: true, items: p.targets.map((t) => `${t.target}${t.why ? ` — ${t.why}` : ''}`) } : null,
+    p.questions.length ? { title: 'Questions pour l’entretien métagraphique', items: p.questions.map((q) => (q.excerpt ? `À propos de « ${q.excerpt} » : ${q.question}` : q.question)) } : null,
+    p.activities.length ? { title: 'Pistes d’intervention', items: p.activities } : null,
+    p.adaptations.length ? { title: 'Mesures d’adaptation à envisager', items: p.adaptations } : null,
+  ].filter(Boolean);
+}
+const profileHead = (r) => [levelText(r), r.words ? `${r.words} mots` : '', `${profileErrors(r).filter((e) => !e.grey).length} erreurs retenues`].filter(Boolean).join(' · ');
+function profileText(r) {
+  const out = [`FICHE DU SCRIPTEUR (provisoire) — ${whoLine(r)}`, profileHead(r), ''];
+  for (const sec of profileSections(r)) {
+    out.push(sec.title.toUpperCase());
+    if (sec.items) out.push(...sec.items.map((t, i) => (sec.ordered ? `${i + 1}. ${t}` : `- ${t}`)));
+    if (sec.lines) out.push(...sec.lines.map(([k, v]) => `${k} : ${v}`));
+    if (sec.table) out.push(...(sec.table.length ? sec.table.map(([a, b, c]) => `- ${a} : ${b}${c ? ` (ex. ${c})` : ''}`) : ['- Aucune erreur retenue.']));
+    out.push('');
+  }
+  out.push(PROFILE_NOTE);
+  return out.join('\n');
+}
+function profileView(r) {
+  return h('div', { class: 'prof-body' }, h('p', { class: 'muted small', style: 'margin:0', textContent: profileHead(r) }),
+    ...profileSections(r).map((sec) => h('div', { class: `prof-sec${sec.warn ? ' warn' : ''}` }, h('h4', { textContent: sec.title }),
+      sec.items ? h(sec.ordered ? 'ol' : 'ul', {}, sec.items.map((t) => h('li', { textContent: t }))) : null,
+      sec.lines ? h('dl', {}, sec.lines.flatMap(([k, v]) => [h('dt', { textContent: k }), h('dd', { textContent: v })])) : null,
+      sec.table ? (sec.table.length ? h('table', { class: 'prof-table' }, h('tbody', {}, sec.table.map((row) => h('tr', {}, row.map((c, i) => h(i ? 'td' : 'th', { textContent: c })))))) : h('p', { class: 'small', textContent: 'Aucune erreur retenue.' })) : null)),
+    h('p', { class: 'faint small', style: 'margin:0', textContent: PROFILE_NOTE }));
+}
+// File d'attente : 3 fiches à la fois (une classe entière ne part pas d'un coup).
+const profileQueue = [];
+let profileActive = 0;
+function queueProfile(r) {
+  if (r.profileBusy || !r.ortho) return;
+  r.profileBusy = true; r.profileErr = '';
+  profileQueue.push(r); pumpProfiles(); renderResults();
+}
+function pumpProfiles() {
+  while (profileActive < 3 && profileQueue.length) {
+    const r = profileQueue.shift();
+    profileActive++;
+    const sig = profileSig(r);
+    api('/api/profil', { method: 'POST', body: { level: r.level, year: r.pda?.year, words: r.words, text: r.pages.map((p) => p.text || '').join('\n\n'),
+      focus: $('ortho-focus').value, errors: profileErrors(r).map(({ text, correction, category, subtype, explanation, grey }) => ({ text, correction, category, subtype, explanation, grey })) } })
+      .then((p) => { r.profile = p; r.profileSig = sig; })
+      .catch((e) => { r.profileErr = e.message || 'La fiche n’a pas pu être établie.'; })
+      .finally(() => { r.profileBusy = false; profileActive--; renderResults(); pumpProfiles(); });
+  }
+}
+function profileBlock(r) {
+  if (r.profileBusy) return h('p', { class: 'muted small prof-wait', textContent: 'Fiche du scripteur en préparation…' });
+  if (!r.profile) {
+    return h('div', { class: 'prof-cta' }, r.profileErr ? h('p', { class: 'small', style: 'margin:0;color:var(--danger,#b91c1c)', textContent: r.profileErr }) : null,
+      h('button', { class: 'btn small', type: 'button', disabled: !!r.rereading, textContent: r.rereading ? 'Fiche du scripteur : après la relecture…' : 'Établir la fiche du scripteur', onclick: () => queueProfile(r) }));
+  }
+  const stale = r.profileSig !== profileSig(r);
+  const first = r.profile.targets[0]?.target;
+  return h('details', { class: 'profile', open: !!r.profileOpen, ontoggle: (ev) => { r.profileOpen = ev.target.open; } },
+    h('summary', {}, h('b', { textContent: 'Fiche du scripteur' }), h('span', { class: 'muted small', textContent: ` · ${[r.profile.level ? `palier ${r.profile.level}/5` : '', first ? `cible : ${first}` : ''].filter(Boolean).join(' · ')}` })),
+    stale ? h('div', { class: 'prof-stale small' }, 'Vous avez modifié les erreurs depuis cette fiche. ',
+      h('button', { class: 'btn small', type: 'button', textContent: 'Refaire la fiche', onclick: () => queueProfile(r) })) : null,
+    profileView(r),
+    h('div', { class: 'prof-actions' },
+      h('button', { class: 'btn small primary', type: 'button', textContent: 'Copier la fiche', onclick: (ev) => copyFrom(ev.currentTarget, profileText(r)) }),
+      h('button', { class: 'btn small', type: 'button', textContent: 'Word', title: 'Télécharger cette fiche en Word', onclick: () => downloadFiches([r]) }),
+      stale ? null : h('button', { class: 'btn small ghost', type: 'button', textContent: 'Refaire', onclick: () => queueProfile(r) })));
+}
+// Document Word : une fiche par page, modifiable. Fabriqué dans le navigateur (voir docx.js).
+function downloadFiches(list) {
+  const blocks = [];
+  list.forEach((r, i) => {
+    if (i) blocks.push({ pagebreak: true });
+    blocks.push({ title: 'Fiche du scripteur' }, { p: whoLine(r), bold: true }, { p: `${profileHead(r)} · ${new Date().toLocaleDateString('fr-CA')}`, muted: true }, { p: PROFILE_NOTE, muted: true });
+    for (const sec of profileSections(r)) {
+      blocks.push({ h: sec.title });
+      if (sec.items) blocks.push(...sec.items.map((t, i) => ({ bullet: t, ...(sec.ordered ? { mark: `${i + 1}.` } : {}) })));
+      if (sec.lines) blocks.push(...sec.lines.map(([k, v]) => ({ bullet: `${k} : ${v}` })));
+      if (sec.table) blocks.push(sec.table.length ? { table: [['Type d’erreur', 'Nombre', 'Exemples tirés du texte'], ...sec.table], widths: [3000, 1500, 5580] } : { p: 'Aucune erreur retenue.' });
+    }
+    blocks.push({ h: 'Mes observations' }, { p: ' ' });
+  });
+  const url = URL.createObjectURL(buildDocx(blocks));
+  const base = list.length === 1 ? (list[0].name || copyLabel(list[0])) : [$('exam').value, $('group').value].filter(Boolean).join('_') || 'classe';
+  const a = h('a', { href: url, download: `fiches-scripteur_${base.replace(/[^\p{L}\p{N}_-]+/gu, '-')}_${new Date().toISOString().slice(0, 10)}.docx` });
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  state.exported = true;
+}
+$('export-fiches').addEventListener('click', async () => {
+  const btn = $('export-fiches');
+  const mine = state.results.filter((r) => r.ortho);
+  mine.filter((r) => !r.profile && !r.profileBusy && !r.rereading).forEach(queueProfile);
+  if (mine.some((r) => r.profileBusy || r.rereading)) {
+    btn.disabled = true; btn.textContent = 'Préparation des fiches…';
+    await new Promise((res) => { const t = setInterval(() => { if (!mine.some((r) => r.profileBusy || r.rereading)) { clearInterval(t); res(); } }, 500); });
+    btn.disabled = false; btn.textContent = 'Télécharger les fiches (Word)';
+  }
+  const ready = mine.filter((r) => r.profile);
+  if (!ready.length) { banner('err', 'Aucune fiche n’a pu être établie. Réessayez.'); return; }
+  downloadFiches([...ready].sort((x, y) => (x.no ?? 0) - (y.no ?? 0)));
+});
+
 function langCard(r) {
   const errors = r.pages.flatMap((p) => p.errors);
   const n = r.pda ? langGrade(r) : counted(errors).length;
@@ -1836,7 +2000,8 @@ function langCard(r) {
   // Ligne courte (le nom de l'élève doit rester lisible) ; le nombre de mots est dans le détail de la copie.
   const detail = r.pda ? `${r.pct == null ? '' : `${pctText(fmt(Math.round(r.pct * 10) / 10))} · `}${plural(n, 'faute retenue', 'fautes retenues', 'error', 'errors')}`
     : r.grade == null ? '' : `${n} faute(s)`;
-  gradeEl.replaceChildren(r.pda ? h('span', {}, r.cote || '—', h('small', {}, ` · ${detail}`))
+  gradeEl.replaceChildren(r.ortho ? h('span', {}, r.profile?.level ? `Palier ${r.profile.level}/5` : `${n}`, h('small', {}, r.profile?.level ? ` · ${n} erreur${n > 1 ? 's' : ''}` : ` erreur${n > 1 ? 's' : ''}`))
+    : r.pda ? h('span', {}, r.cote || '—', h('small', {}, ` · ${detail}`))
     : r.grade == null ? `${n} faute${n > 1 ? 's' : ''}`
     : h('span', {}, fmt(r.grade), h('small', {}, ` / ${fmt(r.total)} · ${detail}`)));
   // Sur téléphone, le détail passe sous le nom (sinon « Rosalie Gagné » devenait « Rosa »).
@@ -1847,6 +2012,7 @@ function langCard(r) {
       r.pda ? h('p', { class: 'small', style: 'margin:0', textContent: pdaLine(r, n) }) : null,
       r.pda && (grey || r.dup?.length) ? h('p', { class: 'muted small', style: 'margin:0', textContent: [grey ? `${plural(grey, 'faute', 'fautes', 'error', 'errors')} ${L('en gris : notion en apprentissage, ne compte pas', 'in grey: being learned, not counted')}` : '', r.dup?.length ? `${plural(r.dup.length, 'faute répétée, retenue', 'fautes répétées, retenues', 'repeated error, counted', 'repeated errors, counted')} ${L('une seule fois', 'once')}` : ''].filter(Boolean).join(' · ') }) : null,
       r.rereading ? h('p', { class: 'muted small', style: 'margin:0', textContent: 'Relecture en cours : d’autres fautes peuvent s’ajouter…' }) : null,
+      r.ortho ? profileBlock(r) : null,
       h('div', { class: 'card-foot' },
         h('span', { textContent: copyLabel(r) }),
         h('div', { style: 'display:flex;gap:.4rem;flex-wrap:wrap' },
@@ -1915,7 +2081,7 @@ function renderViewer(focus) {
     items.length ? categoryChips(items.map((i) => i.e)) : h('p', { class: 'muted', textContent: 'Aucune faute relevée.' }),
     ...items.map(({ e, p, n: k }) => {
       const el = h('div', { class: `err ${CATS[e.category].cls} ${e.grey ? 'grey' : ''} ${focus === e ? 'focus' : ''}`, onclick: () => renderViewer(e) },
-        h('div', { class: 'err-head' }, h('b', { textContent: `${k}. ${CATS[e.category].label}${e.box ? '' : ' (non localisée)'}${e.doubtful ? ' · à vérifier' : ''}${e.grey ? L(' · notion en apprentissage : ne compte pas', ' · being learned: not counted') : ''}${r.dup?.includes(e) ? L(' · répétée : retenue une seule fois', ' · repeated: counted once') : ''}` }),
+        h('div', { class: 'err-head' }, h('b', { textContent: `${k}. ${CATS[e.category].label}${e.subtype ? ` · ${SUBTYPES[e.subtype]}` : ''}${e.box ? '' : ' (non localisée)'}${e.doubtful ? ' · à vérifier' : ''}${e.grey ? L(' · notion en apprentissage : ne compte pas', ' · being learned: not counted') : ''}${r.dup?.includes(e) ? L(' · répétée : retenue une seule fois', ' · repeated: counted once') : ''}` }),
           h('button', { class: 'icon-btn', type: 'button', textContent: '×', title: "Ce n'est pas une faute : retirer", onclick: (ev) => {
             ev.stopPropagation();
             removed = { r, p, e, at: p.errors.indexOf(e) };
@@ -1962,13 +2128,18 @@ function addErrorForm() {
   const fix = h('input', { type: 'text', placeholder: 'Ex. : ils mangent' });
   const cat = h('select', {}, Object.entries(CATS).map(([k, c]) => h('option', { value: k, textContent: c.label })));
   const why = h('input', { type: 'text', placeholder: 'Ex. : accord du verbe avec le sujet' });
+  // Orthopédagogie : le type d'erreur (pour la fiche du scripteur), limité à ceux de la catégorie choisie.
+  const sub = h('select', {});
+  const fillSub = () => sub.replaceChildren(h('option', { value: '', textContent: '— Type (facultatif) —' }),
+    ...Object.entries(SUBTYPES).filter(([k]) => SUB_CAT[k] === cat.value).map(([k, v]) => h('option', { value: k, textContent: v })));
+  fillSub(); cat.addEventListener('change', fillSub);
   const save = async () => {
     if (!text.value.trim() || !fix.value.trim()) { text.focus(); return; }
     const { page, box } = adding;
     // Le cadre tracé à la main est resserré sur l'encre du mot (on garde le tracé si l'encre n'est pas trouvée).
     let snapped = box;
     try { snapped = refineToInk(await pageData(page.url), box); } catch { /* tracé gardé */ }
-    const e = { text: text.value.trim(), correction: fix.value.trim(), category: cat.value, explanation: why.value.trim(), box: snapped, manual: true };
+    const e = { text: text.value.trim(), correction: fix.value.trim(), category: cat.value, explanation: why.value.trim(), box: snapped, manual: true, ...(sub.value ? { subtype: sub.value } : {}) };
     page.errors.push(e);
     adding = null;
     state.exported = false;
@@ -1977,7 +2148,7 @@ function addErrorForm() {
   setTimeout(() => text.focus(), 0);
   return h('div', { class: 'err add-form' },
     h('b', { textContent: 'Nouvelle faute' }),
-    field('Mot ou passage écrit', text), field('Correction', fix), field('Catégorie', cat), field('Explication (facultatif)', why),
+    field('Mot ou passage écrit', text), field('Correction', fix), field('Catégorie', cat), viewing?.ortho ? field('Type d’erreur', sub) : null, field('Explication (facultatif)', why),
     h('div', { style: 'display:flex;gap:.5rem' },
       h('button', { class: 'btn primary small', type: 'button', textContent: 'Ajouter', onclick: save }),
       h('button', { class: 'btn ghost small', type: 'button', textContent: 'Annuler', onclick: () => { adding = null; renderViewer(); } })));
@@ -2034,21 +2205,29 @@ async function printViewer() {
   w.document.close();
 }
 
+// Trois onglets : copies, langue, orthopédagogie. L'orthopédagogie est la correction de la langue avec, en plus,
+// les erreurs classées par type et la fiche du scripteur (state.kind reste « lang » ; « ortho » dit l'onglet).
 function setKind(kind) {
   if (state.running) return;
+  if (kind === 'ortho' && !orthoAvailable()) kind = 'lang';
+  const tab = kind;
+  ortho = tab === 'ortho';
+  kind = ortho ? 'lang' : tab;
   state.kind = kind;
-  try { localStorage.setItem('ce.kind', kind); } catch { /* ignoré */ } // une prof du primaire retrouve l'onglet de la langue
-  $('kind-content').classList.toggle('active', kind === 'content');
-  $('kind-lang').classList.toggle('active', kind === 'lang');
-  $('kind-content').setAttribute('aria-selected', String(kind === 'content'));
-  $('kind-lang').setAttribute('aria-selected', String(kind === 'lang'));
-  document.querySelector('.kind').dataset.active = kind;
+  try { localStorage.setItem('ce.kind', kind); localStorage.setItem('ce.ortho', ortho ? '1' : '0'); } catch { /* ignoré */ } // une prof du primaire retrouve son onglet
+  for (const [id, t] of [['kind-content', 'content'], ['kind-lang', 'lang'], ['kind-ortho', 'ortho']]) {
+    $(id).classList.toggle('active', tab === t);
+    $(id).setAttribute('aria-selected', String(tab === t));
+  }
+  document.querySelector('.kind').dataset.active = tab;
   $('app').dataset.kind = kind; // mode simple : la correction des copies n'a plus de section 1
   setUiMode(uiAdv()); // titre et numéro des étapes
   $('content-settings').hidden = kind !== 'content';
   $('lang-settings').hidden = kind !== 'lang';
   renderPda(); // exemples du primaire seulement en correction de la langue
-  $('empty-text').textContent = kind === 'lang' ? 'Les copies analysées apparaîtront ici, avec les fautes surlignées.'
+  renderOrtho();
+  $('empty-text').textContent = ortho ? 'Les textes analysés apparaîtront ici, avec les erreurs classées par type et la fiche du scripteur.'
+    : kind === 'lang' ? 'Les copies analysées apparaîtront ici, avec les fautes surlignées.'
     : 'Les copies corrigées apparaîtront ici, avec le détail des points par question.';
   renderSummary();
   renderResults();
@@ -2344,6 +2523,7 @@ $('total').addEventListener('input', () => { renderSummary(); updateGridTotal();
 $('make-grid').addEventListener('click', makeGrid);
 $('kind-content').addEventListener('click', () => setKind('content'));
 $('kind-lang').addEventListener('click', () => setKind('lang'));
+$('kind-ortho').addEventListener('click', () => setKind('ortho'));
 $('viewer-print').addEventListener('click', printViewer);
 $('viewer-add').addEventListener('click', () => { adding = adding ? null : { stage: 'draw' }; renderViewer(); });
 document.addEventListener('keydown', (e) => {
@@ -2614,7 +2794,7 @@ setUiMode(savedUi === 'adv');
 // ---------- Démarrage ----------
 
 applyMethod();
-try { if (localStorage.getItem('ce.kind') === 'lang') setKind('lang'); } catch { /* ignoré */ }
+try { if (localStorage.getItem('ce.kind') === 'lang') setKind(ortho ? 'ortho' : 'lang'); } catch { /* ignoré */ }
 
 // Niveau d'enseignement (« Vous enseignez au ») : choisi sur l'accueil (app.html?niveau=…) ou ici, retenu sur l'appareil.
 // Il règle le niveau de la correction de la langue ; au primaire, l'appli s'ouvre sur la correction de la langue.
@@ -2623,16 +2803,22 @@ function setNiveau(n, fromChoice) {
   try { localStorage.setItem('ce.niveau', n); } catch { /* ignoré */ }
   document.querySelectorAll('.lvl-seg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.niveau === n)));
   $('lang-level').value = n;
-  if (fromChoice && n === 'primaire') setKind('lang');
+  if (ortho && !orthoAvailable()) setKind('lang'); // pas d'orthopédagogie au cégep (la Progression ne s'y applique pas)
+  if (fromChoice && n === 'primaire' && state.kind === 'content') setKind('lang');
+  renderOrtho();
   savePrefs(); renderPda(); renderSummary();
 }
 document.querySelectorAll('.lvl-seg button').forEach((b) => b.addEventListener('click', () => setNiveau(b.dataset.niveau, true)));
+try { $('ortho-focus').value = localStorage.getItem('ce.orthoFocus') || ''; } catch { /* ignoré */ }
+$('ortho-focus').addEventListener('input', () => { try { localStorage.setItem('ce.orthoFocus', $('ortho-focus').value); } catch { /* ignoré */ } });
 {
   const asked = new URLSearchParams(location.search).get('niveau');
   let known = null;
   try { known = localStorage.getItem('ce.niveau'); } catch { /* ignoré */ }
   // Arrivée depuis l'accueil avec un niveau (?niveau=…) : réglages de ce niveau, même si l'accueil l'a déjà mémorisé.
-  if (asked) setNiveau(asked, true);
+  // Lien de l'orthopédagogie (/orthopedagogie → app.html?niveau=ortho) : l'onglet Orthopédagogie, au niveau déjà connu.
+  if (asked === 'ortho') { setNiveau(['primaire', 'secondaire'].includes(known) ? known : 'secondaire', false); setKind('ortho'); }
+  else if (asked) setNiveau(asked, true);
   else setNiveau(known || $('lang-level').value, false);
   if (asked) { const q = new URLSearchParams(location.search); q.delete('niveau'); history.replaceState(null, '', location.pathname + (q.size ? `?${q}` : '') + location.hash); } // la clé (?key=) reste
 }

@@ -50,6 +50,7 @@
     </section>
 
     
+    
 
     <section class="creator"><div class="creator-card"><span class="creator-mark" aria-hidden="true">✍</span><div><b>Made by a teacher, for teachers.</b><p>I teach high-school history in Quebec. I built Burn the Pile to do the first pass of my own stacks of tests, without sending my students’ work just anywhere. I still read every paper: the tool does the first pass, I keep the judgment.</p></div></div></section>
 
@@ -133,11 +134,14 @@
     const prim = document.querySelector('.demo-prim'), main = document.querySelector('.demo-main'), sec = document.getElementById('primaire');
     if (prim) { prim.hidden = n !== 'primaire'; main.hidden = n === 'primaire'; }
     if (sec) sec.hidden = n !== 'primaire';
-    if (save) try { localStorage.setItem('ce.niveau', n); } catch {}
+    const orth = document.getElementById('orthopedagogie');
+    if (orth) orth.hidden = n !== 'ortho';
+    // L'appli retient l'orthopédagogie à part (ce.ortho) et le niveau des élèves dans ce.niveau.
+    if (save) try { localStorage.setItem('ce.ortho', n === 'ortho' ? '1' : '0'); if (n !== 'ortho') localStorage.setItem('ce.niveau', n); } catch {}
   };
   document.querySelectorAll('.lvl-btns button').forEach((b) => b.addEventListener('click', () => pick(b.dataset.niveau, true)));
   let n = new URLSearchParams(location.search).get('niveau');
-  if (n) pick(n, true); else { try { n = localStorage.getItem('ce.niveau'); } catch {} if (n) pick(n, false); }
+  if (n) pick(n, true); else { try { n = localStorage.getItem('ce.ortho') === '1' ? 'ortho' : localStorage.getItem('ce.niveau'); } catch {} if (n) pick(n, false); }
 })();
 </script>
 <script>
