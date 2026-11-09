@@ -1854,6 +1854,16 @@ const SUB_CAT = { phonologique: 'orthographe', morphologique: 'orthographe', vis
   homophone_grammatical: 'orthographe', segmentation: 'orthographe', majuscule_signes: 'orthographe', genre: 'accord', nombre: 'accord',
   accord_verbe: 'accord', terminaison_verbale: 'conjugaison', homophone_verbal: 'conjugaison', delimitation: 'ponctuation', virgule: 'ponctuation',
   ponctuation_autre: 'ponctuation', structure_phrase: 'syntaxe', negation: 'syntaxe', pronom_preposition: 'syntaxe', vocabulaire: 'vocabulaire' };
+// Onglet Orthopédagogie : en français, au primaire et au secondaire (selon la Progression des apprentissages).
+function orthoAvailable() { return lang !== 'en' && $('lang-level').value !== 'cegep'; }
+function isOrtho() { return ortho && state.kind === 'lang' && orthoAvailable() && isPda(); }
+function renderOrtho() {
+  const three = orthoAvailable();
+  $('kind-ortho').hidden = !three;
+  document.querySelector('.kind').classList.toggle('three', three);
+  $('ortho-focus-field').hidden = !(ortho && state.kind === 'lang');
+  $('app').classList.toggle('ortho', ortho && state.kind === 'lang');
+}
 const profileErrors = (r) => r.pages.flatMap((p) => p.errors).filter((e) => !e.doubtful);
 // La fiche reflète les erreurs validées : si l'orthopédagogue en retire ou en ajoute, la fiche est marquée à refaire.
 const profileSig = (r) => JSON.stringify(profileErrors(r).map((e) => [e.text, e.correction, e.subtype || e.category, !!e.grey]));
@@ -2195,22 +2205,29 @@ async function printViewer() {
   w.document.close();
 }
 
+// Trois onglets : copies, langue, orthopédagogie. L'orthopédagogie est la correction de la langue avec, en plus,
+// les erreurs classées par type et la fiche du scripteur (state.kind reste « lang » ; « ortho » dit l'onglet).
 function setKind(kind) {
   if (state.running) return;
+  if (kind === 'ortho' && !orthoAvailable()) kind = 'lang';
+  const tab = kind;
+  ortho = tab === 'ortho';
+  kind = ortho ? 'lang' : tab;
   state.kind = kind;
-  try { localStorage.setItem('ce.kind', kind); } catch { /* ignoré */ } // une prof du primaire retrouve l'onglet de la langue
-  $('kind-content').classList.toggle('active', kind === 'content');
-  $('kind-lang').classList.toggle('active', kind === 'lang');
-  $('kind-content').setAttribute('aria-selected', String(kind === 'content'));
-  $('kind-lang').setAttribute('aria-selected', String(kind === 'lang'));
-  document.querySelector('.kind').dataset.active = kind;
+  try { localStorage.setItem('ce.kind', kind); localStorage.setItem('ce.ortho', ortho ? '1' : '0'); } catch { /* ignoré */ } // une prof du primaire retrouve son onglet
+  for (const [id, t] of [['kind-content', 'content'], ['kind-lang', 'lang'], ['kind-ortho', 'ortho']]) {
+    $(id).classList.toggle('active', tab === t);
+    $(id).setAttribute('aria-selected', String(tab === t));
+  }
+  document.querySelector('.kind').dataset.active = tab;
   $('app').dataset.kind = kind; // mode simple : la correction des copies n'a plus de section 1
   setUiMode(uiAdv()); // titre et numéro des étapes
   $('content-settings').hidden = kind !== 'content';
   $('lang-settings').hidden = kind !== 'lang';
   renderPda(); // exemples du primaire seulement en correction de la langue
   renderOrtho();
-  $('empty-text').textContent = kind === 'lang' ? 'Les copies analysées apparaîtront ici, avec les fautes surlignées.'
+  $('empty-text').textContent = ortho ? 'Les textes analysés apparaîtront ici, avec les erreurs classées par type et la fiche du scripteur.'
+    : kind === 'lang' ? 'Les copies analysées apparaîtront ici, avec les fautes surlignées.'
     : 'Les copies corrigées apparaîtront ici, avec le détail des points par question.';
   renderSummary();
   renderResults();
@@ -2506,6 +2523,7 @@ $('total').addEventListener('input', () => { renderSummary(); updateGridTotal();
 $('make-grid').addEventListener('click', makeGrid);
 $('kind-content').addEventListener('click', () => setKind('content'));
 $('kind-lang').addEventListener('click', () => setKind('lang'));
+$('kind-ortho').addEventListener('click', () => setKind('ortho'));
 $('viewer-print').addEventListener('click', printViewer);
 $('viewer-add').addEventListener('click', () => { adding = adding ? null : { stage: 'draw' }; renderViewer(); });
 document.addEventListener('keydown', (e) => {
@@ -2776,52 +2794,21 @@ setUiMode(savedUi === 'adv');
 // ---------- Démarrage ----------
 
 applyMethod();
-try { if (localStorage.getItem('ce.kind') === 'lang') setKind('lang'); } catch { /* ignoré */ }
+try { if (localStorage.getItem('ce.kind') === 'lang') setKind(ortho ? 'ortho' : 'lang'); } catch { /* ignoré */ }
 
 // Niveau d'enseignement (« Vous enseignez au ») : choisi sur l'accueil (app.html?niveau=…) ou ici, retenu sur l'appareil.
 // Il règle le niveau de la correction de la langue ; au primaire, l'appli s'ouvre sur la correction de la langue.
 function setNiveau(n, fromChoice) {
-  if (n === 'ortho') { setOrtho(true); return; }
   if (!['primaire', 'secondaire', 'cegep'].includes(n)) return;
   try { localStorage.setItem('ce.niveau', n); } catch { /* ignoré */ }
+  document.querySelectorAll('.lvl-seg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.niveau === n)));
   $('lang-level').value = n;
-  if (fromChoice) setOrtho(false, true); // Primaire, Secondaire ou Cégep : on quitte l'orthopédagogie
+  if (ortho && !orthoAvailable()) setKind('lang'); // pas d'orthopédagogie au cégep (la Progression ne s'y applique pas)
+  if (fromChoice && n === 'primaire' && state.kind === 'content') setKind('lang');
   renderOrtho();
-  if (fromChoice && n === 'primaire') setKind('lang');
   savePrefs(); renderPda(); renderSummary();
 }
-// Orthopédagogie : l'orthopédagogue travaille au primaire OU au secondaire ; ce niveau règle la Progression des
-// apprentissages (les notions qui comptent). Elle s'ouvre sur la correction de la langue, avec la fiche du scripteur.
-function setOrtho(on, quiet) {
-  ortho = on;
-  try { localStorage.setItem('ce.ortho', on ? '1' : '0'); } catch { /* ignoré */ }
-  if (on && !['primaire', 'secondaire'].includes($('lang-level').value)) {
-    $('lang-level').value = 'secondaire';
-    try { localStorage.setItem('ce.niveau', 'secondaire'); } catch { /* ignoré */ }
-  }
-  renderOrtho();
-  if (quiet) return;
-  if (on) setKind('lang');
-  savePrefs(); renderPda(); renderSummary();
-}
-function renderOrtho() {
-  const fr = lang !== 'en'; // notion québécoise, en français seulement
-  const on = ortho && fr;
-  const btn = document.querySelector('.lvl-seg [data-niveau="ortho"]');
-  if (btn) btn.hidden = !fr;
-  document.querySelectorAll('.levelbar:not(.ortho-row) .lvl-seg button').forEach((b) => b.setAttribute('aria-pressed', String(on ? b.dataset.niveau === 'ortho' : b.dataset.niveau === $('lang-level').value)));
-  $('ortho-row').hidden = !on;
-  document.querySelectorAll('#ortho-row button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.ortho === $('lang-level').value)));
-  $('ortho-focus-field').hidden = !(on && state.kind === 'lang');
-  $('app').classList.toggle('ortho', on);
-}
-const isOrtho = () => ortho && lang !== 'en' && isPda();
-document.querySelectorAll('.levelbar:not(.ortho-row) .lvl-seg button').forEach((b) => b.addEventListener('click', () => setNiveau(b.dataset.niveau, true)));
-document.querySelectorAll('#ortho-row button').forEach((b) => b.addEventListener('click', () => {
-  $('lang-level').value = b.dataset.ortho;
-  try { localStorage.setItem('ce.niveau', b.dataset.ortho); } catch { /* ignoré */ }
-  renderOrtho(); savePrefs(); renderPda(); renderSummary();
-}));
+document.querySelectorAll('.lvl-seg button').forEach((b) => b.addEventListener('click', () => setNiveau(b.dataset.niveau, true)));
 try { $('ortho-focus').value = localStorage.getItem('ce.orthoFocus') || ''; } catch { /* ignoré */ }
 $('ortho-focus').addEventListener('input', () => { try { localStorage.setItem('ce.orthoFocus', $('ortho-focus').value); } catch { /* ignoré */ } });
 {
@@ -2829,9 +2816,10 @@ $('ortho-focus').addEventListener('input', () => { try { localStorage.setItem('c
   let known = null;
   try { known = localStorage.getItem('ce.niveau'); } catch { /* ignoré */ }
   // Arrivée depuis l'accueil avec un niveau (?niveau=…) : réglages de ce niveau, même si l'accueil l'a déjà mémorisé.
-  if (asked) setNiveau(asked, true);
+  // Lien de l'orthopédagogie (/orthopedagogie → app.html?niveau=ortho) : l'onglet Orthopédagogie, au niveau déjà connu.
+  if (asked === 'ortho') { setNiveau(['primaire', 'secondaire'].includes(known) ? known : 'secondaire', false); setKind('ortho'); }
+  else if (asked) setNiveau(asked, true);
   else setNiveau(known || $('lang-level').value, false);
-  if (ortho && asked !== 'ortho') setOrtho(true, !asked); // orthopédagogue qui revient : son choix est retenu
   if (asked) { const q = new URLSearchParams(location.search); q.delete('niveau'); history.replaceState(null, '', location.pathname + (q.size ? `?${q}` : '') + location.hash); } // la clé (?key=) reste
 }
 startI18n();

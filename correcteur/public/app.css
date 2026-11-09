@@ -147,6 +147,10 @@ button.rel { cursor: pointer; font-family: inherit; }
   transition: transform .28s cubic-bezier(.4, 0, .2, 1);
 }
 .kind[data-active="lang"] .kind-pill { transform: translateX(100%); }
+/* Trois onglets (copies, langue, orthopédagogie) ; deux au cégep et en anglais. */
+.kind.three { grid-template-columns: 1fr 1fr 1fr; }
+.kind.three .kind-pill { width: calc((100% - 8px) / 3); }
+.kind.three[data-active="ortho"] .kind-pill { transform: translateX(200%); }
 .kind button {
   position: relative; z-index: 1; display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
   font: inherit; font-size: .85rem; font-weight: 600; letter-spacing: -.005em; border: 0; border-radius: 10px;
@@ -336,7 +340,7 @@ body.light .thumb { border-color: var(--line-2); }
 /* Mise en page : une colonne, aérée. */
 body.light .layout { display: flex; flex-direction: column; gap: 1.4rem; max-width: 800px; }
 body.light .layout > section { width: 100%; }
-.kindbar { display: flex; justify-content: center; } .kindbar .kind { width: 100%; max-width: 520px; }
+.kindbar { display: flex; justify-content: center; } .kindbar .kind { width: 100%; max-width: 620px; }
 body.light .s1 { --c: #4f46e5; --t: #eef0ff; } body.light .s2 { --c: #e07b00; --t: #fff6e8; } body.light .s3 { --c: #0f9f6e; --t: #e9f8f1; }
 body.light .s1, body.light .s2, body.light .s3 { border: 1px solid var(--line); border-radius: 18px; padding: 0 1.5rem 1.5rem; box-shadow: 0 4px 18px rgba(20,30,60,.06); overflow: hidden; }
 .band { display: flex; justify-content: space-between; align-items: center; gap: .7rem; flex-wrap: wrap; margin: 0 -1.5rem 1.1rem; padding: .9rem 1.5rem; background: var(--c); color: #fff; }
@@ -602,11 +606,7 @@ body.light .layout > .levelbar { grid-column: 1 / -1; }
 #zoom-pos { white-space: nowrap; }
 
 /* Orthopédagogie : 4e choix du niveau, niveau des élèves, fiche du scripteur */
-.ortho-row { margin-top: -.2rem; }
-.ortho-row .lvl-seg button { padding: .28rem .8rem; font-size: .8rem; }
-@media (max-width: 480px) {
-  .levelbar .lvl-seg button { padding: .35rem .5rem; font-size: .8rem; }
-}
+@media (max-width: 480px) { .kind.three button { padding: .6rem .35rem; gap: .3rem; } }
 .ortho-focus textarea { min-height: 3rem; }
 .profile { border: 1px solid var(--line); border-radius: 12px; background: #fbfaff; padding: .5rem .7rem; }
 .profile > summary { cursor: pointer; padding: .15rem 0; }
