@@ -664,7 +664,10 @@ function renderSummary() {
   $('export').hidden = $('print-all').hidden = !state.results.length;
   // Correction de la langue : pas d'impression groupée (chaque copie annotée s'imprime depuis sa vue), et un résumé plutôt que des notes.
   if (state.kind === 'lang') $('print-all').hidden = true;
-  $('export-fiches').hidden = !state.results.some((r) => r.ortho);
+  $('export-fiches').hidden = !state.results.some((r) => r.ortho && r.profile);
+  const toDo = state.results.filter((r) => r.ortho && !r.profile && !r.profileBusy).length;
+  $('profile-all').hidden = toDo < 2; // un seul élève : son bouton dans la carte suffit
+  $('profile-all').textContent = `Établir les ${toDo} profils`;
   $('export').textContent = tr(state.kind === 'lang' ? 'Télécharger le résumé des fautes (Excel)' : 'Télécharger les notes (Excel)');
   $('print-all').disabled = state.running || !state.results.some((r) => r.kind !== 'lang');
   renderCalib();
@@ -1649,7 +1652,6 @@ async function analyzeLanguage(bundle) {
 function reread(res) {
   const todo = res.pages.filter((p) => p.reread && p.sent);
   res.rereading = todo.length;
-  if (!todo.length && res.ortho) queueProfile(res);
   const refresh = () => { langGrade(res); state.exported = false; renderResults(); if (viewing === res) renderViewer(); };
   for (const p of todo) {
     const first = verifyErrors(p, p.errors).then(refresh);
@@ -1661,7 +1663,6 @@ function reread(res) {
       delete p.sent; // libère la mémoire : l'image envoyée n'est plus utile
       res.rereading--;
       refresh();
-      if (!res.rereading && res.ortho) queueProfile(res); // la fiche part de la liste complète (après la relecture)
     });
   }
 }
@@ -1883,7 +1884,7 @@ function recurrent(r) {
 }
 const whoLine = (r) => [r.name || copyLabel(r), r.group, r.exam].filter(Boolean).join(' · ');
 const levelText = (r) => (r.pda?.year ? `${r.pda.year}${r.pda.year === 1 ? 're' : 'e'} ${r.level === 'primaire' ? 'année du primaire' : 'secondaire'}` : '');
-const PROFILE_NOTE = 'Fiche provisoire établie à partir d’une seule production et des erreurs validées : à compléter par vos observations.';
+const PROFILE_NOTE = 'Profil provisoire établi à partir des erreurs validées : à compléter par vos observations.';
 // Contenu de la fiche, commun à l'écran, au texte copié et au document Word.
 function profileSections(r) {
   const p = r.profile, rec = recurrent(r);
@@ -1897,16 +1898,18 @@ function profileSections(r) {
     p.questions.length ? { title: 'Questions pour l’entretien métagraphique', items: p.questions.map((q) => (q.excerpt ? `À propos de « ${q.excerpt} » : ${q.question}` : q.question)) } : null,
     p.activities.length ? { title: 'Pistes d’intervention', items: p.activities } : null,
     p.adaptations.length ? { title: 'Mesures d’adaptation à envisager', items: p.adaptations } : null,
+    ...progressSections(r),
   ].filter(Boolean);
 }
 const profileHead = (r) => [levelText(r), r.words ? `${r.words} mots` : '', `${profileErrors(r).filter((e) => !e.grey).length} erreurs retenues`].filter(Boolean).join(' · ');
 function profileText(r) {
-  const out = [`FICHE DU SCRIPTEUR (provisoire) — ${whoLine(r)}`, profileHead(r), ''];
+  const out = [`PROFIL DU SCRIPTEUR (provisoire) — ${whoLine(r)}`, profileHead(r), ''];
   for (const sec of profileSections(r)) {
     out.push(sec.title.toUpperCase());
     if (sec.items) out.push(...sec.items.map((t, i) => (sec.ordered ? `${i + 1}. ${t}` : `- ${t}`)));
     if (sec.lines) out.push(...sec.lines.map(([k, v]) => `${k} : ${v}`));
     if (sec.table) out.push(...(sec.table.length ? sec.table.map(([a, b, c]) => `- ${a} : ${b}${c ? ` (ex. ${c})` : ''}`) : ['- Aucune erreur retenue.']));
+    if (sec.table3) out.push(...sec.table3.map(([a, b, c]) => `- ${a} : avant ${b} ; maintenant ${c}`));
     out.push('');
   }
   out.push(PROFILE_NOTE);
@@ -1917,6 +1920,8 @@ function profileView(r) {
     ...profileSections(r).map((sec) => h('div', { class: `prof-sec${sec.warn ? ' warn' : ''}` }, h('h4', { textContent: sec.title }),
       sec.items ? h(sec.ordered ? 'ol' : 'ul', {}, sec.items.map((t) => h('li', { textContent: t }))) : null,
       sec.lines ? h('dl', {}, sec.lines.flatMap(([k, v]) => [h('dt', { textContent: k }), h('dd', { textContent: v })])) : null,
+      sec.table3 ? h('table', { class: 'prof-table cmp' }, h('thead', {}, h('tr', {}, ['Type d’erreur', 'Avant', 'Maintenant'].map((t) => h('th', { textContent: t })))),
+        h('tbody', {}, sec.table3.map((row) => h('tr', {}, row.map((c, i) => h(i ? 'td' : 'th', { textContent: c })))))) : null,
       sec.table ? (sec.table.length ? h('table', { class: 'prof-table' }, h('tbody', {}, sec.table.map((row) => h('tr', {}, row.map((c, i) => h(i ? 'td' : 'th', { textContent: c })))))) : h('p', { class: 'small', textContent: 'Aucune erreur retenue.' })) : null)),
     h('p', { class: 'faint small', style: 'margin:0', textContent: PROFILE_NOTE }));
 }
@@ -1936,60 +1941,148 @@ function pumpProfiles() {
     api('/api/profil', { method: 'POST', body: { level: r.level, year: r.pda?.year, words: r.words, text: r.pages.map((p) => p.text || '').join('\n\n'),
       focus: $('ortho-focus').value, errors: profileErrors(r).map(({ text, correction, category, subtype, explanation, grey }) => ({ text, correction, category, subtype, explanation, grey })) } })
       .then((p) => { r.profile = p; r.profileSig = sig; })
-      .catch((e) => { r.profileErr = e.message || 'La fiche n’a pas pu être établie.'; })
+      .catch((e) => { r.profileErr = e.message || 'Le profil n’a pas pu être établi.'; })
       .finally(() => { r.profileBusy = false; profileActive--; renderResults(); pumpProfiles(); });
   }
 }
 function profileBlock(r) {
-  if (r.profileBusy) return h('p', { class: 'muted small prof-wait', textContent: 'Fiche du scripteur en préparation…' });
+  if (r.profileBusy) return h('p', { class: 'muted small prof-wait', textContent: 'Profil du scripteur en préparation…' });
   if (!r.profile) {
+    // Établi à la demande : l'orthopédagogue relit d'abord les erreurs (fausses fautes retirées, oublis ajoutés).
     return h('div', { class: 'prof-cta' }, r.profileErr ? h('p', { class: 'small', style: 'margin:0;color:var(--danger,#b91c1c)', textContent: r.profileErr }) : null,
-      h('button', { class: 'btn small', type: 'button', disabled: !!r.rereading, textContent: r.rereading ? 'Fiche du scripteur : après la relecture…' : 'Établir la fiche du scripteur', onclick: () => queueProfile(r) }));
+      h('button', { class: 'btn primary', type: 'button', disabled: !!r.rereading, textContent: r.rereading ? 'Relecture en cours…' : 'Établir le profil du scripteur', onclick: () => queueProfile(r) }),
+      h('span', { class: 'muted small', textContent: 'Relisez d’abord les erreurs dans la copie annotée : le profil part des erreurs que vous avez validées. Gratuit.' }));
   }
   const stale = r.profileSig !== profileSig(r);
   const first = r.profile.targets[0]?.target;
   return h('details', { class: 'profile', open: !!r.profileOpen, ontoggle: (ev) => { r.profileOpen = ev.target.open; } },
-    h('summary', {}, h('b', { textContent: 'Fiche du scripteur' }), h('span', { class: 'muted small', textContent: ` · ${[r.profile.level ? `palier ${r.profile.level}/5` : '', first ? `cible : ${first}` : ''].filter(Boolean).join(' · ')}` })),
-    stale ? h('div', { class: 'prof-stale small' }, 'Vous avez modifié les erreurs depuis cette fiche. ',
-      h('button', { class: 'btn small', type: 'button', textContent: 'Refaire la fiche', onclick: () => queueProfile(r) })) : null,
+    h('summary', {}, h('b', { textContent: 'Profil du scripteur' }), h('span', { class: 'muted small', textContent: ` · ${[r.profile.level ? `palier ${r.profile.level}/5` : '', first ? `cible : ${first}` : '', r.progress ? 'progression comparée' : ''].filter(Boolean).join(' · ')}` })),
+    stale ? h('div', { class: 'prof-stale small' }, 'Vous avez modifié les erreurs depuis ce profil. ',
+      h('button', { class: 'btn small', type: 'button', textContent: 'Refaire le profil', onclick: () => queueProfile(r) })) : null,
     profileView(r),
+    r.progressBusy ? h('p', { class: 'muted small prof-wait', textContent: 'Comparaison en cours…' }) : null,
+    r.progressErr ? h('p', { class: 'small', style: 'margin:.3rem 0 0;color:var(--danger,#b91c1c)', textContent: r.progressErr }) : null,
     h('div', { class: 'prof-actions' },
-      h('button', { class: 'btn small primary', type: 'button', textContent: 'Copier la fiche', onclick: (ev) => copyFrom(ev.currentTarget, profileText(r)) }),
-      h('button', { class: 'btn small', type: 'button', textContent: 'Word', title: 'Télécharger cette fiche en Word', onclick: () => downloadFiches([r]) }),
+      h('button', { class: 'btn small primary', type: 'button', textContent: 'Copier le profil', onclick: (ev) => copyFrom(ev.currentTarget, profileText(r)) }),
+      h('button', { class: 'btn small', type: 'button', textContent: 'Word', title: 'Télécharger ce profil en Word', onclick: () => downloadFiches([r]) }),
+      h('button', { class: 'btn small', type: 'button', disabled: !!r.progressBusy, textContent: r.progress ? 'Comparer de nouveau' : 'Comparer la progression', onclick: () => openProgress(r) }),
       stale ? null : h('button', { class: 'btn small ghost', type: 'button', textContent: 'Refaire', onclick: () => queueProfile(r) })));
 }
+
+// ---------- Progression : comparer avec une évaluation précédente du même élève ----------
+// Deux sources : un autre texte de l'élève analysé dans cette séance (comparaison chiffrée, par 100 mots), ou un document
+// de l'orthopédagogue (ancienne fiche, rapport, profil) en Word, PDF ou texte collé, lu dans le navigateur.
+const per100 = (n, words) => (words ? `${fmt(Math.round((1000 * n) / words) / 10)} / 100 mots` : '');
+function progressSections(r) {
+  const g = r.progress;
+  if (!g) return [];
+  const rows = g.table?.map(([label, a, b]) => [label, a, b]) || [];
+  return [
+    { title: `Progression depuis : ${g.from}`, items: [g.summary, ...(g.caution ? [`Prudence : ${g.caution}`] : [])].filter(Boolean) },
+    rows.length ? { title: 'Avant / maintenant', table3: rows } : null,
+    g.progress.length ? { title: 'Progrès', items: g.progress } : null,
+    g.persistent.length ? { title: 'Difficultés persistantes', items: g.persistent } : null,
+    g.fresh.length ? { title: 'Nouvelles difficultés', items: g.fresh } : null,
+    g.targets.length ? { title: 'Cibles ajustées', ordered: true, items: g.targets.map((t) => `${t.target}${t.why ? ` — ${t.why}` : ''}`) } : null,
+  ].filter(Boolean);
+}
+// Tableau chiffré entre deux copies de la séance : nombre d'erreurs par type, et taux par 100 mots quand on les connaît.
+function compareTable(prev, cur) {
+  const a = recurrent(prev), b = recurrent(cur);
+  const labels = [...new Set([...b, ...a].map((x) => x.label))];
+  const cell = (list, r, label) => { const g = list.find((x) => x.label === label); const n = g ? g.n - g.grey : 0; return `${n}${per100(n, r.words) ? ` (${per100(n, r.words)})` : ''}`; };
+  return [['Type d’erreur', 'Avant', 'Maintenant'], ...labels.map((l) => [l, cell(a, prev, l), cell(b, cur, l)])];
+}
+let progressFor = null;
+function openProgress(r) {
+  progressFor = r;
+  const others = state.results.filter((x) => x !== r && x.ortho);
+  $('progress-title').textContent = `Comparer la progression — ${r.name || copyLabel(r)}`;
+  $('progress-copy').replaceChildren(h('option', { value: '', textContent: others.length ? '— Choisir un autre texte de cet élève —' : '(aucun autre texte analysé dans cette séance)' }),
+    ...others.map((x) => h('option', { value: x.id, textContent: whoLine(x) })));
+  $('progress-copy').disabled = !others.length;
+  $('progress-text').value = ''; $('progress-file').value = ''; $('progress-file-name').textContent = '';
+  $('progress-err').textContent = '';
+  $('progression').hidden = false;
+}
+async function pdfToText(file) {
+  const pdfjs = await loadPdfJs();
+  const pdf = await pdfjs.getDocument({ data: await file.arrayBuffer() }).promise;
+  const out = [];
+  for (let i = 1; i <= Math.min(pdf.numPages, 20); i++) {
+    const c = await (await pdf.getPage(i)).getTextContent();
+    out.push(c.items.map((it) => it.str + (it.hasEOL ? '\n' : ' ')).join(''));
+  }
+  return out.join('\n').replace(/[ \t]+\n/g, '\n').trim();
+}
+$('progress-file').addEventListener('change', async () => {
+  const f = $('progress-file').files[0];
+  if (!f) return;
+  $('progress-file-name').textContent = `Lecture de ${f.name}…`;
+  try {
+    const text = /\.docx$/i.test(f.name) ? await docxToText(f) : /\.pdf$/i.test(f.name) ? await pdfToText(f) : await f.text();
+    if (!text.trim()) throw new Error('Aucun texte trouvé dans ce fichier (PDF numérisé ?). Copiez-collez plutôt le texte, ou analysez l’ancien texte dans la séance.');
+    $('progress-text').value = text.slice(0, 12000);
+    $('progress-file-name').textContent = `${f.name} : texte importé (vous pouvez le relire et retirer les renseignements personnels).`;
+  } catch (e) { $('progress-file-name').textContent = ''; $('progress-err').textContent = e.message; }
+});
+$('progress-close').addEventListener('click', () => { $('progression').hidden = true; });
+$('progress-run').addEventListener('click', () => {
+  const r = progressFor;
+  if (!r) return;
+  const prevRes = state.results.find((x) => x.id === $('progress-copy').value);
+  // Le nom de l'élève, s'il est connu, est retiré du document avant l'envoi.
+  let doc = $('progress-text').value.trim();
+  for (const part of String(r.name || '').split(/\s+/).filter((w) => w.length > 1)) doc = doc.replace(new RegExp(part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), 'l’élève');
+  if (!prevRes && !doc) { $('progress-err').textContent = 'Choisissez un autre texte de l’élève, ou importez une évaluation précédente.'; return; }
+  const errs = (x) => profileErrors(x).map(({ text, correction, category, subtype, grey }) => ({ text, correction, category, subtype, grey }));
+  const from = prevRes ? `${prevRes.exam || 'autre texte'}${prevRes.exam ? '' : ` (${copyLabel(prevRes)})`}` : ($('progress-file').files[0]?.name || 'évaluation précédente');
+  const table = prevRes ? compareTable(prevRes, r).slice(1) : null;
+  $('progression').hidden = true;
+  r.progressBusy = true; r.progressErr = ''; r.profileOpen = true; renderResults();
+  api('/api/progression', { method: 'POST', body: {
+    level: r.level, year: r.pda?.year,
+    current: { words: r.words, errors: errs(r), profile: { usage: r.profile.usage, grammar: r.profile.grammar, syntax: r.profile.syntax, targets: r.profile.targets } },
+    previous: prevRes ? { label: from, words: prevRes.words, errors: errs(prevRes) } : { label: from, text: doc },
+  } })
+    .then((g) => { r.progress = { ...g, from, table }; })
+    .catch((e) => { r.progressErr = e.message || 'La comparaison n’a pas pu être faite.'; })
+    .finally(() => { r.progressBusy = false; renderResults(); });
+});
 // Document Word : une fiche par page, modifiable. Fabriqué dans le navigateur (voir docx.js).
 function downloadFiches(list) {
   const blocks = [];
   list.forEach((r, i) => {
     if (i) blocks.push({ pagebreak: true });
-    blocks.push({ title: 'Fiche du scripteur' }, { p: whoLine(r), bold: true }, { p: `${profileHead(r)} · ${new Date().toLocaleDateString('fr-CA')}`, muted: true }, { p: PROFILE_NOTE, muted: true });
+    blocks.push({ title: 'Profil du scripteur' }, { p: whoLine(r), bold: true }, { p: `${profileHead(r)} · ${new Date().toLocaleDateString('fr-CA')}`, muted: true }, { p: PROFILE_NOTE, muted: true });
     for (const sec of profileSections(r)) {
       blocks.push({ h: sec.title });
       if (sec.items) blocks.push(...sec.items.map((t, i) => ({ bullet: t, ...(sec.ordered ? { mark: `${i + 1}.` } : {}) })));
       if (sec.lines) blocks.push(...sec.lines.map(([k, v]) => ({ bullet: `${k} : ${v}` })));
       if (sec.table) blocks.push(sec.table.length ? { table: [['Type d’erreur', 'Nombre', 'Exemples tirés du texte'], ...sec.table], widths: [3000, 1500, 5580] } : { p: 'Aucune erreur retenue.' });
+      if (sec.table3) blocks.push({ table: [['Type d’erreur', 'Avant', 'Maintenant'], ...sec.table3], widths: [3600, 3240, 3240] });
     }
     blocks.push({ h: 'Mes observations' }, { p: ' ' });
   });
   const url = URL.createObjectURL(buildDocx(blocks));
   const base = list.length === 1 ? (list[0].name || copyLabel(list[0])) : [$('exam').value, $('group').value].filter(Boolean).join('_') || 'classe';
-  const a = h('a', { href: url, download: `fiches-scripteur_${base.replace(/[^\p{L}\p{N}_-]+/gu, '-')}_${new Date().toISOString().slice(0, 10)}.docx` });
+  const a = h('a', { href: url, download: `profils-scripteur_${base.replace(/[^\p{L}\p{N}_-]+/gu, '-')}_${new Date().toISOString().slice(0, 10)}.docx` });
   document.body.append(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
   state.exported = true;
 }
+$('profile-all').addEventListener('click', () => state.results.filter((r) => r.ortho && !r.profile && !r.profileBusy && !r.rereading).forEach(queueProfile));
 $('export-fiches').addEventListener('click', async () => {
   const btn = $('export-fiches');
   const mine = state.results.filter((r) => r.ortho);
   mine.filter((r) => !r.profile && !r.profileBusy && !r.rereading).forEach(queueProfile);
   if (mine.some((r) => r.profileBusy || r.rereading)) {
-    btn.disabled = true; btn.textContent = 'Préparation des fiches…';
+    btn.disabled = true; btn.textContent = 'Préparation des profils…';
     await new Promise((res) => { const t = setInterval(() => { if (!mine.some((r) => r.profileBusy || r.rereading)) { clearInterval(t); res(); } }, 500); });
-    btn.disabled = false; btn.textContent = 'Télécharger les fiches (Word)';
+    btn.disabled = false; btn.textContent = 'Télécharger les profils (Word)';
   }
   const ready = mine.filter((r) => r.profile);
-  if (!ready.length) { banner('err', 'Aucune fiche n’a pu être établie. Réessayez.'); return; }
+  if (!ready.length) { banner('err', 'Aucun profil n’a pu être établi. Réessayez.'); return; }
   downloadFiches([...ready].sort((x, y) => (x.no ?? 0) - (y.no ?? 0)));
 });
 
@@ -2227,7 +2320,7 @@ function setKind(kind) {
   $('lang-settings').hidden = kind !== 'lang';
   renderPda(); // exemples du primaire seulement en correction de la langue
   renderOrtho();
-  $('empty-text').textContent = ortho ? 'Les textes analysés apparaîtront ici, avec les erreurs classées par type et la fiche du scripteur.'
+  $('empty-text').textContent = ortho ? 'Les textes analysés apparaîtront ici, avec les erreurs classées par type, puis le profil du scripteur.'
     : kind === 'lang' ? 'Les copies analysées apparaîtront ici, avec les fautes surlignées.'
     : 'Les copies corrigées apparaîtront ici, avec le détail des points par question.';
   renderSummary();

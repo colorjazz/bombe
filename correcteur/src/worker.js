@@ -86,6 +86,7 @@ const ROUTES = {
   'POST /api/language-reread': languageReread,
   'POST /api/language-verify': languageVerify,
   'POST /api/profil': writerProfile,
+  'POST /api/progression': writerProgress,
   // Pays du visiteur (fourni par Cloudflare), pour la mention « Fait au Canada » de l'accueil.
   'GET /api/geo': async (request) => json({ country: request.cf?.country || '' }),
 };
@@ -1443,6 +1444,67 @@ ${text || '(non disponible)'}`;
     activities: list(raw.activites, 4).filter((a) => PROFILE_ACTIVITIES.includes(a)),
     adaptations: list(raw.adaptations, 2).filter((a) => PROFILE_ADAPTATIONS.includes(a)),
     alert,
+  });
+}
+
+
+// ---------- Progression du scripteur ----------
+// Gratuite (texte seulement). Compare le profil actuel avec une évaluation précédente du même élève : un autre texte
+// analysé dans la séance (erreurs classées) ou un document de l'orthopédagogue (ancienne fiche, rapport). Rien n'est conservé.
+const PROGRESS_SCHEMA = { type: 'OBJECT', properties: {
+  resume: { type: 'STRING', description: "2 ou 3 phrases : l'évolution d'ensemble, avec prudence." },
+  progres: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Ce qui est acquis ou en progrès, avec un fait précis de chaque texte.' },
+  persistants: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Difficultés qui persistent, avec un exemple récent.' },
+  nouveaux: { type: 'ARRAY', items: { type: 'STRING' }, description: "Difficultés nouvelles (souvent liées à des textes plus longs ou plus complexes) ; liste vide s'il n'y en a pas." },
+  cibles: { type: 'ARRAY', items: { type: 'OBJECT', properties: { cible: { type: 'STRING' }, raison: { type: 'STRING' } }, required: ['cible', 'raison'] }, description: '1 ou 2 cibles ajustées pour la suite.' },
+  prudence: { type: 'STRING', description: "Limites de la comparaison (longueur ou genre des textes différents, une seule production chacun, document incomplet). Chaîne vide si rien à signaler." },
+}, required: ['resume', 'progres', 'persistants', 'nouveaux', 'cibles', 'prudence'] };
+const errorLines = (list) => list.map((e) => `- « ${e.text} » → « ${e.correction} » [${e.category || '?'}${e.subtype ? ` / ${e.subtype}` : ''}]${e.grey ? ' (notion en apprentissage)' : ''}`).join('\n') || '(aucune)';
+const readErrors = (raw) => (Array.isArray(raw) ? raw : []).slice(0, 200).map((e) => ({
+  text: String(e?.text || '').slice(0, 120), correction: String(e?.correction || '').slice(0, 120),
+  category: LANG_CATEGORIES[e?.category] ? e.category : '', subtype: ORTHO_TYPES[e?.subtype] ? e.subtype : '', grey: !!e?.grey,
+})).filter((e) => e.text || e.correction);
+async function writerProgress(request, env) {
+  await getKey(env, bearer(request));
+  const body = await readJson(request);
+  const level = body.level === 'primaire' ? 'primaire' : 'secondaire';
+  const year = Number(body.year);
+  const who = year >= 1 && year <= (level === 'primaire' ? 6 : 5)
+    ? (level === 'primaire' ? `${year}${year === 1 ? 're' : 'e'} année du primaire` : `${year}${year === 1 ? 're' : 'e'} secondaire`) : level;
+  const cur = body.current || {}, prev = body.previous || {};
+  const now = readErrors(cur.errors), before = readErrors(prev.errors);
+  const doc = String(prev.text || '').trim().slice(0, 12000);
+  if (!before.length && !doc && !Number(prev.words)) throw new HttpError(400, 'Évaluation précédente vide');
+  const profile = cur.profile || {};
+  const line = (k, v) => (v ? `${k} : ${String(v).slice(0, 600)}` : '');
+  const system = [
+    "Tu assistes une orthopédagogue québécoise. Compare la production ACTUELLE d'un élève avec une évaluation PRÉCÉDENTE du même élève, et analyse l'évolution de son profil de scripteur.",
+    "Raisonne sur les régularités, pas sur des fautes isolées. Tiens compte des longueurs : compare des taux (par 100 mots) plutôt que des nombres quand les deux sont connus. Un texte plus long ou plus complexe fait souvent apparaître de nouvelles erreurs : ce n'est pas un recul. Les notions « en apprentissage » ne sont pas des difficultés.",
+    "Interdits : ne juge pas la motivation, l'attitude ou les émotions de l'élève ; aucun diagnostic ; aucun niveau d'intervention. N'invente aucun exemple : cite seulement ce qui est dans les données. N'écris jamais le nom de l'élève : « l'élève ».",
+    "Si l'évaluation précédente est un document de l'orthopédagogue (fiche, rapport), repère les cibles qu'elle visait et dis si la production actuelle montre un progrès sur ces cibles.",
+    "Rédige en français, phrases courtes, vocabulaire de l'orthopédagogie.",
+  ].join('\n\n');
+  const content = `ÉLÈVE : ${who}.
+
+ÉVALUATION PRÉCÉDENTE (${String(prev.label || 'précédente').slice(0, 120)}) :
+${doc ? `Document de l'orthopédagogue :\n${doc}` : `Texte de ${Number(prev.words) || '?'} mots. Erreurs validées :\n${errorLines(before)}`}
+
+PRODUCTION ACTUELLE : texte de ${Number(cur.words) || '?'} mots. Erreurs validées :
+${errorLines(now)}
+${[line('Tendance en orthographe d’usage', profile.usage), line('Tendance en orthographe grammaticale', profile.grammar), line('Syntaxe et ponctuation', profile.syntax), line('Cibles actuelles', (Array.isArray(profile.targets) ? profile.targets : []).map((t) => t?.target).filter(Boolean).join(' ; '))].filter(Boolean).join('\n')}`;
+  let raw;
+  try {
+    raw = await geminiNative(env, [{ text: `${system}\n\n${content}` }], PROGRESS_SCHEMA, env.LANG_MODEL, { timeoutMs: 90_000 });
+  } catch (err) {
+    console.error('Progression impossible :', err.message);
+    throw new HttpError(502, "La comparaison n'a pas pu être faite. Réessayez.");
+  }
+  const str = (v, n = 600) => String(v || '').trim().slice(0, n);
+  const list = (v, n) => (Array.isArray(v) ? v : []).map((x) => str(x, 400)).filter(Boolean).slice(0, n);
+  return json({
+    summary: str(raw.resume, 900), progress: list(raw.progres, 5), persistent: list(raw.persistants, 5), fresh: list(raw.nouveaux, 4),
+    targets: (Array.isArray(raw.cibles) ? raw.cibles : []).slice(0, 2).map((c) => ({ target: str(c?.cible, 200), why: str(c?.raison, 300) })).filter((c) => c.target),
+    caution: str(raw.prudence, 500),
   });
 }
 

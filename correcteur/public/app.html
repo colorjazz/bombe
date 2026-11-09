@@ -177,7 +177,7 @@
         </div>
         <label id="ortho-focus-field" class="field ortho-focus" hidden><span>Ce que je veux observer <span class="muted small">(facultatif)</span></span>
           <textarea id="ortho-focus" rows="2" placeholder="Ex. : homophones grammaticaux, accords dans le GN, délimitation des phrases"></textarea>
-          <span class="muted small">Chaque texte reçoit une <b>fiche du scripteur</b> provisoire : forces, erreurs récurrentes par type, cibles prioritaires, questions d’entretien métagraphique et pistes. Vous la copiez ou la téléchargez en Word, sans rien retranscrire.</span>
+          <span class="muted small">Les erreurs sont classées par type. Après votre relecture, « Établir le profil du scripteur » prépare un profil provisoire : forces, erreurs récurrentes, cibles, questions d’entretien métagraphique et pistes. « Comparer la progression » le compare à une évaluation précédente. Copier ou Word : rien à retranscrire.</span>
         </label>
         <p class="lang-simple-only set-line"><span id="lang-set-txt"></span> · <a href="#" id="lang-to-adv">Modifier</a></p>
         <div class="field adv" id="lang-cats-field">Fautes à relever
@@ -309,7 +309,8 @@
       <div class="results-head">
         <div class="results-tools">
           <input id="search" type="search" placeholder="Rechercher un élève…" style="width:12rem">
-          <button id="export-fiches" class="btn primary" type="button" hidden>Télécharger les fiches (Word)</button>
+          <button id="profile-all" class="btn primary" type="button" hidden>Établir les profils</button>
+          <button id="export-fiches" class="btn primary" type="button" hidden>Télécharger les profils (Word)</button>
           <button id="export" class="btn green" type="button" disabled hidden>Télécharger les notes (Excel)</button>
           <button id="print-all" class="btn" type="button" disabled>Imprimer toutes les copies…</button>
           <button id="end" class="btn ghost" type="button" disabled>Terminer la session</button>
@@ -470,6 +471,24 @@
       </div>
       <div style="display:flex;gap:.5rem;flex-wrap:wrap"><a class="btn" href="guide.html" target="_blank" rel="noopener">Ouvrir le guide complet</a><button id="welcome-ok" class="btn primary" type="button" style="flex:1">Commencer</button></div>
       <button id="welcome-demo" class="btn ghost block demo-btn" type="button">Voir d’abord un exemple corrigé</button>
+    </div>
+  </div>
+  <div id="progression" class="modal" hidden>
+    <div class="panel stack" style="max-width:560px">
+      <h2 id="progress-title" style="margin:0">Comparer la progression</h2>
+      <label class="field"><span><b>Un autre texte de cet élève</b>, analysé dans cette séance</span>
+        <select id="progress-copy"></select>
+        <span class="muted small">Pour comparer avec un ancien texte, déposez-le avec les autres copies et analysez-le : la comparaison sera chiffrée, par 100 mots.</span>
+      </label>
+      <p class="muted small" style="margin:0;text-align:center">— ou —</p>
+      <div class="field"><span><b>Une évaluation précédente</b> : votre ancienne fiche, un rapport, un profil</span>
+        <label class="btn small" style="justify-self:start">Importer un fichier (Word, PDF ou texte)<input id="progress-file" type="file" accept=".docx,.pdf,.txt" hidden></label>
+        <span id="progress-file-name" class="muted small"></span>
+        <textarea id="progress-text" rows="5" placeholder="Ou collez ici le texte de l’évaluation précédente"></textarea>
+        <span class="muted small">Le texte est envoyé à l’IA pour la comparaison, puis oublié. Retirez les renseignements personnels (date de naissance, diagnostic) ; le nom de l’élève, s’il est connu, est remplacé par « l’élève ».</span>
+      </div>
+      <p id="progress-err" class="small" style="margin:0;color:var(--danger,#b91c1c)"></p>
+      <div style="display:flex;gap:.5rem;justify-content:flex-end"><button id="progress-close" class="btn ghost" type="button">Annuler</button><button id="progress-run" class="btn primary" type="button">Comparer</button></div>
     </div>
   </div>
   <div id="end-modal" class="modal" hidden>
