@@ -667,7 +667,7 @@ function renderSummary() {
   if (state.kind === 'lang') $('print-all').hidden = true;
   $('export-fiches').hidden = !state.results.some((r) => r.ortho && r.profile);
   const toDo = state.results.filter((r) => r.ortho && !r.profile && !r.profileBusy).length;
-  $('profile-all').hidden = toDo < 2; // un seul élève : son bouton dans la carte suffit
+  $('profile-all').hidden = toDo < 2 || orthoIntent === 'evolution'; // un seul élève : son bouton dans la carte suffit ; évolution : le profil s'établit seul
   $('profile-all').textContent = `Établir les ${toDo} profils`;
   $('export').textContent = tr(state.kind === 'lang' ? 'Télécharger le résumé des fautes (Excel)' : 'Télécharger les notes (Excel)');
   $('print-all').disabled = state.running || !state.results.some((r) => r.kind !== 'lang');
@@ -1005,6 +1005,7 @@ async function runAll(only, calibrating = false) {
   state.running = true;
   state.evoBatch = (state.evoBatch || 0) + 1;
   const evoDoc = state.evoDoc; // ancienne fiche importée pour « Suivre l'évolution »
+  renderDash();
   if (state.grid && byGrid() && !state.gridFolded) { state.gridFolded = true; renderGrid(); }
   state.stopping = false;
   $('stop-run').disabled = false;
@@ -1160,7 +1161,8 @@ async function runAll(only, calibrating = false) {
     if (first && !state.open.size) { state.open.add(first.id); renderResults(); }
     $('done-msg').hidden = false;
     $('done-msg').textContent = ortho && state.kind === 'lang'
-      ? `✓ ${pl(done, 'texte analysé', 'textes analysés')}. Relisez les erreurs dans chaque copie annotée (retirez les fausses, ajoutez les oubliées), puis établissez les profils.`
+      ? orthoIntent === 'evolution' ? `✓ ${pl(done, 'texte analysé', 'textes analysés')}. Le suivi s’enchaîne seul (relecture, profil, comparaison) : suivez les étapes dans le tableau de bord.`
+        : `✓ ${pl(done, 'texte analysé', 'textes analysés')}. Relisez les erreurs dans chaque copie annotée (retirez les fausses, ajoutez les oubliées), puis établissez les profils.`
       : state.kind === 'lang'
       ? `✓ ${pl(done, 'copie analysée', 'copies analysées')}. Ouvrez une copie annotée pour voir les fautes surlignées ; retirez celles qui n'en sont pas, ajoutez celles qui manquent.`
       : byGrid() && renderMode() === 'letters' ? `✓ ${pl(done, 'copie corrigée', 'copies corrigées')}. Ouvrez une copie pour voir et modifier ses niveaux. En rose : les critères sous le niveau le plus élevé.`
@@ -2228,9 +2230,18 @@ function renderDash() {
   const mine = state.results.filter((r) => r.ortho);
   el.hidden = !orth;
   $('ortho-students').hidden = !orth || !mine.length;
+  $('ortho-students').textContent = orthoIntent === 'evolution' ? 'Textes analysés' : 'Élèves';
   if (!orth) return;
   // Suivre l'évolution : un élève, deux textes. Pas de vue de groupe : le suivi pas à pas et l'avant / maintenant.
   const curEvo = orthoIntent === 'evolution' && !showIntents ? mine.filter((r) => r.evo === 'new').sort((a, b) => (b.evoBatch || 0) - (a.evoBatch || 0))[0] : null;
+  // Nouveau suivi lancé : on n'affiche pas le précédent, terminé, pendant l'analyse des nouveaux textes.
+  if (orthoIntent === 'evolution' && !showIntents && state.running && curEvo?.evoBatch !== state.evoBatch) {
+    el.replaceChildren(h('div', { class: 'dash-card' }, h('h4', { textContent: 'Suivi en cours' }),
+      h('ol', { class: 'evo-steps' }, ['Analyse des textes', 'Relecture des textes (gratuite)', 'Profil du nouveau texte', 'Comparaison'].map((t, i) =>
+        h('li', { class: `evo-step ${i ? 'wait' : 'run'}` }, h('span', { class: 'dot', textContent: i ? '·' : '…' }), h('span', { textContent: t })))),
+      h('p', { class: 'muted small', style: 'margin:.4rem 0 0', textContent: 'Tout s’enchaîne seul, en 1 à 3 minutes environ. Gardez l’écran allumé et restez sur cette page.' })));
+    return;
+  }
   if (curEvo) {
     el.replaceChildren(evoView(curEvo, mine.find((r) => r.evo === 'prev' && r.evoBatch === curEvo.evoBatch) || null));
     return;
