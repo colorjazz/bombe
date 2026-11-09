@@ -46,3 +46,10 @@ Dépendances : `pdfplumber`, `pypdfium2`, `Pillow`.
 ## Remarque
 
 `gemini/resultats/pda-mat-primaire-partie1-OBSOLETE.json` est une première tentative de Gemini par recherche web. Sa progression est erronée ; ne pas l'utiliser.
+
+## Branches et déploiement
+
+- `main` contient la 1.0 (`correcteur/`) et la 2.0 (`salle-des-profs/`).
+- Le Worker `correcteur-express` (1.0) est déployé par Cloudflare depuis `main`, dossier racine `/correcteur`.
+- Le travail de la 2.0 se fait sur la branche `salle-des-profs`, fusionnée dans `main` à chaque étape terminée.
+- L'ancienne branche de la 1.0, `ccr-fa15538c-lda5fe`, est gardée comme filet de sécurité.
