@@ -1,0 +1,22 @@
+TÂCHE : Vérifier quels modèles d'IA avec vision sont offerts par Microsoft Azure au Canada, avec traitement garanti au Canada, en novembre 2026.
+
+CONTEXTE
+Mon logiciel corrige des photos de copies manuscrites d'élèves québécois. Les données (images de copies) doivent être traitées au Canada, idéalement au Québec. J'utilise aujourd'hui Google Gemini sur Vertex AI à Montréal. Je veux comparer avec Microsoft Azure, parce que les centres de services scolaires du Québec utilisent Microsoft 365.
+
+QUESTIONS
+1. Azure OpenAI (Azure AI Foundry / Microsoft Foundry) : quels modèles sont offerts dans les régions Canada East (Québec) et Canada Central (Toronto) ?
+2. Pour chaque modèle : type de déploiement disponible dans ces régions. Je veux SEULEMENT des déploiements dont le traitement reste dans la région ou au Canada (déploiement « Standard » régional). Explique la différence avec les déploiements « Global » et « Data Zone », et dis lesquels peuvent traiter les données hors Canada.
+3. Ces modèles acceptent-ils des images (vision) ? Supportent-ils les sorties JSON structurées (structured outputs / JSON schema) ?
+4. D'autres modèles avec vision offerts dans Microsoft Foundry au Canada, par exemple des modèles d'autres éditeurs (Anthropic Claude, Mistral, Meta Llama, Microsoft Phi), avec leur type de déploiement et leur région de traitement.
+5. Azure AI Document Intelligence (reconnaissance de l'écriture manuscrite) : disponible à Canada East ? Supporte-t-il l'écriture manuscrite en français ?
+6. Politique de Microsoft sur les données envoyées à Azure OpenAI : conservation, surveillance des abus (abuse monitoring), possibilité de la désactiver, entraînement des modèles.
+7. Prix approximatifs par million de jetons (entrée, sortie) et par image pour les modèles trouvés aux questions 1 et 4.
+
+RÈGLES
+- Sources : documentation officielle de Microsoft (learn.microsoft.com, azure.microsoft.com). Donne le lien et la date de mise à jour de chaque page.
+- La disponibilité change souvent : indique la date de l'information.
+- N'invente aucun modèle ni aucune région. Si ce n'est pas confirmé, dis-le.
+
+FORMAT
+Un tableau : modèle | éditeur | région | type de déploiement | traitement garanti au Canada (oui/non) | vision | JSON structuré | prix | source.
+Puis une réponse courte à chaque question.

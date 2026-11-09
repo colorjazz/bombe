@@ -168,10 +168,35 @@ Chargé depuis `donnees/*.json`. Chaque ligne garde la version de la source.
 | J6. Microsoft | Connexion Microsoft, OneDrive, vérification d'éditeur | Entreprise enregistrée |
 | J7. Observer | Tableau de bord par élève et par groupe, tendances | J5 |
 
-## 10. Questions ouvertes
+## 10. Décisions (9 novembre 2026)
 
-1. **Authentification :** Supabase Auth (A) ou notre propre code (B) ? Recommandation : A.
-2. **Qualité à Montréal :** 75 % de surlignages exacts au lieu de 84 %. Est-ce acceptable au lancement, en améliorant les prompts ?
-3. **La 1.0 continue-t-elle ?** Recommandation : oui, comme correcteur rapide sans compte, avec le même cœur de correction. Le traitement à Montréal deviendrait aussi son réglage par défaut.
-4. **Modèle d'affaires de la 2.0 :** à la page, comme la 1.0, ou abonnement ?
-5. **Code partagé :** un seul Worker pour la 1.0 et la 2.0, ou deux Workers qui partagent un module de correction ?
+| Sujet | Décision |
+|---|---|
+| Comptes | **Supabase Auth** (liens magiques, connexion Microsoft, sessions), SMTP par AWS SES à Montréal |
+| Fournisseur de l'IA, circuit Correction | **À mesurer** : Gemini à Montréal contre Azure OpenAI au Québec (Canada Est), sur la vérité de terrain de `tools/surlignages`. Le code passe par une interface de fournisseur unique. |
+| La 1.0 | **Continue**, comme correcteur rapide sans compte. Montréal devient son réglage par défaut. |
+| Modèle d'affaires de la 2.0 | **Abonnement vendu aux centres de services** |
+| Code | **[Recommandé] Deux Workers** qui partagent un module de correction (voir 11) |
+
+## 11. Deux Workers et un module partagé
+
+```
+bombe/
+  partage/correction/     prompts, appel au fournisseur, normalisation, langue, redressement
+  correcteur/             1.0 : Worker correcteur-express, D1, Stripe, AI Studio ou Montréal
+  salle-des-profs/        2.0 : Worker salle-des-profs, Supabase, Montréal seulement
+```
+
+- Chaque Worker importe `partage/correction/`. Wrangler regroupe les fichiers au déploiement : aucune étape de compilation à ajouter.
+- **Le Worker de la 2.0 ne reçoit jamais la clé d'AI Studio.** Même un bogue ne peut pas envoyer une copie hors de Montréal.
+- Déploiements indépendants : une mise à jour de la 2.0 ne peut pas briser la 1.0 et ses clients payants.
+- Prérequis : réunir la 1.0 et la 2.0 sur une même branche (`main`), puis changer la branche de production de la 1.0 dans Cloudflare. À faire avec soin, une seule fois.
+
+## 12. Abonnement aux centres de services : ce que ça implique
+
+- **Licences** par enseignant ou par école, attribuées par un administrateur du centre de services.
+- **Console d'administration du centre de services** : licences, utilisation agrégée, aucune donnée d'élève.
+- **Plafond d'utilisation de l'IA** par licence, pour maîtriser les coûts (les pages de la 1.0 deviennent un quota mensuel).
+- **Facturation sur facture** (bon de commande) plutôt que par carte, avec un contrat. Respecter les seuils d'achat public.
+- **Pilote gratuit** pour le premier centre de services.
+- Les comptes individuels restent possibles pour l'essai, avec les limites légales vues plus tôt.
