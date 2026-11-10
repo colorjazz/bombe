@@ -2203,7 +2203,8 @@ const INTENTS = {
   pi: { ico: '📝', title: 'Préparer un bilan pour le PI', sub: 'Le profil de l’élève et un paragraphe prêt à copier dans le plan d’intervention, avec un objectif SMART suggéré.',
     steps: ['Choisissez l’année de l’élève et ses conditions de rédaction.', 'Déposez son texte, puis « Analyser ».', 'Relisez les erreurs, puis « Établir le profil et le bilan » : « Copier le bilan » le met dans votre presse-papiers.'] },
 };
-let showIntents = false;
+// À l'ouverture de l'application, l'onglet part du menu « Que voulez-vous faire aujourd'hui ? » ; la dernière tâche y reste mise en évidence.
+let showIntents = true;
 function setIntent(k) {
   if (orthoIntent !== k) $('done-msg').hidden = true; // le message parlait de l'autre tâche
   orthoIntent = k; showIntents = false; foldOpen = { s1: false, s2: k === 'evolution' };
