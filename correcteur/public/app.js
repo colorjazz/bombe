@@ -1015,6 +1015,7 @@ async function runAll(only, calibrating = false) {
   state.running = true;
   // Textes déposés sans choisir de tâche : groupe s'il y en a plusieurs, sinon un élève (les options du haut suivent).
   if (ortho && state.kind === 'lang' && !orthoIntent) { orthoIntent = bundles().length > 1 ? 'groupe' : 'eleve'; try { localStorage.setItem('ce.orthoIntent', orthoIntent); } catch { /* ignoré */ } orthoTitles(); }
+  if (ortho && state.kind === 'lang') showIntents = false; // une analyse lancée : le menu des tâches laisse la place aux résultats
   state.evoBatch = (state.evoBatch || 0) + 1;
   const evoDoc = state.evoDoc; // ancienne fiche importée pour « Suivre l'évolution »
   renderDash();
