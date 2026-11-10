@@ -54,6 +54,7 @@
   - [ ] Horaire **par jour de la semaine** par défaut (titulaires du primaire) ; cycle de 9 ou 10 jours en option (spécialistes, secondaire)
   - [ ] Importer l'horaire : PDF, Excel ou photo, lu par l'IA du circuit Création (aucune donnée d'élève)
   - [ ] Importer le calendrier scolaire du centre de services (journées pédagogiques, congés, fins d'étape) : PDF, .ics ou Excel
+  - [ ] Petit calendrier du mois sous l'horaire : aujourd'hui, journées pédagogiques, évaluations prévues (reliées à la liste « À venir »)
   - [ ] Option « Connecter Outlook » plus tard : demande la permission Calendars.Read, donc une approbation de plus pour les TI
 
 ## Fonctionnalités clés

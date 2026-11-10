@@ -49,12 +49,31 @@ td:nth-child(2),td:nth-child(3),td:nth-child(4){white-space:nowrap}
 .portrait{margin-top:22px;display:grid;grid-template-columns:1fr 1fr 1fr 1.2fr;gap:28px;align-items:start}
 .portrait h3{grid-column:1/-1;margin:0 0 -6px}
 .portrait .note{margin:0}
+
+.cal{margin-top:18px;border-top:1px dashed var(--ligne);padding-top:14px}
+.cal .tete{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.cal .tete b{font-weight:500}.cal .tete span{color:var(--doux);font-size:12px}
+.cal table{border-collapse:collapse;width:100%}.cal th,.cal td{border:0;padding:3px 0;text-align:center;font-size:12px;white-space:nowrap}
+.cal th{color:var(--doux);font-weight:500;font-size:11px;padding-bottom:5px}
+.cal td span{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;position:relative}
+.cal td.we span,.cal td.hors span{color:#c3baae}
+.cal td.auj span{background:var(--terre);color:#fff}
+.cal td.ped span{background:#e4ece5;color:#55745d}
+.cal td.ev span:after{content:"";position:absolute;bottom:2px;left:50%;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:var(--ble)}
+.cal td.auj.ev span:after{background:#fff}
+.legende{display:flex;gap:14px;font-size:11px;color:var(--doux);margin-top:8px;justify-content:center}
+.legende i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+.couv{display:flex;align-items:center;gap:14px;font-size:13px;color:var(--doux)}.couv b{white-space:nowrap;font-size:30px;font-weight:400;color:var(--encre);font-family:Georgia,"DejaVu Serif",serif}
+.avenir{margin-top:24px}.avenir h4{margin:0 0 6px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--doux);font-weight:500}
+.prevu{display:grid;grid-template-columns:70px 1fr auto;gap:12px;align-items:center;padding:9px 0;border-top:1px dashed var(--ligne);font-size:13px}
+.prevu .d{color:var(--doux);white-space:nowrap}.prevu .d:before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--ble);margin-right:7px;vertical-align:2px}
+.prevu small{color:var(--doux)}
 </style></head><body>
 <header><div class="logo serif">Salle des <i>profs</i></div>
 <nav><a class="on" href="#">Accueil</a><a href="#">Planifier</a><a href="#">Créer</a><a href="#">Évaluer</a><a href="#">Observer</a></nav>
 <div class="moi">Marie Gagnon</div></header>
 <main>
-<div class="salut"><div><h1 class="serif">Bonjour Marie</h1><p>Vendredi 7 novembre · Étape 2, semaine 4</p></div>
+<div class="salut"><div><h1 class="serif">Bonjour Marie</h1><p>Vendredi 6 novembre · Étape 2, semaine 4</p></div>
 <div class="filtre"><span>4e année, groupe 41</span><span>Français</span><span>Étape 2</span></div></div>
 <div class="volets">
 <div class="volet" style="--c:var(--sauge)"><div class="n">Un</div><h2 class="serif">Planifier</h2><p>Votre progression selon la PDA.</p><a href="#">Planification annuelle</a><a href="#">Plan de leçon</a><a href="#">Contenus à couvrir</a></div>
@@ -65,25 +84,32 @@ td:nth-child(2),td:nth-child(3),td:nth-child(4){white-space:nowrap}
 <div class="deux">
 <div class="carte"><h3 class="serif">Évaluations en cours</h3>
 <table><tr><th>Évaluation</th><th>Date</th><th>État</th><th></th></tr>
-<tr><td>Dictée 6</td><td>7 nov.</td><td><span class="etat e1">À valider (21)</span></td><td><button class="btn plein petit">Valider</button></td></tr>
+<tr><td>Dictée 6</td><td>6 nov.</td><td><span class="etat e1">À valider (21)</span></td><td><button class="btn plein petit">Valider</button></td></tr>
 <tr><td>Production écrite : le récit d'aventure</td><td>3 nov.</td><td><span class="etat e3">À numériser</span></td><td><button class="btn petit">Numériser</button></td></tr>
 <tr><td>Lecture : le loup et l'agneau</td><td>28 oct.</td><td><span class="etat e2">Terminée</span></td><td><button class="btn petit">Résultats</button></td></tr>
-<tr><td>Dictée 5</td><td>24 oct.</td><td><span class="etat e2">Terminée</span></td><td><button class="btn petit">Résultats</button></td></tr>
-</table></div>
+<tr><td>Dictée 5</td><td>23 oct.</td><td><span class="etat e2">Terminée</span></td><td><button class="btn petit">Résultats</button></td></tr>
+</table>
+<div class="avenir"><h4>À venir</h4>
+<div class="prevu"><span class="d">12 nov.</span><span>Mathématique : les fractions</span><small>Évaluation prête</small></div>
+<div class="prevu"><span class="d">20 nov.</span><span>Lecture : le récit d'aventure</span><small>À créer</small></div>
+<div class="prevu"><span class="d">26 nov.</span><span>Dictée 7</span><small>Planifiée</small></div>
+</div>
+<div class="note" style="margin-top:22px">14 élèves sur 24 confondent <i>-er</i> et <i>-é</i> dans la dictée 6.<br><br><button class="btn petit">Préparer une activité de récupération</button></div></div>
 <div class="carte horaire"><h3 class="serif">Mon horaire et mon calendrier</h3>
 <div class="sous">Aujourd'hui, vendredi · groupe 41</div>
 <div class="periode"><span>8 h 15</span>Français : dictée 6</div>
 <div class="periode maint"><span>9 h 30</span>Mathématique : les fractions (en cours)</div>
 <div class="periode"><span>11 h 05</span>Univers social</div>
 <div class="periode"><span>13 h 15</span>Libération : anglais avec la spécialiste</div>
-<div class="depot compact"><div><b>Calendrier scolaire</b><small>Journées pédagogiques, congés, fins d'étape (PDF, .ics ou Excel)</small></div><button class="btn petit">Importer</button></div>
-<div class="ou">Horaire par jour de la semaine, importé le 2 novembre · <a class="lien" href="#">Remplacer</a> · <a class="lien" href="#">Connecter Outlook</a></div>
+<div class="cal"><div class="tete"><b>Novembre 2026</b><span>Étape 2</span></div><table><tr><th>D</th><th>L</th><th>M</th><th>M</th><th>J</th><th>V</th><th>S</th></tr><tr><td class="we"><span>1</span></td><td class=""><span>2</span></td><td class=""><span>3</span></td><td class=""><span>4</span></td><td class=""><span>5</span></td><td class="auj ev"><span>6</span></td><td class="we"><span>7</span></td></tr><tr><td class="we"><span>8</span></td><td class=""><span>9</span></td><td class=""><span>10</span></td><td class=""><span>11</span></td><td class="ev"><span>12</span></td><td class="ped"><span>13</span></td><td class="we"><span>14</span></td></tr><tr><td class="we"><span>15</span></td><td class=""><span>16</span></td><td class=""><span>17</span></td><td class=""><span>18</span></td><td class=""><span>19</span></td><td class="ev"><span>20</span></td><td class="we"><span>21</span></td></tr><tr><td class="we"><span>22</span></td><td class=""><span>23</span></td><td class=""><span>24</span></td><td class=""><span>25</span></td><td class="ev"><span>26</span></td><td class=""><span>27</span></td><td class="we"><span>28</span></td></tr><tr><td class="we"><span>29</span></td><td class=""><span>30</span></td><td class="hors"><span>1</span></td><td class="hors"><span>2</span></td><td class="hors"><span>3</span></td><td class="hors"><span>4</span></td><td class="hors"><span>5</span></td></tr></table><div class="legende"><span><i style="background:var(--terre)"></i>Aujourd'hui</span><span><i style="background:#cfe0d2"></i>Journée pédagogique</span><span><i style="background:var(--ble)"></i>Évaluation prévue</span></div></div>
+<div class="depot compact" style="margin-top:14px"><div><b>Calendrier scolaire du centre de services</b><small>Importé le 2 novembre (PDF, .ics ou Excel)</small></div><button class="btn petit">Remplacer</button></div>
+<div class="ou"><a class="lien" href="#">Remplacer l'horaire</a> · <a class="lien" href="#">Connecter Outlook</a></div>
 </div></div>
 <div class="carte portrait"><h3 class="serif">Portrait du groupe</h3>
 <div class="comp"><div class="l">Lire des textes variés<span>3 éval.</span></div><div class="barre"><i class="k1" style="width:8%"></i><i class="k2" style="width:25%"></i><i class="k3" style="width:42%"></i><i class="k4" style="width:25%"></i></div></div>
 <div class="comp"><div class="l">Écrire des textes variés<span>2 éval.</span></div><div class="barre"><i class="k1" style="width:17%"></i><i class="k2" style="width:38%"></i><i class="k3" style="width:33%"></i><i class="k4" style="width:12%"></i></div></div>
 <div class="comp"><div class="l">Communiquer oralement<span>à venir</span></div><div class="barre" style="background:var(--ligne)"></div></div>
-<div class="note">14 élèves sur 24 confondent <i>-er</i> et <i>-é</i> dans la dictée 6.<br><br><button class="btn petit">Préparer une activité de récupération</button></div>
+<div class="couv"><b>68 %</b><span>des contenus de la PDA<br>prévus à l'étape 2 sont couverts</span></div>
 </div>
 </main>
 <footer>Noms des élèves chiffrés sur cet appareil · Données hébergées au Québec</footer>
