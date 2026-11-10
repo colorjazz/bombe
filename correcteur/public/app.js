@@ -2193,14 +2193,22 @@ function downloadFiches(list) {
 
 // ---------- Orthopédagogie : accueil (« Que voulez-vous faire ? ») et tableau de bord ----------
 // Tout est calculé ici, à partir des erreurs validées : pas d'appel à l'IA, rien n'est conservé.
+// Icônes au trait (SVG), à la place des emoji : groupe, élève, évolution, bilan pour le PI.
+const ICONES = {
+  groupe: '<circle cx="9" cy="8.5" r="3.3"/><path d="M3 19.5a6 6 0 0 1 12 0"/><circle cx="16.8" cy="10" r="2.6"/><path d="M14.4 14.6a4.8 4.8 0 0 1 6.9 4.4"/>',
+  eleve: '<circle cx="12" cy="8" r="4"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/>',
+  evolution: '<path d="M3 17.5l6-6 4 4 8-8"/><path d="M15.5 7.5H21v5.5"/>',
+  pi: '<rect x="5" y="4.5" width="14" height="16.5" rx="2"/><rect x="9" y="2.8" width="6" height="3.4" rx="1"/><path d="M9 13.5l2.2 2.2L15.5 11.4"/>',
+};
+const icone = (k) => h('span', { class: 'ico-svg', 'aria-hidden': 'true', innerHTML: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONES[k] || ''}</svg>` });
 const INTENTS = {
-  groupe: { ico: '👥', title: 'Dresser le profil d’un groupe', sub: 'Déposez les textes du groupe : vue d’ensemble U, G, P, S, V, sous-groupes de besoins, un profil par élève.',
+  groupe: { title: 'Dresser le profil d’un groupe', sub: 'Déposez les textes du groupe : vue d’ensemble U, G, P, S, V, sous-groupes de besoins, un profil par élève.',
     steps: ['Choisissez l’année des élèves, ce que vous voulez observer et les conditions de rédaction.', 'Déposez les textes du groupe (photos, PDF, Word), puis « Analyser ».', 'Relisez les erreurs, puis « Établir les profils » : le tableau du groupe et les sous-groupes de besoins se remplissent.'] },
-  eleve: { ico: '👤', title: 'Établir le profil d’un élève', sub: 'Un texte de l’élève : erreurs classées par type, forces, cibles, questions d’entretien métagraphique.',
+  eleve: { title: 'Établir le profil d’un élève', sub: 'Un texte de l’élève : erreurs classées par type, forces, cibles, questions d’entretien métagraphique.',
     steps: ['Choisissez l’année de l’élève et ses conditions de rédaction.', 'Déposez son texte, puis « Analyser ».', 'Relisez les erreurs dans la copie annotée, puis « Établir le profil du scripteur ».'] },
-  evolution: { ico: '📈', title: 'Suivre l’évolution d’un élève', sub: 'Un texte récent et un texte (ou votre fiche) d’avant : ce qui progresse, ce qui persiste, les cibles à ajuster.',
+  evolution: { title: 'Suivre l’évolution d’un élève', sub: 'Un texte récent et un texte (ou votre fiche) d’avant : ce qui progresse, ce qui persiste, les cibles à ajuster.',
     steps: ['Choisissez l’année de l’élève et ses conditions de rédaction.', 'Déposez son texte précédent (ou importez votre ancienne fiche) et son nouveau texte, puis « Analyser et suivre l’évolution ».', 'Le profil et l’évolution s’établissent après la relecture : avant / maintenant pour 100 mots, progrès, cibles ajustées.'] },
-  pi: { ico: '📝', title: 'Préparer un bilan pour le PI', sub: 'Le profil de l’élève et un paragraphe prêt à copier dans le plan d’intervention, avec un objectif SMART suggéré.',
+  pi: { title: 'Préparer un bilan pour le PI', sub: 'Le profil de l’élève et un paragraphe prêt à copier dans le plan d’intervention, avec un objectif SMART suggéré.',
     steps: ['Choisissez l’année de l’élève et ses conditions de rédaction.', 'Déposez son texte, puis « Analyser ».', 'Relisez les erreurs, puis « Établir le profil et le bilan » : « Copier le bilan » le met dans votre presse-papiers.'] },
 };
 // À l'ouverture de l'application, l'onglet part du menu « Que voulez-vous faire aujourd'hui ? » ; la dernière tâche y reste mise en évidence.
@@ -2243,13 +2251,13 @@ function openStudent(r) {
 function intentsView() {
   const k = orthoIntent;
   // Tâche choisie, rien d'analysé : seulement sa marche à suivre (« Changer de tâche » est dans la barre du haut).
-  if (k && !showIntents) return h('div', { class: 'dash-next' }, h('b', { textContent: `${INTENTS[k].ico} ${INTENTS[k].title} : la marche à suivre` }), h('ol', {}, INTENTS[k].steps.map((t) => h('li', { textContent: t }))));
+  if (k && !showIntents) return h('div', { class: 'dash-next' }, h('b', {}, icone(k), `${INTENTS[k].title} : la marche à suivre`), h('ol', {}, INTENTS[k].steps.map((t) => h('li', { textContent: t }))));
   return h('div', { class: 'dash-hello' },
     h('h3', { textContent: 'Que voulez-vous faire aujourd’hui ?' }),
     h('p', { class: 'muted small', textContent: 'Choisissez une tâche : l’onglet se règle pour vous. Vous pourrez toujours faire le reste ensuite.' }),
     h('div', { class: 'intents' }, Object.entries(INTENTS).map(([id, it]) => h('button', { type: 'button', class: `intent${k === id ? ' on' : ''}`, 'aria-pressed': String(k === id), onclick: () => setIntent(id) },
-      h('span', { class: 'ico', textContent: it.ico }), h('span', {}, h('b', { textContent: it.title }), h('span', { textContent: it.sub }))))),
-    k ? h('div', { class: 'dash-next' }, h('b', { textContent: `${INTENTS[k].ico} ${INTENTS[k].title} : la marche à suivre` }), h('ol', {}, INTENTS[k].steps.map((t) => h('li', { textContent: t })))) : null);
+      h('span', { class: 'ico' }, icone(id)), h('span', {}, h('b', { textContent: it.title }), h('span', { textContent: it.sub }))))),
+    k ? h('div', { class: 'dash-next' }, h('b', {}, icone(k), `${INTENTS[k].title} : la marche à suivre`), h('ol', {}, INTENTS[k].steps.map((t) => h('li', { textContent: t })))) : null);
 }
 function renderDash() {
   const el = $('ortho-dash');
@@ -2424,7 +2432,7 @@ function renderBar(mine) {
   }
   const change = pick ? (it && mine.length ? btn('← Retour au tableau de bord', '', () => { showIntents = false; renderDash(); }) : null)
     : btn('Changer de tâche', 'ghost', () => { showIntents = true; renderDash(); });
-  $('ortho-bar').replaceChildren(...[h('div', { class: 'bar-task' }, h('span', { class: 'muted small', textContent: 'Tâche :' }), h('b', { textContent: it && !pick ? `${it.ico} ${it.title}` : 'à choisir' }), change),
+  $('ortho-bar').replaceChildren(...[h('div', { class: 'bar-task' }, h('span', { class: 'muted small', textContent: 'Tâche :' }), (it && !pick ? h('b', {}, icone(orthoIntent), it.title) : h('b', { textContent: 'à choisir' })), change),
     a.length ? h('div', { class: 'bar-actions' }, a) : null].filter(Boolean));
 }
 

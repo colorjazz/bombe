@@ -679,7 +679,11 @@ body.light .layout > .levelbar { grid-column: 1 / -1; }
 .dash-hello > p { margin: .2rem 0 .9rem; }
 .intents { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .7rem; }
 .intent { display: grid; grid-template-columns: 2.7rem 1fr; gap: .7rem; align-items: start; text-align: left; border: 2px solid var(--line); background: #fff; border-radius: 14px; padding: .8rem; font: inherit; color: var(--text); cursor: pointer; }
-.intent .ico { width: 2.7rem; height: 2.7rem; border-radius: 12px; background: #eef0ff; display: grid; place-items: center; font-size: 1.3rem; }
+.intent .ico { width: 2.7rem; height: 2.7rem; border-radius: 12px; background: #eef0ff; display: grid; place-items: center; font-size: 1.3rem; color: #3b3d5c; }
+.ico-svg { display: inline-flex; vertical-align: -0.2em; margin-right: .35rem; }
+.ico-svg svg { width: 1.15em; height: 1.15em; }
+.intent .ico .ico-svg { margin: 0; }
+.intent .ico .ico-svg svg { width: 1.65rem; height: 1.65rem; }
 .intent b { display: block; font-size: .95rem; margin-bottom: .15rem; }
 .intent span span { color: var(--muted); font-size: .82rem; line-height: 1.4; }
 .intent:hover { border-color: #c7cbff; }
