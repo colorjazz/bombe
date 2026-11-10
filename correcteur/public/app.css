@@ -101,7 +101,7 @@ button.rel { cursor: pointer; font-family: inherit; }
 .rel.mid { color: var(--amber); border-color: rgba(245,158,11,.4); background: rgba(245,158,11,.1); }
 .rel.lo { color: var(--red); border-color: rgba(244,63,94,.45); background: rgba(244,63,94,.1); }
 .qtable tr.disputed td { background: rgba(245,158,11,.07); }
-.qtable tr.disputed td.q::before { content: "⚖ "; color: var(--amber); }
+.qtable tr.disputed td.q::before { content: "⚖︎ "; color: var(--amber); }
 .qtable .second { font-size: .72rem; color: var(--amber); margin-top: .25rem; }
 .grade { font-size: .95rem; font-weight: 800; color: var(--primary-2); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .grade small { color: var(--muted); font-weight: 500; font-size: .75rem; }
@@ -698,7 +698,7 @@ body.light .layout > .levelbar { grid-column: 1 / -1; }
 .kpi { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: .6rem .8rem; }
 .kpi b { display: block; font-size: 1.5rem; font-weight: 800; letter-spacing: -.02em; }
 .kpi span { color: var(--muted); font-size: .78rem; }
-.kpi.warn b::before { content: "⚠ "; font-size: 1.15rem; }
+.kpi.warn b::before { content: "⚠︎ "; font-size: 1.15rem; }
 .dash-card { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: .8rem .9rem; min-width: 0; }
 .dash-card h4 { margin: 0 0 .5rem; font-size: .95rem; }
 .dash-two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1rem; }

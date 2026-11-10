@@ -33,9 +33,9 @@ FR = dict(
 <ul>
 <li><b>Formats acceptés</b> : PDF (une numérisation de toute la pile convient), photos (JPG, PNG, HEIC d’iPhone…), Word (.docx) et texte (.txt). Plusieurs fichiers à la fois, par glisser-déposer ou en cliquant.</li>
 <li><b>Pages par élève</b> (obligatoire, section 1) : 1 pour une photo ou un fichier par élève, 2 si chaque copie a 2 pages, etc. Les pages sont regroupées dans l’ordre, même dans un PDF du photocopieur. Copies de longueur variable : en affichage <b>Avancé</b>, « Comment sont vos copies ? » → <b>Trouver chaque copie pour moi</b> (l’IA repère où commence chaque copie, gratuit).</li>
-<li><b>Vérifiez les copies</b> sur les miniatures : ✂ sépare deux pages, « rattacher à la copie du dessus » réunit deux copies, × retire une page. Cliquez sur une miniature pour l’agrandir.</li>
+<li><b>Vérifiez les copies</b> sur les miniatures : ✂︎ sépare deux pages, « rattacher à la copie du dessus » réunit deux copies, × retire une page. Cliquez sur une miniature pour l’agrandir.</li>
 <li><b>Photos prises de côté</b> : elles sont redressées automatiquement ; le bouton ↻ d’une miniature la tourne à la main.</li>
-<li><b>Limite</b> : 30 pages par copie, pour les travaux longs du cégep. Une copie anormalement longue regroupe sans doute plusieurs élèves : utilisez le nombre fixe de pages ou ✂.</li>
+<li><b>Limite</b> : 30 pages par copie, pour les travaux longs du cégep. Une copie anormalement longue regroupe sans doute plusieurs élèves : utilisez le nombre fixe de pages ou ✂︎.</li>
 </ul>'''),
     ('camera', 'Prendre les copies en photo', '''
 <ul>
@@ -55,13 +55,13 @@ FR = dict(
     ('modes', 'Correction rapide ou approfondie', '''
 <ul>
 <li><b>Rapide</b> : une seule correction, 1 page décomptée par page.</li>
-<li><b>Approfondie</b> : deux corrections indépendantes ; la note retenue est leur moyenne, question par question. Une <b>fiabilité</b> (en %) mesure leur accord, et les questions où elles diffèrent sont signalées ⚖. 2 pages décomptées par page.</li>
+<li><b>Approfondie</b> : deux corrections indépendantes ; la note retenue est leur moyenne, question par question. Une <b>fiabilité</b> (en %) mesure leur accord, et les questions où elles diffèrent sont signalées ⚖︎. 2 pages décomptées par page.</li>
 <li>Le choix se fait dans l’affichage <b>Avancé</b>.</li>
 </ul>'''),
     ('calibrage', 'Calibrage : une pile corrigée comme vous', '''
 <p>Comme lorsque vous corrigez quelques copies pour « vous faire la main », le calibrage montre à l’outil votre façon de noter avant qu’il corrige le reste de la pile.</p>
 <ul>
-<li>Avec plus de 4 copies, cliquez sur <b>« 🎯 Calibrer d’abord »</b> : 3 copies seulement sont corrigées.</li>
+<li>Avec plus de 4 copies, cliquez sur <b>« <svg class="ico-svg" viewBox="0 0 24 24" width="1.1em" height="1.1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-0.2em;margin-right:.35em"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/></svg>Calibrer d’abord »</b> : 3 copies seulement sont corrigées.</li>
 <li>Relisez-les et <b>changez les notes</b> qui ne vous conviennent pas. Un champ <b>« Pourquoi ? »</b> apparaît : une courte raison aide beaucoup (ex. « j’accepte une conséquence générale si elle est expliquée »), mais elle est facultative.</li>
 <li>Cliquez ensuite sur <b>« Corriger »</b> pour le reste : chaque note changée sert d’exemple (la réponse de l’élève, la note proposée, la vôtre et votre raison). L’outil applique les mêmes critères sans recopier vos notes.</li>
 <li>Les notes changées plus tard, en cours de relecture, guident aussi les copies corrigées ensuite. Le calibrage vaut pour la même évaluation (même nom, barème et corrigé).</li>
@@ -79,11 +79,11 @@ FR = dict(
 </ul>'''),
     ('resultats', 'Relire et modifier les résultats', '''
 <ul>
-<li>Chaque copie apparaît sur <b>une ligne</b> : n° de copie, nom, groupe, note. Un clic sur la ligne l’ouvre ; les copies à vérifier sont marquées ⚠.</li>
+<li>Chaque copie apparaît sur <b>une ligne</b> : n° de copie, nom, groupe, note. Un clic sur la ligne l’ouvre ; les copies à vérifier sont marquées ⚠︎.</li>
 <li>Dans la fiche : les points et la justification de chaque question. <b>Modifiez les points</b> directement, réécrivez le commentaire, complétez le nom ou le groupe.</li>
 <li>Les <b>statistiques</b> donnent la moyenne, le minimum et le maximum, et la <b>moyenne par question</b> montre celle que le groupe a le moins réussie.</li>
 <li><b>Rechercher un élève</b> filtre la liste (et l’impression).</li>
-<li>Les notes de l’IA sont des <b>propositions</b> : vérifiez en priorité les copies ⚠.</li>
+<li>Les notes de l’IA sont des <b>propositions</b> : vérifiez en priorité les copies ⚠︎.</li>
 </ul>'''),
     ('exporter', 'Exporter et imprimer', '''
 <ul>
@@ -148,9 +148,9 @@ EN = dict(
 <ul>
 <li><b>Accepted formats</b>: PDF (a scan of the whole stack works), photos (JPG, PNG, iPhone HEIC…), Word (.docx) and text (.txt). Several files at once, by drag and drop or by clicking.</li>
 <li><b>Pages per student</b> (required, section 1): 1 for one photo or file per student, 2 if each paper has 2 pages, and so on. Pages are grouped in order, even in a photocopier PDF. Papers of varying length: in the <b>Advanced</b> view, “How are your papers organized?” → <b>Find each student’s paper for me</b> (the AI finds where each paper starts, free).</li>
-<li><b>Check the papers</b> on the thumbnails: ✂ splits two pages, “join to the paper above” combines two papers, × removes a page. Click a thumbnail to enlarge it.</li>
+<li><b>Check the papers</b> on the thumbnails: ✂︎ splits two pages, “join to the paper above” combines two papers, × removes a page. Click a thumbnail to enlarge it.</li>
 <li><b>Sideways photos</b> are straightened automatically; the ↻ button on a thumbnail rotates it by hand.</li>
-<li><b>Limit</b>: 30 pages per paper, for long college assignments. An unusually long paper probably groups several students: use a fixed number of pages or ✂.</li>
+<li><b>Limit</b>: 30 pages per paper, for long college assignments. An unusually long paper probably groups several students: use a fixed number of pages or ✂︎.</li>
 </ul>'''),
     ('camera', 'Taking photos of the papers', '''
 <ul>
@@ -170,13 +170,13 @@ EN = dict(
     ('modes', 'Quick or in-depth grading', '''
 <ul>
 <li><b>Quick</b>: a single grading, 1 page used per page.</li>
-<li><b>In-depth</b>: two independent gradings; the grade kept is their average, question by question. A <b>reliability</b> score (%) measures how much they agree, and questions where they differ are flagged ⚖. 2 pages used per page.</li>
+<li><b>In-depth</b>: two independent gradings; the grade kept is their average, question by question. A <b>reliability</b> score (%) measures how much they agree, and questions where they differ are flagged ⚖︎. 2 pages used per page.</li>
 <li>The choice is in the <b>Advanced</b> view.</li>
 </ul>'''),
     ('calibrage', 'Calibration: a pile marked your way', '''
 <p>Just like marking a few papers first to “get your eye in”, calibration shows the tool how you mark before it marks the rest of the pile.</p>
 <ul>
-<li>With more than 4 papers, click <b>“🎯 Calibrate first”</b>: only 3 papers are marked.</li>
+<li>With more than 4 papers, click <b>“<svg class="ico-svg" viewBox="0 0 24 24" width="1.1em" height="1.1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-0.2em;margin-right:.35em"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/></svg>Calibrate first”</b>: only 3 papers are marked.</li>
 <li>Review them and <b>change any marks</b> you disagree with. A <b>“Why?”</b> field appears: a short reason helps a lot (e.g. “I accept a general consequence if it is explained”), but it is optional.</li>
 <li>Then click <b>“Grade”</b> for the rest: each changed mark becomes an example (the student’s answer, the suggested mark, yours and your reason). The tool applies the same criteria without copying your marks.</li>
 <li>Marks you change later, while reviewing, also guide the papers marked afterwards. Calibration applies to the same assessment (same name, total and answer key).</li>
@@ -192,11 +192,11 @@ EN = dict(
 </ul>'''),
     ('resultats', 'Reviewing and editing results', '''
 <ul>
-<li>Each paper appears on <b>one line</b>: paper number, name, class, grade. Click the line to open it; papers to review are marked ⚠.</li>
+<li>Each paper appears on <b>one line</b>: paper number, name, class, grade. Click the line to open it; papers to review are marked ⚠︎.</li>
 <li>In the sheet: the points and justification for each question. <b>Edit the points</b> directly, rewrite the feedback, fill in the name or class.</li>
 <li><b>Statistics</b> show the average, minimum and maximum, and the <b>average by question</b> shows the one the class struggled with most.</li>
 <li><b>Search for a student</b> filters the list (and printing).</li>
-<li>AI grades are <b>suggestions</b>: review the ⚠ papers first.</li>
+<li>AI grades are <b>suggestions</b>: review the ⚠︎ papers first.</li>
 </ul>'''),
     ('exporter', 'Exporting and printing', '''
 <ul>

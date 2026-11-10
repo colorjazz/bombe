@@ -52,8 +52,8 @@ T = {
   price_sub="Une classe de 30 élèves avec des copies de 3 pages : environ 5 $ en mode rapide, 10 $ en mode approfondi (double correction). La correction de la langue compte 1 page par page. Le corrigé n'est jamais facturé. Les pages achetées n'expirent pas.",
   prices=[('Découverte', '14 $', '200 pages', ['~7 ¢ la page', '~2 classes en mode rapide'], ''), ('Session', '29 $', '500 pages', ['~5,8 ¢ la page', '~5 classes en mode rapide, 2 à 3 en approfondi'], 'Le plus populaire'), ('Année', '79 $', '1 800 pages', ['~4,4 ¢ la page', "Toute l'année scolaire"], '')],
   start='ou essayer gratuitement d’abord', buy='Acheter', see_prices='Voir les tarifs →',
-  refer='<b>🤝 Parrainage :</b> faites découvrir Brûle la pile à un collègue. Il reçoit <b>100 pages de plus</b> sur son premier forfait, et vous recevez <b>200 pages</b> dès qu’il a corrigé ses 30 premières pages. Jusqu’à 5 collègues. Votre lien est dans l’appli, bouton « Inviter un collègue ».',
-  ref_banner='🤝 Un collègue vous a invité : <b>100 pages offertes</b> en plus de votre premier forfait.',
+  refer='<b><svg class="ico-svg" viewBox="0 0 24 24" width="1.1em" height="1.1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-0.2em;margin-right:.35em"><circle cx="9" cy="8" r="3.5"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M18.5 8v6M15.5 11h6"/></svg>Parrainage :</b> faites découvrir Brûle la pile à un collègue. Il reçoit <b>100 pages de plus</b> sur son premier forfait, et vous recevez <b>200 pages</b> dès qu’il a corrigé ses 30 premières pages. Jusqu’à 5 collègues. Votre lien est dans l’appli, bouton « Inviter un collègue ».',
+  ref_banner='<svg class="ico-svg" viewBox="0 0 24 24" width="1.1em" height="1.1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-0.2em;margin-right:.35em"><circle cx="9" cy="8" r="3.5"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M18.5 8v6M15.5 11h6"/></svg>Un collègue vous a invité : <b>100 pages offertes</b> en plus de votre premier forfait.',
   price_note='Prix en dollars canadiens. Commencez par 30 pages gratuites. École ou centre de services ? <a href="mailto:bonjour@brulelapile.ca">Écrivez-nous</a> pour un tarif de groupe.',
   faq_h='Questions fréquentes',
   faq=[("L'IA remplace-t-elle mon jugement ?", "Non. Elle vous propose une note et une justification ; vous restez le correcteur. Tout est modifiable avant l'export, et les copies douteuses sont signalées."),
@@ -139,8 +139,8 @@ T = {
   price_sub='A class of 30 students with 3-page tests: about $5 in quick mode, $10 in in-depth mode (double marking). Language checks count 1 page per page. The answer key is never charged. Purchased pages never expire.',
   prices=[('Starter', '$14 CAD', '200 pages', ['~7¢ per page', '~2 classes in quick mode'], ''), ('Term', '$29 CAD', '500 pages', ['~5.8¢ per page', '~5 classes in quick mode, 2–3 in-depth'], 'Most popular'), ('Year', '$79 CAD', '1,800 pages', ['~4.4¢ per page', 'The whole school year'], '')],
   start='or try it free first', buy='Buy', see_prices='See pricing →',
-  refer='<b>🤝 Referrals:</b> introduce Burn the Pile to a colleague. They get <b>100 extra pages</b> on their first pack, and you get <b>200 pages</b> once they have marked their first 30 pages. Up to 5 colleagues. Your link is in the app, “Invite a colleague” button.',
-  ref_banner='🤝 A colleague invited you: <b>100 free pages</b> on top of your first pack.',
+  refer='<b><svg class="ico-svg" viewBox="0 0 24 24" width="1.1em" height="1.1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-0.2em;margin-right:.35em"><circle cx="9" cy="8" r="3.5"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M18.5 8v6M15.5 11h6"/></svg>Referrals:</b> introduce Burn the Pile to a colleague. They get <b>100 extra pages</b> on their first pack, and you get <b>200 pages</b> once they have marked their first 30 pages. Up to 5 colleagues. Your link is in the app, “Invite a colleague” button.',
+  ref_banner='<svg class="ico-svg" viewBox="0 0 24 24" width="1.1em" height="1.1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-0.2em;margin-right:.35em"><circle cx="9" cy="8" r="3.5"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M18.5 8v6M15.5 11h6"/></svg>A colleague invited you: <b>100 free pages</b> on top of your first pack.',
   price_note='Prices in Canadian dollars. Start with 30 free pages. A school or board? <a href="mailto:hello@burnthepile.com">Contact us</a> for group pricing.',
   faq_h='Frequently asked questions',
   faq=[('Does the AI replace my judgment?', 'No. It suggests a mark and a justification; you remain the marker. Everything can be edited before export, and papers that need a second look are flagged.'),
@@ -245,7 +245,7 @@ def page(L, d):
     {prim_section(d)}
     {ortho_section(d)}
 
-    <section class="creator"><div class="creator-card"><span class="creator-mark" aria-hidden="true">✍</span><div><b>{d['creator_h']}</b><p>{d['creator_p']}</p></div></div></section>
+    <section class="creator"><div class="creator-card"><span class="creator-mark" aria-hidden="true"><svg class="ico-svg" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style=""><path d="M4 20l1.1-4.2L15.6 5.3a2 2 0 0 1 2.9 0l.2.2a2 2 0 0 1 0 2.9L8.2 18.9z"/><path d="M13.8 7.1l3.1 3.1"/></svg></span><div><b>{d['creator_h']}</b><p>{d['creator_p']}</p></div></div></section>
 
     <section class="block" id="how">
       <h2>{d['steps_h']}</h2>

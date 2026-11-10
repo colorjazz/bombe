@@ -55,6 +55,16 @@ function h(tag, props = {}, ...children) {
   el.append(...children.flat(Infinity).filter((c) => c != null && c !== false));
   return el;
 }
+// Icônes au trait (SVG), à la place des emoji. Définies tôt : des fonctions appelées au démarrage les utilisent.
+const ICONES = {
+  groupe: '<circle cx="9" cy="8.5" r="3.3"/><path d="M3 19.5a6 6 0 0 1 12 0"/><circle cx="16.8" cy="10" r="2.6"/><path d="M14.4 14.6a4.8 4.8 0 0 1 6.9 4.4"/>',
+  eleve: '<circle cx="12" cy="8" r="4"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/>',
+  evolution: '<path d="M3 17.5l6-6 4 4 8-8"/><path d="M15.5 7.5H21v5.5"/>',
+  cible: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/>',
+  imprimante: '<path d="M7 9V3.5h10V9"/><rect x="3.5" y="9" width="17" height="8" rx="2"/><rect x="7" y="14" width="10" height="6.5" rx="1"/>',
+  pi: '<rect x="5" y="4.5" width="14" height="16.5" rx="2"/><rect x="9" y="2.8" width="6" height="3.4" rx="1"/><path d="M9 13.5l2.2 2.2L15.5 11.4"/>',
+};
+const icone = (k) => h('span', { class: 'ico-svg', 'aria-hidden': 'true', innerHTML: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONES[k] || ''}</svg>` });
 
 const store = {
   get: () => { try { return localStorage.getItem(KEY_STORAGE); } catch { return null; } },
@@ -594,7 +604,7 @@ function renderPages() {
   $('bundles').replaceChildren(...list.map((b, bi) => {
     const st = state.status[b[0].id];
     const tooLong = ready && b.length > MAX_PAGES_PER_COPY;
-    const label = st?.state === 'running' ? st.msg || 'Correction en cours…' : st?.state === 'error' ? `⚠ ${st.msg}` : tooLong ? `⚠ ${MAX_PAGES_PER_COPY} pages max : plusieurs élèves ? Utilisez « Nombre fixe de pages par élève » ou ✂` : '';
+    const label = st?.state === 'running' ? st.msg || 'Correction en cours…' : st?.state === 'error' ? `⚠︎ ${st.msg}` : tooLong ? `⚠︎ ${MAX_PAGES_PER_COPY} pages max : plusieurs élèves ? Utilisez « Nombre fixe de pages par élève » ou ✂︎` : '';
     return h('div', { class: 'bundle' },
       h('div', { class: 'bundle-head' },
         h('span', {}, `Copie ${nos[bi]}${b[0].detectedName ? ` · ${b[0].detectedName}` : ''} · ${b.length} page${b.length > 1 ? 's' : ''}`),
@@ -602,7 +612,7 @@ function renderPages() {
         bi > 0 ? h('button', { class: 'btn ghost merge', type: 'button', textContent: '↑ Même élève', title: 'Même élève que la copie au-dessus : les réunir', disabled: state.running,
           onclick: () => { b[0].startsNew = false; b[0].autoStart = false; renderPages(); } }) : null),
       h('div', { class: 'bundle-pages' }, b.map((p, pi) => [
-        pi > 0 ? h('button', { class: 'split', type: 'button', title: 'Séparer : une nouvelle copie commence ici', textContent: '✂', disabled: state.running,
+        pi > 0 ? h('button', { class: 'split', type: 'button', title: 'Séparer : une nouvelle copie commence ici', textContent: '✂︎', disabled: state.running,
           onclick: () => { p.startsNew = true; p.autoStart = true; renderPages(); } }) : null,
         h('div', { class: 'thumb', title: p.file },
           ...(masked(pi) ? maskPreview(p) : []),
@@ -898,7 +908,7 @@ async function makeGrid() {
     if (copy) setTimeout(() => $('grid-editor').scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
   } catch (err) {
     // Sous le bouton, là où l'enseignant regarde (le bandeau général est plus bas, dans la section des copies).
-    $('grid-error').textContent = `⚠ ${tr(err.message)}`;
+    $('grid-error').textContent = `⚠︎ ${tr(err.message)}`;
     $('grid-error').hidden = false;
     banner('err', err.message);
   } finally {
@@ -993,7 +1003,7 @@ function calibration(examKey) {
 function renderCalib() {
   const n = state.kind === 'content' ? calibration(examKeyNow()).length : 0;
   $('calib-info').hidden = !n;
-  if (n) $('calib-info').textContent = `🎯 Calibrage : ${n > 1 ? `${n} notes que vous avez ajustées guideront` : 'la note que vous avez ajustée guidera'} la correction des prochaines copies.`;
+  if (n) $('calib-info').replaceChildren(icone('cible'), `Calibrage : ${n > 1 ? `${n} notes que vous avez ajustées guideront` : 'la note que vous avez ajustée guidera'} la correction des prochaines copies.`);
   const pending = bundles().length;
   $('calib-run').hidden = state.kind !== 'content' || state.running || !!n || pending <= CALIB_COPIES + 1;
   $('calib-run').disabled = $('run').disabled;
@@ -1114,7 +1124,7 @@ async function runAll(only, calibrating = false) {
         grid: settings.grid && settings.grid.length === r.questions.length ? structuredClone(settings.grid) : null, // niveaux par critère
         render: settings.grid ? renderMode() : 'points',
         comment: r.comment, pageCount: b.length, illegible: !!r.illegible,
-        flags: r.flags, noKey: !hasKey, // sans corrigé : une seule mention après la correction, pas un ⚠ sur chaque copie
+        flags: r.flags, noKey: !hasKey, // sans corrigé : une seule mention après la correction, pas un ⚠︎ sur chaque copie
       });
       }
       state.exported = false;
@@ -1153,11 +1163,11 @@ async function runAll(only, calibrating = false) {
   if (stop) banner('err', stop);
   else if (state.stopping) banner('info', `Correction arrêtée : ${pl(done, 'copie corrigée', 'copies corrigées')}. Les ${list.length - done} autres restent dans la liste : relancez quand vous voulez.`);
   else if (failed) banner('err', `${pl(done, 'copie corrigée', 'copies corrigées')}, ${failed} en erreur : elles restent dans la liste, relancez pour réessayer.`);
-  else if (state.kind === 'lang') banner('ok', `${pl(done, 'copie analysée', 'copies analysées')}.${state.results.some((r) => r.flags?.length) ? ' Vérifiez en priorité les copies marquées ⚠.' : ''}`);
+  else if (state.kind === 'lang') banner('ok', `${pl(done, 'copie analysée', 'copies analysées')}.${state.results.some((r) => r.flags?.length) ? ' Vérifiez en priorité les copies marquées ⚠︎.' : ''}`);
   else if (calibrating) banner('ok', `${pl(done, 'copie corrigée', 'copies corrigées')} pour le calibrage. Relisez-les et changez les notes qui ne vous conviennent pas (la raison est facultative), puis cliquez sur « Corriger » : vos ajustements guideront le reste de la pile.`);
   else if (!hasKey && simpleContent()) banner(); // dit sous les résultats (done-msg)
   else if (!hasKey) banner('info', `${pl(done, 'copie corrigée', 'copies corrigées')} sans votre corrigé : les notes risquent d’être un peu généreuses. Relisez-les, ou ajoutez votre corrigé pour des notes plus justes.`);
-  else banner('ok', `${pl(done, 'copie corrigée', 'copies corrigées')}.${state.results.some((r) => r.flags?.length) ? ' Vérifiez en priorité les copies marquées ⚠.' : ''}`);
+  else banner('ok', `${pl(done, 'copie corrigée', 'copies corrigées')}.${state.results.some((r) => r.flags?.length) ? ' Vérifiez en priorité les copies marquées ⚠︎.' : ''}`);
   // Les résultats sont dans l'autre colonne (ou plus bas sur téléphone) : on y emmène l'enseignant, 1re copie ouverte.
   if (done && !stop) {
     const first = state.results.find((r) => list.some((b) => b[0].id === r.id));
@@ -1216,7 +1226,7 @@ function renderStats() {
   $('stats').replaceChildren(...[stat(String(graded.length), 'copies'),
     letters ? h('div', { class: 'stat' }, h('div', { class: 'v spread', textContent: spread() }), h('div', { class: 'l', textContent: 'cotes de la classe' })) : stat(pctText(fmt(avg)), `moyenne · de ${pctText(fmt(Math.min(...pct)))} à ${pctText(fmt(Math.max(...pct)))}`),
     withRel.length ? h('div', { class: 'stat' }, h('div', { class: 'v', textContent: rel }),
-      h('div', { class: 'l' }, 'fiabilité moyenne ', infoButton())) : null, flagged ? stat(String(flagged), 'à vérifier ⚠') : null].filter(Boolean)); // replaceChildren afficherait « null »
+      h('div', { class: 'l' }, 'fiabilité moyenne ', infoButton())) : null, flagged ? stat(String(flagged), 'à vérifier ⚠︎') : null].filter(Boolean)); // replaceChildren afficherait « null »
 }
 
 // Moyenne de la classe par question : repère les questions mal comprises.
@@ -1327,7 +1337,7 @@ function cardShell(r, cells, body) {
     if (state.open.has(r.id)) state.open.delete(r.id); else state.open.add(r.id);
     setOpen(state.open.has(r.id));
   } },
-    h('span', { class: 'no', title: r.flags.length ? 'À vérifier' : '', textContent: `${r.flags.length ? '⚠ ' : ''}${r.no ?? ''}` }),
+    h('span', { class: 'no', title: r.flags.length ? 'À vérifier' : '', textContent: `${r.flags.length ? '⚠︎ ' : ''}${r.no ?? ''}` }),
     nameCell(r),
     h('input', { class: 'group', type: 'text', value: r.group, placeholder: 'Groupe', 'aria-label': 'Groupe',
       oninput: (e) => { r.group = e.target.value; state.exported = false; } }),
@@ -1539,7 +1549,7 @@ function simpleActions(r, commentBox) {
       h('div', { class: 'more-list' },
         opt(r.showTable ? '▴ Résumé des notes' : '✎ Modifier les notes', () => { r.showTable = !r.showTable; renderResults(); }),
         opt('↻ Réécrire le commentaire', (e) => rewrite(r, commentBox, e.currentTarget)),
-        r.pageUrls ? opt('🖨 Imprimer cette copie', () => printBatch([r], { copies: true })) : null,
+        r.pageUrls ? h('button', { class: 'btn ghost small', type: 'button', onclick: () => printBatch([r], { copies: true }) }, icone('imprimante'), tr('Imprimer cette copie')) : null,
         opt('Supprimer', () => { if (!confirm(tr(`Supprimer la correction de ${r.name || 'cet élève'} ?`))) return; state.results = state.results.filter((x) => x !== r); renderResults(); }, 'danger'))),
     h('span', { class: 'muted small', textContent: copyLabel(r) }));
 }
@@ -1557,7 +1567,7 @@ function card(r) {
     h('div', { class: 'qrow' }, h('span', { textContent: q.question }), h('b', { textContent: qMarkText(r, q, i) })),
     q.justification ? h('p', { class: 'qwhy', textContent: q.justification }) : null))) : null;
   const body = h('div', { class: 'card-body' },
-    r.flags.length ? h('div', { class: 'flags' }, r.flags.map((f) => h('div', { textContent: `⚠ ${f}` }))) : null,
+    r.flags.length ? h('div', { class: 'flags' }, r.flags.map((f) => h('div', { textContent: `⚠︎ ${f}` }))) : null,
     summary,
     h('table', { class: 'qtable', hidden: compact },
       h('thead', {}, h('tr', {}, h('th', { textContent: r.grid ? 'Critère' : 'Question' }), h('th', { textContent: r.grid ? 'Niveau' : 'Points' }), h('th', { textContent: 'Justification' }))),
@@ -1566,8 +1576,8 @@ function card(r) {
         const row = h('tr', { class: rowClass() });
         const second = qq.second != null
           ? h('div', { class: 'second', textContent: qq.first != null
-            ? `⚖ Corrections : ${fmt(qq.first)} et ${fmt(qq.second)} → moyenne retenue`
-            : `⚖ 2e correction : ${fmt(qq.second)} / ${fmt(qq.max)}` }) : null;
+            ? `⚖︎ Corrections : ${fmt(qq.first)} et ${fmt(qq.second)} → moyenne retenue`
+            : `⚖︎ 2e correction : ${fmt(qq.second)} / ${fmt(qq.max)}` }) : null;
         // Note changée : une raison facultative, qui aide le calibrage des copies suivantes.
         const why = h('input', { type: 'text', class: 'why', value: qq.why || '', maxlength: 300, placeholder: 'Pourquoi ? (facultatif, guide les prochaines copies)',
           'aria-label': 'Raison du changement de note', oninput: () => { qq.why = why.value; } });
@@ -2193,14 +2203,6 @@ function downloadFiches(list) {
 
 // ---------- Orthopédagogie : accueil (« Que voulez-vous faire ? ») et tableau de bord ----------
 // Tout est calculé ici, à partir des erreurs validées : pas d'appel à l'IA, rien n'est conservé.
-// Icônes au trait (SVG), à la place des emoji : groupe, élève, évolution, bilan pour le PI.
-const ICONES = {
-  groupe: '<circle cx="9" cy="8.5" r="3.3"/><path d="M3 19.5a6 6 0 0 1 12 0"/><circle cx="16.8" cy="10" r="2.6"/><path d="M14.4 14.6a4.8 4.8 0 0 1 6.9 4.4"/>',
-  eleve: '<circle cx="12" cy="8" r="4"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/>',
-  evolution: '<path d="M3 17.5l6-6 4 4 8-8"/><path d="M15.5 7.5H21v5.5"/>',
-  pi: '<rect x="5" y="4.5" width="14" height="16.5" rx="2"/><rect x="9" y="2.8" width="6" height="3.4" rx="1"/><path d="M9 13.5l2.2 2.2L15.5 11.4"/>',
-};
-const icone = (k) => h('span', { class: 'ico-svg', 'aria-hidden': 'true', innerHTML: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONES[k] || ''}</svg>` });
 const INTENTS = {
   groupe: { title: 'Dresser le profil d’un groupe', sub: 'Déposez les textes du groupe : vue d’ensemble U, G, P, S, V, sous-groupes de besoins, un profil par élève.',
     steps: ['Choisissez l’année des élèves, ce que vous voulez observer et les conditions de rédaction.', 'Déposez les textes du groupe (photos, PDF, Word), puis « Analyser ».', 'Relisez les erreurs, puis « Établir les profils » : le tableau du groupe et les sous-groupes de besoins se remplissent.'] },
@@ -2314,7 +2316,7 @@ function renderDash() {
       h('td', { class: 'pal' }, x.r.profile?.level ? `${x.r.profile.level}/5` : h('button', { class: 'todo', type: 'button', disabled: !!x.r.rereading || !!x.r.profileBusy, textContent: x.r.profileBusy ? '…' : 'Établir',
         onclick: (ev) => { ev.stopPropagation(); queueProfile(x.r); } })),
       h('td', { class: 'hide-m tgt' }, x.top ? h('span', {}, h('span', { class: 'code', textContent: x.top.code }), ` ${x.top.label.split(' · ')[1] || ''}`) : '—',
-        x.r.profile?.alert ? h('span', { class: 'warn-txt', textContent: ' ⚠ à examiner' }) : null),
+        x.r.profile?.alert ? h('span', { class: 'warn-txt', textContent: ' ⚠︎ à examiner' }) : null),
       h('td', { class: 'hide-m small', textContent: x.r.conditions?.join(', ') || '—' }),
       h('td', { class: `hide-m small${x.trend.startsWith('↗') ? ' up' : ''}`, textContent: x.trend || '—' }))))));
   const legend = h('div', { class: 'legend' }, h('span', { textContent: 'Erreurs pour 100 mots : 0' }), h('span', { class: 'ramp' }, HEAT.map((c) => h('i', { style: `background:${c}` }))),
@@ -2328,7 +2330,7 @@ function renderDash() {
   }
   const chip = (r) => h('button', { type: 'button', class: 'who', textContent: r.name || `Copie ${r.no ?? ''}`, onclick: () => openStudent(r) });
   const subgroups = [
-    ...(alerts.length ? [h('div', { class: 'grp warn' }, h('div', { class: 't' }, h('span', { textContent: '⚠ À examiner en priorité' }), h('em', { textContent: pl(alerts.length, 'élève', 'élèves') })),
+    ...(alerts.length ? [h('div', { class: 'grp warn' }, h('div', { class: 't' }, h('span', { textContent: '⚠︎ À examiner en priorité' }), h('em', { textContent: pl(alerts.length, 'élève', 'élèves') })),
       h('div', { class: 'whos' }, alerts.map(chip)), h('div', { class: 'act', textContent: alerts.map((r) => r.profile.alert).join(' ') }))] : []),
     ...[...groups.entries()].sort((a, b) => b[1].list.length - a[1].list.length).map(([code, g]) => h('div', { class: 'grp' },
       h('div', { class: 't' }, h('span', {}, h('span', { class: 'code', textContent: code }), ` ${g.label.split(' · ')[1] || ''}`), h('em', { textContent: pl(g.list.length, 'élève', 'élèves') })),
@@ -2601,7 +2603,7 @@ function langCard(r) {
   // Sur téléphone, le détail passe sous le nom (sinon « Rosalie Gagné » devenait « Rosa »).
   return cardShell(r, [h('span', { class: 'detail', textContent: detail }), gradeEl],
     h('div', { class: 'card-body' },
-      r.flags.length ? h('div', { class: 'flags' }, r.flags.map((f) => h('div', { textContent: `⚠ ${f}` }))) : null,
+      r.flags.length ? h('div', { class: 'flags' }, r.flags.map((f) => h('div', { textContent: `⚠︎ ${f}` }))) : null,
       errors.length ? categoryChips(errors) : h('p', { class: 'muted small', style: 'margin:0', textContent: 'Aucune faute relevée.' }),
       r.pda ? h('p', { class: 'small', style: 'margin:0', textContent: pdaLine(r, n) }) : null,
       r.pda && (grey || r.dup?.length) ? h('p', { class: 'muted small', style: 'margin:0', textContent: [grey ? `${plural(grey, 'faute', 'fautes', 'error', 'errors')} ${L('en gris : notion en apprentissage, ne compte pas', 'in grey: being learned, not counted')}` : '', r.dup?.length ? `${plural(r.dup.length, 'faute répétée, retenue', 'fautes répétées, retenues', 'repeated error, counted', 'repeated errors, counted')} ${L('une seule fois', 'once')}` : ''].filter(Boolean).join(' · ') }) : null,
