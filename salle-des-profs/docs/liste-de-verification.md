@@ -49,6 +49,12 @@
 - [ ] Convivialité inspirée de Mozaïk-Portail : épurée, relaxante, beaucoup d'espace blanc, couleurs douces
 - [ ] Quatre volets dans la navigation : **Planifier, Créer, Évaluer, Observer**
 - [ ] Filtres groupe, matière et étape en haut de la page
+- [x] Style retenu : **Carnet** (papier crème, terre cuite, titres à empattements), avec le tableau « Évaluations en cours » de la version barre latérale. Maquette : `maquettes/accueil-e-carnet-retenue.html`
+- [ ] Carte « Mon horaire et mon calendrier » sur l'accueil :
+  - [ ] Horaire **par jour de la semaine** par défaut (titulaires du primaire) ; cycle de 9 ou 10 jours en option (spécialistes, secondaire)
+  - [ ] Importer l'horaire : PDF, Excel ou photo, lu par l'IA du circuit Création (aucune donnée d'élève)
+  - [ ] Importer le calendrier scolaire du centre de services (journées pédagogiques, congés, fins d'étape) : PDF, .ics ou Excel
+  - [ ] Option « Connecter Outlook » plus tard : demande la permission Calendars.Read, donc une approbation de plus pour les TI
 
 ## Fonctionnalités clés
 - [ ] **QR code par élève** sur chaque copie imprimée, puis numérisation de la pile et tri automatique
