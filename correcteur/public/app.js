@@ -60,8 +60,8 @@ const ICONES = {
   groupe: '<circle cx="9" cy="8.5" r="3.3"/><path d="M3 19.5a6 6 0 0 1 12 0"/><circle cx="16.8" cy="10" r="2.6"/><path d="M14.4 14.6a4.8 4.8 0 0 1 6.9 4.4"/>',
   eleve: '<circle cx="12" cy="8" r="4"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/>',
   evolution: '<path d="M3 17.5l6-6 4 4 8-8"/><path d="M15.5 7.5H21v5.5"/>',
-  cible: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/>',
-  imprimante: '<path d="M7 9V3.5h10V9"/><rect x="3.5" y="9" width="17" height="8" rx="2"/><rect x="7" y="14" width="10" height="6.5" rx="1"/>',
+  cible: '<circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="3"/><path d="M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4"/>',
+  imprimante: '<path d="M7 8V3.5h7.5L17 6v2"/><path d="M14.5 3.5V6H17"/><rect x="3" y="8" width="18" height="8.5" rx="2"/><path d="M6 13h12"/><rect x="7" y="13" width="10" height="7.5" rx=".8"/>',
   pi: '<rect x="5" y="4.5" width="14" height="16.5" rx="2"/><rect x="9" y="2.8" width="6" height="3.4" rx="1"/><path d="M9 13.5l2.2 2.2L15.5 11.4"/>',
 };
 const icone = (k) => h('span', { class: 'ico-svg', 'aria-hidden': 'true', innerHTML: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONES[k] || ''}</svg>` });

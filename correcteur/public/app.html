@@ -56,7 +56,7 @@
         <div class="lang-switch" role="group" aria-label="Langue / Language"><button type="button" data-set-lang="fr">FR</button><button type="button" data-set-lang="en">EN</button></div>
         <a class="btn ghost" href="guide.html" target="_blank" rel="noopener" title="Le guide s'ouvre dans un nouvel onglet : vos résultats restent ici">Guide</a>
         <span id="balance" class="pill" hidden></span>
-        <button id="invite-open" class="btn ghost" type="button" hidden><svg class="ico-svg" viewBox="0 0 24 24" width="1.1em" height="1.1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-0.2em;margin-right:.35em"><circle cx="9" cy="8" r="3.5"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M18.5 8v6M15.5 11h6"/></svg>Inviter un collègue</button>
+        <button id="invite-open" class="btn ghost" type="button" hidden><svg class="ico-svg" viewBox="0 0 24 24" width="1.1em" height="1.1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-0.2em;margin-right:.35em"><circle cx="10" cy="8.5" r="4"/><path d="M3.5 21a6.5 6.5 0 0 1 13 0"/><path d="M19 2.5v5M16.5 5h5"/></svg>Inviter un collègue</button>
         <button id="buy-open" class="btn ghost" type="button" hidden>Acheter des pages</button>
         <button id="logout" class="btn ghost" type="button" hidden title="Retirer la clé de cet appareil">Changer de clé</button>
         <button id="top-menu" class="btn ghost top-menu" type="button" aria-label="Menu" aria-expanded="false">☰</button>
@@ -316,8 +316,8 @@
       <p id="calib-info" class="banner info small" style="margin:0" hidden></p>
       <button id="run" class="btn primary big block" type="button" disabled>Corriger</button>
       <p class="simple-only set-line">Barème, demi-points, sévérité, double correction · <a href="#" id="to-adv">Modifier les réglages</a></p>
-      <p class="awake-line muted small"><svg class="ico-svg" viewBox="0 0 24 24" width="1.1em" height="1.1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-0.2em;margin-right:.35em"><rect x="7" y="2.5" width="10" height="19" rx="2.2"/><path d="M11 18.3h2"/></svg>Pendant la correction, gardez l’écran allumé et restez sur cette page.</p>
-      <button id="calib-run" class="btn block adv" type="button" title="Corrigez 3 copies, ajustez leurs notes : la suite de la pile est corrigée comme vous" hidden><svg class="ico-svg" viewBox="0 0 24 24" width="1.1em" height="1.1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-0.2em;margin-right:.35em"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/></svg>Calibrer d'abord : corriger 3 copies, ajuster, puis le reste</button>
+      <p class="awake-line muted small"><svg class="ico-svg" viewBox="0 0 24 24" width="1.1em" height="1.1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-0.2em;margin-right:.35em"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M10.5 5.5h3M10.5 18.5h3"/></svg>Pendant la correction, gardez l’écran allumé et restez sur cette page.</p>
+      <button id="calib-run" class="btn block adv" type="button" title="Corrigez 3 copies, ajustez leurs notes : la suite de la pile est corrigée comme vous" hidden><svg class="ico-svg" viewBox="0 0 24 24" width="1.1em" height="1.1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-0.2em;margin-right:.35em"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="3"/><path d="M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4"/></svg>Calibrer d'abord : corriger 3 copies, ajuster, puis le reste</button>
       <div id="progress" class="progress" hidden aria-live="polite">
         <div class="progress-top"><b id="progress-count"></b><span id="progress-eta"></span><button id="stop-run" class="btn ghost small" type="button">Arrêter</button></div>
         <div class="bar"><div id="progress-bar"></div></div>
@@ -528,7 +528,7 @@
   </div>
   <div id="awake" class="modal" hidden>
     <div class="panel stack" style="max-width:420px;text-align:center">
-      <div aria-hidden="true"><svg class="ico-svg" viewBox="0 0 24 24" width="2.4rem" height="2.4rem" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style=""><rect x="7" y="2.5" width="10" height="19" rx="2.2"/><path d="M11 18.3h2"/></svg></div>
+      <div aria-hidden="true"><svg class="ico-svg" viewBox="0 0 24 24" width="2.4rem" height="2.4rem" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style=""><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M10.5 5.5h3M10.5 18.5h3"/></svg></div>
       <h2 style="margin:0;justify-content:center">Gardez l'écran allumé</h2>
       <p style="margin:0">Pendant la correction, n'éteignez pas l'écran du téléphone et restez sur cette page.</p>
       <p class="muted small" style="margin:0">Si le téléphone se met en veille, la correction s'arrête. Elle reprend toute seule quand vous revenez sur la page.</p>

@@ -61,7 +61,7 @@ FR = dict(
     ('calibrage', 'Calibrage : une pile corrigée comme vous', '''
 <p>Comme lorsque vous corrigez quelques copies pour « vous faire la main », le calibrage montre à l’outil votre façon de noter avant qu’il corrige le reste de la pile.</p>
 <ul>
-<li>Avec plus de 4 copies, cliquez sur <b>« <svg class="ico-svg" viewBox="0 0 24 24" width="1.1em" height="1.1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-0.2em;margin-right:.35em"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/></svg>Calibrer d’abord »</b> : 3 copies seulement sont corrigées.</li>
+<li>Avec plus de 4 copies, cliquez sur <b>« <svg class="ico-svg" viewBox="0 0 24 24" width="1.1em" height="1.1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-0.2em;margin-right:.35em"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="3"/><path d="M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4"/></svg>Calibrer d’abord »</b> : 3 copies seulement sont corrigées.</li>
 <li>Relisez-les et <b>changez les notes</b> qui ne vous conviennent pas. Un champ <b>« Pourquoi ? »</b> apparaît : une courte raison aide beaucoup (ex. « j’accepte une conséquence générale si elle est expliquée »), mais elle est facultative.</li>
 <li>Cliquez ensuite sur <b>« Corriger »</b> pour le reste : chaque note changée sert d’exemple (la réponse de l’élève, la note proposée, la vôtre et votre raison). L’outil applique les mêmes critères sans recopier vos notes.</li>
 <li>Les notes changées plus tard, en cours de relecture, guident aussi les copies corrigées ensuite. Le calibrage vaut pour la même évaluation (même nom, barème et corrigé).</li>
@@ -176,7 +176,7 @@ EN = dict(
     ('calibrage', 'Calibration: a pile marked your way', '''
 <p>Just like marking a few papers first to “get your eye in”, calibration shows the tool how you mark before it marks the rest of the pile.</p>
 <ul>
-<li>With more than 4 papers, click <b>“<svg class="ico-svg" viewBox="0 0 24 24" width="1.1em" height="1.1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-0.2em;margin-right:.35em"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/></svg>Calibrate first”</b>: only 3 papers are marked.</li>
+<li>With more than 4 papers, click <b>“<svg class="ico-svg" viewBox="0 0 24 24" width="1.1em" height="1.1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-0.2em;margin-right:.35em"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="3"/><path d="M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4"/></svg>Calibrate first”</b>: only 3 papers are marked.</li>
 <li>Review them and <b>change any marks</b> you disagree with. A <b>“Why?”</b> field appears: a short reason helps a lot (e.g. “I accept a general consequence if it is explained”), but it is optional.</li>
 <li>Then click <b>“Grade”</b> for the rest: each changed mark becomes an example (the student’s answer, the suggested mark, yours and your reason). The tool applies the same criteria without copying your marks.</li>
 <li>Marks you change later, while reviewing, also guide the papers marked afterwards. Calibration applies to the same assessment (same name, total and answer key).</li>
