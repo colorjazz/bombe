@@ -190,3 +190,40 @@ ${RECTIF}
 Pour chaque faute, recopie aussi dans « ligne » la ligne manuscrite complète où elle se trouve, exactement telle qu'écrite, indique sa « notion » (l'identifiant ci-dessus) et sa catégorie, et donne une explication courte avec la règle, pour un élève de ${year} (ex. : « Après un organisateur en début de phrase, on met une virgule. »).
 Renvoie EXCLUSIVEMENT un tableau JSON. Si aucune faute n'est trouvée, renvoie un tableau vide [].`;
 }
+
+// Orthopédagogie : chaque faute reçoit aussi un sous-type, qui sert à établir le profil du scripteur. Typologie inspirée
+// du Référentiel d'intervention en écriture (MEQ, 2017) et des travaux sur l'orthographe (unités phonologiques,
+// morphologiques, visuo-orthographiques, lexicales), complétée des homophones grammaticaux et de la segmentation.
+// Le sous-type précise la catégorie ; il ne la remplace pas (les cadres et la note restent ceux de la catégorie).
+export const ORTHO_TYPES = {
+  // U : orthographe d'usage
+  phonologique: { cat: 'orthographe', def: "le mot écrit ne se prononce plus comme le mot attendu : son oublié, ajouté, inversé, confusion sourde/sonore f/v, p/b, t/d, c/g (« tadé » → « tardé », « vlotter » → « flotter »)" },
+  morphologique: { cat: 'orthographe', def: "lettre muette ou partie du mot qu'on trouve par un mot de la même famille, préfixe ou suffixe (« gran » → « grand », grande ; « den » → « dent », dentiste)" },
+  visuo_orthographique: { cat: 'orthographe', def: "le mot se prononce bien, mais le choix des lettres est faux (mémoire visuelle du mot) : an/en, o/au/eau, s/ss/c/ç, g/gu/ge, consonne double, m devant b et p, accent (« drapo » → « drapeau », « tonbé » → « tombé »)" },
+  homophone_lexical: { cat: 'orthographe', def: "un autre mot de même prononciation a été écrit (« ver » → « verre », « dans » → « dent »)" },
+  segmentation: { cat: 'orthographe', def: "mots soudés ou coupés au mauvais endroit, apostrophe oubliée (« lami » → « l'ami », « a voir » → « avoir », « parterre » → « par terre »)" },
+  majuscule_signes: { cat: 'orthographe', def: "majuscule d'un nom propre, trait d'union, abréviation" },
+  // G : orthographe grammaticale
+  homophone_grammatical: { cat: 'orthographe', def: "a/à, et/est, son/sont, on/ont, ce/se, ces/ses, c'est/s'est, ou/où, la/l'a/là, leur/leurs, peu/peut, mes/mais, ni/n'y, sans/s'en" },
+  accord_gn: { cat: 'accord', def: "accord dans le groupe du nom : déterminant, nom, adjectif (genre ou nombre) (« les dents propre » → « propres »)" },
+  accord_attribut: { cat: 'accord', def: "accord de l'adjectif attribut du sujet (« elles sont content » → « contentes »)" },
+  accord_sv_simple: { cat: 'accord', def: "accord du verbe avec un sujet placé juste avant lui (« les dents grince » → « grincent »)" },
+  accord_sv_complexe: { cat: 'accord', def: "accord du verbe avec un sujet inversé, éloigné, coordonné, ou séparé par un pronom écran (« les amis de mon frère vient » → « viennent », « il les mange »)" },
+  pp_etre: { cat: 'accord', def: "participe passé employé avec être (« elles sont parti » → « parties »)" },
+  pp_avoir: { cat: 'accord', def: "participe passé employé avec avoir (accord avec le complément direct placé avant)" },
+  pp_seul: { cat: 'accord', def: "participe passé employé sans auxiliaire (« les feuilles tombé » → « tombées »)" },
+  morphologie_verbale: { cat: 'conjugaison', def: "conjugaison : radical, terminaison de personne ou de temps, auxiliaire fautifs, sans erreur d'accord (« il viens » → « il vient », « il couriait » → « il courait »)" },
+  homophone_verbal: { cat: 'conjugaison', def: "confusion entre formes du verbe qui se prononcent pareil : -é, -er, -ez, -ait, -ais, -ai (« il a manger » → « mangé »)" },
+  // P : ponctuation
+  delimitation: { cat: 'ponctuation', def: "majuscule de début de phrase ou point final oubliés, phrases juxtaposées sans ponctuation (phrases-fleuves) ou coupées au mauvais endroit" },
+  virgule_detachement: { cat: 'ponctuation', def: "virgule oubliée après un complément de phrase ou un organisateur placé en tête de phrase (« Le lendemain nous » → « Le lendemain, nous »)" },
+  virgule: { cat: 'ponctuation', def: "autre virgule oubliée ou fautive : énumération, coordonnant (mais, car), complément du nom détaché" },
+  ponctuation_autre: { cat: 'ponctuation', def: "deux-points, guillemets, tiret de dialogue, point d'interrogation ou d'exclamation" },
+  // S : syntaxe
+  structure_phrase: { cat: 'syntaxe', def: "phrase de base : constituant obligatoire manquant (sujet, verbe), mot oublié, ordre des mots, construction calquée sur l'oral, sujet répété" },
+  subordination: { cat: 'syntaxe', def: "subordonnée mal construite : subordonnant ou pronom relatif fautif (« que » pour « dont »), « que » surutilisé" },
+  negation: { cat: 'syntaxe', def: "« ne » oublié dans la négation" },
+  pronom_preposition: { cat: 'syntaxe', def: "pronom fautif ou ambigu, préposition fautive" },
+  // V : vocabulaire
+  vocabulaire: { cat: 'vocabulaire', def: "mot impropre, répétition, anglicisme, registre familier" },
+};
