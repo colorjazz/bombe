@@ -183,3 +183,4 @@ footer { background: var(--bg); }
 .legal th, .legal td { text-align: left; vertical-align: top; padding: .55rem .6rem; border-top: 1px solid var(--line, #e6e8ef); color: var(--muted); }
 .legal th { font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; color: var(--faint, #8b93a5); border-top: 0; }
 .legal td b { color: var(--text, #1d1a2e); }
+.refer.solid { margin-top: .6rem; border-color: #e07b00; background: #fff8ee; }
