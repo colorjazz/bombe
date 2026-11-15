@@ -6,30 +6,52 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-// Prix publics Gemini, USD par million de jetons (sortie = réponse + réflexion) ; comme public/admin.html.
-export const PRICES = { 'gemini-3.5-flash': { in: 1.5, out: 9 }, 'gemini-3.7-flash': { in: 0.75, out: 3.75 } };
+// Prix publics Gemini, USD par million de jetons (sortie = réponse + réflexion), relevés le 15 novembre 2026 sur
+// ai.google.dev/gemini-api/docs/pricing. 3.8 Flash : prix de lancement jusqu'au 31 décembre 2026, puis 1,50 / 7,50.
+export const PRICES = { 'gemini-3.5-flash': { in: 1.5, out: 9 }, 'gemini-3.7-flash': { in: 0.75, out: 3.75 },
+  'gemini-3.8-flash': { in: 0.75, out: 3.75 }, 'gemini-3.1-pro-preview': { in: 2, out: 12 } };
 export const USD_CAD = 1.38;
 
 const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[’`]/g, "'").replace(/[^a-z0-9']/g, '');
 const center = (b) => [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2];
 
-// Mots de la page couverts par une faute signalée : la suite de mots égale au texte fautif, la plus proche de son cadre.
+// Une lettre de différence (lecture de l'écriture) : « obsédé » lu « obsede », « trico » lu « tricot ».
+const near = (a, b) => {
+  if (a === b) return true;
+  if (Math.min(a.length, b.length) < 4 || Math.abs(a.length - b.length) > 1) return false;
+  let i = 0; while (i < a.length && a[i] === b[i]) i++;
+  let j = 0; while (j < a.length - i && j < b.length - i && a[a.length - 1 - j] === b[b.length - 1 - j]) j++;
+  return Math.max(a.length, b.length) - i - j <= 1;
+};
+
+// Mots de la page couverts par une faute signalée : la suite de mots égale au texte fautif, la plus proche de son cadre
+// (copies générées) ou de sa ligne recopiée (vraies photos, dont la vérité n'a pas la position des mots).
 export function span(page, err) {
   const words = page.words.map((w) => norm(w.w));
   const toks = String(err.text || '').split(/\s+/).map(norm).filter(Boolean);
   if (!toks.length) return null;
   const at = (i) => page.words[i].box;
   const cands = [];
-  for (let i = 0; i + toks.length <= words.length; i++) {
-    if (toks.every((t, j) => words[i + j] === t || (j === toks.length - 1 && words[i + j].startsWith(t)) || (j === 0 && words[i + j].endsWith(t)))) cands.push([i, i + toks.length - 1]);
+  for (const loose of [false, true]) {
+    const eq = (w, t) => w === t || (loose && near(w, t));
+    for (let i = 0; i + toks.length <= words.length; i++) {
+      if (toks.every((t, j) => eq(words[i + j], t) || (j === toks.length - 1 && words[i + j].startsWith(t)) || (j === 0 && words[i + j].endsWith(t)))) cands.push([i, i + toks.length - 1]);
+    }
+    if (cands.length) break;
   }
-  // Texte mal recopié par l'IA : on se rabat sur le mot de la page le plus proche du cadre, s'il en partage un mot.
-  if (!cands.length) toks.forEach((t) => words.forEach((w, i) => { if (w === t) cands.push([i, i]); }));
+  // Texte mal recopié par l'IA : on se rabat sur un mot de la page qu'il contient.
+  if (!cands.length) toks.forEach((t) => words.forEach((w, i) => { if (w === t || near(w, t)) cands.push([i, i]); }));
   if (!cands.length) return null;
-  if (!err.box) return cands[0];
-  const [py, px] = center(err.box);
-  const d = ([a]) => { const [y, x] = center(at(a)); return Math.hypot(y - py, x - px); };
-  return cands.sort((a, b) => d(a) - d(b))[0];
+  if (err.box && at(0)) {
+    const [py, px] = center(err.box);
+    const d = ([a]) => { const [y, x] = center(at(a)); return Math.hypot(y - py, x - px); };
+    return cands.sort((a, b) => d(a) - d(b))[0];
+  }
+  // Sans position : le passage dont les mots voisins ressemblent le plus à la ligne recopiée par l'IA.
+  const line = new Set(String(err.line || '').split(/\s+/).map(norm).filter(Boolean));
+  if (!line.size) return cands[0];
+  const fit = ([a, b]) => words.slice(Math.max(0, a - 6), b + 7).filter((w) => line.has(w)).length;
+  return cands.sort((x, y) => fit(y) - fit(x))[0];
 }
 
 // Vraies fautes reconnues par un signalement. Ponctuation et syntaxe : le cadre peut tomber sur le mot voisin.
@@ -45,7 +67,7 @@ export function matches(page, err) {
 }
 
 // Réponse brute de Gemini → même forme que les fautes affichées (pour savoir ce que le filtre a écarté).
-const rawErrors = (raw) => (Array.isArray(raw) ? raw : raw?.fautes || []).map((f) => ({ text: f.mot_fautif ?? f.texte, correction: f.correction, box: f.box, notion: f.notion, category: f.categorie }));
+const rawErrors = (raw) => (Array.isArray(raw) ? raw : raw?.fautes || []).map((f) => ({ text: f.mot_fautif ?? f.texte, correction: f.correction, box: f.box, line: f.ligne, notion: f.notion, category: f.categorie }));
 
 export function score(truth, data) {
   const t = { first: { found: 0, sig: 0, ok: 0, doubt: 0 }, both: { found: 0, sig: 0, ok: 0, doubt: 0 } };
@@ -61,8 +83,9 @@ export function score(truth, data) {
       return { found, ok, doubt, sig: errs.length }; };
     const a = read(r.first || []), b = read([...(r.first || []), ...(r.reread || [])]);
     const rawSeen = new Set(r.calls.filter((c) => c.kind !== 'other').flatMap((c) => rawErrors(c.raw)).flatMap((e) => matches(page, e).map((f) => f.index)));
-    for (const [k, v] of [['first', a], ['both', b]]) { t[k].found += v.found.size; t[k].sig += v.sig; t[k].ok += v.ok; t[k].doubt += v.doubt; }
-    for (const f of page.faults) {
+    const real = (v) => [...v.found].filter((i) => !page.faults.find((f) => f.index === i).optional).length;
+    for (const [k, v] of [['first', a], ['both', b]]) { t[k].found += real(v); t[k].sig += v.sig; t[k].ok += v.ok; t[k].doubt += v.doubt; }
+    for (const f of page.faults.filter((x) => !x.optional)) {
       for (const key of [`cat:${f.category}`, `type:${f.type}`]) {
         by[key] ||= { n: 0, first: 0, both: 0 };
         by[key].n++; if (a.found.has(f.index)) by[key].first++; if (b.found.has(f.index)) by[key].both++;
@@ -80,7 +103,7 @@ export function score(truth, data) {
     }
     cost.pages++; cost.sec += (r.secFirst || 0) + (r.secReread || 0);
   }
-  const n = runs.reduce((s, r) => s + truth[r.page].faults.length, 0);
+  const n = runs.reduce((s, r) => s + truth[r.page].faults.filter((f) => !f.optional).length, 0);
   return { name: data.name, n, runs: runs.length, failed: data.runs.length - runs.length, t, by, missed, fps, cost };
 }
 

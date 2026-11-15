@@ -4,9 +4,10 @@
 // écartées par le filtre de celles que l'IA n'a jamais vues.
 //
 //   node mesure.mjs <dossier> [--essais 2] [--modele gemini-3.7-flash] [--reflexion low|medium|high] [--cote 2000]
-//                             [--ortho] [--sans-pda] [--nom essai] [--pages 1,3]
+//                             [--ortho] [--sans-pda] [--nom essai] [--pages 1,3] [--parallele 3] [--var CLE=valeur]
 //
 // Clé : AI_API_KEY dans correcteur/.dev.vars (jamais dans le dépôt). Réponses → <dossier>/runs-<nom>.json
+// Derrière un proxy (session infonuagique) : lancer avec NODE_USE_ENV_PROXY=1, sinon fetch de Node l'ignore.
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
@@ -96,20 +97,28 @@ const trials = Number(opt('essais', 2));
 const name = opt('nom', `${vars.LANG_MODEL}-${vars.LANG_THINKING || 'defaut'}${side ? `-${side}` : ''}${flag('ortho') ? '-ortho' : ''}`);
 const runs = [];
 const t0 = Date.now();
-await Promise.all(only.flatMap((page) => Array.from({ length: trials }, (_, trial) => ctx.run({ page, trial }, async () => {
+const jobs = only.flatMap((page) => Array.from({ length: trials }, (_, trial) => ({ page, trial })));
+// Quelques pages à la fois : douze grandes photos en même temps faisaient échouer la moitié des appels (502).
+const one = ({ page, trial }) => ctx.run({ page, trial }, async () => {
   const s = { ...settings(truth[page].year), ...(flag('ortho') ? { ortho: true } : {}) };
   const url = image(truth[page].file);
   const run = { page, trial };
-  try {
+  for (let attempt = 0; attempt < 3; attempt++) try { // erreurs passagères du réseau (502) : on recommence la page
+    delete run.error;
     const t = Date.now();
     const first = await api('/api/language', { pages: [url], identify: false, ...s });
     run.first = first.pages[0].errors; run.secFirst = (Date.now() - t) / 1000;
-    const t2 = Date.now();
-    const more = await api('/api/language-reread', { page: url, ...first.pages[0].reread, ...s, known: run.first.map(({ text, correction, box }) => ({ text, correction, box })) });
-    run.reread = more.errors; run.secReread = (Date.now() - t2) / 1000;
+    if (!flag('sans-relecture')) {
+      const t2 = Date.now();
+      const more = await api('/api/language-reread', { page: url, ...first.pages[0].reread, ...s, known: run.first.map(({ text, correction, box }) => ({ text, correction, box })) });
+      run.reread = more.errors; run.secReread = (Date.now() - t2) / 1000;
+    }
+    break;
   } catch (err) { run.error = err.message; console.error(`page ${page + 1} essai ${trial + 1} :`, err.message); }
   runs.push(run);
-}))));
+});
+const width = Number(opt('parallele', 3));
+await Promise.all(Array.from({ length: width }, async () => { while (jobs.length) await one(jobs.shift()); }));
 for (const r of runs) r.calls = calls.filter((c) => c.page === r.page && c.trial === r.trial).map(({ page, trial, ...c }) => c);
 const file = path.join(dir, `runs-${name}.json`);
 fs.writeFileSync(file, JSON.stringify({ name, vars: { LANG_MODEL: vars.LANG_MODEL, LANG_THINKING: vars.LANG_THINKING || null, LANG_STRATEGY: vars.LANG_STRATEGY || null }, side: side || null, ortho: flag('ortho'), pda: !flag('sans-pda'), runs }));
