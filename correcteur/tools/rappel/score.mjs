@@ -17,7 +17,7 @@ export const USD_CAD = 1.38;
 const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[’`]/g, "'").replace(/[^a-z0-9']/g, '');
 const center = (b) => [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2];
 
-// Une lettre de différence (lecture de l'écriture) : « obsédé » lu « obsede », « trico » lu « tricot ».
+// Une lettre de différence (lecture de l'écriture) : « obsédé » lu « obsede », « jardi » lu « jardin ».
 const near = (a, b) => {
   if (a === b) return true;
   if (Math.min(a.length, b.length) < 4 || Math.abs(a.length - b.length) > 1) return false;
