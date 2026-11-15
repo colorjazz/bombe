@@ -76,6 +76,7 @@ export function score(truth, data) {
   const by = {}; // par catégorie et par type
   const missed = { filtered: 0, unseen: 0, list: [] };
   const fps = [];
+  const boxes = { n: 0, ok: 0 }; // copies générées : cadre juste si IoU ≥ 0,4 avec les mots fautifs (comme tools/surlignages)
   const cost = { usd: 0, tin: 0, tout: 0, thoughts: 0, calls: 0, pages: 0, sec: 0 };
   const runs = data.runs.filter((r) => !r.error);
   for (const r of runs) {
@@ -84,6 +85,15 @@ export function score(truth, data) {
       for (const e of errs) { const m = matches(page, e); m.forEach((f) => found.add(f.index)); if (m.length) ok++; else fps.push(`p${r.page + 1} « ${e.text} » → « ${e.correction} »${e.doubtful ? ' (à vérifier)' : ''}`); if (e.doubtful) doubt++; }
       return { found, ok, doubt, sig: errs.length }; };
     const a = read(r.first || []), b = read([...(r.first || []), ...(r.reread || [])]);
+    if (page.words[0]?.box) for (const e of [...(r.first || []), ...(r.reread || [])]) {
+      const sp = matches(page, e).length && span(page, e);
+      if (!sp || !e.box) continue;
+      const ws = page.words.slice(sp[0], sp[1] + 1).map((w) => w.box).filter((x) => Math.abs(x[0] - page.words[sp[0]].box[0]) < 5);
+      const t = [Math.min(...ws.map((x) => x[0])), Math.min(...ws.map((x) => x[1])), Math.max(...ws.map((x) => x[2])), Math.max(...ws.map((x) => x[3]))];
+      const ih = Math.max(0, Math.min(t[2], e.box[2]) - Math.max(t[0], e.box[0])), iw = Math.max(0, Math.min(t[3], e.box[3]) - Math.max(t[1], e.box[1]));
+      const u = (t[2] - t[0]) * (t[3] - t[1]) + (e.box[2] - e.box[0]) * (e.box[3] - e.box[1]) - ih * iw;
+      boxes.n++; if (u > 0 && (ih * iw) / u >= 0.4) boxes.ok++;
+    }
     // Une « faute » dont la correction est le mot lui-même (« obsédée » → « obsédée ») veut dire que l'IA a lu la bonne forme :
     // elle n'a pas vu la faute, même si le filtre retire ensuite cette ligne.
     const rawSeen = new Set(r.calls.filter((c) => c.kind !== 'other').flatMap((c) => rawErrors(c.raw))
@@ -109,7 +119,7 @@ export function score(truth, data) {
     cost.pages++; cost.sec += (r.secFirst || 0) + (r.secReread || 0);
   }
   const n = runs.reduce((s, r) => s + truth[r.page].faults.filter((f) => !f.optional).length, 0);
-  return { name: data.name, n, runs: runs.length, failed: data.runs.length - runs.length, t, by, missed, fps, cost };
+  return { name: data.name, n, runs: runs.length, failed: data.runs.length - runs.length, t, by, missed, fps, cost, boxes };
 }
 
 // Réunion de plusieurs passages (ex. deux lectures indépendantes en parallèle) : mêmes pages et essais, fautes mises
@@ -135,6 +145,7 @@ export function report(s, detail) {
     `précision   1re lecture ${pct(s.t.first.ok, s.t.first.sig)} (${s.t.first.sig - s.t.first.ok} fausses sur ${s.t.first.sig}) · avec la relecture ${pct(s.t.both.ok, s.t.both.sig)} (${s.t.both.sig - s.t.both.ok} fausses sur ${s.t.both.sig}, dont « à vérifier » ${s.t.both.doubt})`,
     `manquées    ${s.missed.filtered + s.missed.unseen} : écartées par le filtre ${s.missed.filtered}, jamais vues ${s.missed.unseen}`,
     `coût/page   ${Number.isNaN(cad) ? 'prix du modèle inconnu' : `${cad.toFixed(2)} ¢ CA`} (${Math.round(c.tin / c.pages)} jetons d'entrée, ${Math.round(c.tout / c.pages)} de sortie dont ${Math.round(c.thoughts / c.pages)} de réflexion, ${(c.calls / c.pages).toFixed(1)} appels) · ${Math.round(c.sec / c.pages)} s/page`,
+    ...(s.boxes.n ? [`cadres     ${pct(s.boxes.ok, s.boxes.n)} justes (${s.boxes.ok} sur ${s.boxes.n} fautes trouvées)`] : []),
     'par catégorie et par type (1re lecture → avec relecture) :',
     ...Object.entries(s.by).sort().map(([k, v]) => `   ${k.padEnd(20)} ${String(v.n).padStart(3)}  ${pct(v.first, v.n).padStart(5)} → ${pct(v.both, v.n).padStart(5)}`)];
   if (detail) out.push('manquées :', ...s.missed.list.map((x) => `   ${x}`), 'fausses fautes :', ...s.fps.map((x) => `   ${x}`));

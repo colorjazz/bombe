@@ -810,8 +810,13 @@ async function languageReread(request, env) {
   return json({ errors: langErrors(raw.fautes.filter((g) => !known.some((f) => same(f, g))), cats, pda) });
 }
 
+// Finesse avec laquelle Gemini lit la photo (LANG_MEDIA_RES, wrangler.toml) : « media_resolution_ultra_high » double
+// les jetons de l'image (≈ 1 060 → 2 160). Mesuré sur 3 vraies copies (tools/rappel) : fautes d'orthographe trouvées
+// 84 % → 93 %, rappel total 69 % → 72 %, pour ≈ 1 ¢ de plus par page. Accès Gemini direct seulement (non vérifié sur Vertex).
+const pageImage = (env, dataUrl) => ({ ...inlineImage(dataUrl), ...(env.LANG_MEDIA_RES && !vertexOn(env) ? { mediaResolution: { level: env.LANG_MEDIA_RES } } : {}) });
+
 async function geminiVision(env, prompt, dataUrl, pda, ortho = false) {
-  const list = await geminiNative(env, [{ text: ortho ? prompt + ORTHO_RULE : prompt }, inlineImage(dataUrl)], langSchema(pda, ortho), env.LANG_MODEL, { thinking: env.LANG_THINKING, timeoutMs: 150_000 });
+  const list = await geminiNative(env, [{ text: ortho ? prompt + ORTHO_RULE : prompt }, pageImage(env, dataUrl)], langSchema(pda, ortho), env.LANG_MODEL, { thinking: env.LANG_THINKING, timeoutMs: 150_000 });
   return { fautes: (Array.isArray(list) ? list : list.fautes || []).map((f) => ({ ...f, texte: f.mot_fautif ?? f.texte, box: f.box ?? f.box_2d })) };
 }
 

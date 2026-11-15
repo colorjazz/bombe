@@ -24,6 +24,9 @@ AI_FALLBACK_MODEL = "gemini-3.6-flash"
 # Correction de la langue, 2e correction et redressement des photos : modèle stable (pas « preview »).
 # Mesuré sur 9 vraies copies (vérité de terrain, voir tools/surlignages) : 81 % de surlignages exacts, contre 59 %.
 LANG_MODEL = "gemini-3.7-flash"
+# Mesuré le 15 novembre 2026 : Google répond à gemini-3.7-flash avec gemini-3.8-flash (champ modelVersion des réponses).
+# Lecture de la photo par Gemini pour la langue : 2 fois plus de détails que par défaut (tools/rappel : 69 % → 72 % des fautes trouvées).
+LANG_MEDIA_RES = "media_resolution_ultra_high"
 AI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai"
 TRIAL_PAGES = "30"
 # Secrets à définir avec `npx wrangler secret put` :
