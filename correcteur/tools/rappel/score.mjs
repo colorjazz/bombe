@@ -84,7 +84,10 @@ export function score(truth, data) {
       for (const e of errs) { const m = matches(page, e); m.forEach((f) => found.add(f.index)); if (m.length) ok++; else fps.push(`p${r.page + 1} « ${e.text} » → « ${e.correction} »${e.doubtful ? ' (à vérifier)' : ''}`); if (e.doubtful) doubt++; }
       return { found, ok, doubt, sig: errs.length }; };
     const a = read(r.first || []), b = read([...(r.first || []), ...(r.reread || [])]);
-    const rawSeen = new Set(r.calls.filter((c) => c.kind !== 'other').flatMap((c) => rawErrors(c.raw)).flatMap((e) => matches(page, e).map((f) => f.index)));
+    // Une « faute » dont la correction est le mot lui-même (« obsédée » → « obsédée ») veut dire que l'IA a lu la bonne forme :
+    // elle n'a pas vu la faute, même si le filtre retire ensuite cette ligne.
+    const rawSeen = new Set(r.calls.filter((c) => c.kind !== 'other').flatMap((c) => rawErrors(c.raw))
+      .filter((e) => norm(e.text) !== norm(e.correction)).flatMap((e) => matches(page, e).map((f) => f.index)));
     const real = (v) => [...v.found].filter((i) => !page.faults.find((f) => f.index === i).optional).length;
     for (const [k, v] of [['first', a], ['both', b]]) { t[k].found += real(v); t[k].sig += v.sig; t[k].ok += v.ok; t[k].doubt += v.doubt; }
     for (const f of page.faults.filter((x) => !x.optional)) {
