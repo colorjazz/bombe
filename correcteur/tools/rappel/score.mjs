@@ -1,5 +1,7 @@
 // Rappel et précision de la correction de la langue, d'après truth.json et un ou plusieurs runs-*.json (mesure.mjs).
-//   node score.mjs <dossier> [runs-a.json runs-b.json …] [--detail] [--union a.json+b.json]
+//   node score.mjs <dossier> [runs-a.json runs-b.json …] [--detail] [--union a.json+b.json] [--paires]
+// --union : réunion des 1res lectures de deux passages ; --paires : réunion des 1res lectures de deux essais d'un même
+// passage (essais 1+2, 3+4…), soit deux lectures indépendantes de la même page lancées en parallèle.
 // Rappel = fautes trouvées ÷ vraies fautes ; précision = signalements justes ÷ signalements (« à vérifier » compris,
 // comptés à part). Pour chaque faute manquée : « filtrée » si l'IA l'a relevée mais que le filtre (PDA, catégorie,
 // correction identique) l'a écartée, sinon « jamais vue ».
@@ -144,6 +146,14 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const ui = args.indexOf('--union');
   const files = args.slice(1).filter((a, i) => !a.startsWith('--') && args[i] !== '--union');
   const list = files.length ? files : fs.readdirSync(dir).filter((f) => /^runs-.*\.json$/.test(f));
-  for (const f of list) console.log(report(score(truth, load(f)), args.includes('--detail')), '\n');
+  for (const f of list) {
+    const data = load(f);
+    console.log(report(score(truth, data), args.includes('--detail')), '\n');
+    if (args.includes('--paires')) {
+      const a = { name: data.name, runs: data.runs.filter((r) => r.trial % 2 === 0) };
+      const b = { name: data.name, runs: data.runs.filter((r) => r.trial % 2 === 1).map((r) => ({ ...r, trial: r.trial - 1 })) };
+      console.log(report(score(truth, { ...union([a, b]), name: `${data.name} : deux 1res lectures réunies` }), args.includes('--detail')), '\n');
+    }
+  }
   if (ui >= 0) console.log(report(score(truth, union(args[ui + 1].split('+').map(load))), args.includes('--detail')));
 }
