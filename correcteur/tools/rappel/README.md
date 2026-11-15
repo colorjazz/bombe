@@ -56,6 +56,7 @@ copie. Écart d'un essai à l'autre : environ ± 3 points.
 | gemini-3.1-pro-preview | 82 % → 84 % | 80 % | 11,9 |
 | gemini-3.1-pro-preview + règle de style | 71 % → 84 % | 86 % | 16,2 |
 | 1re lecture Flash, relecture Pro | 59 % → 74 % | 89 % | 6,7 |
+| **Code final (ultra high), contre-mesure** | **66 % → 72 %** | **98 %** | **5,3** |
 
 Constats :
 
@@ -64,7 +65,8 @@ Constats :
 - Ce qui reste manqué avec Flash : virgule après un complément de phrase en tête (≈ 40 % trouvées), phrases mal construites
   (≈ 30 %), et deux participes dont la finale est mal formée (« devenu si obsédé ») : toutes les lectures, tous modèles
   confondus, y lisent « devenue si obsédée ». Recopier d'abord le texte « tel qu'écrit » n'y change rien.
-- L'image en « ultra high » : orthographe 84 % → 93 % dans les deux essais qui l'utilisent. Retenu (`LANG_MEDIA_RES`).
+- L'image en « ultra high » : orthographe 84 % → 93-95 % dans les trois essais qui l'utilisent, et cadres plus justes
+  (copies difficiles : 83 % → 92 %). Retenu (`LANG_MEDIA_RES`).
 - Gemini 3.1 Pro trouve beaucoup plus de fautes de syntaxe et de ponctuation, mais invente des fautes (temps de verbe
   changés, « a fréquenté » → « a fréquentée »), varie d'un essai à l'autre et coûte 2,5 à 3,5 fois plus : non retenu.
 - Google répond à `gemini-3.7-flash` avec `gemini-3.8-flash` (champ `modelVersion`) : les deux sont le même modèle aujourd'hui.
