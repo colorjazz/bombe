@@ -49,8 +49,22 @@ const env = { ...vars, DB, IP_SALT: 'mesure', ASSETS: { fetch: () => new Respons
 const ctx = new AsyncLocalStorage();
 const calls = [];
 const realFetch = globalThis.fetch;
+// Le proxy de la session infonuagique coupe toute requête qui ne répond rien en 30 s ; Gemini, lui, réfléchit souvent
+// plus longtemps avant d'écrire. Chaque appel passe donc en flux (streamGenerateContent) avec les résumés de réflexion,
+// qui arrivent au fil de l'eau ; la réponse est ensuite remise sous la forme de generateContent pour le Worker.
+// Sans proxy (--sans-flux), l'appel part tel quel, comme en production.
+async function streamed(url, init) {
+  const body = JSON.parse(init.body);
+  body.generationConfig = { ...body.generationConfig, thinkingConfig: { ...body.generationConfig?.thinkingConfig, includeThoughts: true } };
+  const res = await realFetch(String(url).replace(':generateContent', ':streamGenerateContent?alt=sse'), { ...init, body: JSON.stringify(body) });
+  if (!res.ok) return res;
+  const chunks = (await res.text()).split('\n').filter((l) => l.startsWith('data:')).map((l) => JSON.parse(l.slice(5)));
+  const text = chunks.flatMap((c) => c.candidates?.[0]?.content?.parts || []).filter((p) => !p.thought).map((p) => p.text || '').join('');
+  const last = chunks.at(-1) || {};
+  return new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text }] } }], usageMetadata: last.usageMetadata, modelVersion: last.modelVersion }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+}
 globalThis.fetch = async (url, init) => {
-  const res = await realFetch(url, init);
+  const res = String(url).includes(':generateContent') && !flag('sans-flux') ? await streamed(url, init) : await realFetch(url, init);
   const store = ctx.getStore();
   if (!store || !String(url).includes('generateContent') || !res.ok) return res;
   const body = JSON.parse(init.body);
@@ -60,7 +74,7 @@ globalThis.fetch = async (url, init) => {
   const kind = prompt.includes('RELECTURE') ? 'reread' : prompt.includes('mot_fautif') || body.generationConfig.responseSchema?.items?.properties?.mot_fautif ? 'first' : 'other';
   let raw = null;
   try { raw = JSON.parse(out.candidates[0].content.parts.map((p) => p.text || '').join('')); } catch { /* réponse illisible : le Worker la signalera */ }
-  calls.push({ ...store, kind, model: String(url).match(/models\/([^:]+)/)[1], tin: u.promptTokenCount || 0, tout: (u.totalTokenCount || 0) - (u.promptTokenCount || 0),
+  calls.push({ ...store, kind, model: String(url).match(/models\/([^:]+)/)[1], served: out.modelVersion, tin: u.promptTokenCount || 0, tout: (u.totalTokenCount || 0) - (u.promptTokenCount || 0),
     thoughts: u.thoughtsTokenCount || 0, raw: kind === 'other' ? undefined : raw });
   return res;
 };
