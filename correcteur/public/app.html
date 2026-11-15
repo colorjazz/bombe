@@ -176,15 +176,16 @@
             <div id="pda-list" class="pda-list"></div>
             <button id="pda-reset" class="btn small ghost" type="button">Remettre les réglages du ministère</button>
           </details>
-          <div id="pda-cote-field" class="field adv">Cote selon le pourcentage de fautes (fautes retenues ÷ nombre de mots)
+          <div id="pda-cote-field" class="field adv">Cote de la langue
+            <label class="cote-mode">Selon <select id="pda-cote-mode"><option value="pct">le pourcentage de fautes (fautes retenues ÷ nombre de mots)</option><option value="count">le nombre de fautes retenues</option></select></label>
             <div class="pda-cotes" id="pda-cotes">
-              <label>A <small>jusqu'à</small> <input id="pda-a" type="text" inputmode="decimal" class="num" value="2"> %</label>
-              <label>B <small>jusqu'à</small> <input id="pda-b" type="text" inputmode="decimal" class="num" value="4"> %</label>
-              <label>C <small>jusqu'à</small> <input id="pda-c" type="text" inputmode="decimal" class="num" value="6"> %</label>
-              <label>D <small>jusqu'à</small> <input id="pda-d" type="text" inputmode="decimal" class="num" value="8"> %</label>
+              <label>A <small>jusqu'à</small> <input id="pda-a" type="text" inputmode="decimal" class="num" value="2"> <span class="cote-unit">%</span></label>
+              <label>B <small>jusqu'à</small> <input id="pda-b" type="text" inputmode="decimal" class="num" value="4"> <span class="cote-unit">%</span></label>
+              <label>C <small>jusqu'à</small> <input id="pda-c" type="text" inputmode="decimal" class="num" value="6"> <span class="cote-unit">%</span></label>
+              <label>D <small>jusqu'à</small> <input id="pda-d" type="text" inputmode="decimal" class="num" value="8"> <span class="cote-unit">%</span></label>
               <span>E <small>au-delà</small></span>
             </div>
-            <span class="muted small">Seuils d'exemple : remplacez-les par ceux de votre école.</span>
+            <span class="muted small">Seuils d’exemple : remplacez-les par ceux de votre école ou de la grille du ministère que vous utilisez. Ils sont retenus sur cet appareil.</span>
           </div>
         </div>
         <label id="ortho-focus-field" class="field ortho-focus" hidden><span>Ce que je veux observer <span class="muted small">(facultatif)</span></span>

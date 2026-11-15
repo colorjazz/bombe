@@ -674,13 +674,13 @@ function renderSummary() {
   // Pas de gros bouton vert tant qu'il n'y a rien à télécharger.
   $('export').hidden = $('print-all').hidden = !state.results.length;
   // Correction de la langue : pas d'impression groupée (chaque copie annotée s'imprime depuis sa vue), et un résumé plutôt que des notes.
-  if (state.kind === 'lang') $('print-all').hidden = true;
   $('export-fiches').hidden = !state.results.some((r) => r.ortho && r.profile);
   const toDo = state.results.filter((r) => r.ortho && r.evo !== 'prev' && !r.profile && !r.profileBusy).length; // un texte précédent n'a pas besoin de profil
   $('profile-all').hidden = toDo < 2 || orthoIntent === 'evolution'; // un seul élève : son bouton dans la carte suffit ; évolution : le profil s'établit seul
   $('profile-all').textContent = `Établir les ${toDo} profils`;
   $('export').textContent = tr(state.kind === 'lang' ? 'Télécharger le résumé des fautes (Excel)' : 'Télécharger les notes (Excel)');
-  $('print-all').disabled = state.running || !state.results.some((r) => r.kind !== 'lang');
+  $('print-all').textContent = tr(state.kind === 'lang' ? 'Imprimer ou enregistrer en PDF (toutes les copies annotées)' : 'Imprimer toutes les copies…');
+  $('print-all').disabled = state.running || !state.results.some((r) => (r.kind === 'lang') === (state.kind === 'lang'));
   renderCalib();
 }
 
@@ -1794,9 +1794,12 @@ function renderPda() {
   $('pda-years').replaceChildren(...[...sel.options].filter((o) => o.value).map((o) => h('button', { type: 'button', 'aria-pressed': String(sel.value === o.value),
     textContent: o.textContent.replace(/ (année|secondaire|grade)$/i, ''), title: o.textContent,
     onclick: () => { sel.value = o.value; sel.dispatchEvent(new Event('change')); } })));
+  const lim = [...document.querySelectorAll('#pda-cotes input')].map((i) => i.value);
+  const unit = $('pda-cote-mode').value === 'count' ? L(' fautes', ' errors') : ' %';
+  const coteTxt = ortho && state.kind === 'lang' ? '' : ` · ${L('cote', 'level')} : ${'ABCD'.split('').map((c, i) => `${c} ≤ ${lim[i]}${unit}`).join(', ')}`;
   $('lang-set-txt').textContent = on
-    ? L(`Étape ${$('pda-step').value} (d’après la date) · fautes répétées comptées ${$('pda-once').value === '1' ? 'une fois' : 'chaque fois'}`,
-      `Term ${$('pda-step').value} (from today’s date) · repeated errors counted ${$('pda-once').value === '1' ? 'once' : 'each time'}`)
+    ? L(`Étape ${$('pda-step').value} (d’après la date) · fautes répétées comptées ${$('pda-once').value === '1' ? 'une fois' : 'chaque fois'}${coteTxt}`,
+      `Term ${$('pda-step').value} (from today’s date) · repeated errors counted ${$('pda-once').value === '1' ? 'once' : 'each time'}${coteTxt}`)
     : tr('Toutes les fautes sont relevées : orthographe, accords, conjugaison, ponctuation, syntaxe, vocabulaire');
   if (!on) return;
   const by = (st) => notions().filter((x) => pdaState(x) === st).length;
@@ -1817,10 +1820,19 @@ function renderPda() {
   }).filter(Boolean));
 }
 const pdaOpen = new Set();
+// Seuils de cote modifiés (ou passage en nombre de fautes) : les copies déjà analysées sont recotées tout de suite.
+function applyCoteSettings() {
+  const count = $('pda-cote-mode').value === 'count';
+  document.querySelectorAll('#pda-cotes .cote-unit').forEach((u) => { u.textContent = count ? L('fautes', 'errors') : '%'; });
+  const sc = pdaScoring();
+  if (sc) for (const r of state.results) if (r.kind === 'lang' && r.pda) { r.pda.limits = sc.limits; r.pda.mode = sc.mode; }
+  savePrefs(); renderPda(); renderResults();
+}
 function savePda() { try { localStorage.setItem('ce.pda', JSON.stringify(pdaOver)); } catch { /* ignoré */ } }
 const pdaScoring = () => (isPda() ? {
   year: Number($('pda-year').value), once: $('pda-once').value === '1',
   limits: [...document.querySelectorAll('#pda-cotes input')].map((i) => Number(String(i.value).replace(',', '.')) || 0),
+  mode: $('pda-cote-mode').value, // « pct » : % de fautes ; « count » : nombre de fautes (selon la grille de l'école)
 } : null);
 
 function langScoring() {
@@ -1846,7 +1858,7 @@ function langGrade(r) {
     const count = counted(errors).length - dup.length;
     r.words = r.pages.some((p) => p.words == null) ? null : r.pages.reduce((a, p) => a + p.words, 0);
     r.pct = r.words ? (100 * count) / r.words : null;
-    r.cote = r.pct == null ? null : cote(Math.round(r.pct * 10) / 10, r.pda.limits);
+    r.cote = r.pda.mode === 'count' ? cote(count, r.pda.limits) : r.pct == null ? null : cote(Math.round(r.pct * 10) / 10, r.pda.limits);
     r.grade = null; r.total = null; r.dup = dup;
     return count;
   }
@@ -2614,6 +2626,7 @@ function langCard(r) {
         h('span', { textContent: copyLabel(r) }),
         h('div', { style: 'display:flex;gap:.4rem;flex-wrap:wrap' },
           h('button', { class: 'btn primary small', type: 'button', textContent: 'Voir la copie annotée', onclick: () => openViewer(r) }),
+          h('button', { class: 'btn small', type: 'button', textContent: tr('Imprimer / PDF'), title: tr('Copie surlignée et liste des fautes, avec la correction et l’explication'), onclick: () => printLangCopies([r]) }),
           h('button', { class: 'btn ghost small', type: 'button', style: 'margin-left:1rem', textContent: 'Supprimer', onclick: () => {
             if (!confirm(tr(`Supprimer l'analyse de ${r.name || 'cet élève'} ?`))) return;
             state.results = state.results.filter((x) => x !== r); renderResults();
@@ -2752,54 +2765,65 @@ function addErrorForm() {
 }
 
 // Impression : chaque page avec ses surlignages dessinés, puis la liste des corrections. « Enregistrer en PDF » depuis l'impression.
-async function printViewer() {
-  const r = viewing;
-  const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  let n = 0;
-  const sheets = [];
-  for (const p of r.pages) {
-    const list = [];
-    const img = await new Promise((res) => { const i = new Image(); i.onload = () => res(i); i.src = p.url; });
-    const c = document.createElement('canvas');
-    c.width = img.width; c.height = img.height;
-    const ctx = c.getContext('2d');
-    ctx.drawImage(img, 0, 0);
-    for (const e of p.errors) {
-      const k = ++n;
-      // Primaire : une faute « en apprentissage » est imprimée en gris, avec « ne compte pas », comme à l'écran.
-      const color = e.grey ? '#9ca3af' : CATS[e.category].color;
-      list.push(`<li${e.grey ? ' style="color:#6b7280"' : ''}><b style="color:${color}">${k}. ${esc(tr(CATS[e.category].label))}${e.grey ? ` · ${esc(L('en apprentissage, ne compte pas', 'being learned, not counted'))}` : ''}</b> — <s>${esc(e.text)}</s> → <b>${esc(e.correction)}</b><br><small>${esc(e.explanation)}</small></li>`);
-      if (!e.box) continue;
-      const [y0, x0, y1, x1] = e.box.map((v) => v / 1000);
-      ctx.strokeStyle = ctx.fillStyle = color;
-      ctx.setLineDash(e.grey ? [8, 6] : []);
-      ctx.lineWidth = Math.max(2, c.width / 500);
-      ctx.globalAlpha = 0.22; ctx.fillRect(x0 * c.width, y0 * c.height, (x1 - x0) * c.width, (y1 - y0) * c.height);
-      ctx.globalAlpha = 1; ctx.strokeRect(x0 * c.width, y0 * c.height, (x1 - x0) * c.width, (y1 - y0) * c.height);
-      ctx.font = `bold ${Math.round(c.width / 55)}px sans-serif`;
-      ctx.fillText(String(k), x0 * c.width, y0 * c.height - 4);
-    }
-    // Image réduite selon la longueur de la liste (2 colonnes, environ 9 mm par faute) pour tenir sur une seule feuille.
-    const imgMax = Math.max(110, Math.min(205, 248 - Math.ceil(list.length / 2) * 9));
-    sheets.push(`<section class="sheet"><img src="${c.toDataURL('image/jpeg', 0.85)}" style="max-height:${imgMax}mm">${list.length ? `<ol>${list.join('')}</ol>` : ''}</section>`);
-  }
+// Impression de la correction de la langue : chaque page avec ses surlignages, puis la liste numérotée des fautes
+// (correction et explication). Une copie (depuis sa vue ou sa carte) ou toutes les copies affichées, en un seul document :
+// « Enregistrer en PDF » dans la fenêtre d'impression donne un PDF de la classe.
+function printViewer() { printLangCopies([viewing]); }
+async function printLangCopies(list) {
+  // La fenêtre s'ouvre tout de suite (au clic) : ouverte après le travail, elle est bloquée par certains navigateurs.
   const w = window.open('', '_blank');
   if (!w) { alert(tr('Autorisez les fenêtres surgissantes pour imprimer.')); return; }
-  w.document.write(`<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><title>${esc(r.name || tr('Copie'))} — ${tr('correction de la langue')}</title>
+  w.document.write(`<p style="font:15px system-ui;margin:24px">${tr('Préparation de l’impression…')}</p>`);
+  const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const sheets = [];
+  for (const r of list) {
+    let n = 0;
+    const title = `<h1>${esc(copyTitle(r) || tr('Élève'))}${r.group ? ` · ${esc(r.group)}` : ''} — ${r.pda ? `${esc(pdaLine(r, langGrade(r)))}${r.cote && !r.ortho ? ` → ${r.cote}` : ''}${greyCount(r) ? ` (+${greyCount(r)} ${esc(L('en apprentissage', 'being learned'))})` : ''}` : tr(`${r.pages.reduce((a, p) => a + p.errors.length, 0)} faute(s)`)}${r.grade != null ? ` · ${fmt(r.grade)} / ${fmt(r.total)}` : ''}</h1>`;
+    for (const [pi, p] of r.pages.entries()) {
+      const items = [];
+      const img = await new Promise((res) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = p.url; });
+      if (!img) continue;
+      const c = document.createElement('canvas');
+      c.width = img.width; c.height = img.height;
+      const ctx = c.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      for (const e of p.errors) {
+        const k = ++n;
+        // Primaire : une faute « en apprentissage » est imprimée en gris, avec « ne compte pas », comme à l'écran.
+        const color = e.grey ? '#9ca3af' : CATS[e.category].color;
+        items.push(`<li${e.grey ? ' style="color:#6b7280"' : ''}><b style="color:${color}">${k}. ${esc(tr(CATS[e.category].label))}${e.grey ? ` · ${esc(L('en apprentissage, ne compte pas', 'being learned, not counted'))}` : ''}</b> — <s>${esc(e.text)}</s> → <b>${esc(e.correction)}</b><br><small>${esc(e.explanation)}</small></li>`);
+        if (!e.box) continue;
+        const [y0, x0, y1, x1] = e.box.map((v) => v / 1000);
+        ctx.strokeStyle = ctx.fillStyle = color;
+        ctx.setLineDash(e.grey ? [8, 6] : []);
+        ctx.lineWidth = Math.max(2, c.width / 500);
+        ctx.globalAlpha = 0.22; ctx.fillRect(x0 * c.width, y0 * c.height, (x1 - x0) * c.width, (y1 - y0) * c.height);
+        ctx.globalAlpha = 1; ctx.strokeRect(x0 * c.width, y0 * c.height, (x1 - x0) * c.width, (y1 - y0) * c.height);
+        ctx.font = `bold ${Math.round(c.width / 55)}px sans-serif`;
+        ctx.fillText(String(k), x0 * c.width, y0 * c.height - 4);
+      }
+      // Image réduite selon la longueur de la liste (2 colonnes, environ 9 mm par faute) pour tenir sur une seule feuille.
+      const imgMax = Math.max(110, Math.min(205, 248 - Math.ceil(items.length / 2) * 9));
+      sheets.push(`<section class="sheet">${pi === 0 ? title : ''}<img src="${c.toDataURL('image/jpeg', 0.85)}" style="max-height:${imgMax}mm">${items.length ? `<ol>${items.join('')}</ol>` : ''}</section>`);
+    }
+  }
+  const docTitle = list.length === 1 ? `${list[0].name || tr('Copie')} — ${tr('correction de la langue')}` : tr('Correction de la langue');
+  w.document.open();
+  w.document.write(`<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><title>${esc(docTitle)}</title>
     <style>@page{size:letter;margin:10mm}body{font:10.5px/1.35 system-ui,sans-serif;margin:0;color:#111}
     h1{font-size:14px;margin:0 0 4px}.sheet{break-after:page;page-break-after:always}.sheet:last-child{break-after:auto;page-break-after:auto}
     img{display:block;max-width:100%;max-height:205mm;margin:0 auto 6px;object-fit:contain}
     ol{list-style:none;padding:0;margin:0;column-count:2;column-gap:14px}li{break-inside:avoid;margin:0 0 4px}
     @media screen{body{margin:16px;width:740px}.sheet{border-bottom:1px dashed #bbb;padding-bottom:12px;margin-bottom:12px}}</style></head><body>
-    <h1>${esc(copyTitle(r) || tr('Élève'))}${r.group ? ` · ${esc(r.group)}` : ''} — ${r.pda ? `${esc(pdaLine(r, langGrade(r)))}${r.cote ? ` → ${r.cote}` : ''}${greyCount(r) ? ` (+${greyCount(r)} ${esc(L('en apprentissage', 'being learned'))})` : ''}` : tr(`${n} faute(s)`)}${r.grade != null ? ` · ${fmt(r.grade)} / ${fmt(r.total)}` : ''}</h1>
     ${sheets.join('')}
     <script>window.onload=()=>{
       // Chaque page de copie tient sur une feuille : on réduit l'image tant que la feuille déborde (lettre, marges de 10 mm).
       const max=(279.4-20)*96/25.4-4;
-      document.querySelectorAll('.sheet').forEach((s,i)=>{const im=s.querySelector('img');const extra=i===0?document.querySelector('h1').offsetHeight:0;
-        while(s.offsetHeight+extra>max&&im.offsetHeight>250)im.style.maxHeight=(im.offsetHeight-15)+'px';});
+      document.querySelectorAll('.sheet').forEach((s)=>{const im=s.querySelector('img');
+        while(s.offsetHeight>max&&im.offsetHeight>250)im.style.maxHeight=(im.offsetHeight-15)+'px';});
       window.print();}<\/script></body></html>`);
   w.document.close();
+  state.exported = true;
 }
 
 // Trois onglets : copies, langue, orthopédagogie. L'orthopédagogie est la correction de la langue avec, en plus,
@@ -3165,6 +3189,7 @@ const printable = () => {
     .sort((x, y) => (x.no ?? 0) - (y.no ?? 0));
 };
 $('print-all').addEventListener('click', () => {
+  if (state.kind === 'lang') { printLangCopies(shownResults().filter((r) => r.kind === 'lang')); return; }
   $('print-count').textContent = tr(pl(printable().length, 'copie corrigée', 'copies corrigées'));
   $('print-opts').hidden = false;
 });
@@ -3306,7 +3331,7 @@ window.addEventListener('beforeunload', (e) => {
 // Le corrigé tapé et le nom de l'évaluation ne sont gardés que jusqu'à la fermeture de l'onglet : assez pour corriger
 // plusieurs groupes de suite, sans laisser le corrigé sur un ordinateur partagé. « Terminer la session » les efface aussi.
 // Le regroupement des pages n'est pas retenu : il repart toujours d'un choix neutre.
-const PREF_IDS = ['total', 'per-student', 'whole', 'deep', 'language', 'lang-level', 'pda-year', 'pda-once', 'pda-a', 'pda-b', 'pda-c', 'pda-d', 'lang-total', 'lang-per', 'lang-max', 'anon', 'anon-h', 'anon-all', 'out-lang', 'qc'];
+const PREF_IDS = ['total', 'per-student', 'whole', 'deep', 'language', 'lang-level', 'pda-year', 'pda-once', 'pda-a', 'pda-b', 'pda-c', 'pda-d', 'pda-cote-mode', 'lang-total', 'lang-per', 'lang-max', 'anon', 'anon-h', 'anon-all', 'out-lang', 'qc'];
 const TAB_IDS = ['exam', 'rubric'];
 function savePrefs() {
   const prefs = Object.fromEntries(PREF_IDS.map((id) => [id, $(id).type === 'checkbox' ? $(id).checked : $(id).value]));
@@ -3435,6 +3460,9 @@ $('ortho-focus').addEventListener('input', () => { try { localStorage.setItem('c
   else setNiveau(known || $('lang-level').value, false);
   if (asked) { const q = new URLSearchParams(location.search); q.delete('niveau'); history.replaceState(null, '', location.pathname + (q.size ? `?${q}` : '') + location.hash); } // la clé (?key=) reste
 }
+['pda-a', 'pda-b', 'pda-c', 'pda-d'].forEach((id) => $(id).addEventListener('change', applyCoteSettings));
+$('pda-cote-mode').addEventListener('change', applyCoteSettings);
+document.querySelectorAll('#pda-cotes .cote-unit').forEach((u) => { u.textContent = $('pda-cote-mode').value === 'count' ? L('fautes', 'errors') : '%'; });
 startI18n();
 const saved = new URLSearchParams(location.search).get('key') || store.get();
 if (new URLSearchParams(location.search).has('key')) history.replaceState(null, '', location.pathname);
