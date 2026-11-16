@@ -94,6 +94,14 @@
       <span>Vous enseignez au :</span>
       <div class="lvl-seg"><button type="button" data-niveau="primaire">Primaire</button><button type="button" data-niveau="secondaire">Secondaire</button><button type="button" data-niveau="cegep">Cégep</button></div>
     </div>
+    <!-- Guidé : une question par écran (tâche, puis étapes) ; Autonome : toute la page, avec les réglages avancés. -->
+    <div class="guide-bar">
+      <button id="g-tasks" class="btn ghost small" type="button" hidden>Toutes les tâches</button>
+      <div class="seg mode-seg" role="group" aria-label="Façon de travailler">
+        <button id="ui-simple" type="button" aria-pressed="true">Guidé</button><button id="ui-adv" type="button" aria-pressed="false">Autonome</button>
+      </div>
+    </div>
+    <section id="guide" class="panel guide" hidden></section>
     <div class="kindbar">
       <div class="kind" role="tablist" data-active="content">
         <span class="kind-pill" aria-hidden="true"></span>
@@ -130,9 +138,6 @@
     <section class="panel stack s1">
       <div class="step-head band">
         <h2><span class="step">1</span> <span id="step1-title">Paramètres de l’évaluation</span></h2>
-        <div class="seg" role="group" aria-label="Affichage des options">
-          <button id="ui-simple" type="button" aria-pressed="true">Simple</button><button id="ui-adv" type="button" aria-pressed="false">Avancé</button>
-        </div>
       </div>
       <p class="req-note adv"><span class="req">*</span> obligatoire</p>
       <p id="adv-note" class="muted small" style="margin:0" hidden>Des réglages avancés sont actifs (<a href="#" id="adv-show">voir</a>).</p>

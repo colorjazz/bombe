@@ -183,6 +183,7 @@ const EN = {
   'Connexion perdue. Relancez la correction.': 'Connection lost. Run grading again.',
   'Connexion perdue : la correction reprendra toute seule. Gardez cette page ouverte et l’écran allumé.': 'Connection lost: grading will resume on its own. Keep this page open and the screen on.',
   'Simple': 'Simple', 'Avancé': 'Advanced', 'Affichage des options': 'Settings view',
+  'Guidé': 'Guided', 'Autonome': 'Independent', 'Façon de travailler': 'Way of working', 'Toutes les tâches': 'All tasks',
   'Des réglages avancés sont actifs (': 'Some advanced settings are on (', 'voir': 'show', ').': ').',
   'Fiabilité de la correction : cliquez pour en savoir plus': 'Grading reliability: click to learn more',
   'Que veut dire la fiabilité ?': 'What does reliability mean?',

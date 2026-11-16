@@ -25,6 +25,10 @@ try { ortho = localStorage.getItem('ce.ortho') === '1'; } catch { /* ignoré */ 
 // Fiche d'autocorrection (cégep, 3e onglet) : préparer les fiches à partir des textes, ou vérifier des fiches remplies.
 let fiche = false, ficheMode = 'preparer';
 try { fiche = localStorage.getItem('ce.fiche') === '1'; ficheMode = localStorage.getItem('ce.ficheMode') === 'verifier' ? 'verifier' : 'preparer'; } catch { /* ignoré */ }
+// Mode guidé : la tâche choisie, l'étape en cours, et le nombre de pages par élève (« 5 » : nombre variable).
+// À chaque visite, le mode guidé redemande la tâche.
+const guide = { task: null, step: 'tache', per: '1' };
+try { guide.per = localStorage.getItem('ce.guidePer') || '1'; } catch { /* ignoré */ }
 
 const state = {
   key: null,
@@ -124,6 +128,9 @@ function showGate(msg = '') {
 
 // Accueil, une seule fois par appareil : les 3 étapes et les limites à connaître, avec un lien vers le guide.
 function maybeWelcome() {
+  let onboarded = false;
+  try { onboarded = localStorage.getItem('ce.onboard') === '1'; } catch { /* ignoré */ }
+  if (!onboarded && $('newkey').hidden && !$('app').hidden && !$('g-onboard')) { showOnboard(); return; }
   let seen = false;
   try { seen = localStorage.getItem('ce.welcome') === '1'; } catch { /* ignoré */ }
   const langFirst = state.kind === 'lang'; // primaire : la fenêtre parle de la correction de la langue, pas d'un corrigé
@@ -691,6 +698,7 @@ function renderSummary() {
   $('print-all').textContent = tr(state.kind === 'lang' ? 'Imprimer ou enregistrer en PDF (toutes les copies annotées)' : 'Imprimer toutes les copies…');
   $('print-all').disabled = state.running || !state.results.some((r) => tabOf(r) === curTab());
   renderCalib();
+  gUpdate();
 }
 
 // ---------- Mode simple ----------
@@ -702,7 +710,7 @@ const simpleContent = () => state.kind === 'content' && !uiAdv();
 // Résumé « C'est prêt » : ce que l'appli a compris, chaque ligne vérifiable (« Voir »).
 function renderReady(list, n, cost) {
   const box = $('ready');
-  box.hidden = !simpleContent() || !(n || state.rubricPages.length);
+  box.hidden = !simpleContent() || !(n || (state.rubricPages.length && !guidedExam()));
   if (box.hidden) return;
   // ok : true (✓), false (!) ou 'wait' (en cours).
   const line = (ok, title, sub, onSee, seeLabel = 'Voir') => h('div', { class: 'ready-line' }, ok === 'wait' ? h('span', { class: 'wait' }, h('i', { class: 'spinner' })) : h('span', { class: ok ? 'ok' : 'warn', textContent: ok ? '✓' : '!' }),
@@ -725,7 +733,7 @@ function renderReady(list, n, cost) {
       if (confirm(tr('Faire lire les noms par l’IA ?\n\nLe nom de chaque élève sera envoyé avec sa copie, et rempli automatiquement dans les résultats. Assurez-vous d’en avoir l’autorisation de votre école (Loi 25).'))) setAnon(false);
     }, 'Lire les noms')
     : line(false, 'Noms lus par l’IA', 'le nom de l’élève est envoyé avec sa copie', () => setAnon(true), 'Masquer');
-  box.replaceChildren(...[h('b', { class: 'ready-title', textContent: tr(!n ? (state.results.length ? 'D’autres copies ? Déposez-les ici' : 'Déposez maintenant les copies') : state.detecting ? 'Un instant…' : 'C’est prêt') }), key,
+  box.replaceChildren(...[h('b', { class: 'ready-title', textContent: tr(!n ? (state.results.length ? 'D’autres copies ? Déposez-les ici' : 'Déposez maintenant les copies') : state.detecting ? 'Un instant…' : 'C’est prêt') }), guidedExam() ? null : key,
     n ? copiesLine : null, names].filter(Boolean)); // replaceChildren afficherait « null »
 }
 
@@ -758,6 +766,7 @@ function renderRubric() {
   const n = state.rubricPages.length;
   $('rubric-done').hidden = !n;
   $('rubric-done').textContent = byGrid() ? `✓ Grille ajoutée (${pl(n, 'page', 'pages')}). Elle n’est pas facturée.` : `✓ Corrigé ajouté (${pl(n, 'page', 'pages')}). Il n’est pas facturé.`;
+  gUpdate();
 }
 
 // ---------- Grille détaillée ----------
@@ -802,7 +811,7 @@ function renderGrid() {
       } }),
     h('textarea', { rows: 2, value: l.description, 'aria-label': 'Description du niveau', oninput: (e) => { l.description = e.target.value; } }),
     h('button', { class: 'icon-btn', type: 'button', textContent: '×', title: 'Retirer ce niveau', onclick: () => { c.levels = c.levels.filter((x) => x !== l); renderGrid(); } }));
-  $('grid-criteria').replaceChildren(conversionBox(), ...state.grid.map((c, i) => h('div', { class: 'crit' },
+  $('grid-criteria').replaceChildren(conversionBox() || '', ...state.grid.map((c, i) => h('div', { class: 'crit' },
     h('div', { class: 'crit-top' },
       h('span', { class: 'crit-no', textContent: String(i + 1) }),
       h('input', { type: 'text', value: c.name, 'aria-label': 'Critère', oninput: (e) => { c.name = e.target.value; } }),
@@ -3149,6 +3158,7 @@ function finishSession(forget) {
   $('mode').value = 'file'; $('per').value = ''; state.modeChosen = false;
   ['exam', 'group', 'rubric', 'search'].forEach((id) => { $(id).value = ''; });
   state.grid = null;
+  $('done-msg').hidden = $('adjust').hidden = true;
   renderRubric(); renderGrid(); renderPages(); renderResults(); savePrefs();
   if (forget) { store.del(); location.reload(); return; }
   banner('ok', 'Session terminée : tout a été effacé.');
@@ -3293,7 +3303,7 @@ dropzone($('drop'), $('files'), async (files, progress) => {
     state.camTipShown = true;
     setTimeout(() => banner('info', 'Toute une classe à photographier ? Touchez « Prendre les copies en photo » : vous photographiez les pages à la suite, sans quitter l’appli. Vous pouvez aussi choisir plusieurs photos d’un coup dans votre galerie.'), 0);
   }
-  if (simpleContent() && added.length) { progress(tr('Un instant : je regarde ce que vous avez déposé…')); added = await sortDrop(added); progress(''); }
+  if (simpleContent() && !guidedExam() && added.length) { progress(tr('Un instant : je regarde ce que vous avez déposé…')); added = await sortDrop(added); progress(''); }
   state.pages.push(...added);
   // Regroupement choisi pour l'enseignant (il peut changer ensuite) : des photos ou fichiers d'une page = un élève
   // chacun ; un fichier de plusieurs pages (PDF du photocopieur) = on trouve où commence chaque copie.
@@ -3301,7 +3311,8 @@ dropzone($('drop'), $('files'), async (files, progress) => {
   // des photos d'une page chacune = des pages à regrouper (l'IA trouve où commence chaque copie).
   const docs = [...new Set(state.pages.map((p) => p.file))];
   const multi = docs.filter((f) => state.pages.filter((p) => p.file === f).length > 1 || /\.docx$/i.test(f));
-  if (!state.modeChosen) {
+  if (guidedExam()) $('mode').value = gMode();
+  else if (!state.modeChosen) {
     $('mode').value = simpleContent()
       ? (docs.length > 1 && multi.length === docs.length) || (docs.length === 1 && /\.docx$/i.test(docs[0])) ? 'file' : docs.length === 1 && !multi.length ? 'file' : 'auto'
       : !state.pages.some((p) => !p.firstOfFile) ? 'file' : 'auto';
@@ -3468,7 +3479,7 @@ async function loadDemo() {
     : 'Voici 3 copies d’exemple corrigées avec leur corrigé (rien n’a été décompté). Touchez « Voir la copie corrigée » pour voir les annotations. À votre tour : déposez vos copies.'));
   setTimeout(() => $('cards').scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
 }
-$('demo-btn').addEventListener('click', () => loadDemo().catch((e) => banner('err', e.message)));
+$('demo-btn').addEventListener('click', () => loadDemo().then(() => { if (guidedExam()) gSet('resultats'); }).catch((e) => banner('err', e.message)));
 $('newkey-demo').addEventListener('click', () => { $('newkey').hidden = true; try { localStorage.setItem('ce.welcome', '1'); } catch { /* ignoré */ } loadDemo().catch((e) => banner('err', e.message)); });
 
 // ---------- Parrainage ----------
@@ -3525,7 +3536,7 @@ document.querySelectorAll('[data-close-buy]').forEach((b) => b.addEventListener(
 document.querySelectorAll('[data-pack]').forEach((b) => b.addEventListener('click', () => buy(b.dataset.pack)));
 document.querySelectorAll('[data-close-rel]').forEach((b) => b.addEventListener('click', () => { $('rel-help').hidden = true; }));
 // La fenêtre de la clé contient l'essentiel de l'accueil : pas de 2e fenêtre juste après.
-document.querySelector('[data-close-newkey]').addEventListener('click', () => { $('newkey').hidden = true; try { localStorage.setItem('ce.welcome', '1'); } catch { /* ignoré */ } });
+document.querySelector('[data-close-newkey]').addEventListener('click', () => { $('newkey').hidden = true; try { localStorage.setItem('ce.welcome', '1'); } catch { /* ignoré */ } maybeWelcome(); });
 $('welcome-demo').addEventListener('click', () => { $('welcome').hidden = true; try { localStorage.setItem('ce.welcome', '1'); } catch { /* ignoré */ } loadDemo().catch((e) => banner('err', e.message)); });
 $('welcome-ok').addEventListener('click', () => { $('welcome').hidden = true; try { localStorage.setItem('ce.welcome', '1'); } catch { /* ignoré */ } });
 $('newkey-copy').addEventListener('click', () => navigator.clipboard?.writeText($('newkey-value').textContent));
@@ -3587,6 +3598,326 @@ renderPda();
 // Affichage simple (par défaut) ou avancé : le mode simple cache les réglages fins (classe « adv »), qui restent appliqués.
 // Si l'un d'eux n'a pas sa valeur par défaut, une ligne le signale : rien ne change en douce (ex. double correction facturée).
 // L'année (boutons du mode simple), l'étape (d'après la date) et le nom de l'évaluation ne sont pas des réglages « cachés ».
+// ---------- Mode guidé ----------
+// « Guidé » remplace l'ancien mode simple : une question par écran. Le parcours « Corriger un examen » pilote les
+// vrais réglages de l'appli (façon de corriger, total, corrigé ou grille, précisions, copies) : seuls les éléments de
+// l'étape en cours sont affichés, à leur place habituelle. Les autres tâches ouvrent leur onglet, en version simple.
+// « Autonome » : toute la page, avec les réglages avancés.
+// Déclarées (hissées) : le résumé et les copies les appellent dès le démarrage, avant cette section.
+function isGuided() { return !uiAdv(); }
+function guidedExam() { return isGuided() && guide.task === 'examen' && state.kind === 'content'; }
+const G_ORDER = ['methode', 'points', 'corrige', 'consignes', 'copies', 'pret'];
+const G_SVG = {
+  examen: '<rect x="5" y="3.5" width="14" height="17" rx="2"/><path d="M8.5 9l1.5 1.5L13 7.5"/><path d="M8.5 15h7"/>',
+  langue: '<path d="M5 5h14M12 5v14"/><path d="M8.5 19h7"/>',
+  ortho: '<circle cx="12" cy="8" r="4"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/>',
+  fiche: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/><path d="M15 16.5l1.5 1.5 3-3"/>',
+  points: '<path d="M5 7h3M5 12h3M5 17h3"/><path d="M11 7h8M11 12h8M11 17h8"/>',
+  grille: '<rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M3.5 14.5h17M9.5 4.5v15"/>',
+  primaire: '<path d="M4 19V8l8-4 8 4v11"/><path d="M9 19v-5h6v5"/><path d="M3 19h18"/>',
+  secondaire: '<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 13h8M8 17h5"/>',
+  cegep: '<path d="M2.5 9.5L12 5l9.5 4.5L12 14z"/><path d="M6.5 11.5v4.5c3 2 8 2 11 0v-4.5"/><path d="M21.5 9.5v5"/>',
+  guide: '<circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/>',
+  autonome: '<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>',
+  alerte: '<path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17h0"/>',
+  lire: '<path d="M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5S2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/>',
+  excel: '<rect x="4" y="3.5" width="16" height="17" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>',
+  imprimer: '<path d="M7 8V3.5h10V8"/><rect x="3" y="8" width="18" height="8.5" rx="2"/><rect x="7" y="13" width="10" height="7.5" rx=".8"/>',
+  info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h0"/>',
+};
+const gIcon = (k, cls = 'g-ico') => h('span', { class: cls, 'aria-hidden': 'true', innerHTML: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${G_SVG[k]}</svg>` });
+// Un choix : une grande carte (icône, titre, explication) ; pressed = sélectionné.
+const gChoice = (icon, title, sub, onclick, pressed = false, tag = null) => h('button', { type: 'button', class: 'g-choice', 'aria-pressed': String(pressed), onclick },
+  gIcon(icon), h('span', {}, h('b', {}, title, tag ? h('span', { class: `g-tag${tag.rec ? ' rec' : ''}`, textContent: tag.text }) : null), h('span', { class: 'g-d', textContent: sub })));
+const gHint = (text) => h('p', { class: 'g-hint' }, gIcon('info', 'g-hint-ico'), h('span', { textContent: text }));
+const gGrid = () => byGrid();
+const gPts = (x) => L(`${fmt(x)} point${x > 1 ? 's' : ''}`, `${fmt(x)} point${x === 1 ? '' : 's'}`);
+const gStepName = (k) => [L('La façon de corriger', 'How you grade'), gGrid() ? L('Les pages', 'Pages') : L('Le total et les pages', 'Total and pages'),
+  gGrid() ? L('La grille', 'The rubric') : L('Le corrigé', 'The answer key'), L('Les consignes', 'Instructions'), L('Les copies', 'The papers'), L('Vérifier et lancer', 'Check and start')][k];
+
+// Les éléments du mode guidé (en-tête, contenu, navigation) vont dans la section où se trouvent les vrais réglages
+// de l'étape : section 1 pour le corrigé et les consignes, section 2 pour les copies, sinon le panneau « guide ».
+const gEls = { head: h('div', { class: 'g-el g-head' }), body: h('div', { class: 'g-el g-body' }), nav: h('div', { class: 'g-el g-nav' }) };
+let gBannerHome = null; // place d'origine du bandeau des messages (section 2), pour l'y remettre en mode autonome
+
+function gSet(step) {
+  guide.step = step;
+  gBuild();
+  window.scrollTo({ top: 0 });
+}
+function gTask(task) {
+  guide.task = task;
+  if (task === 'examen') {
+    setKind('content');
+    guide.step = state.running ? 'encours' : state.results.some((r) => tabOf(r) === 'content') ? 'resultats' : 'methode';
+  } else {
+    setKind(task === 'langue' ? 'lang' : task); // langue, ortho, fiche : l'onglet habituel, en version simple
+    guide.step = 'libre';
+  }
+  gBuild();
+  window.scrollTo({ top: 0 });
+}
+const gNext = () => gSet(G_ORDER[G_ORDER.indexOf(guide.step) + 1] || 'pret');
+const gBack = () => gSet(guide.step === 'methode' ? 'tache' : G_ORDER[G_ORDER.indexOf(guide.step) - 1] || 'tache');
+
+// Regroupement des pages selon la réponse « pages par élève » : un document par élève (Word, PDF de plusieurs pages)
+// reste un élève par fichier ; sinon, des paquets de 1 à 4 pages ; « 5 et plus » : l'appli trouve chaque copie.
+function gMode() {
+  const docs = [...new Set(state.pages.map((p) => p.file))];
+  const multi = docs.filter((f) => state.pages.filter((p) => p.file === f).length > 1 || /\.docx$/i.test(f));
+  if ((docs.length > 1 && multi.length === docs.length) || (docs.length === 1 && /\.docx$/i.test(docs[0]))) return 'file';
+  const per = Number(guide.per);
+  if (per >= 1 && per <= 4) { $('per').value = String(per); return 'fixed'; }
+  return 'auto';
+}
+function gApplyMode() {
+  $('per-student').value = guide.per === '5' ? '' : guide.per;
+  const before = $('mode').value;
+  $('mode').value = gMode();
+  state.modeChosen = true;
+  applyMode();
+  if ($('mode').value === 'auto' && before !== 'auto' && state.pages.length > 1) detectCopies(); else renderPages();
+}
+
+function gBuild() {
+  const app = $('app');
+  const guided = isGuided();
+  if (!gBannerHome) gBannerHome = { parent: $('banner').parentElement, next: $('banner').nextSibling };
+  const wiz = guided && (guide.step === 'tache' || guidedExam());
+  app.classList.toggle('guided', guided);
+  app.classList.toggle('g-wiz', wiz);
+  app.dataset.g = wiz ? guide.step : '';
+  $('g-tasks').hidden = !guided || guide.step === 'tache';
+  if (!wiz) {
+    Object.values(gEls).forEach((el) => el.remove());
+    $('guide').hidden = true;
+    if ($('banner').parentElement !== gBannerHome.parent) gBannerHome.parent.insertBefore($('banner'), gBannerHome.next);
+    return;
+  }
+  const step = guide.step;
+  const host = ['corrige', 'consignes'].includes(step) ? app.querySelector('.s1') : ['copies', 'encours'].includes(step) ? app.querySelector('.s2') : $('guide');
+  $('guide').hidden = host !== $('guide');
+  const k = G_ORDER.indexOf(step);
+  const [q, sub] = gTitles(step);
+  gEls.head.replaceChildren(...[
+    k >= 0 ? h('div', { class: 'g-prog' }, h('span', {}, L('Corriger un examen · ', 'Grade a test · '), h('b', { textContent: L(`Étape ${k + 1} sur ${G_ORDER.length}`, `Step ${k + 1} of ${G_ORDER.length}`) }), ` : ${gStepName(k)}`),
+      h('span', { class: 'g-dots', 'aria-hidden': 'true' }, G_ORDER.map((_, i) => h('i', { class: i < k ? 'done' : i === k ? 'now' : '' })))) : null,
+    h('h2', { class: 'g-q', textContent: q }),
+    sub ? h('p', { class: 'g-sub', textContent: sub }) : null].filter(Boolean));
+  gEls.body.replaceChildren(...gBody(step));
+  host.prepend(gEls.head, gEls.body);
+  gEls.head.after($('banner')); // les messages de l'appli restent visibles, juste sous la question
+  host.append(gEls.nav);
+  if (step === 'copies' && !state.pages.length) gApplyMode(); // la caméra suit aussi les pages par élève
+  gUpdate();
+}
+
+function gTitles(step) {
+  const g = gGrid();
+  return {
+    tache: [L('Que voulez-vous faire aujourd’hui ?', 'What would you like to do today?'), L('Choisissez une tâche : je vous guide pas à pas.', 'Choose a task: I’ll guide you step by step.')],
+    methode: [L('Comment ce travail est-il corrigé ?', 'How is this work graded?'), L('Ça change la façon dont l’appli lit votre corrigé.', 'This changes how the app reads your answer key.')],
+    points: g ? [L('Combien de pages chaque élève a-t-il remises ?', 'How many pages did each student hand in?'), L('Le total des points viendra de votre grille.', 'The total will come from your rubric.')]
+      : [L('Le travail est noté sur combien ?', 'What is the work out of?'), ''],
+    corrige: g ? [L('Ajoutez votre grille d’évaluation', 'Add your rubric'), L('Une grille vierge, sans nom d’élève. L’appli la recopie telle quelle (vos critères, vos niveaux, vos points) et vous la montre pour vérification. Elle n’utilise aucune page.', 'A blank rubric, with no student name. The app copies it as is (your criteria, levels and points) and shows it to you to check. It uses no pages.')]
+      : [L('Ajoutez votre corrigé', 'Add your answer key'), L('Facultatif, mais la correction sera plus juste. Le corrigé n’utilise aucune page.', 'Optional, but grading will be more accurate. The answer key uses no pages.')],
+    consignes: [L('Des consignes pour la correction ?', 'Any grading instructions?'), L('Ce que vous diriez à un collègue qui corrigerait à votre place. Facultatif, mais ça rend la correction plus juste.', 'What you would tell a colleague grading in your place. Optional, but it makes grading more accurate.')],
+    copies: [L('Ajoutez les copies des élèves', 'Add the students’ papers'), L('Toute la pile d’un coup : photos, PDF numérisé ou fichiers Word.', 'The whole pile at once: photos, a scanned PDF or Word files.')],
+    pret: [L('Tout est prêt', 'Everything is ready'), L('Vérifiez d’un coup d’œil. Touchez « Modifier » pour changer une réponse.', 'Check at a glance. Tap “Change” to change an answer.')],
+    encours: [L('Correction en cours…', 'Grading in progress…'), L('Gardez cette page ouverte : les copies corrigées s’affichent au fur et à mesure.', 'Keep this page open: graded papers appear as they are done.')],
+    resultats: [state.results.length && state.results.every((r) => r.demo) ? L('Voici un exemple corrigé', 'Here is a graded example') : L('C’est corrigé !', 'All graded!'), ''],
+  }[step] || ['', ''];
+}
+
+function gBody(step) {
+  if (step === 'tache') {
+    const lvl = $('lang-level').value;
+    const tasks = [
+      ['examen', 'examen', L('Corriger un examen ou un travail', 'Grade a test or an assignment'), L('Avec votre corrigé ou votre grille : une note et un commentaire pour chaque élève.', 'With your answer key or rubric: a grade and a comment for each student.')],
+      ['langue', 'langue', L('Corriger la langue d’un texte', 'Correct the language of a text'), lvl === 'primaire' ? L('Fautes surlignées et cote selon la Progression des apprentissages.', 'Errors highlighted, with a grade.') : L('Orthographe, accords, ponctuation : fautes surlignées, cote ou nombre de fautes.', 'Spelling, agreement, punctuation: errors highlighted, with a grade or an error count.')],
+      orthoAvailable() ? ['ortho', 'ortho', L('Orthopédagogie', 'Remedial teaching'), L('Profil du scripteur, suivi de l’évolution, bilan pour le plan d’intervention.', 'Writer profile, progress tracking, summary for the intervention plan.'), true] : null,
+      ficheAvailable() ? ['fiche', 'fiche', L('Fiche d’autocorrection', 'Self-correction sheet'), L('Préparer les fiches des élèves à partir de leurs textes, puis vérifier les fiches remplies.', 'Prepare students’ sheets from their texts, then check the completed sheets.'), true] : null,
+    ].filter(Boolean);
+    return [h('div', { class: 'g-choices' }, tasks.map(([id, icon, title, sub, beta]) => gChoice(icon, title, sub, () => gTask(id), false, beta ? { text: L('Bêta', 'Beta') } : null)))];
+  }
+  if (step === 'methode') {
+    const pick = (m) => { setMethod(m); gBuild(); };
+    return [h('div', { class: 'g-choices' },
+      gChoice('points', L('Des points par question', 'Points per question'), L('Examen, questionnaire, exercices : chaque question vaut des points.', 'Test, quiz, exercises: each question is worth points.'), () => pick('points'), !gGrid()),
+      gChoice('grille', L('Avec une grille', 'With a rubric'), L('Rédaction, projet, oral : des critères et des niveaux (A, B, C…).', 'Essay, project, oral: criteria and levels (A, B, C…).'), () => pick('grid'), gGrid()))];
+  }
+  if (step === 'points') {
+    const out = [];
+    if (!gGrid()) {
+      const total = h('input', { id: 'g-total', class: 'g-num', type: 'number', min: '1', max: '1000', inputmode: 'decimal', value: $('total').value, 'aria-label': L('Total des points', 'Total points'),
+        oninput: (e) => { $('total').value = e.target.value; $('total').dispatchEvent(new Event('input')); paint(); } });
+      const chips = h('div', { class: 'g-chips' }, ['10', '20', '25', '50', '100'].map((v) => h('button', { type: 'button', class: 'g-chip', textContent: v,
+        onclick: () => { total.value = v; total.dispatchEvent(new Event('input')); } })));
+      const paint = () => chips.querySelectorAll('.g-chip').forEach((c) => c.setAttribute('aria-pressed', String(c.textContent === total.value)));
+      paint();
+      out.push(chips, h('div', { class: 'g-numrow' }, total, h('span', { textContent: L('points', 'points') })),
+        h('h3', { class: 'g-q2', textContent: L('Combien de pages chaque élève a-t-il remises ?', 'How many pages did each student hand in?') }));
+    }
+    const pages = h('div', { class: 'g-chips' }, [['1', '1'], ['2', '2'], ['3', '3'], ['4', '4'], ['5', L('5 et plus', '5 or more')]].map(([v, t]) => h('button', { type: 'button', class: 'g-chip', textContent: t, 'aria-pressed': String(guide.per === v),
+      onclick: () => { guide.per = v; try { localStorage.setItem('ce.guidePer', v); } catch { /* ignoré */ } $('per-student').value = v === '5' ? '' : v; if (state.pages.length) gApplyMode(); gBuild(); } })));
+    out.push(pages, gHint(guide.per === '5' ? L('Nombre de pages variable : l’appli trouvera elle-même où commence chaque copie.', 'Varying number of pages: the app will find where each paper starts.')
+      : L('Avec le nombre de pages, l’appli sépare les copies toute seule quand vous ajoutez toute la pile d’un coup.', 'With the number of pages, the app separates the papers when you add the whole pile at once.')));
+    return out;
+  }
+  if (step === 'consignes') {
+    const list = gGrid() ? L(['Ne pas pénaliser la langue (évaluée à part)', 'Être exigeant sur les arguments', 'Commentaires courts', 'Tutoyer l’élève'], ['Don’t penalize language (graded separately)', 'Be demanding on arguments', 'Short comments', 'Encouraging tone'])
+      : L(['Points partiels permis', 'Accepter les réponses équivalentes', 'Ne pas pénaliser l’orthographe', 'Commentaires courts', 'Tutoyer l’élève'], ['Partial credit allowed', 'Accept equivalent answers', 'Don’t penalize spelling', 'Short comments', 'Encouraging tone']);
+    const lines = () => $('rubric').value.split('\n').map((x) => x.trim()).filter(Boolean);
+    const chips = h('div', { class: 'g-chips multi' }, list.map((c) => h('button', { type: 'button', class: 'g-chip', textContent: c, 'aria-pressed': String(lines().includes(c)),
+      onclick: () => {
+        const cur = $('rubric').value.split('\n');
+        const i = cur.findIndex((x) => x.trim() === c);
+        if (i >= 0) cur.splice(i, 1); else { if (cur.length && !cur.at(-1).trim()) cur.pop(); cur.push(c); }
+        $('rubric').value = cur.join('\n').replace(/^\n+/, '');
+        $('rubric').dispatchEvent(new Event('input'));
+      } })));
+    return [h('p', { class: 'g-small', textContent: L('Touchez pour ajouter :', 'Tap to add:') }), chips];
+  }
+  if (step === 'pret') return [h('div', { class: 'g-recap', id: 'g-recap' }), h('p', { class: 'g-cost', id: 'g-cost' })];
+  if (step === 'resultats') {
+    const res = state.results.filter((r) => tabOf(r) === 'content');
+    const flagged = res.filter((r) => r.flags?.length);
+    const left = state.pages.length && !state.running ? bundles().length : 0; // copies restées dans la pile : échec ou arrêt
+    const act = (icon, title, sub, onclick, primary = false) => h('button', { type: 'button', class: `btn g-act${primary ? ' primary' : ''}`, onclick }, gIcon(icon, 'g-act-ico'), h('b', { textContent: title }), h('small', { textContent: sub }));
+    const toCards = () => setTimeout(() => (document.querySelector('#cards .card.flag') || $('cards')).scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+    return [
+      h('p', { class: 'g-sub', textContent: res.every((r) => r.demo) ? L('Rien n’a été décompté. À votre tour : « Ajouter mes copies ».', 'Nothing was used. Your turn: “Add my papers”.')
+        : L('Les notes sont des propositions : tout est modifiable.', 'Grades are suggestions: everything can be changed.') }), // le nombre de copies est dans le message de l'appli, juste au-dessus
+      h('h3', { class: 'g-q2', textContent: L('Et maintenant ?', 'What next?') }),
+      h('div', { class: 'g-acts' },
+        left ? act('alerte', left > 1 ? L(`Corriger les ${left} copies restantes`, `Grade the ${left} remaining papers`) : L('Corriger la copie restante', 'Grade the remaining paper'),
+          left > 1 ? L('Elles n’ont pas pu être corrigées (réseau, photo illisible) ou la correction a été arrêtée : vous pouvez les relancer.', 'They could not be graded (network, unreadable photo) or grading was stopped: you can try again.')
+            : L('Elle n’a pas pu être corrigée (réseau, photo illisible) ou la correction a été arrêtée : vous pouvez la relancer.', 'It could not be graded (network, unreadable photo) or grading was stopped: you can try again.'),
+          () => gSet('pret'), true) : null,
+        flagged.length ? act('alerte', L(`Vérifier ${flagged.length > 1 ? `les ${flagged.length} copies signalées` : 'la copie signalée'}`, `Check the ${flagged.length > 1 ? `${flagged.length} flagged papers` : 'flagged paper'}`), L('Elles sont marquées ⚠︎ dans la liste ci-dessous.', 'They are marked ⚠︎ in the list below.'),
+          () => { flagged.forEach((r) => state.open.add(r.id)); renderResults(); toCards(); }, !left)
+          : act('lire', L('Relire les copies corrigées', 'Review the graded papers'), L('Touchez une copie pour voir le détail de sa note.', 'Tap a paper to see how it was graded.'), () => toCards(), !left),
+        act('excel', L('Télécharger les notes (Excel)', 'Download the grades (Excel)'), L('Pour votre carnet de notes. Rien n’est conservé ici : téléchargez avant de partir.', 'For your gradebook. Nothing is kept here: download before you leave.'), () => $('export').click()),
+        act('imprimer', L('Imprimer les copies corrigées', 'Print the graded papers'), L('Ou les enregistrer en PDF, pour les remettre aux élèves.', 'Or save them as PDF, to hand back to students.'), () => $('print-all').click())),
+    ];
+  }
+  return [];
+}
+
+// Mise à jour légère (appelée par renderSummary) : boutons, récapitulatif, passage à « en cours » puis aux résultats.
+function gUpdate() {
+  if (!isGuided() || !$('app').classList.contains('g-wiz')) return;
+  const step = guide.step;
+  // Correction lancée depuis le parcours : l'écran « en cours ». Ailleurs (le menu des tâches, par exemple), on n'y ramène pas.
+  if (guidedExam() && state.running && ['pret', 'copies'].includes(step)) { gSet('encours'); return; }
+  if (step === 'encours' && !state.running) { gSet(state.results.some((r) => tabOf(r) === 'content') ? 'resultats' : 'copies'); return; }
+  const nav = [];
+  const btn = (text, cls, onclick, disabled = false) => h('button', { type: 'button', class: `btn ${cls}`, textContent: text, disabled, onclick });
+  const back = btn(L('Retour', 'Back'), 'ghost', gBack);
+  const n = state.pages.length, list = bundles();
+  if (step === 'methode') nav.push(back, btn(L('Suivant', 'Next'), 'primary', gNext));
+  else if (step === 'points') nav.push(back, btn(L('Suivant', 'Next'), 'primary', gNext, !(gGrid() || Number($('total').value) > 0)));
+  else if (step === 'corrige') {
+    const has = gGrid() ? !!state.grid : state.rubricPages.length > 0;
+    nav.push(back, btn(state.reading ? L('Lecture de la grille…', 'Reading the rubric…') : has || (gGrid() && state.rubricPages.length) ? L('Suivant', 'Next')
+      : gGrid() ? L('Je la taperai à l’étape suivante', 'I’ll type it in the next step') : L('Continuer sans corrigé', 'Continue without a key'), 'primary', gNext, !!state.reading));
+  } else if (step === 'consignes') {
+    nav.push(back, btn($('rubric').value.trim() ? L('Suivant', 'Next') : L('Pas de consignes', 'No instructions'), 'primary', () => {
+      // Grille tapée à la main (aucune photo de grille) : l'appli la lit avant la correction.
+      if (gGrid() && !state.grid && !state.reading && !state.rubricPages.length && $('rubric').value.trim()) makeGrid();
+      gNext();
+    }));
+    gEls.body.querySelectorAll('.g-chip').forEach((c) => c.setAttribute('aria-pressed', String($('rubric').value.split('\n').map((x) => x.trim()).includes(c.textContent))));
+  } else if (step === 'copies') nav.push(back, btn(state.detecting ? L('Un instant…', 'One moment…') : L('Suivant', 'Next'), 'primary', gNext, !n || state.detecting));
+  else if (step === 'pret') {
+    gRecap();
+    const run = $('run');
+    const why = state.detecting ? L('Analyse des copies en cours…', 'Analyzing the papers…') : state.reading ? L('Lecture de la grille…', 'Reading the rubric…')
+      : gGrid() && !state.grid ? L('Il manque la grille : ajoutez-la à l’étape 3, ou tapez-la à l’étape 4.', 'The rubric is missing: add it in step 3, or type it in step 4.')
+      : !n ? L('Ajoutez d’abord les copies (étape 5).', 'Add the papers first (step 5).') : run.textContent;
+    const label = list.length > 1 ? L(`Corriger les ${list.length} copies`, `Grade the ${list.length} papers`) : L('Corriger la copie', 'Grade the paper');
+    nav.push(back, btn(label, 'primary big', () => run.click(), run.disabled));
+    if (run.disabled && n) nav.push(h('p', { class: 'g-why', textContent: why }));
+  } else if (step === 'resultats' && state.results.length && state.results.every((r) => r.demo)) {
+    // Exemple : on le retire et on revient aux copies, sans effacer le corrigé ni les consignes déjà donnés.
+    nav.push(btn(L('Toutes les tâches', 'All tasks'), 'ghost', () => gSet('tache')), btn(L('Ajouter mes copies', 'Add my papers'), 'primary', () => {
+      state.results = state.results.filter((r) => !r.demo); state.open = new Set(); banner(); renderResults(); gSet('copies');
+    }));
+  } else if (step === 'resultats') {
+    nav.push(btn(L('Corriger un autre travail', 'Grade another assignment'), 'ghost', () => {
+      if (state.results.some((r) => !r.demo) && !state.exported && !confirm(L('Les notes n’ont pas été téléchargées. Tout effacer quand même et corriger un autre travail ?', 'The grades were not downloaded. Erase everything anyway and grade another assignment?'))) return;
+      finishSession(false); banner(); gSet('methode');
+    }), btn(L('Toutes les tâches', 'All tasks'), '', () => gSet('tache')));
+  }
+  gEls.nav.replaceChildren(...nav);
+  gEls.nav.hidden = !nav.length;
+}
+
+function gRecap() {
+  const box = $('g-recap');
+  if (!box) return;
+  const n = state.pages.length, list = bundles();
+  const gridSum = state.grid ? state.grid.reduce((a, c) => a + (Number(c.max) || 0), 0) : 0;
+  const per = guide.per === '5' ? L('nombre de pages variable', 'varying number of pages') : L(`${pl(Number(guide.per), 'page', 'pages')} par élève`, `${guide.per} page${guide.per === '1' ? '' : 's'} per student`);
+  const rub = $('rubric').value.split('\n').map((x) => x.trim()).filter(Boolean);
+  const row = (k, v, step) => h('div', { class: 'g-row' }, h('span', { class: 'k', textContent: k }), h('b', { textContent: v }),
+    h('button', { type: 'button', class: 'linklike', textContent: L('Modifier', 'Change'), onclick: () => gSet(step) }));
+  box.replaceChildren(
+    row(L('Façon de corriger', 'Grading'), gGrid() ? L('Avec une grille', 'With a rubric') : L('Des points par question', 'Points per question'), 'methode'),
+    row(L('Total', 'Total'), `${gGrid() ? (state.grid ? L(`${gPts(gridSum)} (selon la grille)`, `${gPts(gridSum)} (from the rubric)`) : L('selon la grille', 'from the rubric')) : gPts(Number($('total').value) || 0)} · ${per}`, 'points'),
+    gGrid() ? row(L('Grille', 'Rubric'), state.reading ? L('Lecture en cours…', 'Reading…') : state.grid ? L(`${pl(state.grid.length, 'critère', 'critères')}, sur ${gPts(gridSum)}`, `${state.grid.length} criteri${state.grid.length > 1 ? 'a' : 'on'}, out of ${gPts(gridSum)}`) : L('Manquante', 'Missing'), 'corrige')
+      : row(L('Corrigé', 'Answer key'), state.rubricPages.length ? L(`Ajouté (${pl(state.rubricPages.length, 'page', 'pages')})`, `Added (${state.rubricPages.length} page${state.rubricPages.length > 1 ? 's' : ''})`) : L('Aucun : l’appli corrigera à partir des questions', 'None: the app will grade from the questions'), 'corrige'),
+    row(L('Consignes', 'Instructions'), rub.length ? rub.join(' · ') : L('Aucune', 'None'), 'consignes'),
+    gAdvRow(row),
+    row(L('Copies', 'Papers'), n ? L(`${pl(list.length, 'copie', 'copies')} · ${pl(n, 'page', 'pages')}`, `${list.length} paper${list.length > 1 ? 's' : ''} · ${n} page${n > 1 ? 's' : ''}`) : L('Aucune', 'None'), 'copies'));
+  const cost = n * ($('deep').value === '1' ? 2 : 1);
+  $('g-cost').replaceChildren(...(n ? [L('Cette correction utilisera ', 'This grading will use '), h('b', { textContent: L(pl(cost, 'page', 'pages'), `${cost} page${cost > 1 ? 's' : ''}`) }),
+    ...(state.pagesLeft != null ? [L('. Il vous en restera ', '. You will have '), h('b', { textContent: String(Math.max(0, state.pagesLeft - cost)) }), L('.', ' left.')] : ['.'])] : []));
+}
+
+// Réglages fins changés en mode autonome (ils restent appliqués) : une ligne du récapitulatif les rappelle.
+function gAdvRow(row) {
+  if (advControls().every(isDefault)) return '';
+  const on = [$('deep').value === '1' ? L('correction approfondie (2 pages par page)', 'in-depth grading (2 pages per page)') : null,
+    $('whole').value === '1' ? L('points entiers seulement', 'whole points only') : null,
+    $('language').checked ? L('orthographe comptée dans la note', 'spelling counted in the grade') : null].filter(Boolean);
+  return h('div', { class: 'g-row' }, h('span', { class: 'k', textContent: L('Autres réglages', 'Other settings') }),
+    h('b', { textContent: on.length ? on.join(' · ') : L('modifiés en mode autonome', 'changed in independent mode') }),
+    h('button', { type: 'button', class: 'linklike', textContent: L('Modifier', 'Change'), onclick: () => { setUiMode(true); $('app').querySelector('.s1').scrollIntoView({ behavior: 'smooth', block: 'start' }); } }));
+}
+
+// Première arrivée avec la clé : le niveau (s'il n'a pas été choisi sur l'accueil), puis guidé ou autonome.
+// Ces choix sont retenus ; ils se changent en tout temps en haut de la page.
+let gAskLevel = false;
+function showOnboard() {
+  const box = h('div', { class: 'modal g-onboard', id: 'g-onboard' });
+  const panel = h('div', { class: 'panel stack' });
+  box.append(panel);
+  const done = (adv) => {
+    try { localStorage.setItem('ce.onboard', '1'); } catch { /* ignoré */ }
+    box.remove();
+    setUiMode(adv);
+    if (adv) maybeWelcome();
+    else { try { localStorage.setItem('ce.welcome', '1'); } catch { /* ignoré */ } if (guide.step === 'libre') gBuild(); else gSet('tache'); } // arrivé par le lien de l'orthopédagogie : il y reste
+  };
+  const modeScreen = () => panel.replaceChildren(
+    h('h2', { textContent: L('Comment voulez-vous travailler ?', 'How would you like to work?') }),
+    h('p', { class: 'g-sub', textContent: L('Vous pourrez changer d’idée en tout temps, en haut de la page.', 'You can change your mind at any time, at the top of the page.') }),
+    h('div', { class: 'g-choices' },
+      gChoice('guide', L('Guidé', 'Guided'), L('Je vous pose quelques questions, une à la fois, et je vous montre quoi faire.', 'I ask you a few questions, one at a time, and show you what to do.'), () => done(false), false, { text: L('Pour commencer', 'To start'), rec: true }),
+      gChoice('autonome', L('Autonome', 'Independent'), L('Toutes les options sur une seule page.', 'All the options on a single page.'), () => done(true))));
+  if (gAskLevel) {
+    panel.replaceChildren(
+      h('h2', { textContent: L('Bienvenue ! Vous enseignez…', 'Welcome! You teach…') }),
+      h('p', { class: 'g-sub', textContent: L('L’appli s’adapte à votre niveau : exemples, barèmes et options. Vous pourrez le changer en tout temps.', 'The app adapts to your level: examples, scales and options. You can change it at any time.') }),
+      h('div', { class: 'g-choices three' }, [['primaire', L('au primaire', 'Elementary school')], ['secondaire', L('au secondaire', 'High school')], ['cegep', L('au cégep', 'College')]].map(([n, t]) =>
+        h('button', { type: 'button', class: 'g-choice big', onclick: () => { setNiveau(n, false); modeScreen(); } }, gIcon(n), h('b', { textContent: t })))));
+  } else modeScreen();
+  document.body.append(box);
+}
+$('g-tasks').addEventListener('click', () => gSet('tache'));
+$('rubric').addEventListener('input', () => gUpdate());
+
 function advControls() { return [...document.querySelectorAll('.adv input, .adv select')].filter((el) => !['pda-year', 'pda-step', 'exam'].includes(el.id) && !el.closest('#pda-list')); } // notions : leur défaut dépend de l'année
 function isDefault(el) { return (el.id === 'out-lang' ? el.value === lang
   : el.type === 'checkbox' ? el.checked === el.defaultChecked
@@ -3604,12 +3935,13 @@ function setUiMode(adv) {
   $('ui-simple').setAttribute('aria-pressed', String(!adv));
   $('ui-adv').setAttribute('aria-pressed', String(adv));
   $('adv-note').hidden = adv || advControls().every(isDefault);
-  try { localStorage.setItem('ce.ui', adv ? 'adv' : 'simple'); } catch { /* ignoré */ }
+  try { localStorage.setItem('ce.ui', adv ? 'adv' : 'guide'); } catch { /* ignoré */ }
   renderPages(); // le mode simple cache les pages et la section 1 de la correction des copies
+  gBuild();
 }
 function uiAdv() { return !$('app').classList.contains('ui-simple'); } // déclarée (hissée) : appelée avant cette ligne au démarrage
-$('ui-simple').addEventListener('click', () => setUiMode(false));
-$('ui-adv').addEventListener('click', () => setUiMode(true));
+$('ui-simple').addEventListener('click', () => { if (isGuided()) return; guide.step = 'tache'; setUiMode(false); window.scrollTo({ top: 0 }); });
+$('ui-adv').addEventListener('click', () => { if (!isGuided()) return; setUiMode(true); });
 $('adv-show').addEventListener('click', (e) => { e.preventDefault(); setUiMode(true); });
 // Téléphone : Guide, achat, changement de clé et langue dans un menu ; le solde reste visible (et mène à l'achat).
 $('top-menu').addEventListener('click', () => { const open = document.querySelector('.top-actions').classList.toggle('open'); $('top-menu').setAttribute('aria-expanded', String(open)); });
@@ -3635,9 +3967,10 @@ function setNiveau(n, fromChoice) {
   $('lang-level').value = n;
   if (ortho && !orthoAvailable()) setKind('lang'); // pas d'orthopédagogie au cégep (la Progression ne s'y applique pas)
   if (fiche && !ficheAvailable()) setKind('lang'); // la fiche d'autocorrection est un outil du cégep
-  if (fromChoice && n === 'primaire' && state.kind === 'content') setKind('lang');
+  if (fromChoice && n === 'primaire' && state.kind === 'content' && !isGuided()) setKind('lang');
   renderOrtho();
   savePrefs(); renderPda(); renderSummary();
+  if (isGuided() && guide.step === 'tache') gBuild();
 }
 document.querySelectorAll('.lvl-seg button').forEach((b) => b.addEventListener('click', () => setNiveau(b.dataset.niveau, true)));
 try { $('ortho-focus').value = localStorage.getItem('ce.orthoFocus') || ''; } catch { /* ignoré */ }
@@ -3663,9 +3996,10 @@ $('ortho-focus').addEventListener('input', () => { try { localStorage.setItem('c
   try { known = localStorage.getItem('ce.niveau'); } catch { /* ignoré */ }
   // Arrivée depuis l'accueil avec un niveau (?niveau=…) : réglages de ce niveau, même si l'accueil l'a déjà mémorisé.
   // Lien de l'orthopédagogie (/orthopedagogie → app.html?niveau=ortho) : l'onglet Orthopédagogie, au niveau déjà connu.
-  if (asked === 'ortho') { setNiveau(['primaire', 'secondaire'].includes(known) ? known : 'secondaire', false); setKind('ortho'); }
+  if (asked === 'ortho') { setNiveau(['primaire', 'secondaire'].includes(known) ? known : 'secondaire', false); guide.task = 'ortho'; guide.step = 'libre'; setKind('ortho'); } // en mode guidé aussi : la tâche est déjà choisie
   else if (asked) setNiveau(asked, true);
   else setNiveau(known || $('lang-level').value, false);
+  gAskLevel = !asked && !known; // nouvel utilisateur arrivé sans passer par l'accueil : le niveau est demandé
   if (asked) { const q = new URLSearchParams(location.search); q.delete('niveau'); history.replaceState(null, '', location.pathname + (q.size ? `?${q}` : '') + location.hash); } // la clé (?key=) reste
 }
 ['pda-a', 'pda-b', 'pda-c', 'pda-d'].forEach((id) => $(id).addEventListener('change', applyCoteSettings));
