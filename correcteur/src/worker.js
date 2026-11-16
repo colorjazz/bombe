@@ -90,6 +90,8 @@ const ROUTES = {
   'POST /api/language-verify': languageVerify,
   'POST /api/profil': writerProfile,
   'POST /api/progression': writerProgress,
+  'POST /api/fiche': ficheKey,
+  'POST /api/fiche-verifier': ficheCheck,
   // Pays du visiteur (fourni par Cloudflare), pour la mention « Fait au Canada » de l'accueil.
   'GET /api/geo': async (request) => json({ country: request.cf?.country || '' }),
 };
@@ -1318,6 +1320,104 @@ async function classify(request, env) {
     const total = Number(x.total);
     return { type: ['grille', 'corrige', 'copie', 'autre'].includes(x.type) ? x.type : 'copie', total: total > 0 && total <= 1000 ? total : 0 };
   }) });
+}
+
+// ---------- Fiche d'autocorrection (cégep) ----------
+// Modèle des centres d'aide en français : pour chaque faute, l'élève écrit le mot et son contexte, la correction, la
+// classe du mot, le raisonnement ou la règle, et le type d'erreur (usage, grammaire, ponctuation). Pas de note : on
+// vérifie, on corrige, on commente. Rien n'est conservé.
+const FICHE_CLASSES = ['Nom commun', 'Nom propre', 'Déterminant', 'Adjectif', 'Pronom', 'Verbe', 'Participe passé', 'Adverbe', 'Préposition',
+  'Conjonction de coordination', 'Conjonction de subordination', 'Signe de ponctuation', 'Groupe de mots'];
+const FICHE_TYPES = ['Orthographe d’usage', 'Grammaticale', 'Ponctuation'];
+const FICHE_RULES = "Type d'erreur : « Orthographe d’usage » pour un mot mal écrit en soi (lettres, accents, majuscule d'un nom propre, trait d'union, mot composé) ; « Grammaticale » pour un accord, une terminaison de verbe, un participe passé, un homophone grammatical (a/à, ces/ses, son/sont, leur/leurs…) ou une construction de phrase ; « Ponctuation » pour une virgule, un point ou un autre signe. Raisonnement : comme dans un centre d'aide en français, explique la règle appliquée à CE cas et la manipulation qui permet de la vérifier (remplacement, encadrement, question, recherche du donneur d'accord), ou la référence à consulter (« Vérification dans le dictionnaire »). Deux phrases au plus.";
+
+// Corrigé (gratuit, texte seulement) : classe du mot, type d'erreur et raisonnement de chaque faute relevée et validée.
+async function ficheKey(request, env) {
+  await getKey(env, bearer(request));
+  const body = await readJson(request);
+  const errors = (Array.isArray(body.errors) ? body.errors : []).slice(0, 150).map((e, i) => ({
+    i, text: String(e?.text || '').slice(0, 120), correction: String(e?.correction || '').slice(0, 120), line: String(e?.line || '').slice(0, 300),
+    category: LANG_CATEGORIES[e?.category] ? e.category : '', why: String(e?.explanation || '').slice(0, 300),
+  })).filter((e) => e.text || e.correction);
+  if (!errors.length) throw new HttpError(400, 'Aucune faute');
+  const schema = { type: 'ARRAY', items: { type: 'OBJECT', properties: {
+    index: { type: 'INTEGER' }, classe: { type: 'STRING', enum: FICHE_CLASSES }, type_erreur: { type: 'STRING', enum: FICHE_TYPES },
+    raisonnement: { type: 'STRING', description: 'Raisonnement ou règle, deux phrases au plus.' } }, required: ['index', 'classe', 'type_erreur', 'raisonnement'] } };
+  const prompt = `Tu es enseignante de français au cégep, au Québec, et tu prépares le corrigé d'une fiche d'autocorrection. Pour chaque faute ci-dessous (déjà validée), donne la classe du mot CORRIGÉ dans sa phrase, le type d'erreur et le raisonnement.
+${FICHE_RULES}
+FAUTES (index · « écrit » → « correction » · ligne du texte · catégorie · explication déjà donnée) :
+${errors.map((e) => `${e.i} · « ${e.text} » → « ${e.correction} »${e.line ? ` · ligne : « ${e.line} »` : ''}${e.category ? ` · ${e.category}` : ''}${e.why ? ` · ${e.why}` : ''}`).join('\n')}`;
+  let raw;
+  try { raw = await geminiNative(env, [{ text: prompt }], schema, env.LANG_MODEL, { timeoutMs: 90_000 }); } catch (err) {
+    console.error('Corrigé de la fiche impossible :', err.message);
+    throw new HttpError(502, "Le corrigé n'a pas pu être préparé. Réessayez.");
+  }
+  const out = errors.map(() => null);
+  for (const r of Array.isArray(raw) ? raw : []) {
+    const k = errors.findIndex((e) => e.i === r.index);
+    if (k < 0) continue;
+    out[k] = { classe: FICHE_CLASSES.includes(r.classe) ? r.classe : '', type: FICHE_TYPES.includes(r.type_erreur) ? r.type_erreur : '', reasoning: String(r.raisonnement || '').trim().slice(0, 500) };
+  }
+  return json({ items: errors.map((e, k) => ({ index: e.i, ...(out[k] || { classe: '', type: '', reasoning: '' }) })) });
+}
+
+// Vérification d'une fiche remplie par l'élève (photo) : 1 page de fiche = 1 page décomptée, comme la langue.
+// L'IA recopie chaque ligne, juge chaque case (juste, à revoir, vide), donne la bonne réponse et un commentaire. Pas de note.
+const FICHE_VERDICT = { type: 'STRING', enum: ['juste', 'a_revoir', 'vide'] };
+const FICHE_CHECK_SCHEMA = { type: 'OBJECT', properties: {
+  nom: { type: 'STRING', description: "Nom et prénom de l'élève s'ils sont écrits en haut de la fiche, sinon chaîne vide." },
+  lignes: { type: 'ARRAY', items: { type: 'OBJECT', properties: {
+    mot_contexte: { type: 'STRING' }, correction: { type: 'STRING' }, classe: { type: 'STRING' }, regle: { type: 'STRING' }, type_erreur: { type: 'STRING' },
+    verdict_correction: FICHE_VERDICT, verdict_classe: FICHE_VERDICT, verdict_regle: FICHE_VERDICT, verdict_type: FICHE_VERDICT,
+    bonne_correction: { type: 'STRING', description: 'La correction attendue, seulement si la correction de l’élève est à revoir ou vide.' },
+    bonne_classe: { type: 'STRING', description: 'La classe attendue, seulement si elle est à revoir ou vide.' },
+    bon_type: { type: 'STRING', description: 'Le type attendu (Orthographe d’usage, Grammaticale ou Ponctuation), seulement s’il est à revoir ou vide.' },
+    commentaire: { type: 'STRING', description: "Une ou deux phrases à l'élève : ce qui est juste, ce qui cloche dans son raisonnement, la piste pour corriger. Tutoiement." },
+  }, required: ['mot_contexte', 'correction', 'classe', 'regle', 'type_erreur', 'verdict_correction', 'verdict_classe', 'verdict_regle', 'verdict_type', 'commentaire'] } },
+  commentaire_general: { type: 'STRING', description: "Deux ou trois phrases à l'élève sur l'ensemble de sa fiche : forces, ce qui revient, une piste. Tutoiement. Aucune note." },
+}, required: ['nom', 'lignes', 'commentaire_general'] };
+async function ficheCheck(request, env, url, ctx) {
+  const key = bearer(request);
+  const body = await readJson(request);
+  checkImages(body.pages, 10, 'Fiche', MAX_LANG_IMAGE_CHARS);
+  if (!body.pages.length) throw new HttpError(400, 'Fiche vide');
+  const ref = (Array.isArray(body.reference) ? body.reference : []).slice(0, 150).map((e) => ({
+    context: String(e?.context || '').slice(0, 200), correction: String(e?.correction || '').slice(0, 120), classe: String(e?.classe || '').slice(0, 60), type: String(e?.type || '').slice(0, 40),
+  })).filter((e) => e.correction);
+  const n = body.pages.length;
+  const pay = await reserve(env, key, n, request, ctx, 'fiche');
+  try {
+    const prompt = `Tu es enseignante de français au cégep, au Québec. Voici la photo d'une fiche d'autocorrection remplie à la main par un élève : un tableau dont chaque ligne porte sur une faute de son texte, avec les colonnes « Mot et contexte », « Correction », « Classe du mot », « Raisonnement ou règle » et « Erreur d'usage, grammaticale ou de ponctuation ».
+Ta mission :
+1. Recopie fidèlement chaque ligne remplie par l'élève, dans l'ordre (ignore la ligne d'exemple imprimée, souvent en caractères d'imprimerie, et les marques de l'enseignante en couleur).
+2. Juge chaque case : « juste », « a_revoir » (fausse ou imprécise) ou « vide ». Pour le raisonnement, « juste » si la règle invoquée est la bonne et s'applique au cas, même formulée simplement.
+3. Quand une case est à revoir ou vide, donne la bonne réponse (correction, classe, type) ; dans le commentaire, explique en une ou deux phrases ce qui cloche et comment le vérifier.
+4. Termine par un commentaire général. Aucune note, aucun pointage : seulement la vérification, la correction et des commentaires.
+Classes de mots possibles : ${FICHE_CLASSES.join(', ')}.
+${FICHE_RULES}
+${ref.length ? `CORRIGÉ DE L'ENSEIGNANTE (fautes relevées dans le texte de l'élève) : sers-t'en pour juger les corrections.\n${ref.map((e, i) => `${i + 1}. ${e.context ? `« ${e.context} » ` : ''}→ « ${e.correction} »${e.classe ? ` · ${e.classe}` : ''}${e.type ? ` · ${e.type}` : ''}`).join('\n')}` : "Pas de corrigé fourni : juge d'après tes connaissances de la grammaire du français."}
+Rédige en français.`;
+    let raw;
+    try {
+      raw = await geminiNative(env, [{ text: prompt }, ...body.pages.map((pg) => pageImage(env, pg))], FICHE_CHECK_SCHEMA, env.LANG_MODEL, { timeoutMs: 150_000 });
+    } catch (err) {
+      console.error('Vérification de la fiche impossible :', err.message);
+      throw new HttpError(502, "La fiche n'a pas pu être vérifiée. Aucune page n'a été décomptée, réessayez.");
+    }
+    const v = (x) => (['juste', 'a_revoir', 'vide'].includes(x) ? x : 'a_revoir');
+    const str = (x, k = 400) => String(x || '').trim().slice(0, k);
+    const rows = (Array.isArray(raw.lignes) ? raw.lignes : []).slice(0, 60).map((l) => ({
+      context: str(l.mot_contexte, 300), correction: str(l.correction, 200), classe: str(l.classe, 80), rule: str(l.regle, 600), type: str(l.type_erreur, 60),
+      verdicts: { correction: v(l.verdict_correction), classe: v(l.verdict_classe), rule: v(l.verdict_regle), type: v(l.verdict_type) },
+      expected: { correction: str(l.bonne_correction, 200), classe: str(l.bonne_classe, 80), type: str(l.bon_type, 60) },
+      comment: str(l.commentaire, 500),
+    }));
+    const left = await env.DB.prepare('SELECT pages FROM access_keys WHERE key = ?').bind(key).first();
+    return json({ name: body.identify === false ? '' : str(raw.nom, 80), rows, general: str(raw.commentaire_general, 800), pagesLeft: left?.pages ?? 0 });
+  } catch (err) {
+    await pay.refund(n).catch((e) => console.error('Remboursement impossible :', e.message));
+    throw err;
+  } finally { pay.close(); }
 }
 
 // ---------- Détection des copies (gratuite) ----------

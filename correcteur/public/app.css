@@ -93,6 +93,7 @@
   .card-head > :nth-child(5) { grid-area: grade; } .card-head > :nth-child(6) { grid-area: chev; }
   .card-head input.group { padding-top: 0; padding-bottom: 0; font-size: .72rem; }
   .card-head .detail { display: inline; font-size: .72rem; color: var(--muted); white-space: nowrap; }
+  .card-head .grade .pc-wide { display: none; }
 }
 .rel { font-size: .7rem; font-weight: 700; padding: .1rem .45rem; border-radius: 999px; border: 1px solid; white-space: nowrap; }
 button.rel { cursor: pointer; font-family: inherit; }
@@ -643,16 +644,16 @@ body.light .layout > .levelbar { grid-column: 1 / -1; }
 .prof-table td:nth-child(3) { white-space: nowrap; }
 .prof-table thead th { width: auto; }
 .prof-table tbody th { width: 32%; }
-.prof-table:not(.cmp) td:nth-child(2), .prof-table:not(.cmp) td:nth-child(3), .prof-table:not(.cmp) thead th:nth-child(2), .prof-table:not(.cmp) thead th:nth-child(3) { width: 1%; white-space: nowrap; }
+.prof-table:not(.cmp):not(.fiche-table) td:nth-child(2), .prof-table:not(.cmp):not(.fiche-table) td:nth-child(3), .prof-table:not(.cmp):not(.fiche-table) thead th:nth-child(2), .prof-table:not(.cmp):not(.fiche-table) thead th:nth-child(3) { width: 1%; white-space: nowrap; }
 @media (max-width: 560px) {
-  .prof-table:not(.cmp) thead { display: none; }
-  .prof-table:not(.cmp) tr { display: grid; grid-template-columns: auto 1fr; gap: 0 .5rem; border-bottom: 1px solid var(--line); padding: .35rem 0; }
-  .prof-table:not(.cmp) th, .prof-table:not(.cmp) td { border: 0; padding: .05rem 0; width: auto !important; }
-  .prof-table:not(.cmp) tbody th { grid-column: 1 / -1; }
-  .prof-table:not(.cmp) td:nth-child(2)::before { content: "Nombre : "; color: var(--muted); }
-  .prof-table:not(.cmp) td:nth-child(3):not(:empty)::before { content: "· "; color: var(--muted); }
-  .prof-table:not(.cmp) td:nth-child(3):not(:empty)::after { content: " pour 100 mots"; color: var(--muted); }
-  .prof-table:not(.cmp) td:nth-child(4) { grid-column: 1 / -1; color: var(--muted); white-space: normal; }
+  .prof-table:not(.cmp):not(.fiche-table) thead { display: none; }
+  .prof-table:not(.cmp):not(.fiche-table) tr { display: grid; grid-template-columns: auto 1fr; gap: 0 .5rem; border-bottom: 1px solid var(--line); padding: .35rem 0; }
+  .prof-table:not(.cmp):not(.fiche-table) th, .prof-table:not(.cmp):not(.fiche-table) td { border: 0; padding: .05rem 0; width: auto !important; }
+  .prof-table:not(.cmp):not(.fiche-table) tbody th { grid-column: 1 / -1; }
+  .prof-table:not(.cmp):not(.fiche-table) td:nth-child(2)::before { content: "Nombre : "; color: var(--muted); }
+  .prof-table:not(.cmp):not(.fiche-table) td:nth-child(3):not(:empty)::before { content: "· "; color: var(--muted); }
+  .prof-table:not(.cmp):not(.fiche-table) td:nth-child(3):not(:empty)::after { content: " pour 100 mots"; color: var(--muted); }
+  .prof-table:not(.cmp):not(.fiche-table) td:nth-child(4) { grid-column: 1 / -1; color: var(--muted); white-space: normal; }
 }
 
 /* ---------- Orthopédagogie : tableau de bord plutôt que trois étapes ---------- */
@@ -795,3 +796,41 @@ body.light .s0 { border: 1px solid var(--line); border-radius: 18px; padding: 0 
 .beta { font-size: .58rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; background: #fde68a; color: #78350f; border-radius: 999px; padding: .08rem .38rem; line-height: 1.2; margin-left: -.15rem; }
 @media (max-width: 480px) { .beta { font-size: .52rem; padding: .05rem .3rem; } }
 .cote-mode { display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; font-weight: 500; } .cote-mode select { max-width: 100%; }
+
+/* ---------- Fiche d'autocorrection (cégep) ---------- */
+.kind.three[data-active="fiche"] .kind-pill { transform: translateX(200%); }
+.fiche-modes { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
+.fiche-modes button { font: inherit; text-align: left; border: 2px solid var(--line); background: #fff; border-radius: 12px; padding: .7rem .8rem; cursor: pointer; display: grid; gap: .2rem; color: var(--text); }
+.fiche-modes button b { font-size: .95rem; }
+.fiche-modes button span { font-size: .8rem; color: var(--muted); line-height: 1.35; }
+.fiche-modes button[aria-pressed="true"] { border-color: var(--primary); background: #f7f7ff; box-shadow: 0 6px 18px -12px rgba(79, 70, 229, .7); }
+@media (max-width: 560px) { .fiche-modes { grid-template-columns: 1fr; } }
+/* Vérifier : les réglages de la langue ne servent pas (seul le choix du mode reste). */
+#app.fiche-verif #lang-settings > :not(#fiche-modes) { display: none !important; }
+.fiche-block { border: 1px solid var(--line); border-radius: 12px; background: #fbfaff; padding: .6rem .7rem; display: grid; gap: .4rem; }
+.fiche-table th, .fiche-table td { font-size: .8rem; }
+.fiche-table tbody th { width: 22%; font-weight: 600; }
+.fiche-table.check td { min-width: 7rem; }
+.verdict { font: inherit; font-size: .72rem; font-weight: 700; border-radius: 999px; padding: .1rem .5rem; margin-top: .25rem; border: 1px solid transparent; cursor: pointer; }
+.verdict.juste { background: #dcfce7; color: #15803d; }
+.verdict.a_revoir { background: #ffedd5; color: #b45309; }
+.verdict.vide { background: #f1f5f9; color: #475569; }
+.fiche-table .expected { font-size: .74rem; color: #b45309; margin-top: .2rem; }
+.fiche-table tr.com td { background: #fafafa; }
+.fiche-table tr.com textarea { width: 100%; font: inherit; font-size: .8rem; min-height: 2.4rem; }
+.prof-table.fiche-table td { white-space: normal; width: auto; }
+.prof-table.fiche-table thead th { white-space: normal; }
+/* Sur téléphone : une carte par faute, chaque case avec son titre. */
+@media (max-width: 560px) {
+  .fiche-table thead { display: none; }
+  .fiche-table tbody tr { display: grid; grid-template-columns: 1fr 1fr; gap: .45rem .7rem; padding: .55rem 0; border-bottom: 1px solid var(--line); }
+  .fiche-table tbody tr.com { padding-top: 0; }
+  .fiche-table tbody th, .fiche-table tbody td { border: 0; padding: 0; width: auto !important; min-width: 0 !important; }
+  .fiche-table tbody th { grid-column: 1 / -1; font-size: .88rem; }
+  .fiche-table td[data-label]::before { content: attr(data-label); display: block; font-size: .68rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; margin-bottom: .1rem; }
+  .fiche-table td[data-label="Raisonnement ou règle"], .fiche-table tr.com td { grid-column: 1 / -1; }
+  .fiche-table tr:has(+ tr.com) { border-bottom: 0; padding-bottom: .3rem; }
+  .fiche-table tr.com td { background: none; }
+  .fiche-table tr.com textarea { box-sizing: border-box; }
+}
+.fiche-missed { background: #fff7ed; border-left: 3px solid #ea580c; padding: .35rem .5rem; border-radius: 6px; }

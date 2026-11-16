@@ -17,7 +17,7 @@ function block(b) {
   if (b.table) {
     const cols = b.widths || b.table[0].map(() => Math.floor(9800 / b.table[0].length));
     const border = (side) => `<w:${side} w:val="single" w:sz="4" w:space="0" w:color="BBBBBB"/>`;
-    const rows = b.table.map((row, i) => `<w:tr>${row.map((cell, j) => `<w:tc><w:tcPr><w:tcW w:w="${cols[j]}" w:type="dxa"/>${i === 0 ? '<w:shd w:val="clear" w:color="auto" w:fill="EEF2FF"/>' : ''}</w:tcPr>${para(run(cell, { bold: i === 0, size: 20 }), { after: 0 })}</w:tc>`).join('')}</w:tr>`).join('');
+    const rows = b.table.map((row, i) => `<w:tr>${i && b.rowHeight ? `<w:trPr><w:trHeight w:val="${b.rowHeight}"/></w:trPr>` : ''}${row.map((cell, j) => `<w:tc><w:tcPr><w:tcW w:w="${cols[j]}" w:type="dxa"/>${i === 0 ? '<w:shd w:val="clear" w:color="auto" w:fill="EEF2FF"/>' : ''}</w:tcPr>${para(run(cell, { bold: i === 0, size: 20 }), { after: 0 })}</w:tc>`).join('')}</w:tr>`).join('');
     return `<w:tbl><w:tblPr><w:tblW w:w="${cols.reduce((a, c) => a + c, 0)}" w:type="dxa"/><w:tblBorders>${['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map(border).join('')}</w:tblBorders><w:tblCellMar><w:left w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid>${cols.map((c) => `<w:gridCol w:w="${c}"/>`).join('')}</w:tblGrid>${rows}</w:tbl>${para('', { after: 60 })}`;
   }
   return '';
@@ -44,9 +44,12 @@ function zip(files) {
   return new Blob([...parts, ...central, end], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
 }
 
-export function buildDocx(blocks) {
+// opts.landscape : page en largeur (fiches en tableau de cinq colonnes) ; un tableau peut aussi porter rowHeight (twips)
+// pour laisser de la place à l'écriture à la main.
+export function buildDocx(blocks, opts = {}) {
   const body = blocks.map(block).join('');
-  const doc = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${body}<w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1080" w:right="1080" w:bottom="1080" w:left="1080" w:header="720" w:footer="720" w:gutter="0"/></w:sectPr></w:body></w:document>`;
+  const size = opts.landscape ? '<w:pgSz w:w="15840" w:h="12240" w:orient="landscape"/>' : '<w:pgSz w:w="12240" w:h="15840"/>';
+  const doc = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${body}<w:sectPr>${size}<w:pgMar w:top="1080" w:right="1080" w:bottom="1080" w:left="1080" w:header="720" w:footer="720" w:gutter="0"/></w:sectPr></w:body></w:document>`;
   return zip([
     ['[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>'],
     ['_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>'],

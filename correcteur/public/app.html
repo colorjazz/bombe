@@ -109,6 +109,10 @@
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M15.5 8.5h5M15.5 12h5M17.5 15.5h3"/></svg>
           <span class="kind-long">Orthopédagogie</span><span class="kind-short">Ortho</span><span class="beta" title="En phase de test : vos commentaires sont les bienvenus">bêta</span><small class="kind-sub">Profil du scripteur</small>
         </button>
+        <button id="kind-fiche" type="button" role="tab" aria-selected="false" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/><path d="M15 16.5l1.5 1.5 3-3"/></svg>
+          <span class="kind-long">Fiche d’autocorrection</span><span class="kind-short">Fiche</span><span class="beta" title="En phase de test : vos commentaires sont les bienvenus">bêta</span><small class="kind-sub">Préparer et vérifier</small>
+        </button>
       </div>
     </div>
     <!-- Orthopédagogie : deux colonnes (ajout et réglages à gauche, tableau de bord et élèves à droite) ; sur téléphone,
@@ -148,6 +152,11 @@
         <select id="out-lang"><option value="fr">Français</option><option value="en">English</option></select>
       </label>
       <div id="lang-settings" class="stack" hidden>
+        <!-- Fiche d'autocorrection (cégep) : deux usages -->
+        <div id="fiche-modes" class="fiche-modes" role="group" aria-label="Fiche d’autocorrection" hidden>
+          <button type="button" data-fiche="preparer" aria-pressed="true"><b>Préparer les fiches</b><span>À partir des textes des élèves : la fiche à remplir (mot et contexte) et votre corrigé complet.</span></button>
+          <button type="button" data-fiche="verifier" aria-pressed="false"><b>Vérifier des fiches remplies</b><span>Photo de la fiche de l’élève : chaque case vérifiée, la bonne réponse et un commentaire. Aucune note.</span></button>
+        </div>
         <p class="muted small adv" style="margin:0">L'IA relève les fautes de français sur chaque page et les surligne directement sur la copie, avec la correction et la règle. 1 page de copie = 1 page décomptée.</p>
         <label class="field" hidden>Niveau des élèves <!-- réglé par « Vous enseignez au » en haut de l'appli -->
           <select id="lang-level">
@@ -334,6 +343,10 @@
           <input id="search" type="search" placeholder="Rechercher un élève…" style="width:12rem">
           <button id="profile-all" class="btn primary" type="button" hidden>Établir les profils</button>
           <button id="export-fiches" class="btn primary" type="button" hidden>Télécharger les profils (Word)</button>
+          <button id="fiche-students" class="btn primary" type="button" hidden>Imprimer les fiches des élèves</button>
+          <button id="fiche-keys" class="btn" type="button" hidden>Imprimer les corrigés</button>
+          <button id="fiche-word" class="btn" type="button" hidden>Fiches et corrigés (Word)</button>
+          <button id="fiche-checks" class="btn primary" type="button" hidden>Imprimer les fiches vérifiées</button>
           <button id="export" class="btn green" type="button" disabled hidden>Télécharger les notes (Excel)</button>
           <button id="print-all" class="btn" type="button" disabled>Imprimer toutes les copies…</button>
           <button id="end" class="btn ghost" type="button" disabled>Terminer la session</button>
