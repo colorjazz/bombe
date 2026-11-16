@@ -3160,7 +3160,7 @@ function finishSession(forget) {
   $('end-modal').hidden = true;
   // Ordinateur partagé : la clé mémorisée permettrait au suivant d'utiliser les pages restantes.
   Object.assign(state, { results: [], pages: [], rubricPages: [], status: {}, open: new Set(), exported: true, seq: 0, structure: null });
-  $('mode').value = 'file'; $('per').value = ''; state.modeChosen = false;
+  $('mode').value = 'file'; $('per').value = ''; state.modeChosen = state.modeBySelect = false;
   ['exam', 'group', 'rubric', 'search'].forEach((id) => { $(id).value = ''; });
   state.grid = null;
   $('done-msg').hidden = $('adjust').hidden = true;
@@ -3342,11 +3342,22 @@ $('m-points').addEventListener('click', () => setMethod('points'));
 $('m-grid').addEventListener('click', () => setMethod('grid'));
 
 $('mode').addEventListener('change', () => {
-  state.modeChosen = true;
+  state.modeChosen = true; state.modeBySelect = true;
   applyMode(); renderPages();
   if ($('mode').value === 'auto') detectCopies();
 });
 $('per').addEventListener('input', () => { applyMode(); renderPages(); });
+// Regroupement de départ, tant qu'aucune page n'est déposée. « Pages par élève » est un réglage de la correction de
+// copies, visible seulement en affichage avancé : ailleurs (langue, fiches, affichage simple), l'appli regroupe
+// elle-même (un fichier par élève, ou elle trouve où commence chaque copie). Avant, la valeur retenue s'appliquait
+// partout sans être affichée : 4 fiches photographiées devenaient 2 « copies » de 2 pages.
+function baseGrouping() {
+  if (state.pages.length || state.modeBySelect || guidedExam()) return; // le parcours guidé règle le sien à l'étape des copies
+  if (state.kind === 'content' && uiAdv() && Number($('per-student').value) >= 1) { applyPerStudent(); return; }
+  // Fiches remplies : une photo (ou une page du PDF numérisé) = une fiche. Une fiche de deux pages : « ↑ Même élève ».
+  if (ficheVerify()) { state.modeChosen = true; $('mode').value = 'fixed'; $('per').value = '1'; applyMode(); return; }
+  state.modeChosen = false; $('mode').value = 'file'; $('per').value = ''; applyMode();
+}
 // « Pages par élève » (obligatoire, section 1) : fixe le regroupement des copies. Le menu « Comment sont vos copies ? »
 // reste en affichage avancé pour les cas particuliers (nombre de pages variable : « Trouver chaque copie pour moi »).
 function applyPerStudent() {
@@ -3355,7 +3366,7 @@ function applyPerStudent() {
   applyMode(); renderPages();
 }
 $('per-student').addEventListener('input', applyPerStudent);
-$('clear-pages').addEventListener('click', () => { if (!confirm(tr('Retirer toutes les pages ?'))) return; state.pages = []; state.status = {}; state.modeChosen = false; $('mode').value = 'file'; renderPages(); });
+$('clear-pages').addEventListener('click', () => { if (!confirm(tr('Retirer toutes les pages ?'))) return; state.pages = []; state.status = {}; state.modeChosen = state.modeBySelect = false; $('mode').value = 'file'; renderPages(); });
 $('total').addEventListener('input', () => { renderSummary(); updateGridTotal(); });
 $('make-grid').addEventListener('click', makeGrid);
 $('kind-content').addEventListener('click', () => setKind('content'));
@@ -3366,6 +3377,7 @@ document.querySelectorAll('#fiche-modes [data-fiche]').forEach((b) => b.addEvent
   if (state.running) return;
   ficheMode = b.dataset.fiche;
   try { localStorage.setItem('ce.ficheMode', ficheMode); } catch { /* ignoré */ }
+  baseGrouping(); // préparer : l'appli trouve chaque texte ; vérifier : une page = une fiche
   renderOrtho(); emptyText(); renderSummary(); renderResults();
 }));
 $('viewer-print').addEventListener('click', printViewer);
@@ -3582,8 +3594,7 @@ $('out-lang').value = lang; // par défaut la langue du site ; le choix de l'ens
 // Étape selon la date (calendrier scolaire du Québec) : 1re jusqu'à la mi-novembre, 2e jusqu'à février, 3e ensuite.
 // Elle n'est pas mémorisée (absente de PREF_IDS) : elle avance d'elle-même avec l'année scolaire.
 { const d = new Date(), m = d.getMonth() + 1; $('pda-step').value = m >= 8 && (m < 11 || (m === 11 && d.getDate() <= 15)) ? '1' : m >= 11 || m <= 2 ? '2' : '3'; }
-loadPrefs();
-if ($('per-student').value) applyPerStudent();
+loadPrefs(); // le regroupement de départ (pages par élève) se fait avec l'onglet et l'affichage : baseGrouping
 $('anon-opts').hidden = !anonymous();
 $('consent-link').href = lang === 'en' ? 'consent.html' : 'consentement.html';
 for (const id of [...PREF_IDS, ...TAB_IDS]) $(id).addEventListener('change', savePrefs);
@@ -3676,7 +3687,6 @@ function gMode() {
   return 'auto';
 }
 function gApplyMode() {
-  $('per-student').value = guide.per === '5' ? '' : guide.per;
   const before = $('mode').value;
   $('mode').value = gMode();
   state.modeChosen = true;
@@ -3766,7 +3776,7 @@ function gBody(step) {
         h('h3', { class: 'g-q2', textContent: L('Combien de pages chaque élève a-t-il remises ?', 'How many pages did each student hand in?') }));
     }
     const pages = h('div', { class: 'g-chips' }, [['1', '1'], ['2', '2'], ['3', '3'], ['4', '4'], ['5', L('5 et plus', '5 or more')]].map(([v, t]) => h('button', { type: 'button', class: 'g-chip', textContent: t, 'aria-pressed': String(guide.per === v),
-      onclick: () => { guide.per = v; try { localStorage.setItem('ce.guidePer', v); } catch { /* ignoré */ } $('per-student').value = v === '5' ? '' : v; if (state.pages.length) gApplyMode(); gBuild(); } })));
+      onclick: () => { guide.per = v; try { localStorage.setItem('ce.guidePer', v); } catch { /* ignoré */ } if (state.pages.length) gApplyMode(); gBuild(); } })));
     out.push(pages, gHint(guide.per === '5' ? L('Nombre de pages variable : l’appli trouvera elle-même où commence chaque copie.', 'Varying number of pages: the app will find where each paper starts.')
       : L('Avec le nombre de pages, l’appli sépare les copies toute seule quand vous ajoutez toute la pile d’un coup.', 'With the number of pages, the app separates the papers when you add the whole pile at once.')));
     return out;
@@ -3929,6 +3939,8 @@ function setGuided(on, adv) {
   else {
     let sub = null;
     try { sub = localStorage.getItem('ce.ui'); } catch { /* ignoré */ }
+    // Copies déjà regroupées dans le parcours : le mode autonome reprend la réponse (pages par élève).
+    if (state.pages.length && guide.task === 'examen' && guide.per !== '5') $('per-student').value = guide.per;
     setUiMode(adv ?? sub === 'adv');
   }
   window.scrollTo({ top: 0 });
@@ -3958,6 +3970,7 @@ function setUiMode(adv) {
   $('ui-adv').setAttribute('aria-pressed', String(adv));
   $('adv-note').hidden = adv || advControls().every(isDefault);
   if (!guide.on) { try { localStorage.setItem('ce.ui', adv ? 'adv' : 'simple'); } catch { /* ignoré */ } }
+  baseGrouping();
   renderPages(); // le mode simple cache les pages et la section 1 de la correction des copies
   gBuild();
 }
