@@ -98,7 +98,7 @@
     <div class="guide-bar">
       <button id="g-tasks" class="btn ghost small" type="button" hidden>Toutes les tâches</button>
       <div class="seg mode-seg" role="group" aria-label="Façon de travailler">
-        <button id="ui-simple" type="button" aria-pressed="true">Guidé</button><button id="ui-adv" type="button" aria-pressed="false">Autonome</button>
+        <button id="mode-guide" type="button" aria-pressed="true">Guidé</button><button id="mode-auto" type="button" aria-pressed="false">Autonome</button>
       </div>
     </div>
     <section id="guide" class="panel guide" hidden></section>
@@ -138,6 +138,9 @@
     <section class="panel stack s1">
       <div class="step-head band">
         <h2><span class="step">1</span> <span id="step1-title">Paramètres de l’évaluation</span></h2>
+        <div class="seg" role="group" aria-label="Affichage des options">
+          <button id="ui-simple" type="button" aria-pressed="true">Simple</button><button id="ui-adv" type="button" aria-pressed="false">Avancé</button>
+        </div>
       </div>
       <p class="req-note adv"><span class="req">*</span> obligatoire</p>
       <p id="adv-note" class="muted small" style="margin:0" hidden>Des réglages avancés sont actifs (<a href="#" id="adv-show">voir</a>).</p>
@@ -159,7 +162,7 @@
       <div id="lang-settings" class="stack" hidden>
         <!-- Fiche d'autocorrection (cégep) : deux usages -->
         <div id="fiche-modes" class="fiche-modes" role="group" aria-label="Fiche d’autocorrection" hidden>
-          <button type="button" data-fiche="preparer" aria-pressed="true"><b>Préparer les fiches</b><span>À partir des textes des élèves : la fiche à remplir (mot et contexte) et votre corrigé complet.</span></button>
+          <button type="button" data-fiche="preparer" aria-pressed="true"><b>Préparer les fiches</b><span>L’appli relève les fautes de chaque texte et prépare la fiche de l’élève (les mots fautifs déjà inscrits) et votre corrigé.</span></button>
           <button type="button" data-fiche="verifier" aria-pressed="false"><b>Vérifier des fiches remplies</b><span>Photo de la fiche de l’élève : chaque case vérifiée, la bonne réponse et un commentaire. Aucune note.</span></button>
         </div>
         <p class="muted small adv" style="margin:0">L'IA relève les fautes de français sur chaque page et les surligne directement sur la copie, avec la correction et la règle. 1 page de copie = 1 page décomptée.</p>

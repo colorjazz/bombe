@@ -841,7 +841,7 @@ body.light .layout > .guide-bar, body.light .layout > .guide { grid-column: 1 / 
 .mode-seg { background: #fff; }
 .mode-seg button { font-size: .84rem; padding: .32rem .95rem; }
 .mode-seg button[aria-pressed="true"] { background: var(--primary); color: #fff; box-shadow: none; }
-#app.guided .kindbar { display: none !important; }
+#app.guided .kindbar, #app.guided .s1 .step-head .seg { display: none !important; } /* simple / avancé : un choix du mode autonome */
 /* L'assistant prend la page : une colonne, seules les sections de l'étape en cours. */
 body.light #app.g-wiz.layout { display: flex; flex-direction: column; max-width: 820px; }
 #app.g-wiz > .s1, #app.g-wiz > .s2, #app.g-wiz > .s3, #app.g-wiz > #ortho-cols { display: none !important; }

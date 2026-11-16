@@ -27,8 +27,13 @@ let fiche = false, ficheMode = 'preparer';
 try { fiche = localStorage.getItem('ce.fiche') === '1'; ficheMode = localStorage.getItem('ce.ficheMode') === 'verifier' ? 'verifier' : 'preparer'; } catch { /* ignoré */ }
 // Mode guidé : la tâche choisie, l'étape en cours, et le nombre de pages par élève (« 5 » : nombre variable).
 // À chaque visite, le mode guidé redemande la tâche.
-const guide = { task: null, step: 'tache', per: '1' };
-try { guide.per = localStorage.getItem('ce.guidePer') || '1'; } catch { /* ignoré */ }
+// on : mode guidé ; sinon autonome, avec son affichage simple ou avancé (« ce.ui »).
+const guide = { task: null, step: 'tache', per: '1', on: true };
+try {
+  guide.per = localStorage.getItem('ce.guidePer') || '1';
+  const m = localStorage.getItem('ce.mode');
+  guide.on = m ? m === 'guide' : localStorage.getItem('ce.ui') !== 'adv'; // avant « ce.mode » : « ce.ui » valait guide ou adv
+} catch { /* ignoré */ }
 
 const state = {
   key: null,
@@ -1206,7 +1211,7 @@ async function runAll(only, calibrating = false) {
       : byGrid() ? `✓ ${pl(done, 'copie corrigée', 'copies corrigées')}. Ouvrez une copie pour voir et modifier ses niveaux. En rose : les critères où des points ont été retirés.`
       : `✓ ${pl(done, 'copie corrigée', 'copies corrigées')}. Ouvrez une copie pour voir et modifier sa note. En rose : les questions où des points ont été retirés.${hasKey ? '' : ' Sans votre corrigé, les notes risquent d’être un peu généreuses : relisez-les.'}`;
     // Pas d'accord : dire tout de suite qu'on peut corriger l'IA ou changer les réglages (sinon on conclut « ça corrige mal »).
-    const toSettings = (e) => { e.preventDefault(); setUiMode(true); $('app').querySelector('.s1').scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+    const toSettings = (e) => { e.preventDefault(); toAdvanced(); $('app').querySelector('.s1').scrollIntoView({ behavior: 'smooth', block: 'start' }); };
     $('adjust').replaceChildren(h('b', { textContent: tr('Pas d’accord ? ') }),
       tr(state.kind === 'lang' ? 'Dans la copie annotée, le × retire une fausse faute et « + Ajouter une faute » en ajoute une. Pour une correction plus ou moins sévère, ou une autre année : '
         : 'Ouvrez une copie et touchez « Modifier les notes » : chaque point se change. Pour tout recorriger autrement (barème, demi-points, sévérité, double correction) : '),
@@ -3604,7 +3609,7 @@ renderPda();
 // l'étape en cours sont affichés, à leur place habituelle. Les autres tâches ouvrent leur onglet, en version simple.
 // « Autonome » : toute la page, avec les réglages avancés.
 // Déclarées (hissées) : le résumé et les copies les appellent dès le démarrage, avant cette section.
-function isGuided() { return !uiAdv(); }
+function isGuided() { return guide.on; }
 function guidedExam() { return isGuided() && guide.task === 'examen' && state.kind === 'content'; }
 const G_ORDER = ['methode', 'points', 'corrige', 'consignes', 'copies', 'pret'];
 const G_SVG = {
@@ -3685,6 +3690,8 @@ function gBuild() {
   if (!gBannerHome) gBannerHome = { parent: $('banner').parentElement, next: $('banner').nextSibling };
   const wiz = guided && (guide.step === 'tache' || guidedExam());
   app.classList.toggle('guided', guided);
+  $('mode-guide').setAttribute('aria-pressed', String(guided));
+  $('mode-auto').setAttribute('aria-pressed', String(!guided));
   app.classList.toggle('g-wiz', wiz);
   app.dataset.g = wiz ? guide.step : '';
   $('g-tasks').hidden = !guided || guide.step === 'tache';
@@ -3883,7 +3890,7 @@ function gAdvRow(row) {
     $('language').checked ? L('orthographe comptée dans la note', 'spelling counted in the grade') : null].filter(Boolean);
   return h('div', { class: 'g-row' }, h('span', { class: 'k', textContent: L('Autres réglages', 'Other settings') }),
     h('b', { textContent: on.length ? on.join(' · ') : L('modifiés en mode autonome', 'changed in independent mode') }),
-    h('button', { type: 'button', class: 'linklike', textContent: L('Modifier', 'Change'), onclick: () => { setUiMode(true); $('app').querySelector('.s1').scrollIntoView({ behavior: 'smooth', block: 'start' }); } }));
+    h('button', { type: 'button', class: 'linklike', textContent: L('Modifier', 'Change'), onclick: () => { toAdvanced(); $('app').querySelector('.s1').scrollIntoView({ behavior: 'smooth', block: 'start' }); } }));
 }
 
 // Première arrivée avec la clé : le niveau (s'il n'a pas été choisi sur l'accueil), puis guidé ou autonome.
@@ -3896,7 +3903,7 @@ function showOnboard() {
   const done = (adv) => {
     try { localStorage.setItem('ce.onboard', '1'); } catch { /* ignoré */ }
     box.remove();
-    setUiMode(adv);
+    setGuided(!adv);
     if (adv) maybeWelcome();
     else { try { localStorage.setItem('ce.welcome', '1'); } catch { /* ignoré */ } if (guide.step === 'libre') gBuild(); else gSet('tache'); } // arrivé par le lien de l'orthopédagogie : il y reste
   };
@@ -3915,6 +3922,21 @@ function showOnboard() {
   } else modeScreen();
   document.body.append(box);
 }
+function setGuided(on, adv) {
+  guide.on = on;
+  try { localStorage.setItem('ce.mode', on ? 'guide' : 'auto'); } catch { /* ignoré */ }
+  if (on) { guide.step = 'tache'; setUiMode(false); }
+  else {
+    let sub = null;
+    try { sub = localStorage.getItem('ce.ui'); } catch { /* ignoré */ }
+    setUiMode(adv ?? sub === 'adv');
+  }
+  window.scrollTo({ top: 0 });
+}
+// « Modifier les réglages » : les réglages fins sont en mode autonome, affichage avancé.
+function toAdvanced() { if (guide.on) setGuided(false, true); else setUiMode(true); }
+$('mode-guide').addEventListener('click', () => { if (!guide.on) setGuided(true); });
+$('mode-auto').addEventListener('click', () => { if (guide.on) setGuided(false); });
 $('g-tasks').addEventListener('click', () => gSet('tache'));
 $('rubric').addEventListener('input', () => gUpdate());
 
@@ -3935,23 +3957,23 @@ function setUiMode(adv) {
   $('ui-simple').setAttribute('aria-pressed', String(!adv));
   $('ui-adv').setAttribute('aria-pressed', String(adv));
   $('adv-note').hidden = adv || advControls().every(isDefault);
-  try { localStorage.setItem('ce.ui', adv ? 'adv' : 'guide'); } catch { /* ignoré */ }
+  if (!guide.on) { try { localStorage.setItem('ce.ui', adv ? 'adv' : 'simple'); } catch { /* ignoré */ } }
   renderPages(); // le mode simple cache les pages et la section 1 de la correction des copies
   gBuild();
 }
 function uiAdv() { return !$('app').classList.contains('ui-simple'); } // déclarée (hissée) : appelée avant cette ligne au démarrage
-$('ui-simple').addEventListener('click', () => { if (isGuided()) return; guide.step = 'tache'; setUiMode(false); window.scrollTo({ top: 0 }); });
-$('ui-adv').addEventListener('click', () => { if (!isGuided()) return; setUiMode(true); });
-$('adv-show').addEventListener('click', (e) => { e.preventDefault(); setUiMode(true); });
+$('ui-simple').addEventListener('click', () => setUiMode(false));
+$('ui-adv').addEventListener('click', () => setUiMode(true));
+$('adv-show').addEventListener('click', (e) => { e.preventDefault(); toAdvanced(); });
 // Téléphone : Guide, achat, changement de clé et langue dans un menu ; le solde reste visible (et mène à l'achat).
 $('top-menu').addEventListener('click', () => { const open = document.querySelector('.top-actions').classList.toggle('open'); $('top-menu').setAttribute('aria-expanded', String(open)); });
 $('balance').addEventListener('click', () => { if (!$('buy-open').hidden) $('buy-open').click(); });
-$('lang-to-adv').addEventListener('click', (e) => { e.preventDefault(); setUiMode(true); $('lang-settings').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
-$('to-adv').addEventListener('click', (e) => { e.preventDefault(); setUiMode(true); $('app').querySelector('.s1').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+$('lang-to-adv').addEventListener('click', (e) => { e.preventDefault(); toAdvanced(); $('lang-settings').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+$('to-adv').addEventListener('click', (e) => { e.preventDefault(); toAdvanced(); $('app').querySelector('.s1').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
 advControls().forEach((el) => el.addEventListener('change', () => setUiMode(uiAdv())));
 let savedUi = null;
 try { savedUi = localStorage.getItem('ce.ui'); } catch { /* ignoré */ }
-setUiMode(savedUi === 'adv');
+setUiMode(!guide.on && savedUi === 'adv'); // mode guidé : toujours l'affichage simple
 
 // ---------- Démarrage ----------
 
