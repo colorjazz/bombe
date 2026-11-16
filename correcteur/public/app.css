@@ -929,3 +929,7 @@ body.light #app.g-wiz > section { padding-top: 1.4rem; }
 #app.g-wiz .g-body:not(:has(*)), #app.g-wiz #banner:not(:has(*)) { display: none; }
 #app input.g-num { width: 7.5rem; font-size: 1.6rem; font-weight: 800; }
 .g-onboard .panel h2 { font-size: 1.4rem; margin: 0; }
+/* Résultats d'un autre onglet : un encadré qui y mène. */
+.elsewhere { display: grid; gap: .45rem; background: #eef0ff; border: 1px solid #c7c9ff; border-radius: 12px; padding: .65rem .8rem; }
+.elsewhere[hidden] { display: none; }
+.elsewhere-row { display: flex; align-items: center; justify-content: space-between; gap: .4rem .8rem; flex-wrap: wrap; font-size: .9rem; }

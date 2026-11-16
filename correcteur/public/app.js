@@ -654,8 +654,9 @@ function renderSummary() {
   const tooLong = list.some((b) => b.length > MAX_PAGES_PER_COPY);
   const mode = $('mode').value;
   const grouped = mode && !(mode === 'fixed' && !(Number($('per').value) >= 1));
+  const mine = state.results.filter((r) => tabOf(r) === curTab()); // les autres onglets : encadré « elsewhere »
   $('summary').replaceChildren(...(n ? [h('b', { textContent: String(list.length) }), ` ${tr(list.length > 1 ? 'copies' : 'copie')} · `,
-    h('b', { textContent: String(n) }), ` ${tr(n > 1 ? 'pages' : 'page')}`] : [ortho && state.kind === 'lang' ? (state.results.length ? '✓ Tous les textes importés sont analysés.' : 'Aucun texte importé') : tr(state.results.length ? '✓ Toutes les copies importées sont corrigées.' : 'Aucune copie importée')]));
+    h('b', { textContent: String(n) }), ` ${tr(n > 1 ? 'pages' : 'page')}`] : [ortho && state.kind === 'lang' ? (mine.length ? '✓ Tous les textes importés sont analysés.' : 'Aucun texte importé') : tr(mine.length ? '✓ Toutes les copies importées sont corrigées.' : 'Aucune copie importée')]));
   const cost = n * (state.kind === 'content' && $('deep').value === '1' ? 2 : 1);
   $('cost').textContent = n ? (cost > 1 ? `${cost} pages seront décomptées` : '1 page sera décomptée') : '';
   const enough = state.pagesLeft == null || state.pagesLeft >= cost;
@@ -684,9 +685,10 @@ function renderSummary() {
     : ortho && state.kind === 'lang' ? (orthoIntent === 'evolution' ? 'Analyser et suivre l’évolution' : n ? `Analyser ${pl(list.length, 'texte', 'textes')}` : 'Analyser')
     : n ? `${state.kind === 'lang' ? 'Analyser la langue de' : 'Corriger'} ${pl(list.length, 'copie', 'copies')}` : 'Corriger';
   renderReady(list, n, cost);
+  renderElsewhere();
   $('demo-btn').hidden = !!(state.results.length || n || state.running || (ortho && state.kind === 'lang') || ficheOn()); // pas d'exemple pour l'orthopédagogie ni les fiches
   // Pas de résultats : ni recherche ni « Terminer » ; sur téléphone, la section entière attend la 1re copie corrigée.
-  $('app').classList.toggle('no-results', !state.results.length && !state.running);
+  $('app').classList.toggle('no-results', !mine.length && !state.running);
   $('export').disabled = $('end').disabled = state.running || !state.results.length;
   // Pas de gros bouton vert tant qu'il n'y a rien à télécharger.
   $('export').hidden = $('print-all').hidden = !state.results.length;
@@ -704,6 +706,39 @@ function renderSummary() {
   $('print-all').disabled = state.running || !state.results.some((r) => tabOf(r) === curTab());
   renderCalib();
   gUpdate();
+}
+
+// Résultats d'un autre onglet : ils n'apparaissent que dans leur onglet. Sans cet encadré, l'enseignante qui change
+// d'onglet (ou de niveau) après l'analyse voyait « tout est analysé »… et aucune copie.
+const taskOf = (r) => (r.kind === 'fichev' ? 'fichev' : r.kind !== 'lang' ? 'examen' : r.ortho ? 'ortho' : r.fiche ? 'fichep' : 'langue');
+function renderElsewhere() {
+  const box = $('elsewhere');
+  const groups = new Map();
+  for (const r of state.results) if (tabOf(r) !== curTab() && !r.demo) groups.set(taskOf(r), [...(groups.get(taskOf(r)) || []), r]);
+  box.hidden = !groups.size || state.running;
+  if (box.hidden) return;
+  const what = { examen: (n) => [L(pl(n, 'copie corrigée', 'copies corrigées'), `${n} graded paper${n > 1 ? 's' : ''}`), L('Correction de copies', 'Grading papers')],
+    langue: (n) => [L(pl(n, 'copie analysée', 'copies analysées'), `${n} analyzed paper${n > 1 ? 's' : ''}`), L('Correction de la langue', 'Language correction')],
+    ortho: (n) => [pl(n, 'texte analysé', 'textes analysés'), 'Orthopédagogie'],
+    fichep: (n) => [pl(n, 'texte analysé', 'textes analysés'), 'Fiche d’autocorrection'],
+    fichev: (n) => [pl(n, 'fiche vérifiée', 'fiches vérifiées'), 'Fiche d’autocorrection'] };
+  box.replaceChildren(...[...groups].map(([t, list]) => {
+    const [count, place] = what[t](list.length);
+    return h('div', { class: 'elsewhere-row' }, h('span', {}, L('Vos ', 'Your '), h('b', { textContent: count }), L(` sont dans « ${place} ».`, ` are in “${place}”.`)),
+      h('button', { type: 'button', class: 'btn small', textContent: L('Les afficher', 'Show them'), onclick: () => showTaskResults(t) }));
+  }));
+}
+// Ouvre l'onglet de ces résultats (et le niveau où il existe : fiches au cégep, orthopédagogie hors cégep).
+function showTaskResults(t) {
+  if (t === 'fichev' || t === 'fichep') {
+    if (!ficheAvailable()) setNiveau('cegep', false);
+    ficheMode = t === 'fichev' ? 'verifier' : 'preparer';
+    try { localStorage.setItem('ce.ficheMode', ficheMode); } catch { /* ignoré */ }
+  }
+  if (t === 'ortho' && !orthoAvailable()) setNiveau('secondaire', false);
+  const task = t === 'fichev' || t === 'fichep' ? 'fiche' : t;
+  if (isGuided()) gTask(task); else setKind(task === 'examen' ? 'content' : task === 'langue' ? 'lang' : task);
+  setTimeout(() => $('cards').scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
 }
 
 // ---------- Mode simple ----------
@@ -3038,7 +3073,9 @@ function setKind(kind) {
   if (state.running) return;
   if (kind === 'ortho' && !orthoAvailable()) kind = 'lang';
   if (kind === 'fiche' && !ficheAvailable()) kind = 'lang';
+  const before = ortho ? 'ortho' : fiche ? 'fiche' : state.kind;
   const tab = kind;
+  if (before !== tab) { banner(); $('done-msg').hidden = $('adjust').hidden = true; } // « 4 copies analysées » parlait de l'autre onglet
   ortho = tab === 'ortho';
   fiche = tab === 'fiche';
   kind = ortho || fiche ? 'lang' : tab;
