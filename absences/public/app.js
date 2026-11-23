@@ -4,7 +4,28 @@
 const PREAVIS_MIN = 7; // jours d'avance demandés aux élèves
 const $ = (sel, el = document) => el.querySelector(sel);
 const app = $('#app');
+const navBas = $('#nav-bas');
 let moi = null;
+
+// Icônes (traits, 24 × 24)
+const ICONES = {
+  liste: '<path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/>',
+  calendrier: '<rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
+  examen: '<path d="M9 4h6a1 1 0 0 1 1 1v1H8V5a1 1 0 0 1 1-1Z"/><path d="M8 5.5H6.5A1.5 1.5 0 0 0 5 7v12.5A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V7a1.5 1.5 0 0 0-1.5-1.5H16"/><path d="m9 14 2 2 4-4"/>',
+  eleves: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18.5 14.8c1.6.8 2.6 2.5 3 5.2"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  gauche: '<path d="m15 5-7 7 7 7"/>',
+  droite: '<path d="m9 5 7 7-7 7"/>',
+  fermer: '<path d="M6 6l12 12M18 6 6 18"/>',
+  coche: '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+  lieu: '<path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11Z"/><circle cx="12" cy="10" r="2.3"/>',
+  horloge: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+  recherche: '<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/>',
+  imprimer: '<path d="M7 9V3.5h10V9M7 17H4.5V10a1 1 0 0 1 1-1h13a1 1 0 0 1 1 1v7H17"/><rect x="7" y="14" width="10" height="6.5" rx="1"/>',
+  corbeille: '<path d="M4.5 7h15M10 4h4M6.5 7l1 13h9l1-13"/>',
+  cle: '<circle cx="8" cy="15" r="4"/><path d="m11 12 8.5-8.5M16 7l2.5 2.5"/>',
+};
+const ico = (nom, cls = '') => `<svg class="ico ${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONES[nom]}</svg>`;
 
 // ---------- Outils ----------
 
@@ -31,28 +52,44 @@ function joursAvant(iso) {
   return Math.round((new Date(iso + 'T12:00') - new Date(auj() + 'T12:00')) / 864e5);
 }
 
-function dateFr(iso, avecJour = true) {
+function dateFr(iso, options = { weekday: 'short', day: 'numeric', month: 'long' }) {
   if (!iso) return '';
-  return new Date(iso + 'T12:00').toLocaleDateString('fr-CA', { weekday: avecJour ? 'short' : undefined, day: 'numeric', month: 'long' });
+  return new Date(iso + 'T12:00').toLocaleDateString('fr-CA', options).replace('.', '');
 }
+const dateCourte = (iso) => dateFr(iso, { day: 'numeric', month: 'short' });
 
 function periode(debut, fin) {
-  return debut === fin ? dateFr(debut) : `du ${dateFr(debut)} au ${dateFr(fin)}`;
+  if (debut === fin) return dateFr(debut);
+  return `${dateCourte(debut)} au ${dateCourte(fin)}`;
 }
 
-// « Dans 3 jours », « En cours », « Terminé »
+// Petit bloc « 27 NOV. » en tête des cartes de tournoi
+function blocDate(debut, fin) {
+  const d = new Date(debut + 'T12:00');
+  const nb = joursAvant(fin) - joursAvant(debut) + 1;
+  return `<div class="bloc-date" aria-hidden="true">
+    <span class="bd-mois">${d.toLocaleDateString('fr-CA', { month: 'short' }).replace('.', '')}</span>
+    <span class="bd-jour">${d.getDate()}</span>
+    ${nb > 1 ? `<span class="bd-duree">${nb} j</span>` : ''}
+  </div>`;
+}
+
 function etat(debut, fin) {
   const d = joursAvant(debut), f = joursAvant(fin);
   if (f < 0) return '<span class="pastille grise">Terminé</span>';
   if (d <= 0) return '<span class="pastille rouge">En cours</span>';
   if (d === 1) return '<span class="pastille orange">Demain</span>';
-  return `<span class="pastille ${d <= PREAVIS_MIN ? 'orange' : 'bleue'}">Dans ${d} jours</span>`;
+  return `<span class="pastille ${d <= PREAVIS_MIN ? 'orange' : 'neutre'}">Dans ${d} jours</span>`;
 }
 
 function preavisPastille(jours) {
-  if (jours < 0) return '<span class="pastille rouge" title="Déclaré après le départ">Averti en retard</span>';
+  if (jours < 0) return '<span class="pastille rouge" title="Déclaré après le départ">En retard</span>';
   const cls = jours < 3 ? 'rouge' : jours < PREAVIS_MIN ? 'orange' : 'verte';
-  return `<span class="pastille ${cls}" title="Délai entre la déclaration et le départ">Averti ${jours} j avant</span>`;
+  return `<span class="pastille ${cls}" title="Délai entre la déclaration et le départ">${jours} j d'avance</span>`;
+}
+
+function meta(...morceaux) {
+  return morceaux.filter(Boolean).map((m) => `<span>${m}</span>`).join('');
 }
 
 function montrerErreur(form, msg) {
@@ -61,13 +98,35 @@ function montrerErreur(form, msg) {
   p.hidden = !msg;
 }
 
+let toastMinuterie;
+function toast(msg) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.hidden = false;
+  clearTimeout(toastMinuterie);
+  toastMinuterie = setTimeout(() => { t.hidden = true; }, 2600);
+}
+
+// Confirmation dans la page (les boîtes du navigateur sont laides et bloquées dans certains cadres)
+function demander(texte, bouton = 'Confirmer') {
+  const dlg = $('#dlg-confirmer');
+  $('#confirmer-texte').textContent = texte;
+  $('#confirmer-oui').textContent = bouton;
+  dlg.returnValue = '';
+  dlg.showModal();
+  return new Promise((ok) => dlg.addEventListener('close', () => ok(dlg.returnValue === 'oui'), { once: true }));
+}
+
 function ouvrir(dlg) {
   montrerErreur(dlg, '');
   dlg.showModal();
+  $('.feuille-corps', dlg).scrollTop = 0;
 }
 
 document.querySelectorAll('dialog').forEach((d) => {
-  d.addEventListener('click', (e) => { if (e.target.matches('[data-fermer]')) d.close(); });
+  d.addEventListener('click', (e) => {
+    if (e.target.closest('[data-fermer]') || e.target === d) d.close(); // clic sur le fond : fermer
+  });
 });
 
 function deconnecter() {
@@ -76,21 +135,24 @@ function deconnecter() {
   moi = null;
   demarrer();
 }
-$('#deconnexion').onclick = deconnecter;
+$('#deconnexion').onclick = () => { $('#menu-compte').hidden = true; deconnecter(); };
+$('#qui').onclick = (e) => { e.stopPropagation(); $('#menu-compte').hidden = !$('#menu-compte').hidden; };
+document.addEventListener('click', (e) => { if (!e.target.closest('#menu-compte')) $('#menu-compte').hidden = true; });
 
 // ---------- Connexion ----------
 
 function ecranConnexion() {
   $('#qui').hidden = true;
+  navBas.hidden = true;
+  document.body.className = 'page-connexion';
   app.replaceChildren($('#tpl-connexion').content.cloneNode(true));
   const form = $('#form-connexion');
   let role = localStorage.getItem('role') || 'eleve';
   const choisir = (r) => {
     role = r;
-    app.querySelectorAll('[data-role]').forEach((b) => b.classList.toggle('actif', b.dataset.role === r));
+    app.querySelectorAll('[data-role]').forEach((b) => b.setAttribute('aria-selected', b.dataset.role === r));
     form.querySelectorAll('.eleve').forEach((el) => { el.hidden = r !== 'eleve'; });
     form.querySelectorAll('.enseignant').forEach((el) => { el.hidden = r !== 'enseignant'; });
-    form.nip.required = r === 'eleve';
   };
   app.querySelectorAll('[data-role]').forEach((b) => { b.onclick = () => choisir(b.dataset.role); });
   choisir(role);
@@ -100,6 +162,8 @@ function ecranConnexion() {
     e.preventDefault();
     montrerErreur(form, '');
     const f = Object.fromEntries(new FormData(form));
+    const bouton = $('button[type=submit]', form);
+    bouton.disabled = true;
     try {
       const r = await api('login', { method: 'POST', body: { role, ...f } });
       localStorage.setItem('jeton', r.token);
@@ -108,58 +172,75 @@ function ecranConnexion() {
       if (f.groupe) localStorage.setItem('groupe', f.groupe);
       moi = r.moi;
       afficher();
-    } catch (err) { montrerErreur(form, err.message); }
+    } catch (err) { montrerErreur(form, err.message); } finally { bouton.disabled = false; }
   };
 }
 
 // ---------- Élève ----------
 
 async function ecranEleve() {
+  document.body.className = 'page-eleve';
+  navBas.hidden = false;
+  navBas.innerHTML = `<button class="principal plein action-bas" id="btn-declarer-bas">${ico('plus')} Déclarer une absence</button>`;
+  navBas.classList.add('nav-action');
+  $('#btn-declarer-bas').onclick = ouvrirDeclaration;
+
   const { absences } = await api('mes-absences');
-  const aFaire = absences.flatMap((a) => a.taches).filter((t) => !t.fait_at);
-  const reprises = absences.flatMap((a) => a.taches)
-    .filter((t) => t.examen && t.reprise_date && joursAvant(t.reprise_date) >= 0)
+  const taches = absences.flatMap((a) => a.taches);
+  const aFaire = taches.filter((t) => !t.fait_at);
+  const reprises = taches.filter((t) => t.examen && t.reprise_date && joursAvant(t.reprise_date) >= 0)
     .sort((a, b) => a.reprise_date.localeCompare(b.reprise_date));
+  const prochaine = reprises[0];
 
   app.innerHTML = `
-    <section class="entete-eleve">
-      <button id="btn-declarer" class="principal gros">＋ Déclarer une absence pour un tournoi</button>
-      <p class="aide">Déclare ton absence <strong>au moins ${PREAVIS_MIN} jours avant</strong> ton départ :
-        tes enseignants pourront préparer ton travail.</p>
+    <div class="entete-page">
+      <div>
+        <h1>Mes absences</h1>
+        <p class="aide">Déclare chaque tournoi au moins ${PREAVIS_MIN} jours avant ton départ.</p>
+      </div>
+      <button class="principal large-seulement" id="btn-declarer">${ico('plus')} Déclarer une absence</button>
+    </div>
+    <section class="stats">
+      <div class="stat"><span class="stat-nb">${aFaire.length}</span><span class="stat-lib">${aFaire.length > 1 ? 'travaux' : 'travail'} à faire</span></div>
+      <div class="stat"><span class="stat-nb">${reprises.length}</span><span class="stat-lib">reprise${reprises.length > 1 ? 's' : ''} d'examen
+        ${prochaine ? `<small>Prochaine : ${dateFr(prochaine.reprise_date)}, ${esc(prochaine.matiere || prochaine.enseignant)}</small>` : ''}</span></div>
     </section>
-    <section class="resume">
-      <div class="chiffre"><strong>${aFaire.length}</strong> travail${aFaire.length > 1 ? 'x' : ''} à faire</div>
-      <div class="chiffre"><strong>${reprises.length}</strong> reprise${reprises.length > 1 ? 's' : ''} d'examen à venir
-        ${reprises[0] ? `<small>Prochaine : ${dateFr(reprises[0].reprise_date)} (${esc(reprises[0].matiere || reprises[0].enseignant)})</small>` : ''}</div>
-    </section>
-    <h2>Mes absences</h2>
-    ${absences.length ? '' : '<p class="vide">Aucune absence déclarée pour l\'instant.</p>'}
-    <div id="liste"></div>`;
+    ${absences.length ? '' : `<div class="vide-grand">${ico('calendrier')}<p>Aucune absence déclarée.</p><p class="aide">Ton prochain tournoi approche ? Déclare-le dès que tu connais les dates.</p></div>`}
+    <div id="liste" class="liste-cartes"></div>`;
 
   const liste = $('#liste');
   for (const a of absences) {
     const carte = document.createElement('article');
-    carte.className = 'carte' + (joursAvant(a.fin) < 0 && a.taches.every((t) => t.fait_at) ? ' passee' : '');
+    const finis = a.taches.length && a.taches.every((t) => t.fait_at);
+    carte.className = 'carte' + (joursAvant(a.fin) < 0 && (finis || !a.taches.length) ? ' passee' : '');
     carte.innerHTML = `
-      <div class="titre-carte">
-        <div>
+      <div class="carte-tete">
+        ${blocDate(a.debut, a.fin)}
+        <div class="carte-titre">
           <h3>${esc(a.tournoi)}</h3>
-          <p class="details">${periode(a.debut, a.fin)}${a.sport ? ' · ' + esc(a.sport) : ''}${a.lieu ? ' · ' + esc(a.lieu) : ''}</p>
+          <p class="meta">${meta(periode(a.debut, a.fin), esc(a.sport), esc(a.lieu))}</p>
+          <div class="etat">${etat(a.debut, a.fin)}</div>
         </div>
-        ${etat(a.debut, a.fin)}
       </div>
-      ${a.note ? `<p class="note">« ${esc(a.note)} »</p>` : ''}
-      <h4>Travail demandé par mes enseignants</h4>
-      ${a.taches.length ? '' : '<p class="vide">Rien pour l\'instant. Reviens voir avant ton départ.</p>'}
-      <ul class="taches">${a.taches.map(tacheEleve).join('')}</ul>
-      ${a.taches.length ? '' : '<button class="lien danger" data-annuler>Annuler cette absence</button>'}`;
-    carte.querySelectorAll('[data-fait]').forEach((cb) => {
-      cb.onchange = async () => { await api(`taches/${cb.dataset.fait}/fait`, { method: 'POST' }); ecranEleve(); };
+      ${a.note ? `<p class="note">${esc(a.note)}</p>` : ''}
+      <div class="carte-section">
+        <h4>Travail demandé <span class="compte">${a.taches.filter((t) => t.fait_at).length}/${a.taches.length}</span></h4>
+        ${a.taches.length ? `<ul class="taches">${a.taches.map(tacheEleve).join('')}</ul>`
+          : '<p class="vide">Rien pour l\'instant. Tes enseignants ajouteront le travail ici.</p>'}
+      </div>
+      ${a.taches.length ? '' : `<div class="carte-pied"><button class="lien danger" data-annuler>Annuler cette absence</button></div>`}`;
+    carte.querySelectorAll('[data-fait]').forEach((b) => {
+      b.onclick = async () => {
+        b.closest('li').classList.toggle('fait');
+        await api(`taches/${b.dataset.fait}/fait`, { method: 'POST' });
+        ecranEleve();
+      };
     });
     const annuler = $('[data-annuler]', carte);
     if (annuler) annuler.onclick = async () => {
-      if (!confirm(`Annuler ton absence pour « ${a.tournoi} » ?`)) return;
+      if (!await demander(`Annuler ton absence pour « ${a.tournoi} » ?`, 'Annuler l\'absence')) return;
       await api('absences/' + a.id, { method: 'DELETE' });
+      toast('Absence annulée');
       ecranEleve();
     };
     liste.append(carte);
@@ -168,14 +249,17 @@ async function ecranEleve() {
 }
 
 function tacheEleve(t) {
+  const retard = !t.fait_at && t.remise && joursAvant(t.remise) < 0;
   return `<li class="${t.fait_at ? 'fait' : ''}">
-    <label class="case-fait"><input type="checkbox" data-fait="${t.id}" ${t.fait_at ? 'checked' : ''}> Terminé</label>
-    <div>
-      <strong>${esc(t.matiere || 'Cours')}</strong> <span class="details">— ${esc(t.enseignant)}</span>
+    <button class="coche" data-fait="${t.id}" aria-pressed="${!!t.fait_at}" aria-label="${t.fait_at ? 'Marquer comme non terminé' : 'Marquer comme terminé'}">${ico('coche')}</button>
+    <div class="tache-corps">
+      <p class="tache-tete"><strong>${esc(t.matiere || 'Cours')}</strong><span class="details">${esc(t.enseignant)}</span></p>
       ${t.travail ? `<p class="travail">${esc(t.travail)}</p>` : ''}
-      ${t.remise ? `<p>📅 À remettre le <strong>${dateFr(t.remise)}</strong></p>` : ''}
-      ${t.examen ? `<p class="examen">📝 Examen à reprendre${t.examen_nom ? ' : ' + esc(t.examen_nom) : ''}<br>
-        ${t.reprise_date ? `<strong>${dateFr(t.reprise_date)}</strong>` : 'Date à confirmer avec ton enseignant'}${t.reprise_info ? ' · ' + esc(t.reprise_info) : ''}</p>` : ''}
+      ${t.remise ? `<p class="echeance ${retard ? 'retard' : ''}">${ico('horloge')} À remettre ${retard ? 'depuis le' : 'le'} <strong>${dateFr(t.remise)}</strong></p>` : ''}
+      ${t.examen ? `<div class="reprise">${ico('examen')}<div>
+        <strong>Reprise d'examen${t.examen_nom ? ' · ' + esc(t.examen_nom) : ''}</strong>
+        <span>${t.reprise_date ? dateFr(t.reprise_date) : 'Date à confirmer avec ton enseignant'}${t.reprise_info ? ' · ' + esc(t.reprise_info) : ''}</span>
+      </div></div>` : ''}
     </div>
   </li>`;
 }
@@ -185,21 +269,20 @@ async function ouvrirDeclaration() {
   const form = $('#form-absence');
   form.reset();
   const { tournois } = await api('tournois');
-  form.tournoi_id.innerHTML = '<option value="">— Choisis ton tournoi —</option>'
-    + tournois.map((t) => `<option value="${t.id}" data-debut="${t.debut}">${esc(t.nom)} (${periode(t.debut, t.fin)}${t.lieu ? ', ' + esc(t.lieu) : ''})</option>`).join('')
-    + '<option value="nouveau">➕ Mon tournoi n\'est pas dans la liste</option>';
+  form.tournoi_id.innerHTML = '<option value="">Choisis ton tournoi</option>'
+    + tournois.map((t) => `<option value="${t.id}" data-debut="${t.debut}">${esc(t.nom)} · ${periode(t.debut, t.fin)}${t.lieu ? ', ' + esc(t.lieu) : ''}</option>`).join('')
+    + '<option value="nouveau">Mon tournoi n\'est pas dans la liste</option>';
   if (!tournois.length) form.tournoi_id.value = 'nouveau';
   const maj = () => {
     const nouveau = form.tournoi_id.value === 'nouveau';
     $('#nouveau-tournoi').hidden = !nouveau;
-    ['nom', 'debut'].forEach((n) => { form[n].required = nouveau; });
     const debut = nouveau ? form.debut.value : form.tournoi_id.selectedOptions[0]?.dataset.debut;
     const avert = $('#avert-preavis');
     const j = debut ? joursAvant(debut) : null;
     avert.hidden = j === null || j >= PREAVIS_MIN;
     if (!avert.hidden) avert.textContent = j < 0
-      ? 'Ce tournoi a déjà commencé. Déclare-le quand même, puis parle à tes enseignants dès ton retour.'
-      : `Attention : ton départ est dans ${j} jour${j > 1 ? 's' : ''}. Préviens aussi tes enseignants en personne.`;
+      ? 'Ce tournoi a déjà commencé. Déclare-le quand même et parle à tes enseignants dès ton retour.'
+      : `Ton départ est dans ${j} jour${j > 1 ? 's' : ''} : préviens aussi tes enseignants en personne.`;
     if (nouveau && form.debut.value && (!form.fin.value || form.fin.value < form.debut.value)) form.fin.value = form.debut.value;
   };
   form.tournoi_id.onchange = maj;
@@ -208,12 +291,14 @@ async function ouvrirDeclaration() {
   form.onsubmit = async (e) => {
     e.preventDefault();
     const f = Object.fromEntries(new FormData(form));
+    if (!f.tournoi_id) return montrerErreur(form, 'Choisis ton tournoi dans la liste.');
     const corps = { note: f.note };
     if (f.tournoi_id === 'nouveau') corps.nouveau = { nom: f.nom, sport: f.sport, lieu: f.lieu, debut: f.debut, fin: f.fin };
     else corps.tournoi_id = Number(f.tournoi_id);
     try {
       await api('absences', { method: 'POST', body: corps });
       dlg.close();
+      toast('Absence déclarée. Tes enseignants la voient.');
       ecranEleve();
     } catch (err) { montrerErreur(form, err.message); }
   };
@@ -222,30 +307,33 @@ async function ouvrirDeclaration() {
 
 // ---------- Enseignant ----------
 
+const ONGLETS = [
+  ['tournois', 'liste', 'Tournois'],
+  ['calendrier', 'calendrier', 'Calendrier'],
+  ['reprises', 'examen', 'Reprises'],
+  ['eleves', 'eleves', 'Élèves'],
+];
 const vue = { onglet: 'tournois', groupe: '', recherche: '', passes: false, mois: auj().slice(0, 7), jour: null };
 
 async function ecranEnseignant() {
-  const [tab, liste] = await Promise.all([api('tableau' + (vue.passes || vue.onglet === 'calendrier' ? '?passes=1' : '')), vue.onglet === 'eleves' ? api('eleves') : null]);
+  document.body.className = 'page-enseignant';
+  const [tab, liste] = await Promise.all([
+    api('tableau' + (vue.passes || vue.onglet === 'calendrier' ? '?passes=1' : '')),
+    vue.onglet === 'eleves' ? api('eleves') : null,
+  ]);
   const groupes = [...new Set(tab.tournois.flatMap((t) => t.eleves.map((e) => e.groupe)).filter(Boolean))].sort();
-  const enCours = tab.tournois.filter((t) => joursAvant(t.debut) <= 0 && joursAvant(t.fin) >= 0);
-  const nbAbsentsAuj = new Set(enCours.flatMap((t) => t.eleves.map((e) => e.eleve_id))).size;
 
-  app.innerHTML = `
-    <nav class="onglets">
-      <button data-onglet="tournois">🏆 Tournois et absents</button>
-      <button data-onglet="calendrier">📅 Calendrier</button>
-      <button data-onglet="reprises">📝 Reprises d'examen (${tab.reprises.length})</button>
-      <button data-onglet="eleves">👥 Élèves</button>
-    </nav>
-    <section class="resume">
-      <div class="chiffre"><strong>${nbAbsentsAuj}</strong> élève${nbAbsentsAuj > 1 ? 's' : ''} absent${nbAbsentsAuj > 1 ? 's' : ''} aujourd'hui</div>
-      <div class="chiffre"><strong>${tab.tournois.filter((t) => joursAvant(t.debut) > 0 && joursAvant(t.debut) <= 14).length}</strong> tournoi(s) dans les 14 prochains jours</div>
-    </section>
-    <div id="contenu"></div>`;
-  app.querySelectorAll('[data-onglet]').forEach((b) => {
-    b.classList.toggle('actif', b.dataset.onglet === vue.onglet);
-    b.onclick = () => { vue.onglet = b.dataset.onglet; ecranEnseignant(); };
+  navBas.classList.remove('nav-action');
+  navBas.hidden = false;
+  navBas.innerHTML = ONGLETS.map(([id, icone, lib]) => `
+    <button data-onglet="${id}" ${id === vue.onglet ? 'aria-current="page"' : ''}>
+      ${ico(icone)}<span>${lib}${id === 'reprises' && tab.reprises.length ? ` <b class="badge">${tab.reprises.length}</b>` : ''}</span>
+    </button>`).join('');
+  navBas.querySelectorAll('[data-onglet]').forEach((b) => {
+    b.onclick = () => { vue.onglet = b.dataset.onglet; window.scrollTo(0, 0); ecranEnseignant(); };
   });
+
+  app.innerHTML = '<div id="contenu"></div>';
   const contenu = $('#contenu');
   if (vue.onglet === 'tournois') ongletTournois(contenu, tab.tournois, groupes);
   else if (vue.onglet === 'calendrier') ongletCalendrier(contenu, tab.tournois, groupes);
@@ -253,26 +341,47 @@ async function ecranEnseignant() {
   else ongletEleves(contenu, liste.eleves);
 }
 
+function filtreGroupe(groupes) {
+  return `<select id="filtre-groupe" aria-label="Groupe"><option value="">Tous les groupes</option>
+    ${groupes.map((g) => `<option ${g === vue.groupe ? 'selected' : ''}>${esc(g)}</option>`).join('')}</select>`;
+}
+
 function ongletTournois(contenu, tournois, groupes) {
+  const enCours = tournois.filter((t) => joursAvant(t.debut) <= 0 && joursAvant(t.fin) >= 0);
+  const absentsAuj = new Set(enCours.flatMap((t) => t.eleves.map((e) => e.eleve_id))).size;
+  const prochains = tournois.filter((t) => joursAvant(t.debut) > 0 && joursAvant(t.debut) <= 14);
+  const sansTravail = tournois.filter((t) => joursAvant(t.fin) >= 0)
+    .flatMap((t) => t.eleves).filter((e) => !e.taches.some((ta) => ta.enseignant_id === moi.id)).length;
+
   contenu.innerHTML = `
-    <div class="filtres">
-      <input type="search" id="recherche" placeholder="Chercher un élève ou un tournoi" value="${esc(vue.recherche)}">
-      <select id="filtre-groupe"><option value="">Tous les groupes</option>
-        ${groupes.map((g) => `<option ${g === vue.groupe ? 'selected' : ''}>${esc(g)}</option>`).join('')}</select>
-      <label class="case"><input type="checkbox" id="passes" ${vue.passes ? 'checked' : ''}> Voir les tournois passés</label>
-      <button class="secondaire" onclick="print()">🖨️ Imprimer</button>
+    <div class="entete-page">
+      <h1>Tournois et absents</h1>
+      <button class="secondaire large-seulement" id="imprimer">${ico('imprimer')} Imprimer</button>
     </div>
-    <div id="tournois"></div>`;
+    <section class="stats">
+      <div class="stat"><span class="stat-nb">${absentsAuj}</span><span class="stat-lib">absent${absentsAuj > 1 ? 's' : ''} aujourd'hui</span></div>
+      <div class="stat"><span class="stat-nb">${prochains.length}</span><span class="stat-lib">tournoi${prochains.length > 1 ? 's' : ''} d'ici 14 jours</span></div>
+      <div class="stat"><span class="stat-nb">${sansTravail}</span><span class="stat-lib">élève${sansTravail > 1 ? 's' : ''} sans votre travail</span></div>
+    </section>
+    <div class="filtres collant">
+      <label class="recherche">${ico('recherche')}<input type="search" id="recherche" placeholder="Élève ou tournoi" value="${esc(vue.recherche)}" aria-label="Rechercher"></label>
+      ${filtreGroupe(groupes)}
+      <button class="puce" id="passes" aria-pressed="${vue.passes}">Passés</button>
+    </div>
+    <div id="tournois" class="liste-cartes"></div>`;
   $('#recherche').oninput = (e) => { vue.recherche = e.target.value; dessiner(); };
   $('#filtre-groupe').onchange = (e) => { vue.groupe = e.target.value; dessiner(); };
-  $('#passes').onchange = (e) => { vue.passes = e.target.checked; ecranEnseignant(); };
+  $('#passes').onclick = () => { vue.passes = !vue.passes; ecranEnseignant(); };
+  $('#imprimer').onclick = () => window.print();
 
   function dessiner() {
     const zone = $('#tournois');
     zone.replaceChildren();
     const q = vue.recherche.trim().toLowerCase();
     let n = 0;
-    for (const t of tournois) {
+    const ordre = [...tournois].sort((a, b) => (joursAvant(a.fin) < 0) - (joursAvant(b.fin) < 0)
+      || (joursAvant(a.fin) < 0 ? b.debut.localeCompare(a.debut) : a.debut.localeCompare(b.debut)));
+    for (const t of ordre) {
       const eleves = t.eleves.filter((e) => (!vue.groupe || e.groupe === vue.groupe)
         && (!q || e.nom.toLowerCase().includes(q) || t.nom.toLowerCase().includes(q) || (t.sport || '').toLowerCase().includes(q)));
       if (!eleves.length) continue;
@@ -280,48 +389,59 @@ function ongletTournois(contenu, tournois, groupes) {
       const carte = document.createElement('article');
       carte.className = 'carte' + (joursAvant(t.fin) < 0 ? ' passee' : '');
       carte.innerHTML = `
-        <div class="titre-carte">
-          <div>
+        <div class="carte-tete">
+          ${blocDate(t.debut, t.fin)}
+          <div class="carte-titre">
             <h3>${esc(t.nom)}</h3>
-            <p class="details">${periode(t.debut, t.fin)}${t.sport ? ' · ' + esc(t.sport) : ''}${t.lieu ? ' · ' + esc(t.lieu) : ''}
-              · <strong>${eleves.length} élève${eleves.length > 1 ? 's' : ''}</strong></p>
+            <p class="meta">${meta(periode(t.debut, t.fin), esc(t.sport), esc(t.lieu))}</p>
+            <div class="etat">${etat(t.debut, t.fin)}<span class="details">${eleves.length} élève${eleves.length > 1 ? 's' : ''}</span></div>
           </div>
-          ${etat(t.debut, t.fin)}
         </div>
-        <table class="eleves">
-          <thead><tr><th>Élève</th><th>Groupe</th><th>Déclaré</th><th>Travail demandé</th></tr></thead>
-          <tbody>${eleves.map((e) => `
-            <tr>
-              <td data-titre="Élève"><strong>${esc(e.nom)}</strong>${e.note ? `<div class="note">« ${esc(e.note)} »</div>` : ''}</td>
-              <td data-titre="Groupe">${esc(e.groupe)}</td>
-              <td data-titre="Déclaré">${preavisPastille(e.preavis)}</td>
-              <td data-titre="Travail">${e.taches.length ? `<ul class="mini">${e.taches.map((ta) => tacheProf(ta)).join('')}</ul>` : '<span class="vide">Aucun</span>'}</td>
-            </tr>`).join('')}</tbody>
-        </table>
-        <button class="principal" data-ajouter>＋ Demander du travail / une reprise d'examen</button>`;
+        <ul class="rangees">${eleves.map((e) => `
+          <li>
+            <div class="rangee-tete">
+              <span class="avatar petit">${initiales(e.nom)}</span>
+              <div class="rangee-nom"><strong>${esc(e.nom)}</strong><span class="details">${esc(e.groupe)}</span></div>
+              ${preavisPastille(e.preavis)}
+            </div>
+            ${e.note ? `<p class="note">${esc(e.note)}</p>` : ''}
+            ${e.taches.length ? `<ul class="mini">${e.taches.map(tacheProf).join('')}</ul>` : ''}
+          </li>`).join('')}
+        </ul>
+        <div class="carte-pied">
+          <button class="principal" data-ajouter>${ico('plus')} Travail ou reprise d'examen</button>
+        </div>`;
       $('[data-ajouter]', carte).onclick = () => ouvrirTache(t, eleves);
       carte.querySelectorAll('[data-retirer]').forEach((b) => {
         b.onclick = async () => {
-          if (!confirm('Retirer ce travail ? L\'élève ne le verra plus.')) return;
+          if (!await demander('Retirer ce travail ? L\'élève ne le verra plus.', 'Retirer')) return;
           await api('taches/' + b.dataset.retirer, { method: 'DELETE' });
+          toast('Travail retiré');
           ecranEnseignant();
         };
       });
       zone.append(carte);
     }
-    if (!n) zone.innerHTML = '<p class="vide">Aucune absence déclarée' + (q || vue.groupe ? ' pour ce filtre.' : ' pour les tournois à venir.') + '</p>';
+    if (!n) zone.innerHTML = `<div class="vide-grand">${ico('liste')}<p>${q || vue.groupe ? 'Aucun résultat pour ce filtre.' : 'Aucune absence déclarée pour les tournois à venir.'}</p></div>`;
   }
   dessiner();
 }
 
+function initiales(nom) {
+  return esc(nom.split(/\s+/).filter(Boolean).slice(0, 2).map((m) => m[0]).join('').toUpperCase());
+}
+
 function tacheProf(t) {
   const mien = t.enseignant_id === moi.id;
-  return `<li>
-    <strong>${esc(t.matiere || t.enseignant)}</strong>${t.fait_at ? ' <span class="pastille verte">Terminé</span>' : ''}
-    ${mien ? `<button class="lien danger" data-retirer="${t.id}" title="Retirer">✕</button>` : ''}
-    ${t.travail ? `<div>${esc(t.travail)}</div>` : ''}
-    ${t.remise ? `<div class="details">À remettre le ${dateFr(t.remise)}</div>` : ''}
-    ${t.examen ? `<div class="examen">📝 Reprise${t.examen_nom ? ' « ' + esc(t.examen_nom) + ' »' : ''} : ${t.reprise_date ? dateFr(t.reprise_date) : 'date à fixer'}${t.reprise_info ? ', ' + esc(t.reprise_info) : ''}</div>` : ''}
+  return `<li class="${mien ? 'mien' : ''}">
+    <div class="mini-tete">
+      <strong>${esc(t.matiere || t.enseignant)}</strong>
+      ${t.fait_at ? '<span class="pastille verte">Terminé</span>' : ''}
+      ${mien ? `<button class="icone-btn petit" data-retirer="${t.id}" aria-label="Retirer ce travail">${ico('corbeille')}</button>` : ''}
+    </div>
+    ${t.travail ? `<p>${esc(t.travail)}</p>` : ''}
+    ${t.remise ? `<p class="details">À remettre le ${dateFr(t.remise)}</p>` : ''}
+    ${t.examen ? `<p class="reprise-ligne">${ico('examen')} Reprise${t.examen_nom ? ' · ' + esc(t.examen_nom) : ''} : ${t.reprise_date ? dateFr(t.reprise_date) : 'date à fixer'}${t.reprise_info ? ', ' + esc(t.reprise_info) : ''}</p>` : ''}
   </li>`;
 }
 
@@ -329,9 +449,22 @@ function ouvrirTache(t, eleves) {
   const dlg = $('#dlg-tache');
   const form = $('#form-tache');
   form.reset();
-  $('#tache-tournoi').textContent = t.nom;
+  $('#tache-tournoi').textContent = `${t.nom} · ${periode(t.debut, t.fin)}`;
   $('#tache-eleves').innerHTML = eleves.map((e) =>
-    `<label class="case"><input type="checkbox" name="absence" value="${e.absence_id}" checked> ${esc(e.nom)} <span class="details">${esc(e.groupe)}</span></label>`).join('');
+    `<label class="case"><input type="checkbox" name="absence" value="${e.absence_id}" checked><span>${esc(e.nom)}</span><span class="details">${esc(e.groupe)}</span></label>`).join('');
+  const tous = $('#tache-tous');
+  const majTous = () => {
+    const cases = [...form.querySelectorAll('[name=absence]')];
+    tous.textContent = cases.every((c) => c.checked) ? 'Tout décocher' : 'Tout cocher';
+  };
+  tous.onclick = () => {
+    const cases = [...form.querySelectorAll('[name=absence]')];
+    const cocher = !cases.every((c) => c.checked);
+    cases.forEach((c) => { c.checked = cocher; });
+    majTous();
+  };
+  form.querySelectorAll('[name=absence]').forEach((c) => { c.onchange = majTous; });
+  majTous();
   const bloc = $('#bloc-examen');
   bloc.hidden = true;
   form.examen.onchange = () => { bloc.hidden = !form.examen.checked; };
@@ -340,22 +473,22 @@ function ouvrirTache(t, eleves) {
     const f = Object.fromEntries(new FormData(form));
     const ids = [...form.querySelectorAll('[name=absence]:checked')].map((c) => Number(c.value));
     try {
-      await api('taches', { method: 'POST', body: { ...f, examen: form.examen.checked, absence_ids: ids } });
+      const r = await api('taches', { method: 'POST', body: { ...f, examen: form.examen.checked, absence_ids: ids } });
       dlg.close();
+      toast(`Envoyé à ${r.nb} élève${r.nb > 1 ? 's' : ''}`);
       ecranEnseignant();
     } catch (err) { montrerErreur(form, err.message); }
   };
   ouvrir(dlg);
 }
 
-// Calendrier du mois : nombre d'élèves absents chaque jour ; un clic sur un jour montre qui et pour quel tournoi.
+// Calendrier du mois : nombre d'élèves absents chaque jour ; un toucher sur un jour montre qui et pour quel tournoi.
 function ongletCalendrier(contenu, tournois, groupes) {
   const [an, mo] = vue.mois.split('-').map(Number);
   const iso = (d) => d.toLocaleDateString('en-CA');
   const premier = new Date(an, mo - 1, 1, 12);
   const nbJours = new Date(an, mo, 0).getDate();
   const decalage = (premier.getDay() + 6) % 7; // semaine commençant le lundi
-  // Absences de chaque jour du mois
   const parJour = {};
   for (let j = 1; j <= nbJours; j++) parJour[iso(new Date(an, mo - 1, j, 12))] = [];
   for (const t of tournois) {
@@ -364,116 +497,151 @@ function ongletCalendrier(contenu, tournois, groupes) {
       for (const jour in parJour) if (jour >= t.debut && jour <= t.fin) parJour[jour].push({ ...e, tournoi: t });
     }
   }
-  const max = Math.max(1, ...Object.values(parJour).map((l) => l.length));
-  const total = new Set(Object.values(parJour).flat().map((e) => e.eleve_id)).size;
+  const compte = (l) => new Set(l.map((e) => e.eleve_id)).size;
+  const max = Math.max(1, ...Object.values(parJour).map(compte));
+  const total = compte(Object.values(parJour).flat());
+  const pic = Object.entries(parJour).reduce((m, [j, l]) => (compte(l) > m.n ? { j, n: compte(l) } : m), { j: null, n: 0 });
   const titre = premier.toLocaleDateString('fr-CA', { month: 'long', year: 'numeric' });
-  if (vue.jour && !parJour[vue.jour]) vue.jour = null;
+  if (!vue.jour || !parJour[vue.jour]) vue.jour = parJour[auj()] ? auj() : null;
 
-  let cases = '<div class="cal-vide"></div>'.repeat(decalage);
+  let cases = '<span class="cal-vide"></span>'.repeat(decalage);
   for (const [jour, liste] of Object.entries(parJour)) {
     const d = new Date(jour + 'T12:00');
-    const fds = d.getDay() === 0 || d.getDay() === 6;
-    const n = new Set(liste.map((e) => e.eleve_id)).size;
-    const intens = n ? 0.15 + 0.75 * (n / max) : 0;
-    cases += `<button class="cal-jour${fds ? ' fds' : ''}${jour === auj() ? ' auj' : ''}${jour === vue.jour ? ' choisi' : ''}"
-      data-jour="${jour}" style="${n ? `background: rgba(29,78,216,${intens.toFixed(2)}); color: ${intens > 0.5 ? '#fff' : 'inherit'}` : ''}"
-      title="${n} élève${n > 1 ? 's' : ''} absent${n > 1 ? 's' : ''}">
-      <span class="cal-num">${d.getDate()}</span>
-      ${n ? `<span class="cal-nb">${n}</span><span class="cal-lib">absent${n > 1 ? 's' : ''}</span>` : ''}
+    const n = compte(liste);
+    const niveau = n ? Math.min(4, Math.ceil((n / max) * 4)) : 0;
+    const cls = ['cal-jour', `n${niveau}`, d.getDay() % 6 === 0 ? 'fds' : '', jour === auj() ? 'auj' : '', jour === vue.jour ? 'choisi' : ''].join(' ');
+    cases += `<button class="${cls}" data-jour="${jour}" aria-label="${dateFr(jour)} : ${n} absent${n > 1 ? 's' : ''}">
+      <span class="cal-num">${d.getDate()}</span>${n ? `<span class="cal-nb">${n}</span>` : ''}
     </button>`;
   }
 
   contenu.innerHTML = `
-    <div class="filtres">
-      <button class="secondaire" id="mois-prec" aria-label="Mois précédent">◀</button>
-      <h2 class="cal-titre">${titre}</h2>
-      <button class="secondaire" id="mois-suiv" aria-label="Mois suivant">▶</button>
-      <button class="secondaire" id="mois-auj">Aujourd'hui</button>
-      <select id="filtre-groupe"><option value="">Tous les groupes</option>
-        ${groupes.map((g) => `<option ${g === vue.groupe ? 'selected' : ''}>${esc(g)}</option>`).join('')}</select>
+    <div class="entete-page cal-entete-page">
+      <h1 class="cal-titre">${titre}</h1>
+      <div class="cal-nav">
+        <button class="icone-btn" id="mois-prec" aria-label="Mois précédent">${ico('gauche')}</button>
+        <button class="secondaire petit" id="mois-auj">Aujourd'hui</button>
+        <button class="icone-btn" id="mois-suiv" aria-label="Mois suivant">${ico('droite')}</button>
+      </div>
     </div>
-    <p class="aide">${total} élève${total > 1 ? 's' : ''} absent${total > 1 ? 's' : ''} au moins un jour ce mois-ci.
-      Plus la case est foncée, plus il y a d'absents. Cliquez sur un jour pour voir qui.</p>
-    <article class="carte">
+    <div class="filtres">
+      ${filtreGroupe(groupes)}
+      <p class="aide cal-resume">${total} élève${total > 1 ? 's' : ''} absent${total > 1 ? 's' : ''} ce mois-ci${pic.n ? ` · pointe le ${dateFr(pic.j, { day: 'numeric', month: 'long' })} (${pic.n})` : ''}</p>
+    </div>
+    <section class="carte calendrier-carte">
       <div class="calendrier">
-        ${['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'].map((j) => `<div class="cal-entete">${j}</div>`).join('')}
+        ${['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((j, i) => `<span class="cal-entete"><span class="court">${j}</span><span class="long">${['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'][i]}</span></span>`).join('')}
         ${cases}
       </div>
-    </article>
-    <div id="detail-jour"></div>`;
+      <div class="legende" aria-hidden="true"><span>Moins</span><i class="n1"></i><i class="n2"></i><i class="n3"></i><i class="n4"></i><span>Plus d'absents</span></div>
+    </section>
+    <section id="detail-jour"></section>`;
 
+  const redessiner = () => ongletCalendrier(contenu, tournois, groupes);
   const changerMois = (delta) => {
-    const d = new Date(an, mo - 1 + delta, 1, 12);
-    vue.mois = iso(d).slice(0, 7);
+    vue.mois = iso(new Date(an, mo - 1 + delta, 1, 12)).slice(0, 7);
     vue.jour = null;
-    ongletCalendrier(contenu, tournois, groupes);
+    redessiner();
   };
   $('#mois-prec').onclick = () => changerMois(-1);
   $('#mois-suiv').onclick = () => changerMois(1);
-  $('#mois-auj').onclick = () => { vue.mois = auj().slice(0, 7); vue.jour = auj(); ongletCalendrier(contenu, tournois, groupes); };
-  $('#filtre-groupe').onchange = (e) => { vue.groupe = e.target.value; ongletCalendrier(contenu, tournois, groupes); };
+  $('#mois-auj').onclick = () => { vue.mois = auj().slice(0, 7); vue.jour = auj(); redessiner(); };
+  $('#filtre-groupe').onchange = (e) => { vue.groupe = e.target.value; redessiner(); };
   contenu.querySelectorAll('[data-jour]').forEach((b) => {
-    b.onclick = () => { vue.jour = b.dataset.jour; ongletCalendrier(contenu, tournois, groupes); };
+    b.onclick = () => {
+      vue.jour = b.dataset.jour;
+      redessiner();
+      if (matchMedia('(max-width: 700px)').matches) $('#detail-jour').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
   });
 
-  if (vue.jour) {
-    const liste = parJour[vue.jour];
-    const groupesT = new Map();
-    for (const e of liste) {
-      if (!groupesT.has(e.tournoi.id)) groupesT.set(e.tournoi.id, { t: e.tournoi, eleves: [] });
-      groupesT.get(e.tournoi.id).eleves.push(e);
-    }
-    $('#detail-jour').innerHTML = `
-      <article class="carte">
-        <h3>${dateFr(vue.jour)} : ${liste.length ? `${new Set(liste.map((e) => e.eleve_id)).size} élève(s) absent(s)` : 'aucun absent'}</h3>
-        ${[...groupesT.values()].map(({ t, eleves }) => `
-          <h4>${esc(t.nom)} <span class="details">${t.sport ? esc(t.sport) + ' · ' : ''}${t.lieu ? esc(t.lieu) + ' · ' : ''}${periode(t.debut, t.fin)}</span></h4>
-          <ul class="mini">${eleves.map((e) => `<li><strong>${esc(e.nom)}</strong> <span class="details">${esc(e.groupe)}</span></li>`).join('')}</ul>`).join('')}
-      </article>`;
+  const detail = $('#detail-jour');
+  if (!vue.jour) { detail.innerHTML = '<p class="aide centre">Touchez un jour pour voir les élèves absents.</p>'; return; }
+  const liste = parJour[vue.jour];
+  const parTournoi = new Map();
+  for (const e of liste) {
+    if (!parTournoi.has(e.tournoi.id)) parTournoi.set(e.tournoi.id, { t: e.tournoi, eleves: [] });
+    parTournoi.get(e.tournoi.id).eleves.push(e);
   }
+  const n = compte(liste);
+  detail.innerHTML = `
+    <h2 class="detail-titre">${dateFr(vue.jour, { weekday: 'long', day: 'numeric', month: 'long' })}
+      <span class="details">${n ? `${n} absent${n > 1 ? 's' : ''}` : 'aucun absent'}</span></h2>
+    ${[...parTournoi.values()].map(({ t, eleves }) => `
+      <article class="carte">
+        <div class="carte-tete compacte">
+          <div class="carte-titre">
+            <h3>${esc(t.nom)}</h3>
+            <p class="meta">${meta(periode(t.debut, t.fin), esc(t.sport), esc(t.lieu))}</p>
+          </div>
+        </div>
+        <ul class="rangees">${eleves.map((e) => `<li><div class="rangee-tete">
+          <span class="avatar petit">${initiales(e.nom)}</span>
+          <div class="rangee-nom"><strong>${esc(e.nom)}</strong><span class="details">${esc(e.groupe)}</span></div>
+        </div></li>`).join('')}</ul>
+      </article>`).join('')}`;
 }
 
 function ongletReprises(contenu, reprises) {
-  contenu.innerHTML = reprises.length ? `
-    <article class="carte">
-      <table class="eleves">
-        <thead><tr><th>Date</th><th>Élève</th><th>Matière</th><th>Examen</th><th>Heure / local</th><th>Tournoi</th></tr></thead>
-        <tbody>${reprises.map((r) => `<tr>
-          <td data-titre="Date"><strong>${dateFr(r.reprise_date)}</strong></td>
-          <td data-titre="Élève">${esc(r.eleve)} <span class="details">${esc(r.groupe)}</span></td>
-          <td data-titre="Matière">${esc(r.matiere || '')} <span class="details">${esc(r.enseignant)}</span></td>
-          <td data-titre="Examen">${esc(r.examen_nom)}</td>
-          <td data-titre="Heure / local">${esc(r.reprise_info)}</td>
-          <td data-titre="Tournoi">${esc(r.tournoi)}</td></tr>`).join('')}</tbody>
-      </table>
-    </article>` : '<p class="vide">Aucune reprise d\'examen prévue.</p>';
+  // Regroupées par date : c'est ainsi qu'on réserve un local
+  const parDate = new Map();
+  for (const r of reprises) {
+    if (!parDate.has(r.reprise_date)) parDate.set(r.reprise_date, []);
+    parDate.get(r.reprise_date).push(r);
+  }
+  contenu.innerHTML = `
+    <div class="entete-page"><h1>Reprises d'examen</h1></div>
+    <p class="aide">Toutes les reprises à venir, toutes matières confondues.</p>
+    ${reprises.length ? [...parDate].map(([date, liste]) => `
+      <section class="jour-reprises">
+        <h2 class="jour-titre">${blocDate(date, date)}<span>${dateFr(date, { weekday: 'long', day: 'numeric', month: 'long' })}</span></h2>
+        <ul class="carte rangees">${liste.map((r) => `<li>
+          <div class="rangee-tete">
+            <span class="avatar petit">${initiales(r.eleve)}</span>
+            <div class="rangee-nom"><strong>${esc(r.eleve)}</strong><span class="details">${esc(r.groupe)} · ${esc(r.tournoi)}</span></div>
+          </div>
+          <p class="reprise-ligne">${ico('examen')} <span><strong>${esc(r.matiere || r.enseignant)}</strong>${r.examen_nom ? ' · ' + esc(r.examen_nom) : ''}
+            ${r.reprise_info ? `<span class="details"> · ${esc(r.reprise_info)}</span>` : ''}<span class="details"> · ${esc(r.enseignant)}</span></span></p>
+        </li>`).join('')}</ul>
+      </section>`).join('') : `<div class="vide-grand">${ico('examen')}<p>Aucune reprise d'examen prévue.</p></div>`}`;
 }
 
 function ongletEleves(contenu, eleves) {
   contenu.innerHTML = `
+    <div class="entete-page"><h1>Élèves</h1></div>
+    <div class="filtres">
+      <label class="recherche">${ico('recherche')}<input type="search" id="recherche-eleve" placeholder="Rechercher un élève" aria-label="Rechercher un élève"></label>
+    </div>
     <p class="aide">Un élève a oublié son NIP ? Effacez-le : il en choisira un nouveau à sa prochaine connexion.</p>
-    <article class="carte">
-      <table class="eleves">
-        <thead><tr><th>Élève</th><th>Groupe</th><th>Absences</th><th></th></tr></thead>
-        <tbody>${eleves.map((e) => `<tr>
-          <td data-titre="Élève">${esc(e.nom)}</td><td data-titre="Groupe">${esc(e.groupe)}</td><td data-titre="Absences">${e.nb}</td>
-          <td><button class="lien" data-nip="${e.id}" data-nom="${esc(e.nom)}">Effacer le NIP</button></td></tr>`).join('')}</tbody>
-      </table>
-    </article>`;
-  contenu.querySelectorAll('[data-nip]').forEach((b) => {
-    b.onclick = async () => {
-      if (!confirm(`Effacer le NIP de ${b.dataset.nom} ?`)) return;
-      await api(`eleves/${b.dataset.nip}/effacer-nip`, { method: 'POST' });
-      b.replaceWith('NIP effacé ✔');
-    };
-  });
+    <ul class="carte rangees" id="liste-eleves"></ul>`;
+  const dessiner = (q = '') => {
+    const l = eleves.filter((e) => !q || e.nom.toLowerCase().includes(q.toLowerCase()) || e.groupe.includes(q));
+    $('#liste-eleves').innerHTML = l.length ? l.map((e) => `<li><div class="rangee-tete">
+      <span class="avatar petit">${initiales(e.nom)}</span>
+      <div class="rangee-nom"><strong>${esc(e.nom)}</strong><span class="details">${esc(e.groupe)} · ${e.nb} absence${e.nb > 1 ? 's' : ''}</span></div>
+      <button class="secondaire petit" data-nip="${e.id}" data-nom="${esc(e.nom)}">${ico('cle')} Effacer le NIP</button>
+    </div></li>`).join('') : '<li class="vide">Aucun élève.</li>';
+    contenu.querySelectorAll('[data-nip]').forEach((b) => {
+      b.onclick = async () => {
+        if (!await demander(`Effacer le NIP de ${b.dataset.nom} ?`, 'Effacer')) return;
+        await api(`eleves/${b.dataset.nip}/effacer-nip`, { method: 'POST' });
+        toast(`NIP de ${b.dataset.nom} effacé`);
+        b.disabled = true;
+      };
+    });
+  };
+  $('#recherche-eleve').oninput = (e) => dessiner(e.target.value.trim());
+  dessiner();
 }
 
 // ---------- Démarrage ----------
 
 function afficher() {
   $('#qui').hidden = false;
-  $('#qui-nom').textContent = moi.nom + (moi.role === 'eleve' ? (moi.groupe ? ' · ' + moi.groupe : '') : (moi.matiere ? ' · ' + moi.matiere : ''));
+  $('#qui-initiales').innerHTML = initiales(moi.nom);
+  $('#qui-nom').textContent = moi.nom;
+  $('#qui-detail').textContent = moi.role === 'eleve' ? `Groupe ${moi.groupe || ''}` : (moi.matiere || 'Enseignant');
+  $('#menu-nom').textContent = moi.nom;
   (moi.role === 'eleve' ? ecranEleve() : ecranEnseignant()).catch((err) => {
     app.innerHTML = `<p class="erreur">${esc(err.message)}</p>`;
   });

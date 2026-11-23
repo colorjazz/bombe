@@ -167,6 +167,4 @@
     return new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
   };
 
-  // Le cadre des artefacts refuse confirm() : la démo répond « oui » à chaque confirmation.
-  window.confirm = () => true;
 })();

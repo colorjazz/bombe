@@ -4,12 +4,13 @@ import { readFileSync, writeFileSync } from 'node:fs';
 const ici = new URL('.', import.meta.url);
 const lire = (f) => readFileSync(new URL(f, ici), 'utf8');
 const bandeau = `<div class="demo-bandeau">
-  <strong>Démonstration</strong> — données fictives, gardées seulement dans votre navigateur.
-  Code élève : <code>sport</code> · code enseignant : <code>prof</code>.
-  <span class="demo-acces">Essayer :
-    <button data-demo="eleve">Léa (élève, NIP 1234)</button>
-    <button data-demo="enseignant">M. Gagnon (enseignant)</button>
-    <button data-demo="reset">Remettre les données d'origine</button></span>
+  <span class="demo-etiquette">Démo</span>
+  <span class="demo-texte">Données fictives, gardées dans ce navigateur. Codes : élève <code>sport</code>, enseignant <code>prof</code>.</span>
+  <span class="demo-acces">
+    <button data-demo="eleve">Vue élève</button>
+    <button data-demo="enseignant">Vue enseignant</button>
+    <button data-demo="reset" class="demo-reset">Réinitialiser</button>
+  </span>
 </div>`;
 const raccourcis = `<script>
 document.querySelectorAll('[data-demo]').forEach((b) => b.onclick = async () => {
@@ -22,11 +23,16 @@ document.querySelectorAll('[data-demo]').forEach((b) => b.onclick = async () => 
 });
 </script>`;
 const css = lire('../public/style.css') + `
-.demo-bandeau { background: #fef3c7; color: #78350f; padding: 8px 16px; font-size: .9rem; display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; }
-.demo-bandeau code { background: #fff; padding: 1px 6px; border-radius: 4px; }
-.demo-acces { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-.demo-bandeau button { background: #fff; border: 1px solid #f59e0b; padding: 6px 10px; font-size: .85rem; min-height: 36px; }
-button[onclick="print()"] { display: none; }`;
+.demo-bandeau { background: #fff; border-bottom: 1px solid #e4e4e0; padding: 6px 12px; font-size: .85rem; display: flex; align-items: center; gap: 10px; color: #646b7a; }
+.demo-etiquette { background: #14213d; color: #fff; font-weight: 700; font-size: .72rem; padding: 3px 8px; border-radius: 6px; letter-spacing: .02em; flex: none; }
+.demo-texte { flex: 1; }
+.demo-bandeau code { background: #f3f3f1; padding: 1px 5px; border-radius: 4px; color: #1c2333; }
+.demo-acces { display: flex; gap: 6px; flex: none; }
+.demo-bandeau button { min-height: 34px; padding: 0 10px; font-size: .82rem; font-weight: 600; border: 1px solid #d3d3cd; background: #fff; border-radius: 8px; color: #1c2333; }
+.demo-bandeau .demo-reset { border: 0; color: #646b7a; font-weight: 500; }
+.page-enseignant .demo-bandeau { grid-column: 1 / -1; }
+@media (max-width: 700px) { .demo-texte { display: none; } .demo-acces { flex: 1; justify-content: flex-end; } }
+@media (min-width: 901px) { body.page-enseignant { grid-template-rows: auto auto 1fr; grid-template-areas: 'demo demo' 'barre barre' 'nav main'; } .demo-bandeau { grid-area: demo; } }`;
 let html = lire('../public/index.html')
   .replace('<link rel="stylesheet" href="style.css">', `<style>\n${css}\n</style>`)
   .replace('<body>', '<body>\n' + bandeau)

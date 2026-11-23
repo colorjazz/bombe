@@ -2,244 +2,496 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#14213d">
+  <meta name="color-scheme" content="light">
   <title>Absences Sport-études</title>
   <meta name="color-scheme" content="light">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap">
   <style>
+/*
+  VOICE   : sobre et fiable, un outil d'école que l'on ouvre entre deux cours.
+  IDEA    : l'agenda scolaire et le tableau des départs ; chaque tournoi a sa date détachable.
+  PICTURE : blocs de date, calendrier dont les cases foncent avec le nombre d'absents.
+  COLOUR  : encre marine, blanc, gris pierre ; un bleu vif pour l'action ; rouge/ambre/vert pour le préavis.
+  LAYOUT  : téléphone d'abord — barre d'onglets en bas, feuilles qui montent du bas ; colonne latérale sur ordinateur.
+*/
 :root {
-  --bleu: #1d4ed8; --bleu-pale: #dbeafe; --fond: #f4f6fb; --texte: #1f2937; --gris: #6b7280;
-  --rouge: #b91c1c; --rouge-pale: #fee2e2; --orange: #b45309; --orange-pale: #fef3c7; --vert: #047857; --vert-pale: #d1fae5;
+  --encre: #14213d; --texte: #1c2333; --gris: #646b7a; --gris-clair: #8a909c;
+  --fond: #f3f3f1; --carte: #ffffff; --ligne: #e4e4e0; --ligne-forte: #d3d3cd;
+  --action: #2047d6; --action-fonce: #1838ad; --action-pale: #e8edfc;
+  --rouge: #b42318; --rouge-pale: #fdecea; --ambre: #a15c07; --ambre-pale: #fdf1dc; --vert: #11714a; --vert-pale: #e3f4ec;
+  --rayon: 14px; --ombre: 0 1px 2px rgba(20,33,61,.06), 0 1px 1px rgba(20,33,61,.04);
+  --nav-h: 64px; --bas-sur: env(safe-area-inset-bottom, 0px);
+  color-scheme: light;
 }
-* { box-sizing: border-box; }
-body { margin: 0; font-family: system-ui, 'Segoe UI', Roboto, Arial, sans-serif; background: var(--fond); color: var(--texte); font-size: 16px; }
-main { max-width: 1000px; margin: 0 auto; padding: 16px; }
-h1 { font-size: 1.25rem; margin: 0; }
-h2 { font-size: 1.2rem; }
-h3 { margin: 0; font-size: 1.1rem; }
-h4 { margin: 14px 0 6px; font-size: .95rem; color: var(--gris); text-transform: uppercase; letter-spacing: .03em; }
-
-.barre { background: var(--bleu); color: #fff; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
-.barre .lien { color: #fff; }
-
-.carte { background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
-.carte.passee { opacity: .65; }
-.etroite { max-width: 440px; margin: 24px auto; }
-.titre-carte { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
-.details { color: var(--gris); font-size: .9rem; margin: 4px 0 0; }
-.note { font-style: italic; color: var(--gris); font-size: .9rem; }
-.vide { color: var(--gris); }
-.aide { color: var(--gris); }
+* { box-sizing: border-box; min-width: 0; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; font: 16px/1.5 'Figtree', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; background: var(--fond); color: var(--texte);
+  -webkit-font-smoothing: antialiased; overflow-x: clip; }
+h1 { font-size: 1.6rem; line-height: 1.15; margin: 0; letter-spacing: -.01em; color: var(--encre); text-wrap: balance; }
+h2 { font-size: 1.15rem; margin: 0; color: var(--encre); }
+h3 { font-size: 1.05rem; line-height: 1.3; margin: 0; color: var(--encre); }
+h4 { font-size: .85rem; margin: 0 0 8px; color: var(--gris); font-weight: 600; display: flex; align-items: center; gap: 8px; }
+p { margin: 0; }
+.ico { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.details { color: var(--gris); font-size: .875rem; font-weight: 400; }
+.aide { color: var(--gris); font-size: .925rem; }
 .centre { text-align: center; }
+.vide { color: var(--gris-clair); font-size: .925rem; }
+.chargement { text-align: center; color: var(--gris); padding: 48px 0; }
+[hidden] { display: none !important; }
 
-button { font: inherit; cursor: pointer; border-radius: 8px; border: 0; padding: 10px 16px; }
-.principal { background: var(--bleu); color: #fff; font-weight: 600; }
-.principal:hover { filter: brightness(1.1); }
-.secondaire { background: #e5e7eb; color: var(--texte); }
-.gros { padding: 14px 18px; font-size: 1.05rem; width: 100%; }
-.lien { background: none; padding: 2px 4px; color: var(--bleu); text-decoration: underline; }
-.danger { color: var(--rouge); }
+/* ---------- Barre du haut ---------- */
+.barre { position: sticky; top: 0; z-index: 20; background: var(--encre); color: #fff; display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; padding: 10px max(16px, env(safe-area-inset-right)) 10px max(16px, env(safe-area-inset-left)); min-height: 56px; grid-area: barre; }
+.marque { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.05rem; }
+.logo { width: 32px; height: 32px; border-radius: 8px; background: rgba(255,255,255,.12); display: grid; place-items: center; }
+.logo svg { width: 20px; height: 20px; fill: none; stroke: #fff; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.nom-appli .sous { font-weight: 400; opacity: .7; }
+.qui { display: flex; align-items: center; gap: 10px; background: none; color: #fff; padding: 4px; border-radius: 999px; min-height: 44px; }
+.qui:hover { background: rgba(255,255,255,.08); }
+.qui-texte { display: flex; flex-direction: column; text-align: left; line-height: 1.2; padding-right: 8px; }
+.qui-texte span:last-child { font-size: .8rem; opacity: .7; }
+.avatar { width: 36px; height: 36px; border-radius: 50%; background: #fff; color: var(--encre); display: grid; place-items: center; font-weight: 700; font-size: .85rem; flex: none; }
+.avatar.petit { width: 34px; height: 34px; background: var(--action-pale); color: var(--action-fonce); font-size: .8rem; }
+.menu { position: absolute; right: 12px; top: calc(100% + 6px); background: #fff; color: var(--texte); border-radius: 12px; box-shadow: 0 12px 32px rgba(20,33,61,.18);
+  padding: 8px; min-width: 220px; }
+.menu-titre { padding: 8px 12px; font-weight: 600; border-bottom: 1px solid var(--ligne); margin-bottom: 6px; }
+.menu-item { width: 100%; text-align: left; background: none; padding: 12px; border-radius: 8px; color: var(--rouge); }
+.menu-item:hover { background: var(--rouge-pale); }
 
-.choix-role { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
-.choix-role button { background: #eef2ff; color: var(--texte); border: 2px solid transparent; }
-.choix-role button.actif { border-color: var(--bleu); background: var(--bleu-pale); font-weight: 600; }
+main { width: 100%; max-width: 1040px; margin: 0 auto; padding: 20px 16px 32px; grid-area: main; }
 
-form label { display: block; margin-bottom: 12px; font-weight: 600; font-size: .95rem; }
-form label small { display: block; font-weight: 400; color: var(--gris); margin-top: 2px; }
+/* ---------- Boutons et champs ---------- */
+button { font: inherit; cursor: pointer; border: 0; border-radius: 10px; padding: 0 16px; min-height: 44px; display: inline-flex; align-items: center;
+  justify-content: center; gap: 8px; color: inherit; background: none; -webkit-tap-highlight-color: transparent; }
+button:disabled { opacity: .5; cursor: default; }
+:focus-visible { outline: 3px solid rgba(32,71,214,.45); outline-offset: 2px; }
+.principal { background: var(--action); color: #fff; font-weight: 600; }
+.principal:hover { background: var(--action-fonce); }
+.secondaire { background: #fff; color: var(--texte); border: 1px solid var(--ligne-forte); font-weight: 500; }
+.secondaire:hover { background: #f7f7f5; }
+.danger-plein { background: var(--rouge); color: #fff; font-weight: 600; }
+.plein { width: 100%; }
+.petit { min-height: 36px; padding: 0 12px; font-size: .875rem; }
+.lien { background: none; padding: 0 4px; min-height: 32px; color: var(--action); font-weight: 600; font-size: .9rem; }
+.lien.danger { color: var(--rouge); }
+.icone-btn { width: 44px; padding: 0; border-radius: 50%; color: var(--gris); }
+.icone-btn:hover { background: #efefec; color: var(--texte); }
+.icone-btn.petit { width: 32px; min-height: 32px; }
+.icone-btn.petit .ico { width: 17px; height: 17px; }
+.icone-btn svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+
+label { display: block; font-weight: 600; font-size: .9rem; margin-bottom: 14px; color: var(--texte); }
+label small { display: block; font-weight: 400; color: var(--gris); margin-top: 4px; font-size: .85rem; }
+.facultatif { font-weight: 400; color: var(--gris-clair); font-size: .85rem; }
 input:not([type=checkbox]), select, textarea {
-  display: block; width: 100%; margin-top: 4px; padding: 10px; font: inherit; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff;
-}
-label.case, .case-fait { display: flex; align-items: center; gap: 8px; font-weight: 400; }
-input[type=checkbox] { width: 20px; height: 20px; }
-fieldset { border: 1px solid #e5e7eb; border-radius: 8px; margin: 0 0 12px; padding: 12px; }
-fieldset[hidden] { display: none; }
-legend { font-weight: 600; padding: 0 4px; }
-.deux { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.cases { max-height: 200px; overflow: auto; }
-.cases .case { margin-bottom: 6px; }
-.boutons { display: flex; justify-content: flex-end; gap: 8px; }
-.erreur { color: var(--rouge); background: var(--rouge-pale); padding: 8px 12px; border-radius: 8px; }
-.avert { color: var(--orange); background: var(--orange-pale); padding: 8px 12px; border-radius: 8px; }
+  display: block; width: 100%; margin-top: 6px; padding: 11px 12px; font: inherit; font-size: 16px; font-weight: 400; color: var(--texte);
+  border: 1px solid var(--ligne-forte); border-radius: 10px; background: #fff; min-height: 46px; appearance: none; -webkit-appearance: none; }
+select { background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23646b7a' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center / 18px;
+  padding-right: 40px; }
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--action); box-shadow: 0 0 0 3px rgba(32,71,214,.15); }
+textarea { resize: vertical; min-height: 80px; }
+input[type=checkbox] { width: 22px; height: 22px; accent-color: var(--action); margin: 0; flex: none; }
+.deux { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 12px; }
+.groupe-champs { border: 0; background: #f6f6f4; border-radius: 12px; margin: 0 0 14px; padding: 14px 14px 0; }
+.groupe-champs legend { float: left; width: 100%; display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: .9rem; margin-bottom: 6px; }
+.cases { clear: both; padding-bottom: 8px; }
+label.case { display: flex; align-items: center; gap: 12px; font-weight: 500; margin: 0; padding: 10px 0; border-top: 1px solid var(--ligne); min-height: 44px; }
+label.case:first-child { border-top: 0; }
+label.case .details { margin-left: auto; }
+.interrupteur { display: flex; align-items: center; gap: 12px; font-weight: 600; min-height: 44px; }
+.interrupteur input { appearance: none; -webkit-appearance: none; width: 46px; height: 28px; border-radius: 999px; background: #cfd0cb; position: relative; transition: background .15s; cursor: pointer; }
+.interrupteur input::after { content: ''; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.2); transition: transform .15s; }
+.interrupteur input:checked { background: var(--action); }
+.interrupteur input:checked::after { transform: translateX(18px); }
+.erreur { color: var(--rouge); background: var(--rouge-pale); padding: 10px 12px; border-radius: 10px; font-size: .925rem; margin-bottom: 14px; }
+.avert { color: var(--ambre); background: var(--ambre-pale); padding: 10px 12px; border-radius: 10px; font-size: .925rem; margin-bottom: 14px; }
 
-dialog { border: 0; border-radius: 12px; padding: 20px; width: min(560px, 94vw); box-shadow: 0 10px 40px rgba(0,0,0,.25); }
-dialog::backdrop { background: rgba(15,23,42,.5); }
-dialog h2 { margin-top: 0; }
+/* ---------- Connexion ---------- */
+.connexion { max-width: 420px; margin: 8px auto 0; }
+.connexion h1 { font-size: 1.9rem; margin-bottom: 8px; }
+.connexion .intro { color: var(--gris); margin-bottom: 24px; }
+.segment { display: grid; grid-template-columns: 1fr 1fr; background: #e7e7e3; border-radius: 12px; padding: 4px; margin-bottom: 20px; }
+.segment button { border-radius: 9px; font-weight: 600; color: var(--gris); }
+.segment button[aria-selected=true] { background: #fff; color: var(--encre); box-shadow: var(--ombre); }
+.connexion form { background: var(--carte); border-radius: var(--rayon); padding: 20px; box-shadow: var(--ombre); }
+.connexion .aide { margin: -4px 0 14px; font-size: .85rem; }
 
-.pastille { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: .8rem; font-weight: 600; white-space: nowrap; }
+/* ---------- En-têtes, statistiques, filtres ---------- */
+.entete-page { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.entete-page .aide { margin-top: 4px; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 20px; }
+.stat { background: var(--carte); border-radius: var(--rayon); padding: 14px 16px; box-shadow: var(--ombre); display: flex; align-items: baseline; gap: 10px; }
+.stat-nb { font-size: 1.75rem; font-weight: 700; color: var(--encre); font-variant-numeric: tabular-nums; line-height: 1; }
+.stat-lib { color: var(--gris); font-size: .9rem; line-height: 1.3; }
+.stat-lib small { display: block; color: var(--texte); font-size: .825rem; margin-top: 2px; }
+.filtres { display: flex; gap: 8px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+.filtres select { width: auto; margin: 0; min-width: 160px; }
+.collant { position: sticky; top: 56px; z-index: 5; background: var(--fond); padding: 8px 0; margin-top: -8px; }
+.recherche { position: relative; flex: 1 1 220px; margin: 0; }
+.recherche .ico { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--gris-clair); }
+.recherche input { margin: 0; padding-left: 40px; }
+.puce { border: 1px solid var(--ligne-forte); background: #fff; border-radius: 999px; padding: 0 16px; font-weight: 500; font-size: .9rem; }
+.puce[aria-pressed=true] { background: var(--encre); color: #fff; border-color: var(--encre); }
+
+/* ---------- Cartes ---------- */
+.liste-cartes { display: grid; gap: 14px; }
+.carte { background: var(--carte); border-radius: var(--rayon); box-shadow: var(--ombre); padding: 16px; list-style: none; margin: 0 0 14px; }
+.liste-cartes .carte { margin: 0; }
+.carte.passee { opacity: .6; }
+.carte-tete { display: flex; align-items: flex-start; gap: 14px; }
+.etat { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+.carte-titre { flex: 1; }
+.meta { display: flex; flex-wrap: wrap; gap: 2px 0; color: var(--gris); font-size: .875rem; margin-top: 3px; }
+.meta span:not(:last-child)::after { content: '·'; margin: 0 6px; color: var(--gris-clair); }
+.carte-section { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--ligne); }
+.carte-pied { margin-top: 14px; display: flex; justify-content: flex-end; }
+.note { margin-top: 10px; padding-left: 12px; border-left: 3px solid var(--ligne-forte); color: var(--gris); font-size: .9rem; }
+.compte { background: #efefec; color: var(--gris); border-radius: 999px; padding: 1px 8px; font-size: .78rem; font-variant-numeric: tabular-nums; }
+
+.bloc-date { flex: none; width: 52px; border-radius: 10px; overflow: hidden; text-align: center; background: #fff; border: 1px solid var(--ligne-forte); line-height: 1; }
+.bd-mois { display: block; background: var(--encre); color: #fff; font-size: .68rem; font-weight: 700; text-transform: uppercase; padding: 4px 0; letter-spacing: .04em; }
+.bd-jour { display: block; font-size: 1.35rem; font-weight: 700; color: var(--encre); padding: 6px 0 2px; font-variant-numeric: tabular-nums; }
+.bd-duree { display: block; font-size: .68rem; color: var(--gris); padding-bottom: 5px; }
+
+.pastille { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 999px; font-size: .78rem; font-weight: 600; white-space: nowrap; }
 .pastille.rouge { background: var(--rouge-pale); color: var(--rouge); }
-.pastille.orange { background: var(--orange-pale); color: var(--orange); }
+.pastille.orange { background: var(--ambre-pale); color: var(--ambre); }
 .pastille.verte { background: var(--vert-pale); color: var(--vert); }
-.pastille.bleue { background: var(--bleu-pale); color: var(--bleu); }
-.pastille.grise { background: #e5e7eb; color: var(--gris); }
+.pastille.neutre { background: var(--action-pale); color: var(--action-fonce); }
+.pastille.grise { background: #ececea; color: var(--gris); }
 
-.entete-eleve { margin-bottom: 12px; }
-.resume { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
-.chiffre { background: #fff; border-radius: 12px; padding: 12px 16px; flex: 1; min-width: 200px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
-.chiffre strong { font-size: 1.6rem; color: var(--bleu); margin-right: 4px; }
-.chiffre small { display: block; color: var(--gris); }
+/* Rangées d'élèves */
+.rangees { list-style: none; padding: 0; margin: 14px 0 0; }
+ul.carte.rangees { padding: 4px 16px; }
+.rangees > li { padding: 12px 0; border-top: 1px solid var(--ligne); }
+.rangees > li:first-child { border-top: 0; }
+.carte-tete + .rangees > li:first-child { border-top: 1px solid var(--ligne); }
+.rangee-tete { display: flex; align-items: center; gap: 12px; }
+.rangee-nom { flex: 1; display: flex; flex-direction: column; line-height: 1.3; }
+.rangees .note { margin-left: 46px; }
+ul.mini { list-style: none; padding: 0; margin: 10px 0 0 46px; display: grid; gap: 8px; }
+ul.mini li { background: #f7f7f5; border-radius: 10px; padding: 10px 12px; font-size: .9rem; }
+ul.mini li.mien { background: var(--action-pale); }
+ul.mini p { margin-top: 2px; }
+.mini-tete { display: flex; align-items: center; gap: 8px; min-height: 28px; }
+.mini-tete .icone-btn { margin-left: auto; }
+.reprise-ligne { display: flex; align-items: flex-start; gap: 8px; color: var(--ambre); margin-top: 6px; font-size: .9rem; }
+.reprise-ligne .ico { width: 18px; height: 18px; margin-top: 1px; }
 
-.taches { list-style: none; padding: 0; margin: 0; }
-.taches li { display: flex; gap: 12px; align-items: flex-start; padding: 10px; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 8px; }
-.taches li.fait { background: #f9fafb; }
-.taches li.fait .travail { text-decoration: line-through; color: var(--gris); }
-.taches p { margin: 4px 0; }
-.case-fait { flex-direction: column; font-size: .75rem; color: var(--gris); gap: 2px; min-width: 56px; }
-.examen { background: var(--orange-pale); color: #7c2d12; padding: 6px 8px; border-radius: 6px; }
+/* Tâches de l'élève */
+.taches { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+.taches li { display: flex; gap: 12px; align-items: flex-start; padding: 12px; border: 1px solid var(--ligne); border-radius: 12px; }
+.coche { width: 32px; min-height: 32px; height: 32px; padding: 0; border-radius: 50%; border: 2px solid var(--ligne-forte); color: transparent; flex: none; margin-top: -2px; position: relative; }
+.coche::before { content: ''; position: absolute; inset: -6px; } /* zone de toucher de 44 px */
+.coche .ico { width: 18px; height: 18px; stroke-width: 2.6; }
+.taches li.fait .coche { background: var(--vert); border-color: var(--vert); color: #fff; }
+.taches li.fait { background: #fafaf8; }
+.taches li.fait .tache-corps { opacity: .6; }
+.taches li.fait .travail { text-decoration: line-through; }
+.tache-corps { flex: 1; display: grid; gap: 6px; }
+.tache-tete { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 8px; }
 .travail { white-space: pre-wrap; }
+.echeance { display: flex; align-items: center; gap: 6px; font-size: .9rem; color: var(--gris); }
+.echeance .ico { width: 17px; height: 17px; }
+.echeance.retard { color: var(--rouge); }
+.reprise { display: flex; gap: 10px; background: var(--ambre-pale); color: #5c3504; border-radius: 10px; padding: 10px 12px; font-size: .9rem; }
+.reprise .ico { color: var(--ambre); }
+.reprise div { display: flex; flex-direction: column; }
 
-.onglets { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
-.onglets button { background: #fff; color: var(--texte); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
-.onglets button.actif { background: var(--bleu); color: #fff; }
-.filtres { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
-.filtres input[type=search] { flex: 2; min-width: 200px; margin: 0; }
-.filtres select { flex: 1; min-width: 150px; width: auto; margin: 0; }
+.vide-grand { text-align: center; padding: 40px 20px; color: var(--gris); }
+.vide-grand .ico { width: 40px; height: 40px; color: var(--gris-clair); stroke-width: 1.4; margin-bottom: 8px; }
+.vide-grand p:first-of-type { color: var(--texte); font-weight: 600; margin-bottom: 4px; }
 
-table.eleves { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: .95rem; }
-table.eleves th { text-align: left; color: var(--gris); font-weight: 600; font-size: .85rem; border-bottom: 2px solid #e5e7eb; padding: 6px; }
-table.eleves td { border-bottom: 1px solid #eef0f3; padding: 8px 6px; vertical-align: top; }
-ul.mini { margin: 0; padding-left: 0; list-style: none; }
-ul.mini li { margin-bottom: 6px; }
-ul.mini .examen { margin-top: 2px; font-size: .9rem; }
+/* ---------- Calendrier ---------- */
+.cal-entete-page { align-items: center; }
+.cal-titre { text-transform: capitalize; }
+.cal-nav { display: flex; align-items: center; gap: 4px; }
+.cal-resume { margin-left: auto; }
+.calendrier-carte { padding: 12px; }
+.calendrier { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.cal-entete { text-align: center; font-weight: 600; color: var(--gris); font-size: .8rem; padding: 2px 0 4px; }
+.cal-entete .court { display: none; }
+.cal-jour { aspect-ratio: 1 / .85; min-height: 0; padding: 8px; border-radius: 10px; background: #f7f7f5; display: flex; flex-direction: column;
+  align-items: flex-start; justify-content: space-between; color: var(--texte); position: relative; }
+.cal-jour.fds { background: #efefec; }
+.cal-num { font-size: .85rem; font-weight: 500; color: var(--gris); }
+.cal-nb { font-size: 1.35rem; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; align-self: flex-end; }
+.cal-jour.n1 { background: #dde5fb; } .cal-jour.n2 { background: #a9bcf3; }
+.cal-jour.n3 { background: #5b7ee6; color: #fff; } .cal-jour.n4 { background: #1f3fb0; color: #fff; }
+.cal-jour.n3 .cal-num, .cal-jour.n4 .cal-num { color: rgba(255,255,255,.85); }
+.cal-jour.auj .cal-num { background: var(--encre); color: #fff; border-radius: 999px; padding: 0 7px; }
+.cal-jour.choisi { box-shadow: 0 0 0 2px var(--carte), 0 0 0 4px var(--encre); }
+.legende { display: flex; align-items: center; justify-content: flex-end; gap: 4px; margin-top: 12px; font-size: .78rem; color: var(--gris); }
+.legende i { width: 14px; height: 14px; border-radius: 4px; display: inline-block; }
+.legende span:first-child { margin-right: 4px; } .legende span:last-child { margin-left: 4px; }
+.legende .n1 { background: #dde5fb; } .legende .n2 { background: #a9bcf3; } .legende .n3 { background: #5b7ee6; } .legende .n4 { background: #1f3fb0; }
+#detail-jour { margin-top: 20px; scroll-margin-top: 70px; }
+.detail-titre { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; text-transform: none; }
+.detail-titre::first-letter { text-transform: uppercase; }
+.carte-tete.compacte + .rangees { margin-top: 10px; }
 
-/* Téléphone : les tableaux deviennent des fiches */
-@media (max-width: 640px) {
-  .deux { grid-template-columns: 1fr; }
-  table.eleves thead { display: none; }
-  table.eleves tr { display: block; border-bottom: 2px solid #e5e7eb; padding: 6px 0; }
-  table.eleves td { display: block; border: 0; padding: 3px 0; }
-  table.eleves td[data-titre]::before { content: attr(data-titre) " : "; color: var(--gris); font-size: .85rem; }
+/* Reprises */
+.jour-reprises { margin-top: 20px; }
+.jour-titre { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.jour-titre span:last-child::first-letter { text-transform: uppercase; }
+.jour-titre .bloc-date { width: 44px; }
+.jour-titre .bd-jour { font-size: 1.1rem; padding: 4px 0; }
+.rangees .reprise-ligne { margin-left: 46px; color: var(--texte); }
+.rangees .reprise-ligne .ico { color: var(--ambre); }
+
+/* ---------- Feuilles (dialogues) ---------- */
+dialog { border: 0; padding: 0; border-radius: 16px; width: min(560px, 94vw); max-height: 90dvh; box-shadow: 0 24px 64px rgba(20,33,61,.3); color: var(--texte); overflow: hidden; }
+dialog::backdrop { background: rgba(20,33,61,.45); }
+dialog[open] { display: flex; }
+dialog form { display: flex; flex-direction: column; width: 100%; max-height: 90dvh; }
+.feuille-tete { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 18px 16px 12px 20px; border-bottom: 1px solid var(--ligne); }
+.feuille-tete .details { margin-top: 2px; }
+.feuille-corps { padding: 18px 20px 4px; overflow-y: auto; overscroll-behavior: contain; flex: 1; }
+.feuille-pied { display: flex; gap: 10px; justify-content: flex-end; padding: 12px 20px calc(12px + var(--bas-sur)); border-top: 1px solid var(--ligne); background: #fff; }
+.feuille.petite { width: min(400px, 94vw); }
+.confirmer-texte { font-size: 1.05rem; font-weight: 500; padding-bottom: 14px; }
+
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(24px + var(--bas-sur)); background: var(--encre); color: #fff;
+  padding: 12px 18px; border-radius: 12px; box-shadow: 0 8px 24px rgba(20,33,61,.3); z-index: 50; font-weight: 500; max-width: calc(100vw - 32px); }
+
+/* ---------- Navigation ---------- */
+.nav-bas { grid-area: nav; }
+.nav-bas button { position: relative; }
+.badge { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: var(--ambre-pale); color: var(--ambre);
+  font-size: .72rem; font-weight: 700; font-style: normal; }
+
+/* Ordinateur : colonne de navigation à gauche */
+@media (min-width: 901px) {
+  body.page-enseignant { display: grid; grid-template-columns: 232px minmax(0, 1fr); grid-template-rows: auto 1fr; grid-template-areas: 'barre barre' 'nav main'; min-height: 100vh; }
+  body.page-enseignant .nav-bas { display: flex; flex-direction: column; gap: 4px; padding: 20px 12px; border-right: 1px solid var(--ligne); background: #fafaf8;
+    position: sticky; top: 56px; height: calc(100vh - 56px); }
+  .nav-bas button { justify-content: flex-start; gap: 12px; color: var(--gris); font-weight: 500; padding: 0 14px; }
+  .nav-bas button span { display: flex; align-items: center; gap: 8px; flex: 1; }
+  .nav-bas button .badge { margin-left: auto; }
+  .nav-bas button:hover { background: #efefec; color: var(--texte); }
+  .nav-bas button[aria-current=page] { background: var(--action-pale); color: var(--action-fonce); font-weight: 600; }
+  .nav-bas.nav-action { display: none; }
+  main { padding: 28px 32px 48px; }
 }
+
+/* Téléphone et tablette */
+@media (max-width: 900px) {
+  body.page-enseignant, body.page-eleve { padding-bottom: calc(var(--nav-h) + var(--bas-sur) + 12px); }
+  .nav-bas { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; background: rgba(255,255,255,.96); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    border-top: 1px solid var(--ligne); display: grid; grid-template-columns: repeat(4, 1fr); padding: 0 max(4px, env(safe-area-inset-left)) var(--bas-sur); }
+  .nav-bas button { flex-direction: column; gap: 3px; min-height: var(--nav-h); border-radius: 0; color: var(--gris-clair); font-size: .72rem; font-weight: 600; padding: 6px 0; }
+  .nav-bas button .ico { width: 24px; height: 24px; }
+  .nav-bas button[aria-current=page] { color: var(--action); }
+  .nav-bas button[aria-current=page] .ico { stroke-width: 2.2; }
+  .nav-bas .badge { position: absolute; top: 6px; left: calc(50% + 6px); min-width: 18px; height: 18px; font-size: .68rem; background: var(--ambre); color: #fff; }
+  .nav-bas.nav-action { display: block; padding: 10px 16px calc(10px + var(--bas-sur)); }
+  .nav-bas.nav-action button { flex-direction: row; min-height: 52px; border-radius: 12px; font-size: 1rem; color: #fff; }
+  .nav-bas.nav-action .ico { width: 22px; height: 22px; stroke-width: 2.2; }
+  .large-seulement { display: none !important; }
+  .toast { bottom: calc(var(--nav-h) + var(--bas-sur) + 14px); }
+  .qui-texte { display: none; }
+}
+
+@media (max-width: 600px) {
+  main { padding: 16px 12px 24px; }
+  h1 { font-size: 1.45rem; }
+  .nom-appli .sous { display: none; }
+  .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .page-eleve .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stat { flex-direction: column; align-items: flex-start; gap: 4px; padding: 12px; }
+  .stat-nb { font-size: 1.5rem; }
+  .stat-lib { font-size: .8rem; }
+  .carte { padding: 14px; border-radius: 12px; }
+  ul.carte.rangees { padding: 2px 14px; }
+  .carte-tete { gap: 12px; }
+  .carte-pied .principal { width: 100%; }
+  ul.mini, .rangees .note, .rangees .reprise-ligne { margin-left: 0; }
+  .rangee-tete .pastille { font-size: .72rem; padding: 2px 8px; }
+  .filtres select { flex: 1; min-width: 0; }
+  .collant { top: 56px; margin-left: -12px; margin-right: -12px; padding: 8px 12px; }
+  .recherche { flex-basis: 100%; }
+  .cal-entete-page { flex-wrap: wrap; }
+  .cal-titre { font-size: 1.3rem; }
+  .cal-resume { margin-left: 0; flex-basis: 100%; font-size: .85rem; }
+  .calendrier-carte { padding: 8px; }
+  .calendrier { gap: 4px; }
+  .cal-entete .court { display: inline; } .cal-entete .long { display: none; }
+  .cal-jour { aspect-ratio: 1; padding: 4px; border-radius: 8px; align-items: center; justify-content: center; gap: 0; }
+  .cal-num { font-size: .75rem; }
+  .cal-nb { font-size: 1rem; align-self: center; }
+  .cal-jour.auj .cal-num { padding: 0 5px; }
+  .deux { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .connexion .deux { grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 12px; }
+  .connexion h1 { font-size: 1.6rem; }
+  .rangee-tete .secondaire.petit { padding: 0 10px; font-size: .8rem; }
+
+  /* Les dialogues deviennent des feuilles qui montent du bas */
+  dialog.feuille { width: 100%; max-width: 100%; margin: auto 0 0; border-radius: 18px 18px 0 0; max-height: 94dvh; animation: monter .22s ease-out; }
+  dialog.feuille form { max-height: 94dvh; }
+  dialog.feuille::before { content: ''; position: absolute; top: 6px; left: 50%; transform: translateX(-50%); width: 40px; height: 4px; border-radius: 2px; background: var(--ligne-forte); }
+  .feuille-tete { padding-top: 20px; }
+  .feuille-corps { padding: 16px 16px 4px; }
+  .feuille-pied { padding: 10px 16px calc(10px + var(--bas-sur)); }
+  .feuille-pied button { flex: 1; min-height: 50px; }
+}
+@keyframes monter { from { transform: translateY(40px); opacity: .4; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { dialog.feuille { animation: none; } }
 
 @media print {
-  .barre, .onglets, .filtres, .resume, button { display: none !important; }
-  body { background: #fff; }
+  .barre, .nav-bas, .filtres, .stats, button { display: none !important; }
+  body { background: #fff; display: block !important; padding: 0 !important; }
   .carte { box-shadow: none; border: 1px solid #ccc; break-inside: avoid; }
 }
 
-/* Calendrier */
-.cal-titre { margin: 0 8px; min-width: 180px; text-align: center; text-transform: capitalize; }
-.calendrier { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
-.cal-entete { text-align: center; font-weight: 600; color: var(--gris); font-size: .85rem; padding: 4px 0; }
-.cal-jour { min-height: 74px; padding: 6px; border-radius: 8px; background: #f8fafc; border: 1px solid #e5e7eb;
-  display: flex; flex-direction: column; align-items: flex-start; text-align: left; color: inherit; }
-.cal-jour.fds { background: #f1f5f9; }
-.cal-jour.auj { outline: 3px solid var(--orange); }
-.cal-jour.choisi { outline: 3px solid var(--texte); }
-.cal-num { font-size: .85rem; font-weight: 600; }
-.cal-nb { font-size: 1.4rem; font-weight: 700; line-height: 1.1; margin-top: auto; }
-.cal-lib { font-size: .7rem; }
-@media (max-width: 640px) {
-  .cal-jour { min-height: 52px; padding: 3px; }
-  .cal-lib { display: none; }
-  .cal-nb { font-size: 1.1rem; }
-  .cal-titre { min-width: 0; font-size: 1rem; }
-}
-
-.demo-bandeau { background: #fef3c7; color: #78350f; padding: 8px 16px; font-size: .9rem; display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; }
-.demo-bandeau code { background: #fff; padding: 1px 6px; border-radius: 4px; }
-.demo-acces { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-.demo-bandeau button { background: #fff; border: 1px solid #f59e0b; padding: 6px 10px; font-size: .85rem; min-height: 36px; }
-button[onclick="print()"] { display: none; }
+.demo-bandeau { background: #fff; border-bottom: 1px solid #e4e4e0; padding: 6px 12px; font-size: .85rem; display: flex; align-items: center; gap: 10px; color: #646b7a; }
+.demo-etiquette { background: #14213d; color: #fff; font-weight: 700; font-size: .72rem; padding: 3px 8px; border-radius: 6px; letter-spacing: .02em; flex: none; }
+.demo-texte { flex: 1; }
+.demo-bandeau code { background: #f3f3f1; padding: 1px 5px; border-radius: 4px; color: #1c2333; }
+.demo-acces { display: flex; gap: 6px; flex: none; }
+.demo-bandeau button { min-height: 34px; padding: 0 10px; font-size: .82rem; font-weight: 600; border: 1px solid #d3d3cd; background: #fff; border-radius: 8px; color: #1c2333; }
+.demo-bandeau .demo-reset { border: 0; color: #646b7a; font-weight: 500; }
+.page-enseignant .demo-bandeau { grid-column: 1 / -1; }
+@media (max-width: 700px) { .demo-texte { display: none; } .demo-acces { flex: 1; justify-content: flex-end; } }
+@media (min-width: 901px) { body.page-enseignant { grid-template-rows: auto auto 1fr; grid-template-areas: 'demo demo' 'barre barre' 'nav main'; } .demo-bandeau { grid-area: demo; } }
 </style>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏆</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%2314213d'/><rect x='8' y='9' width='16' height='15' rx='2' fill='none' stroke='white' stroke-width='2'/><path d='M8 14h16M12 7v4M20 7v4' stroke='white' stroke-width='2' stroke-linecap='round'/></svg>">
 </head>
 <body>
 <div class="demo-bandeau">
-  <strong>Démonstration</strong> — données fictives, gardées seulement dans votre navigateur.
-  Code élève : <code>sport</code> · code enseignant : <code>prof</code>.
-  <span class="demo-acces">Essayer :
-    <button data-demo="eleve">Léa (élève, NIP 1234)</button>
-    <button data-demo="enseignant">M. Gagnon (enseignant)</button>
-    <button data-demo="reset">Remettre les données d'origine</button></span>
+  <span class="demo-etiquette">Démo</span>
+  <span class="demo-texte">Données fictives, gardées dans ce navigateur. Codes : élève <code>sport</code>, enseignant <code>prof</code>.</span>
+  <span class="demo-acces">
+    <button data-demo="eleve">Vue élève</button>
+    <button data-demo="enseignant">Vue enseignant</button>
+    <button data-demo="reset" class="demo-reset">Réinitialiser</button>
+  </span>
 </div>
   <header class="barre">
-    <h1>🏆 Absences Sport-études</h1>
-    <div id="qui" hidden>
-      <span id="qui-nom"></span>
-      <button id="deconnexion" class="lien">Se déconnecter</button>
+    <div class="marque">
+      <span class="logo" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="m9 15 2 2 4-4"/></svg></span>
+      <span class="nom-appli">Absences <span class="sous">Sport-études</span></span>
+    </div>
+    <button id="qui" class="qui" hidden aria-haspopup="true">
+      <span class="avatar" id="qui-initiales"></span>
+      <span class="qui-texte"><span id="qui-nom"></span><span id="qui-detail"></span></span>
+    </button>
+    <div id="menu-compte" class="menu" hidden>
+      <p class="menu-titre" id="menu-nom"></p>
+      <button id="deconnexion" class="menu-item">Se déconnecter</button>
     </div>
   </header>
 
-  <main id="app"><p class="centre">Chargement…</p></main>
+  <main id="app"><p class="chargement">Chargement…</p></main>
+  <nav id="nav-bas" class="nav-bas" hidden></nav>
 
   <!-- Écran de connexion -->
   <template id="tpl-connexion">
-    <section class="carte etroite">
-      <h2>Bienvenue</h2>
-      <div class="choix-role">
-        <button data-role="eleve" class="gros actif">🎒 Je suis élève</button>
-        <button data-role="enseignant" class="gros">📚 Je suis enseignant·e</button>
+    <section class="connexion">
+      <h1>Absences pour tournois</h1>
+      <p class="intro">Les élèves déclarent leurs tournois. Les enseignants y joignent le travail à faire et les reprises d'examen.</p>
+      <div class="segment" role="tablist">
+        <button type="button" data-role="eleve" role="tab">Élève</button>
+        <button type="button" data-role="enseignant" role="tab">Enseignant</button>
       </div>
-      <form id="form-connexion">
-        <label>Prénom et nom <input name="nom" autocomplete="name" required placeholder="ex. Léa Tremblay"></label>
-        <label class="eleve">Groupe <input name="groupe" placeholder="ex. 3-02" autocomplete="off"></label>
-        <label class="eleve">NIP (4 chiffres)
-          <input name="nip" inputmode="numeric" pattern="\d{4}" maxlength="4" autocomplete="current-password">
-          <small>Première fois ? Choisis ton NIP maintenant et retiens-le.</small>
-        </label>
-        <label class="enseignant" hidden>Matière <input name="matiere" placeholder="ex. Mathématiques"></label>
-        <label>Code de l'école <input name="code" required autocomplete="off">
-          <small class="eleve">Donné par ton enseignant.</small></label>
-        <button class="principal" type="submit">Entrer</button>
+      <form id="form-connexion" novalidate>
+        <label>Prénom et nom <input name="nom" autocomplete="name" required placeholder="Léa Tremblay"></label>
+        <div class="deux eleve">
+          <label>Groupe <input name="groupe" placeholder="3-02" autocomplete="off"></label>
+          <label>NIP <input name="nip" type="password" inputmode="numeric" pattern="\d{4}" maxlength="4" placeholder="4 chiffres" autocomplete="current-password"></label>
+        </div>
+        <p class="eleve aide">Première connexion ? Choisis ton NIP maintenant et garde-le en tête.</p>
+        <label class="enseignant" hidden>Matière <input name="matiere" placeholder="Mathématiques"></label>
+        <label>Code de l'école <input name="code" required autocomplete="off" autocapitalize="off">
+          <small class="eleve">Ton enseignant te le donne.</small></label>
         <p class="erreur" hidden></p>
+        <button class="principal plein" type="submit">Se connecter</button>
       </form>
     </section>
   </template>
 
-  <!-- Boîte : déclarer une absence (élève) -->
-  <dialog id="dlg-absence">
-    <form id="form-absence" method="dialog">
-      <h2>Déclarer une absence</h2>
-      <label>Tournoi
-        <select name="tournoi_id" required></select>
-      </label>
-      <fieldset id="nouveau-tournoi">
-        <label>Nom du tournoi <input name="nom" placeholder="ex. Championnat provincial de volleyball"></label>
-        <div class="deux">
-          <label>Sport <input name="sport" placeholder="ex. Volleyball"></label>
-          <label>Ville <input name="lieu" placeholder="ex. Sherbrooke"></label>
-        </div>
-        <div class="deux">
-          <label>Premier jour d'absence <input type="date" name="debut"></label>
-          <label>Dernier jour d'absence <input type="date" name="fin"></label>
-        </div>
-      </fieldset>
-      <p id="avert-preavis" class="avert" hidden></p>
-      <label>Message pour les enseignants (facultatif)
-        <textarea name="note" rows="2" placeholder="ex. Je pars jeudi midi, je serai là le matin."></textarea></label>
-      <p class="erreur" hidden></p>
-      <div class="boutons">
+  <!-- Feuille : déclarer une absence (élève) -->
+  <dialog id="dlg-absence" class="feuille">
+    <form id="form-absence" novalidate>
+      <header class="feuille-tete">
+        <h2>Déclarer une absence</h2>
+        <button type="button" class="icone-btn" data-fermer aria-label="Fermer"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      </header>
+      <div class="feuille-corps">
+        <label>Tournoi <select name="tournoi_id" required></select></label>
+        <fieldset id="nouveau-tournoi" class="groupe-champs">
+          <label>Nom du tournoi <input name="nom" placeholder="Championnat provincial de volleyball"></label>
+          <div class="deux">
+            <label>Sport <input name="sport" placeholder="Volleyball"></label>
+            <label>Ville <input name="lieu" placeholder="Sherbrooke"></label>
+          </div>
+          <div class="deux">
+            <label>Premier jour <input type="date" name="debut"></label>
+            <label>Dernier jour <input type="date" name="fin"></label>
+          </div>
+        </fieldset>
+        <p id="avert-preavis" class="avert" hidden></p>
+        <label>Message aux enseignants <span class="facultatif">facultatif</span>
+          <textarea name="note" rows="2" placeholder="Je pars jeudi midi, je serai là le matin."></textarea></label>
+        <p class="erreur" hidden></p>
+      </div>
+      <footer class="feuille-pied">
         <button type="button" class="secondaire" data-fermer>Annuler</button>
         <button type="submit" class="principal">Déclarer</button>
-      </div>
+      </footer>
     </form>
   </dialog>
 
-  <!-- Boîte : demander du travail / une reprise d'examen (enseignant) -->
-  <dialog id="dlg-tache">
-    <form id="form-tache" method="dialog">
-      <h2>Travail pour <span id="tache-tournoi"></span></h2>
-      <fieldset>
-        <legend>Élèves concernés</legend>
-        <div id="tache-eleves" class="cases"></div>
-      </fieldset>
-      <label>Travail à faire
-        <textarea name="travail" rows="3" placeholder="ex. Lire le chapitre 4 et faire les exercices p. 112 à 115."></textarea></label>
-      <label>À remettre le <input type="date" name="remise"></label>
-      <label class="case"><input type="checkbox" name="examen"> Il y a un examen à reprendre</label>
-      <fieldset id="bloc-examen" hidden>
-        <label>Examen <input name="examen_nom" placeholder="ex. Examen de l'étape 2 — fonctions"></label>
-        <div class="deux">
-          <label>Date de reprise <input type="date" name="reprise_date"></label>
-          <label>Heure et local <input name="reprise_info" placeholder="ex. 8 h 15, local B-204"></label>
+  <!-- Feuille : demander du travail / une reprise d'examen (enseignant) -->
+  <dialog id="dlg-tache" class="feuille">
+    <form id="form-tache" novalidate>
+      <header class="feuille-tete">
+        <div>
+          <h2>Travail à faire</h2>
+          <p class="details" id="tache-tournoi"></p>
         </div>
-      </fieldset>
-      <p class="erreur" hidden></p>
-      <div class="boutons">
-        <button type="button" class="secondaire" data-fermer>Annuler</button>
-        <button type="submit" class="principal">Envoyer aux élèves</button>
+        <button type="button" class="icone-btn" data-fermer aria-label="Fermer"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      </header>
+      <div class="feuille-corps">
+        <fieldset class="groupe-champs">
+          <legend>Élèves <button type="button" class="lien" id="tache-tous">Tout décocher</button></legend>
+          <div id="tache-eleves" class="cases"></div>
+        </fieldset>
+        <label>Travail <textarea name="travail" rows="3" placeholder="Lire le chapitre 4 et faire les exercices p. 112 à 115."></textarea></label>
+        <label>À remettre le <input type="date" name="remise"></label>
+        <label class="interrupteur"><input type="checkbox" name="examen" role="switch"> <span>Un examen est à reprendre</span></label>
+        <fieldset id="bloc-examen" class="groupe-champs" hidden>
+          <label>Examen <input name="examen_nom" placeholder="Examen de l'étape 2"></label>
+          <div class="deux">
+            <label>Date de reprise <input type="date" name="reprise_date"></label>
+            <label>Heure et local <input name="reprise_info" placeholder="8 h 15, B-204"></label>
+          </div>
+        </fieldset>
+        <p class="erreur" hidden></p>
       </div>
+      <footer class="feuille-pied">
+        <button type="button" class="secondaire" data-fermer>Annuler</button>
+        <button type="submit" class="principal">Envoyer</button>
+      </footer>
     </form>
   </dialog>
+
+  <!-- Confirmation -->
+  <dialog id="dlg-confirmer" class="feuille petite">
+    <form method="dialog">
+      <div class="feuille-corps"><p id="confirmer-texte" class="confirmer-texte"></p></div>
+      <footer class="feuille-pied">
+        <button value="non" class="secondaire">Annuler</button>
+        <button value="oui" class="danger-plein" id="confirmer-oui">Confirmer</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" hidden></div>
 
   <script>
 // Démonstration : remplace le serveur par des données fictives gardées dans le navigateur (localStorage).
@@ -411,8 +663,6 @@ button[onclick="print()"] { display: none; }
     return new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
   };
 
-  // Le cadre des artefacts refuse confirm() : la démo répond « oui » à chaque confirmation.
-  window.confirm = () => true;
 })();
 
 </script>
@@ -423,7 +673,28 @@ button[onclick="print()"] { display: none; }
 const PREAVIS_MIN = 7; // jours d'avance demandés aux élèves
 const $ = (sel, el = document) => el.querySelector(sel);
 const app = $('#app');
+const navBas = $('#nav-bas');
 let moi = null;
+
+// Icônes (traits, 24 × 24)
+const ICONES = {
+  liste: '<path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/>',
+  calendrier: '<rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
+  examen: '<path d="M9 4h6a1 1 0 0 1 1 1v1H8V5a1 1 0 0 1 1-1Z"/><path d="M8 5.5H6.5A1.5 1.5 0 0 0 5 7v12.5A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V7a1.5 1.5 0 0 0-1.5-1.5H16"/><path d="m9 14 2 2 4-4"/>',
+  eleves: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18.5 14.8c1.6.8 2.6 2.5 3 5.2"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  gauche: '<path d="m15 5-7 7 7 7"/>',
+  droite: '<path d="m9 5 7 7-7 7"/>',
+  fermer: '<path d="M6 6l12 12M18 6 6 18"/>',
+  coche: '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+  lieu: '<path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11Z"/><circle cx="12" cy="10" r="2.3"/>',
+  horloge: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+  recherche: '<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/>',
+  imprimer: '<path d="M7 9V3.5h10V9M7 17H4.5V10a1 1 0 0 1 1-1h13a1 1 0 0 1 1 1v7H17"/><rect x="7" y="14" width="10" height="6.5" rx="1"/>',
+  corbeille: '<path d="M4.5 7h15M10 4h4M6.5 7l1 13h9l1-13"/>',
+  cle: '<circle cx="8" cy="15" r="4"/><path d="m11 12 8.5-8.5M16 7l2.5 2.5"/>',
+};
+const ico = (nom, cls = '') => `<svg class="ico ${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONES[nom]}</svg>`;
 
 // ---------- Outils ----------
 
@@ -450,28 +721,44 @@ function joursAvant(iso) {
   return Math.round((new Date(iso + 'T12:00') - new Date(auj() + 'T12:00')) / 864e5);
 }
 
-function dateFr(iso, avecJour = true) {
+function dateFr(iso, options = { weekday: 'short', day: 'numeric', month: 'long' }) {
   if (!iso) return '';
-  return new Date(iso + 'T12:00').toLocaleDateString('fr-CA', { weekday: avecJour ? 'short' : undefined, day: 'numeric', month: 'long' });
+  return new Date(iso + 'T12:00').toLocaleDateString('fr-CA', options).replace('.', '');
 }
+const dateCourte = (iso) => dateFr(iso, { day: 'numeric', month: 'short' });
 
 function periode(debut, fin) {
-  return debut === fin ? dateFr(debut) : `du ${dateFr(debut)} au ${dateFr(fin)}`;
+  if (debut === fin) return dateFr(debut);
+  return `${dateCourte(debut)} au ${dateCourte(fin)}`;
 }
 
-// « Dans 3 jours », « En cours », « Terminé »
+// Petit bloc « 27 NOV. » en tête des cartes de tournoi
+function blocDate(debut, fin) {
+  const d = new Date(debut + 'T12:00');
+  const nb = joursAvant(fin) - joursAvant(debut) + 1;
+  return `<div class="bloc-date" aria-hidden="true">
+    <span class="bd-mois">${d.toLocaleDateString('fr-CA', { month: 'short' }).replace('.', '')}</span>
+    <span class="bd-jour">${d.getDate()}</span>
+    ${nb > 1 ? `<span class="bd-duree">${nb} j</span>` : ''}
+  </div>`;
+}
+
 function etat(debut, fin) {
   const d = joursAvant(debut), f = joursAvant(fin);
   if (f < 0) return '<span class="pastille grise">Terminé</span>';
   if (d <= 0) return '<span class="pastille rouge">En cours</span>';
   if (d === 1) return '<span class="pastille orange">Demain</span>';
-  return `<span class="pastille ${d <= PREAVIS_MIN ? 'orange' : 'bleue'}">Dans ${d} jours</span>`;
+  return `<span class="pastille ${d <= PREAVIS_MIN ? 'orange' : 'neutre'}">Dans ${d} jours</span>`;
 }
 
 function preavisPastille(jours) {
-  if (jours < 0) return '<span class="pastille rouge" title="Déclaré après le départ">Averti en retard</span>';
+  if (jours < 0) return '<span class="pastille rouge" title="Déclaré après le départ">En retard</span>';
   const cls = jours < 3 ? 'rouge' : jours < PREAVIS_MIN ? 'orange' : 'verte';
-  return `<span class="pastille ${cls}" title="Délai entre la déclaration et le départ">Averti ${jours} j avant</span>`;
+  return `<span class="pastille ${cls}" title="Délai entre la déclaration et le départ">${jours} j d'avance</span>`;
+}
+
+function meta(...morceaux) {
+  return morceaux.filter(Boolean).map((m) => `<span>${m}</span>`).join('');
 }
 
 function montrerErreur(form, msg) {
@@ -480,13 +767,35 @@ function montrerErreur(form, msg) {
   p.hidden = !msg;
 }
 
+let toastMinuterie;
+function toast(msg) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.hidden = false;
+  clearTimeout(toastMinuterie);
+  toastMinuterie = setTimeout(() => { t.hidden = true; }, 2600);
+}
+
+// Confirmation dans la page (les boîtes du navigateur sont laides et bloquées dans certains cadres)
+function demander(texte, bouton = 'Confirmer') {
+  const dlg = $('#dlg-confirmer');
+  $('#confirmer-texte').textContent = texte;
+  $('#confirmer-oui').textContent = bouton;
+  dlg.returnValue = '';
+  dlg.showModal();
+  return new Promise((ok) => dlg.addEventListener('close', () => ok(dlg.returnValue === 'oui'), { once: true }));
+}
+
 function ouvrir(dlg) {
   montrerErreur(dlg, '');
   dlg.showModal();
+  $('.feuille-corps', dlg).scrollTop = 0;
 }
 
 document.querySelectorAll('dialog').forEach((d) => {
-  d.addEventListener('click', (e) => { if (e.target.matches('[data-fermer]')) d.close(); });
+  d.addEventListener('click', (e) => {
+    if (e.target.closest('[data-fermer]') || e.target === d) d.close(); // clic sur le fond : fermer
+  });
 });
 
 function deconnecter() {
@@ -495,21 +804,24 @@ function deconnecter() {
   moi = null;
   demarrer();
 }
-$('#deconnexion').onclick = deconnecter;
+$('#deconnexion').onclick = () => { $('#menu-compte').hidden = true; deconnecter(); };
+$('#qui').onclick = (e) => { e.stopPropagation(); $('#menu-compte').hidden = !$('#menu-compte').hidden; };
+document.addEventListener('click', (e) => { if (!e.target.closest('#menu-compte')) $('#menu-compte').hidden = true; });
 
 // ---------- Connexion ----------
 
 function ecranConnexion() {
   $('#qui').hidden = true;
+  navBas.hidden = true;
+  document.body.className = 'page-connexion';
   app.replaceChildren($('#tpl-connexion').content.cloneNode(true));
   const form = $('#form-connexion');
   let role = localStorage.getItem('role') || 'eleve';
   const choisir = (r) => {
     role = r;
-    app.querySelectorAll('[data-role]').forEach((b) => b.classList.toggle('actif', b.dataset.role === r));
+    app.querySelectorAll('[data-role]').forEach((b) => b.setAttribute('aria-selected', b.dataset.role === r));
     form.querySelectorAll('.eleve').forEach((el) => { el.hidden = r !== 'eleve'; });
     form.querySelectorAll('.enseignant').forEach((el) => { el.hidden = r !== 'enseignant'; });
-    form.nip.required = r === 'eleve';
   };
   app.querySelectorAll('[data-role]').forEach((b) => { b.onclick = () => choisir(b.dataset.role); });
   choisir(role);
@@ -519,6 +831,8 @@ function ecranConnexion() {
     e.preventDefault();
     montrerErreur(form, '');
     const f = Object.fromEntries(new FormData(form));
+    const bouton = $('button[type=submit]', form);
+    bouton.disabled = true;
     try {
       const r = await api('login', { method: 'POST', body: { role, ...f } });
       localStorage.setItem('jeton', r.token);
@@ -527,58 +841,75 @@ function ecranConnexion() {
       if (f.groupe) localStorage.setItem('groupe', f.groupe);
       moi = r.moi;
       afficher();
-    } catch (err) { montrerErreur(form, err.message); }
+    } catch (err) { montrerErreur(form, err.message); } finally { bouton.disabled = false; }
   };
 }
 
 // ---------- Élève ----------
 
 async function ecranEleve() {
+  document.body.className = 'page-eleve';
+  navBas.hidden = false;
+  navBas.innerHTML = `<button class="principal plein action-bas" id="btn-declarer-bas">${ico('plus')} Déclarer une absence</button>`;
+  navBas.classList.add('nav-action');
+  $('#btn-declarer-bas').onclick = ouvrirDeclaration;
+
   const { absences } = await api('mes-absences');
-  const aFaire = absences.flatMap((a) => a.taches).filter((t) => !t.fait_at);
-  const reprises = absences.flatMap((a) => a.taches)
-    .filter((t) => t.examen && t.reprise_date && joursAvant(t.reprise_date) >= 0)
+  const taches = absences.flatMap((a) => a.taches);
+  const aFaire = taches.filter((t) => !t.fait_at);
+  const reprises = taches.filter((t) => t.examen && t.reprise_date && joursAvant(t.reprise_date) >= 0)
     .sort((a, b) => a.reprise_date.localeCompare(b.reprise_date));
+  const prochaine = reprises[0];
 
   app.innerHTML = `
-    <section class="entete-eleve">
-      <button id="btn-declarer" class="principal gros">＋ Déclarer une absence pour un tournoi</button>
-      <p class="aide">Déclare ton absence <strong>au moins ${PREAVIS_MIN} jours avant</strong> ton départ :
-        tes enseignants pourront préparer ton travail.</p>
+    <div class="entete-page">
+      <div>
+        <h1>Mes absences</h1>
+        <p class="aide">Déclare chaque tournoi au moins ${PREAVIS_MIN} jours avant ton départ.</p>
+      </div>
+      <button class="principal large-seulement" id="btn-declarer">${ico('plus')} Déclarer une absence</button>
+    </div>
+    <section class="stats">
+      <div class="stat"><span class="stat-nb">${aFaire.length}</span><span class="stat-lib">${aFaire.length > 1 ? 'travaux' : 'travail'} à faire</span></div>
+      <div class="stat"><span class="stat-nb">${reprises.length}</span><span class="stat-lib">reprise${reprises.length > 1 ? 's' : ''} d'examen
+        ${prochaine ? `<small>Prochaine : ${dateFr(prochaine.reprise_date)}, ${esc(prochaine.matiere || prochaine.enseignant)}</small>` : ''}</span></div>
     </section>
-    <section class="resume">
-      <div class="chiffre"><strong>${aFaire.length}</strong> travail${aFaire.length > 1 ? 'x' : ''} à faire</div>
-      <div class="chiffre"><strong>${reprises.length}</strong> reprise${reprises.length > 1 ? 's' : ''} d'examen à venir
-        ${reprises[0] ? `<small>Prochaine : ${dateFr(reprises[0].reprise_date)} (${esc(reprises[0].matiere || reprises[0].enseignant)})</small>` : ''}</div>
-    </section>
-    <h2>Mes absences</h2>
-    ${absences.length ? '' : '<p class="vide">Aucune absence déclarée pour l\'instant.</p>'}
-    <div id="liste"></div>`;
+    ${absences.length ? '' : `<div class="vide-grand">${ico('calendrier')}<p>Aucune absence déclarée.</p><p class="aide">Ton prochain tournoi approche ? Déclare-le dès que tu connais les dates.</p></div>`}
+    <div id="liste" class="liste-cartes"></div>`;
 
   const liste = $('#liste');
   for (const a of absences) {
     const carte = document.createElement('article');
-    carte.className = 'carte' + (joursAvant(a.fin) < 0 && a.taches.every((t) => t.fait_at) ? ' passee' : '');
+    const finis = a.taches.length && a.taches.every((t) => t.fait_at);
+    carte.className = 'carte' + (joursAvant(a.fin) < 0 && (finis || !a.taches.length) ? ' passee' : '');
     carte.innerHTML = `
-      <div class="titre-carte">
-        <div>
+      <div class="carte-tete">
+        ${blocDate(a.debut, a.fin)}
+        <div class="carte-titre">
           <h3>${esc(a.tournoi)}</h3>
-          <p class="details">${periode(a.debut, a.fin)}${a.sport ? ' · ' + esc(a.sport) : ''}${a.lieu ? ' · ' + esc(a.lieu) : ''}</p>
+          <p class="meta">${meta(periode(a.debut, a.fin), esc(a.sport), esc(a.lieu))}</p>
+          <div class="etat">${etat(a.debut, a.fin)}</div>
         </div>
-        ${etat(a.debut, a.fin)}
       </div>
-      ${a.note ? `<p class="note">« ${esc(a.note)} »</p>` : ''}
-      <h4>Travail demandé par mes enseignants</h4>
-      ${a.taches.length ? '' : '<p class="vide">Rien pour l\'instant. Reviens voir avant ton départ.</p>'}
-      <ul class="taches">${a.taches.map(tacheEleve).join('')}</ul>
-      ${a.taches.length ? '' : '<button class="lien danger" data-annuler>Annuler cette absence</button>'}`;
-    carte.querySelectorAll('[data-fait]').forEach((cb) => {
-      cb.onchange = async () => { await api(`taches/${cb.dataset.fait}/fait`, { method: 'POST' }); ecranEleve(); };
+      ${a.note ? `<p class="note">${esc(a.note)}</p>` : ''}
+      <div class="carte-section">
+        <h4>Travail demandé <span class="compte">${a.taches.filter((t) => t.fait_at).length}/${a.taches.length}</span></h4>
+        ${a.taches.length ? `<ul class="taches">${a.taches.map(tacheEleve).join('')}</ul>`
+          : '<p class="vide">Rien pour l\'instant. Tes enseignants ajouteront le travail ici.</p>'}
+      </div>
+      ${a.taches.length ? '' : `<div class="carte-pied"><button class="lien danger" data-annuler>Annuler cette absence</button></div>`}`;
+    carte.querySelectorAll('[data-fait]').forEach((b) => {
+      b.onclick = async () => {
+        b.closest('li').classList.toggle('fait');
+        await api(`taches/${b.dataset.fait}/fait`, { method: 'POST' });
+        ecranEleve();
+      };
     });
     const annuler = $('[data-annuler]', carte);
     if (annuler) annuler.onclick = async () => {
-      if (!confirm(`Annuler ton absence pour « ${a.tournoi} » ?`)) return;
+      if (!await demander(`Annuler ton absence pour « ${a.tournoi} » ?`, 'Annuler l\'absence')) return;
       await api('absences/' + a.id, { method: 'DELETE' });
+      toast('Absence annulée');
       ecranEleve();
     };
     liste.append(carte);
@@ -587,14 +918,17 @@ async function ecranEleve() {
 }
 
 function tacheEleve(t) {
+  const retard = !t.fait_at && t.remise && joursAvant(t.remise) < 0;
   return `<li class="${t.fait_at ? 'fait' : ''}">
-    <label class="case-fait"><input type="checkbox" data-fait="${t.id}" ${t.fait_at ? 'checked' : ''}> Terminé</label>
-    <div>
-      <strong>${esc(t.matiere || 'Cours')}</strong> <span class="details">— ${esc(t.enseignant)}</span>
+    <button class="coche" data-fait="${t.id}" aria-pressed="${!!t.fait_at}" aria-label="${t.fait_at ? 'Marquer comme non terminé' : 'Marquer comme terminé'}">${ico('coche')}</button>
+    <div class="tache-corps">
+      <p class="tache-tete"><strong>${esc(t.matiere || 'Cours')}</strong><span class="details">${esc(t.enseignant)}</span></p>
       ${t.travail ? `<p class="travail">${esc(t.travail)}</p>` : ''}
-      ${t.remise ? `<p>📅 À remettre le <strong>${dateFr(t.remise)}</strong></p>` : ''}
-      ${t.examen ? `<p class="examen">📝 Examen à reprendre${t.examen_nom ? ' : ' + esc(t.examen_nom) : ''}<br>
-        ${t.reprise_date ? `<strong>${dateFr(t.reprise_date)}</strong>` : 'Date à confirmer avec ton enseignant'}${t.reprise_info ? ' · ' + esc(t.reprise_info) : ''}</p>` : ''}
+      ${t.remise ? `<p class="echeance ${retard ? 'retard' : ''}">${ico('horloge')} À remettre ${retard ? 'depuis le' : 'le'} <strong>${dateFr(t.remise)}</strong></p>` : ''}
+      ${t.examen ? `<div class="reprise">${ico('examen')}<div>
+        <strong>Reprise d'examen${t.examen_nom ? ' · ' + esc(t.examen_nom) : ''}</strong>
+        <span>${t.reprise_date ? dateFr(t.reprise_date) : 'Date à confirmer avec ton enseignant'}${t.reprise_info ? ' · ' + esc(t.reprise_info) : ''}</span>
+      </div></div>` : ''}
     </div>
   </li>`;
 }
@@ -604,21 +938,20 @@ async function ouvrirDeclaration() {
   const form = $('#form-absence');
   form.reset();
   const { tournois } = await api('tournois');
-  form.tournoi_id.innerHTML = '<option value="">— Choisis ton tournoi —</option>'
-    + tournois.map((t) => `<option value="${t.id}" data-debut="${t.debut}">${esc(t.nom)} (${periode(t.debut, t.fin)}${t.lieu ? ', ' + esc(t.lieu) : ''})</option>`).join('')
-    + '<option value="nouveau">➕ Mon tournoi n\'est pas dans la liste</option>';
+  form.tournoi_id.innerHTML = '<option value="">Choisis ton tournoi</option>'
+    + tournois.map((t) => `<option value="${t.id}" data-debut="${t.debut}">${esc(t.nom)} · ${periode(t.debut, t.fin)}${t.lieu ? ', ' + esc(t.lieu) : ''}</option>`).join('')
+    + '<option value="nouveau">Mon tournoi n\'est pas dans la liste</option>';
   if (!tournois.length) form.tournoi_id.value = 'nouveau';
   const maj = () => {
     const nouveau = form.tournoi_id.value === 'nouveau';
     $('#nouveau-tournoi').hidden = !nouveau;
-    ['nom', 'debut'].forEach((n) => { form[n].required = nouveau; });
     const debut = nouveau ? form.debut.value : form.tournoi_id.selectedOptions[0]?.dataset.debut;
     const avert = $('#avert-preavis');
     const j = debut ? joursAvant(debut) : null;
     avert.hidden = j === null || j >= PREAVIS_MIN;
     if (!avert.hidden) avert.textContent = j < 0
-      ? 'Ce tournoi a déjà commencé. Déclare-le quand même, puis parle à tes enseignants dès ton retour.'
-      : `Attention : ton départ est dans ${j} jour${j > 1 ? 's' : ''}. Préviens aussi tes enseignants en personne.`;
+      ? 'Ce tournoi a déjà commencé. Déclare-le quand même et parle à tes enseignants dès ton retour.'
+      : `Ton départ est dans ${j} jour${j > 1 ? 's' : ''} : préviens aussi tes enseignants en personne.`;
     if (nouveau && form.debut.value && (!form.fin.value || form.fin.value < form.debut.value)) form.fin.value = form.debut.value;
   };
   form.tournoi_id.onchange = maj;
@@ -627,12 +960,14 @@ async function ouvrirDeclaration() {
   form.onsubmit = async (e) => {
     e.preventDefault();
     const f = Object.fromEntries(new FormData(form));
+    if (!f.tournoi_id) return montrerErreur(form, 'Choisis ton tournoi dans la liste.');
     const corps = { note: f.note };
     if (f.tournoi_id === 'nouveau') corps.nouveau = { nom: f.nom, sport: f.sport, lieu: f.lieu, debut: f.debut, fin: f.fin };
     else corps.tournoi_id = Number(f.tournoi_id);
     try {
       await api('absences', { method: 'POST', body: corps });
       dlg.close();
+      toast('Absence déclarée. Tes enseignants la voient.');
       ecranEleve();
     } catch (err) { montrerErreur(form, err.message); }
   };
@@ -641,30 +976,33 @@ async function ouvrirDeclaration() {
 
 // ---------- Enseignant ----------
 
+const ONGLETS = [
+  ['tournois', 'liste', 'Tournois'],
+  ['calendrier', 'calendrier', 'Calendrier'],
+  ['reprises', 'examen', 'Reprises'],
+  ['eleves', 'eleves', 'Élèves'],
+];
 const vue = { onglet: 'tournois', groupe: '', recherche: '', passes: false, mois: auj().slice(0, 7), jour: null };
 
 async function ecranEnseignant() {
-  const [tab, liste] = await Promise.all([api('tableau' + (vue.passes || vue.onglet === 'calendrier' ? '?passes=1' : '')), vue.onglet === 'eleves' ? api('eleves') : null]);
+  document.body.className = 'page-enseignant';
+  const [tab, liste] = await Promise.all([
+    api('tableau' + (vue.passes || vue.onglet === 'calendrier' ? '?passes=1' : '')),
+    vue.onglet === 'eleves' ? api('eleves') : null,
+  ]);
   const groupes = [...new Set(tab.tournois.flatMap((t) => t.eleves.map((e) => e.groupe)).filter(Boolean))].sort();
-  const enCours = tab.tournois.filter((t) => joursAvant(t.debut) <= 0 && joursAvant(t.fin) >= 0);
-  const nbAbsentsAuj = new Set(enCours.flatMap((t) => t.eleves.map((e) => e.eleve_id))).size;
 
-  app.innerHTML = `
-    <nav class="onglets">
-      <button data-onglet="tournois">🏆 Tournois et absents</button>
-      <button data-onglet="calendrier">📅 Calendrier</button>
-      <button data-onglet="reprises">📝 Reprises d'examen (${tab.reprises.length})</button>
-      <button data-onglet="eleves">👥 Élèves</button>
-    </nav>
-    <section class="resume">
-      <div class="chiffre"><strong>${nbAbsentsAuj}</strong> élève${nbAbsentsAuj > 1 ? 's' : ''} absent${nbAbsentsAuj > 1 ? 's' : ''} aujourd'hui</div>
-      <div class="chiffre"><strong>${tab.tournois.filter((t) => joursAvant(t.debut) > 0 && joursAvant(t.debut) <= 14).length}</strong> tournoi(s) dans les 14 prochains jours</div>
-    </section>
-    <div id="contenu"></div>`;
-  app.querySelectorAll('[data-onglet]').forEach((b) => {
-    b.classList.toggle('actif', b.dataset.onglet === vue.onglet);
-    b.onclick = () => { vue.onglet = b.dataset.onglet; ecranEnseignant(); };
+  navBas.classList.remove('nav-action');
+  navBas.hidden = false;
+  navBas.innerHTML = ONGLETS.map(([id, icone, lib]) => `
+    <button data-onglet="${id}" ${id === vue.onglet ? 'aria-current="page"' : ''}>
+      ${ico(icone)}<span>${lib}${id === 'reprises' && tab.reprises.length ? ` <b class="badge">${tab.reprises.length}</b>` : ''}</span>
+    </button>`).join('');
+  navBas.querySelectorAll('[data-onglet]').forEach((b) => {
+    b.onclick = () => { vue.onglet = b.dataset.onglet; window.scrollTo(0, 0); ecranEnseignant(); };
   });
+
+  app.innerHTML = '<div id="contenu"></div>';
   const contenu = $('#contenu');
   if (vue.onglet === 'tournois') ongletTournois(contenu, tab.tournois, groupes);
   else if (vue.onglet === 'calendrier') ongletCalendrier(contenu, tab.tournois, groupes);
@@ -672,26 +1010,47 @@ async function ecranEnseignant() {
   else ongletEleves(contenu, liste.eleves);
 }
 
+function filtreGroupe(groupes) {
+  return `<select id="filtre-groupe" aria-label="Groupe"><option value="">Tous les groupes</option>
+    ${groupes.map((g) => `<option ${g === vue.groupe ? 'selected' : ''}>${esc(g)}</option>`).join('')}</select>`;
+}
+
 function ongletTournois(contenu, tournois, groupes) {
+  const enCours = tournois.filter((t) => joursAvant(t.debut) <= 0 && joursAvant(t.fin) >= 0);
+  const absentsAuj = new Set(enCours.flatMap((t) => t.eleves.map((e) => e.eleve_id))).size;
+  const prochains = tournois.filter((t) => joursAvant(t.debut) > 0 && joursAvant(t.debut) <= 14);
+  const sansTravail = tournois.filter((t) => joursAvant(t.fin) >= 0)
+    .flatMap((t) => t.eleves).filter((e) => !e.taches.some((ta) => ta.enseignant_id === moi.id)).length;
+
   contenu.innerHTML = `
-    <div class="filtres">
-      <input type="search" id="recherche" placeholder="Chercher un élève ou un tournoi" value="${esc(vue.recherche)}">
-      <select id="filtre-groupe"><option value="">Tous les groupes</option>
-        ${groupes.map((g) => `<option ${g === vue.groupe ? 'selected' : ''}>${esc(g)}</option>`).join('')}</select>
-      <label class="case"><input type="checkbox" id="passes" ${vue.passes ? 'checked' : ''}> Voir les tournois passés</label>
-      <button class="secondaire" onclick="print()">🖨️ Imprimer</button>
+    <div class="entete-page">
+      <h1>Tournois et absents</h1>
+      <button class="secondaire large-seulement" id="imprimer">${ico('imprimer')} Imprimer</button>
     </div>
-    <div id="tournois"></div>`;
+    <section class="stats">
+      <div class="stat"><span class="stat-nb">${absentsAuj}</span><span class="stat-lib">absent${absentsAuj > 1 ? 's' : ''} aujourd'hui</span></div>
+      <div class="stat"><span class="stat-nb">${prochains.length}</span><span class="stat-lib">tournoi${prochains.length > 1 ? 's' : ''} d'ici 14 jours</span></div>
+      <div class="stat"><span class="stat-nb">${sansTravail}</span><span class="stat-lib">élève${sansTravail > 1 ? 's' : ''} sans votre travail</span></div>
+    </section>
+    <div class="filtres collant">
+      <label class="recherche">${ico('recherche')}<input type="search" id="recherche" placeholder="Élève ou tournoi" value="${esc(vue.recherche)}" aria-label="Rechercher"></label>
+      ${filtreGroupe(groupes)}
+      <button class="puce" id="passes" aria-pressed="${vue.passes}">Passés</button>
+    </div>
+    <div id="tournois" class="liste-cartes"></div>`;
   $('#recherche').oninput = (e) => { vue.recherche = e.target.value; dessiner(); };
   $('#filtre-groupe').onchange = (e) => { vue.groupe = e.target.value; dessiner(); };
-  $('#passes').onchange = (e) => { vue.passes = e.target.checked; ecranEnseignant(); };
+  $('#passes').onclick = () => { vue.passes = !vue.passes; ecranEnseignant(); };
+  $('#imprimer').onclick = () => window.print();
 
   function dessiner() {
     const zone = $('#tournois');
     zone.replaceChildren();
     const q = vue.recherche.trim().toLowerCase();
     let n = 0;
-    for (const t of tournois) {
+    const ordre = [...tournois].sort((a, b) => (joursAvant(a.fin) < 0) - (joursAvant(b.fin) < 0)
+      || (joursAvant(a.fin) < 0 ? b.debut.localeCompare(a.debut) : a.debut.localeCompare(b.debut)));
+    for (const t of ordre) {
       const eleves = t.eleves.filter((e) => (!vue.groupe || e.groupe === vue.groupe)
         && (!q || e.nom.toLowerCase().includes(q) || t.nom.toLowerCase().includes(q) || (t.sport || '').toLowerCase().includes(q)));
       if (!eleves.length) continue;
@@ -699,48 +1058,59 @@ function ongletTournois(contenu, tournois, groupes) {
       const carte = document.createElement('article');
       carte.className = 'carte' + (joursAvant(t.fin) < 0 ? ' passee' : '');
       carte.innerHTML = `
-        <div class="titre-carte">
-          <div>
+        <div class="carte-tete">
+          ${blocDate(t.debut, t.fin)}
+          <div class="carte-titre">
             <h3>${esc(t.nom)}</h3>
-            <p class="details">${periode(t.debut, t.fin)}${t.sport ? ' · ' + esc(t.sport) : ''}${t.lieu ? ' · ' + esc(t.lieu) : ''}
-              · <strong>${eleves.length} élève${eleves.length > 1 ? 's' : ''}</strong></p>
+            <p class="meta">${meta(periode(t.debut, t.fin), esc(t.sport), esc(t.lieu))}</p>
+            <div class="etat">${etat(t.debut, t.fin)}<span class="details">${eleves.length} élève${eleves.length > 1 ? 's' : ''}</span></div>
           </div>
-          ${etat(t.debut, t.fin)}
         </div>
-        <table class="eleves">
-          <thead><tr><th>Élève</th><th>Groupe</th><th>Déclaré</th><th>Travail demandé</th></tr></thead>
-          <tbody>${eleves.map((e) => `
-            <tr>
-              <td data-titre="Élève"><strong>${esc(e.nom)}</strong>${e.note ? `<div class="note">« ${esc(e.note)} »</div>` : ''}</td>
-              <td data-titre="Groupe">${esc(e.groupe)}</td>
-              <td data-titre="Déclaré">${preavisPastille(e.preavis)}</td>
-              <td data-titre="Travail">${e.taches.length ? `<ul class="mini">${e.taches.map((ta) => tacheProf(ta)).join('')}</ul>` : '<span class="vide">Aucun</span>'}</td>
-            </tr>`).join('')}</tbody>
-        </table>
-        <button class="principal" data-ajouter>＋ Demander du travail / une reprise d'examen</button>`;
+        <ul class="rangees">${eleves.map((e) => `
+          <li>
+            <div class="rangee-tete">
+              <span class="avatar petit">${initiales(e.nom)}</span>
+              <div class="rangee-nom"><strong>${esc(e.nom)}</strong><span class="details">${esc(e.groupe)}</span></div>
+              ${preavisPastille(e.preavis)}
+            </div>
+            ${e.note ? `<p class="note">${esc(e.note)}</p>` : ''}
+            ${e.taches.length ? `<ul class="mini">${e.taches.map(tacheProf).join('')}</ul>` : ''}
+          </li>`).join('')}
+        </ul>
+        <div class="carte-pied">
+          <button class="principal" data-ajouter>${ico('plus')} Travail ou reprise d'examen</button>
+        </div>`;
       $('[data-ajouter]', carte).onclick = () => ouvrirTache(t, eleves);
       carte.querySelectorAll('[data-retirer]').forEach((b) => {
         b.onclick = async () => {
-          if (!confirm('Retirer ce travail ? L\'élève ne le verra plus.')) return;
+          if (!await demander('Retirer ce travail ? L\'élève ne le verra plus.', 'Retirer')) return;
           await api('taches/' + b.dataset.retirer, { method: 'DELETE' });
+          toast('Travail retiré');
           ecranEnseignant();
         };
       });
       zone.append(carte);
     }
-    if (!n) zone.innerHTML = '<p class="vide">Aucune absence déclarée' + (q || vue.groupe ? ' pour ce filtre.' : ' pour les tournois à venir.') + '</p>';
+    if (!n) zone.innerHTML = `<div class="vide-grand">${ico('liste')}<p>${q || vue.groupe ? 'Aucun résultat pour ce filtre.' : 'Aucune absence déclarée pour les tournois à venir.'}</p></div>`;
   }
   dessiner();
 }
 
+function initiales(nom) {
+  return esc(nom.split(/\s+/).filter(Boolean).slice(0, 2).map((m) => m[0]).join('').toUpperCase());
+}
+
 function tacheProf(t) {
   const mien = t.enseignant_id === moi.id;
-  return `<li>
-    <strong>${esc(t.matiere || t.enseignant)}</strong>${t.fait_at ? ' <span class="pastille verte">Terminé</span>' : ''}
-    ${mien ? `<button class="lien danger" data-retirer="${t.id}" title="Retirer">✕</button>` : ''}
-    ${t.travail ? `<div>${esc(t.travail)}</div>` : ''}
-    ${t.remise ? `<div class="details">À remettre le ${dateFr(t.remise)}</div>` : ''}
-    ${t.examen ? `<div class="examen">📝 Reprise${t.examen_nom ? ' « ' + esc(t.examen_nom) + ' »' : ''} : ${t.reprise_date ? dateFr(t.reprise_date) : 'date à fixer'}${t.reprise_info ? ', ' + esc(t.reprise_info) : ''}</div>` : ''}
+  return `<li class="${mien ? 'mien' : ''}">
+    <div class="mini-tete">
+      <strong>${esc(t.matiere || t.enseignant)}</strong>
+      ${t.fait_at ? '<span class="pastille verte">Terminé</span>' : ''}
+      ${mien ? `<button class="icone-btn petit" data-retirer="${t.id}" aria-label="Retirer ce travail">${ico('corbeille')}</button>` : ''}
+    </div>
+    ${t.travail ? `<p>${esc(t.travail)}</p>` : ''}
+    ${t.remise ? `<p class="details">À remettre le ${dateFr(t.remise)}</p>` : ''}
+    ${t.examen ? `<p class="reprise-ligne">${ico('examen')} Reprise${t.examen_nom ? ' · ' + esc(t.examen_nom) : ''} : ${t.reprise_date ? dateFr(t.reprise_date) : 'date à fixer'}${t.reprise_info ? ', ' + esc(t.reprise_info) : ''}</p>` : ''}
   </li>`;
 }
 
@@ -748,9 +1118,22 @@ function ouvrirTache(t, eleves) {
   const dlg = $('#dlg-tache');
   const form = $('#form-tache');
   form.reset();
-  $('#tache-tournoi').textContent = t.nom;
+  $('#tache-tournoi').textContent = `${t.nom} · ${periode(t.debut, t.fin)}`;
   $('#tache-eleves').innerHTML = eleves.map((e) =>
-    `<label class="case"><input type="checkbox" name="absence" value="${e.absence_id}" checked> ${esc(e.nom)} <span class="details">${esc(e.groupe)}</span></label>`).join('');
+    `<label class="case"><input type="checkbox" name="absence" value="${e.absence_id}" checked><span>${esc(e.nom)}</span><span class="details">${esc(e.groupe)}</span></label>`).join('');
+  const tous = $('#tache-tous');
+  const majTous = () => {
+    const cases = [...form.querySelectorAll('[name=absence]')];
+    tous.textContent = cases.every((c) => c.checked) ? 'Tout décocher' : 'Tout cocher';
+  };
+  tous.onclick = () => {
+    const cases = [...form.querySelectorAll('[name=absence]')];
+    const cocher = !cases.every((c) => c.checked);
+    cases.forEach((c) => { c.checked = cocher; });
+    majTous();
+  };
+  form.querySelectorAll('[name=absence]').forEach((c) => { c.onchange = majTous; });
+  majTous();
   const bloc = $('#bloc-examen');
   bloc.hidden = true;
   form.examen.onchange = () => { bloc.hidden = !form.examen.checked; };
@@ -759,22 +1142,22 @@ function ouvrirTache(t, eleves) {
     const f = Object.fromEntries(new FormData(form));
     const ids = [...form.querySelectorAll('[name=absence]:checked')].map((c) => Number(c.value));
     try {
-      await api('taches', { method: 'POST', body: { ...f, examen: form.examen.checked, absence_ids: ids } });
+      const r = await api('taches', { method: 'POST', body: { ...f, examen: form.examen.checked, absence_ids: ids } });
       dlg.close();
+      toast(`Envoyé à ${r.nb} élève${r.nb > 1 ? 's' : ''}`);
       ecranEnseignant();
     } catch (err) { montrerErreur(form, err.message); }
   };
   ouvrir(dlg);
 }
 
-// Calendrier du mois : nombre d'élèves absents chaque jour ; un clic sur un jour montre qui et pour quel tournoi.
+// Calendrier du mois : nombre d'élèves absents chaque jour ; un toucher sur un jour montre qui et pour quel tournoi.
 function ongletCalendrier(contenu, tournois, groupes) {
   const [an, mo] = vue.mois.split('-').map(Number);
   const iso = (d) => d.toLocaleDateString('en-CA');
   const premier = new Date(an, mo - 1, 1, 12);
   const nbJours = new Date(an, mo, 0).getDate();
   const decalage = (premier.getDay() + 6) % 7; // semaine commençant le lundi
-  // Absences de chaque jour du mois
   const parJour = {};
   for (let j = 1; j <= nbJours; j++) parJour[iso(new Date(an, mo - 1, j, 12))] = [];
   for (const t of tournois) {
@@ -783,116 +1166,151 @@ function ongletCalendrier(contenu, tournois, groupes) {
       for (const jour in parJour) if (jour >= t.debut && jour <= t.fin) parJour[jour].push({ ...e, tournoi: t });
     }
   }
-  const max = Math.max(1, ...Object.values(parJour).map((l) => l.length));
-  const total = new Set(Object.values(parJour).flat().map((e) => e.eleve_id)).size;
+  const compte = (l) => new Set(l.map((e) => e.eleve_id)).size;
+  const max = Math.max(1, ...Object.values(parJour).map(compte));
+  const total = compte(Object.values(parJour).flat());
+  const pic = Object.entries(parJour).reduce((m, [j, l]) => (compte(l) > m.n ? { j, n: compte(l) } : m), { j: null, n: 0 });
   const titre = premier.toLocaleDateString('fr-CA', { month: 'long', year: 'numeric' });
-  if (vue.jour && !parJour[vue.jour]) vue.jour = null;
+  if (!vue.jour || !parJour[vue.jour]) vue.jour = parJour[auj()] ? auj() : null;
 
-  let cases = '<div class="cal-vide"></div>'.repeat(decalage);
+  let cases = '<span class="cal-vide"></span>'.repeat(decalage);
   for (const [jour, liste] of Object.entries(parJour)) {
     const d = new Date(jour + 'T12:00');
-    const fds = d.getDay() === 0 || d.getDay() === 6;
-    const n = new Set(liste.map((e) => e.eleve_id)).size;
-    const intens = n ? 0.15 + 0.75 * (n / max) : 0;
-    cases += `<button class="cal-jour${fds ? ' fds' : ''}${jour === auj() ? ' auj' : ''}${jour === vue.jour ? ' choisi' : ''}"
-      data-jour="${jour}" style="${n ? `background: rgba(29,78,216,${intens.toFixed(2)}); color: ${intens > 0.5 ? '#fff' : 'inherit'}` : ''}"
-      title="${n} élève${n > 1 ? 's' : ''} absent${n > 1 ? 's' : ''}">
-      <span class="cal-num">${d.getDate()}</span>
-      ${n ? `<span class="cal-nb">${n}</span><span class="cal-lib">absent${n > 1 ? 's' : ''}</span>` : ''}
+    const n = compte(liste);
+    const niveau = n ? Math.min(4, Math.ceil((n / max) * 4)) : 0;
+    const cls = ['cal-jour', `n${niveau}`, d.getDay() % 6 === 0 ? 'fds' : '', jour === auj() ? 'auj' : '', jour === vue.jour ? 'choisi' : ''].join(' ');
+    cases += `<button class="${cls}" data-jour="${jour}" aria-label="${dateFr(jour)} : ${n} absent${n > 1 ? 's' : ''}">
+      <span class="cal-num">${d.getDate()}</span>${n ? `<span class="cal-nb">${n}</span>` : ''}
     </button>`;
   }
 
   contenu.innerHTML = `
-    <div class="filtres">
-      <button class="secondaire" id="mois-prec" aria-label="Mois précédent">◀</button>
-      <h2 class="cal-titre">${titre}</h2>
-      <button class="secondaire" id="mois-suiv" aria-label="Mois suivant">▶</button>
-      <button class="secondaire" id="mois-auj">Aujourd'hui</button>
-      <select id="filtre-groupe"><option value="">Tous les groupes</option>
-        ${groupes.map((g) => `<option ${g === vue.groupe ? 'selected' : ''}>${esc(g)}</option>`).join('')}</select>
+    <div class="entete-page cal-entete-page">
+      <h1 class="cal-titre">${titre}</h1>
+      <div class="cal-nav">
+        <button class="icone-btn" id="mois-prec" aria-label="Mois précédent">${ico('gauche')}</button>
+        <button class="secondaire petit" id="mois-auj">Aujourd'hui</button>
+        <button class="icone-btn" id="mois-suiv" aria-label="Mois suivant">${ico('droite')}</button>
+      </div>
     </div>
-    <p class="aide">${total} élève${total > 1 ? 's' : ''} absent${total > 1 ? 's' : ''} au moins un jour ce mois-ci.
-      Plus la case est foncée, plus il y a d'absents. Cliquez sur un jour pour voir qui.</p>
-    <article class="carte">
+    <div class="filtres">
+      ${filtreGroupe(groupes)}
+      <p class="aide cal-resume">${total} élève${total > 1 ? 's' : ''} absent${total > 1 ? 's' : ''} ce mois-ci${pic.n ? ` · pointe le ${dateFr(pic.j, { day: 'numeric', month: 'long' })} (${pic.n})` : ''}</p>
+    </div>
+    <section class="carte calendrier-carte">
       <div class="calendrier">
-        ${['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'].map((j) => `<div class="cal-entete">${j}</div>`).join('')}
+        ${['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((j, i) => `<span class="cal-entete"><span class="court">${j}</span><span class="long">${['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'][i]}</span></span>`).join('')}
         ${cases}
       </div>
-    </article>
-    <div id="detail-jour"></div>`;
+      <div class="legende" aria-hidden="true"><span>Moins</span><i class="n1"></i><i class="n2"></i><i class="n3"></i><i class="n4"></i><span>Plus d'absents</span></div>
+    </section>
+    <section id="detail-jour"></section>`;
 
+  const redessiner = () => ongletCalendrier(contenu, tournois, groupes);
   const changerMois = (delta) => {
-    const d = new Date(an, mo - 1 + delta, 1, 12);
-    vue.mois = iso(d).slice(0, 7);
+    vue.mois = iso(new Date(an, mo - 1 + delta, 1, 12)).slice(0, 7);
     vue.jour = null;
-    ongletCalendrier(contenu, tournois, groupes);
+    redessiner();
   };
   $('#mois-prec').onclick = () => changerMois(-1);
   $('#mois-suiv').onclick = () => changerMois(1);
-  $('#mois-auj').onclick = () => { vue.mois = auj().slice(0, 7); vue.jour = auj(); ongletCalendrier(contenu, tournois, groupes); };
-  $('#filtre-groupe').onchange = (e) => { vue.groupe = e.target.value; ongletCalendrier(contenu, tournois, groupes); };
+  $('#mois-auj').onclick = () => { vue.mois = auj().slice(0, 7); vue.jour = auj(); redessiner(); };
+  $('#filtre-groupe').onchange = (e) => { vue.groupe = e.target.value; redessiner(); };
   contenu.querySelectorAll('[data-jour]').forEach((b) => {
-    b.onclick = () => { vue.jour = b.dataset.jour; ongletCalendrier(contenu, tournois, groupes); };
+    b.onclick = () => {
+      vue.jour = b.dataset.jour;
+      redessiner();
+      if (matchMedia('(max-width: 700px)').matches) $('#detail-jour').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
   });
 
-  if (vue.jour) {
-    const liste = parJour[vue.jour];
-    const groupesT = new Map();
-    for (const e of liste) {
-      if (!groupesT.has(e.tournoi.id)) groupesT.set(e.tournoi.id, { t: e.tournoi, eleves: [] });
-      groupesT.get(e.tournoi.id).eleves.push(e);
-    }
-    $('#detail-jour').innerHTML = `
-      <article class="carte">
-        <h3>${dateFr(vue.jour)} : ${liste.length ? `${new Set(liste.map((e) => e.eleve_id)).size} élève(s) absent(s)` : 'aucun absent'}</h3>
-        ${[...groupesT.values()].map(({ t, eleves }) => `
-          <h4>${esc(t.nom)} <span class="details">${t.sport ? esc(t.sport) + ' · ' : ''}${t.lieu ? esc(t.lieu) + ' · ' : ''}${periode(t.debut, t.fin)}</span></h4>
-          <ul class="mini">${eleves.map((e) => `<li><strong>${esc(e.nom)}</strong> <span class="details">${esc(e.groupe)}</span></li>`).join('')}</ul>`).join('')}
-      </article>`;
+  const detail = $('#detail-jour');
+  if (!vue.jour) { detail.innerHTML = '<p class="aide centre">Touchez un jour pour voir les élèves absents.</p>'; return; }
+  const liste = parJour[vue.jour];
+  const parTournoi = new Map();
+  for (const e of liste) {
+    if (!parTournoi.has(e.tournoi.id)) parTournoi.set(e.tournoi.id, { t: e.tournoi, eleves: [] });
+    parTournoi.get(e.tournoi.id).eleves.push(e);
   }
+  const n = compte(liste);
+  detail.innerHTML = `
+    <h2 class="detail-titre">${dateFr(vue.jour, { weekday: 'long', day: 'numeric', month: 'long' })}
+      <span class="details">${n ? `${n} absent${n > 1 ? 's' : ''}` : 'aucun absent'}</span></h2>
+    ${[...parTournoi.values()].map(({ t, eleves }) => `
+      <article class="carte">
+        <div class="carte-tete compacte">
+          <div class="carte-titre">
+            <h3>${esc(t.nom)}</h3>
+            <p class="meta">${meta(periode(t.debut, t.fin), esc(t.sport), esc(t.lieu))}</p>
+          </div>
+        </div>
+        <ul class="rangees">${eleves.map((e) => `<li><div class="rangee-tete">
+          <span class="avatar petit">${initiales(e.nom)}</span>
+          <div class="rangee-nom"><strong>${esc(e.nom)}</strong><span class="details">${esc(e.groupe)}</span></div>
+        </div></li>`).join('')}</ul>
+      </article>`).join('')}`;
 }
 
 function ongletReprises(contenu, reprises) {
-  contenu.innerHTML = reprises.length ? `
-    <article class="carte">
-      <table class="eleves">
-        <thead><tr><th>Date</th><th>Élève</th><th>Matière</th><th>Examen</th><th>Heure / local</th><th>Tournoi</th></tr></thead>
-        <tbody>${reprises.map((r) => `<tr>
-          <td data-titre="Date"><strong>${dateFr(r.reprise_date)}</strong></td>
-          <td data-titre="Élève">${esc(r.eleve)} <span class="details">${esc(r.groupe)}</span></td>
-          <td data-titre="Matière">${esc(r.matiere || '')} <span class="details">${esc(r.enseignant)}</span></td>
-          <td data-titre="Examen">${esc(r.examen_nom)}</td>
-          <td data-titre="Heure / local">${esc(r.reprise_info)}</td>
-          <td data-titre="Tournoi">${esc(r.tournoi)}</td></tr>`).join('')}</tbody>
-      </table>
-    </article>` : '<p class="vide">Aucune reprise d\'examen prévue.</p>';
+  // Regroupées par date : c'est ainsi qu'on réserve un local
+  const parDate = new Map();
+  for (const r of reprises) {
+    if (!parDate.has(r.reprise_date)) parDate.set(r.reprise_date, []);
+    parDate.get(r.reprise_date).push(r);
+  }
+  contenu.innerHTML = `
+    <div class="entete-page"><h1>Reprises d'examen</h1></div>
+    <p class="aide">Toutes les reprises à venir, toutes matières confondues.</p>
+    ${reprises.length ? [...parDate].map(([date, liste]) => `
+      <section class="jour-reprises">
+        <h2 class="jour-titre">${blocDate(date, date)}<span>${dateFr(date, { weekday: 'long', day: 'numeric', month: 'long' })}</span></h2>
+        <ul class="carte rangees">${liste.map((r) => `<li>
+          <div class="rangee-tete">
+            <span class="avatar petit">${initiales(r.eleve)}</span>
+            <div class="rangee-nom"><strong>${esc(r.eleve)}</strong><span class="details">${esc(r.groupe)} · ${esc(r.tournoi)}</span></div>
+          </div>
+          <p class="reprise-ligne">${ico('examen')} <span><strong>${esc(r.matiere || r.enseignant)}</strong>${r.examen_nom ? ' · ' + esc(r.examen_nom) : ''}
+            ${r.reprise_info ? `<span class="details"> · ${esc(r.reprise_info)}</span>` : ''}<span class="details"> · ${esc(r.enseignant)}</span></span></p>
+        </li>`).join('')}</ul>
+      </section>`).join('') : `<div class="vide-grand">${ico('examen')}<p>Aucune reprise d'examen prévue.</p></div>`}`;
 }
 
 function ongletEleves(contenu, eleves) {
   contenu.innerHTML = `
+    <div class="entete-page"><h1>Élèves</h1></div>
+    <div class="filtres">
+      <label class="recherche">${ico('recherche')}<input type="search" id="recherche-eleve" placeholder="Rechercher un élève" aria-label="Rechercher un élève"></label>
+    </div>
     <p class="aide">Un élève a oublié son NIP ? Effacez-le : il en choisira un nouveau à sa prochaine connexion.</p>
-    <article class="carte">
-      <table class="eleves">
-        <thead><tr><th>Élève</th><th>Groupe</th><th>Absences</th><th></th></tr></thead>
-        <tbody>${eleves.map((e) => `<tr>
-          <td data-titre="Élève">${esc(e.nom)}</td><td data-titre="Groupe">${esc(e.groupe)}</td><td data-titre="Absences">${e.nb}</td>
-          <td><button class="lien" data-nip="${e.id}" data-nom="${esc(e.nom)}">Effacer le NIP</button></td></tr>`).join('')}</tbody>
-      </table>
-    </article>`;
-  contenu.querySelectorAll('[data-nip]').forEach((b) => {
-    b.onclick = async () => {
-      if (!confirm(`Effacer le NIP de ${b.dataset.nom} ?`)) return;
-      await api(`eleves/${b.dataset.nip}/effacer-nip`, { method: 'POST' });
-      b.replaceWith('NIP effacé ✔');
-    };
-  });
+    <ul class="carte rangees" id="liste-eleves"></ul>`;
+  const dessiner = (q = '') => {
+    const l = eleves.filter((e) => !q || e.nom.toLowerCase().includes(q.toLowerCase()) || e.groupe.includes(q));
+    $('#liste-eleves').innerHTML = l.length ? l.map((e) => `<li><div class="rangee-tete">
+      <span class="avatar petit">${initiales(e.nom)}</span>
+      <div class="rangee-nom"><strong>${esc(e.nom)}</strong><span class="details">${esc(e.groupe)} · ${e.nb} absence${e.nb > 1 ? 's' : ''}</span></div>
+      <button class="secondaire petit" data-nip="${e.id}" data-nom="${esc(e.nom)}">${ico('cle')} Effacer le NIP</button>
+    </div></li>`).join('') : '<li class="vide">Aucun élève.</li>';
+    contenu.querySelectorAll('[data-nip]').forEach((b) => {
+      b.onclick = async () => {
+        if (!await demander(`Effacer le NIP de ${b.dataset.nom} ?`, 'Effacer')) return;
+        await api(`eleves/${b.dataset.nip}/effacer-nip`, { method: 'POST' });
+        toast(`NIP de ${b.dataset.nom} effacé`);
+        b.disabled = true;
+      };
+    });
+  };
+  $('#recherche-eleve').oninput = (e) => dessiner(e.target.value.trim());
+  dessiner();
 }
 
 // ---------- Démarrage ----------
 
 function afficher() {
   $('#qui').hidden = false;
-  $('#qui-nom').textContent = moi.nom + (moi.role === 'eleve' ? (moi.groupe ? ' · ' + moi.groupe : '') : (moi.matiere ? ' · ' + moi.matiere : ''));
+  $('#qui-initiales').innerHTML = initiales(moi.nom);
+  $('#qui-nom').textContent = moi.nom;
+  $('#qui-detail').textContent = moi.role === 'eleve' ? `Groupe ${moi.groupe || ''}` : (moi.matiere || 'Enseignant');
+  $('#menu-nom').textContent = moi.nom;
   (moi.role === 'eleve' ? ecranEleve() : ecranEnseignant()).catch((err) => {
     app.innerHTML = `<p class="erreur">${esc(err.message)}</p>`;
   });

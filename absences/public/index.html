@@ -2,101 +2,138 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#14213d">
+  <meta name="color-scheme" content="light">
   <title>Absences Sport-études</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="style.css">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏆</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%2314213d'/><rect x='8' y='9' width='16' height='15' rx='2' fill='none' stroke='white' stroke-width='2'/><path d='M8 14h16M12 7v4M20 7v4' stroke='white' stroke-width='2' stroke-linecap='round'/></svg>">
 </head>
 <body>
   <header class="barre">
-    <h1>🏆 Absences Sport-études</h1>
-    <div id="qui" hidden>
-      <span id="qui-nom"></span>
-      <button id="deconnexion" class="lien">Se déconnecter</button>
+    <div class="marque">
+      <span class="logo" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="m9 15 2 2 4-4"/></svg></span>
+      <span class="nom-appli">Absences <span class="sous">Sport-études</span></span>
+    </div>
+    <button id="qui" class="qui" hidden aria-haspopup="true">
+      <span class="avatar" id="qui-initiales"></span>
+      <span class="qui-texte"><span id="qui-nom"></span><span id="qui-detail"></span></span>
+    </button>
+    <div id="menu-compte" class="menu" hidden>
+      <p class="menu-titre" id="menu-nom"></p>
+      <button id="deconnexion" class="menu-item">Se déconnecter</button>
     </div>
   </header>
 
-  <main id="app"><p class="centre">Chargement…</p></main>
+  <main id="app"><p class="chargement">Chargement…</p></main>
+  <nav id="nav-bas" class="nav-bas" hidden></nav>
 
   <!-- Écran de connexion -->
   <template id="tpl-connexion">
-    <section class="carte etroite">
-      <h2>Bienvenue</h2>
-      <div class="choix-role">
-        <button data-role="eleve" class="gros actif">🎒 Je suis élève</button>
-        <button data-role="enseignant" class="gros">📚 Je suis enseignant·e</button>
+    <section class="connexion">
+      <h1>Absences pour tournois</h1>
+      <p class="intro">Les élèves déclarent leurs tournois. Les enseignants y joignent le travail à faire et les reprises d'examen.</p>
+      <div class="segment" role="tablist">
+        <button type="button" data-role="eleve" role="tab">Élève</button>
+        <button type="button" data-role="enseignant" role="tab">Enseignant</button>
       </div>
-      <form id="form-connexion">
-        <label>Prénom et nom <input name="nom" autocomplete="name" required placeholder="ex. Léa Tremblay"></label>
-        <label class="eleve">Groupe <input name="groupe" placeholder="ex. 3-02" autocomplete="off"></label>
-        <label class="eleve">NIP (4 chiffres)
-          <input name="nip" inputmode="numeric" pattern="\d{4}" maxlength="4" autocomplete="current-password">
-          <small>Première fois ? Choisis ton NIP maintenant et retiens-le.</small>
-        </label>
-        <label class="enseignant" hidden>Matière <input name="matiere" placeholder="ex. Mathématiques"></label>
-        <label>Code de l'école <input name="code" required autocomplete="off">
-          <small class="eleve">Donné par ton enseignant.</small></label>
-        <button class="principal" type="submit">Entrer</button>
+      <form id="form-connexion" novalidate>
+        <label>Prénom et nom <input name="nom" autocomplete="name" required placeholder="Léa Tremblay"></label>
+        <div class="deux eleve">
+          <label>Groupe <input name="groupe" placeholder="3-02" autocomplete="off"></label>
+          <label>NIP <input name="nip" type="password" inputmode="numeric" pattern="\d{4}" maxlength="4" placeholder="4 chiffres" autocomplete="current-password"></label>
+        </div>
+        <p class="eleve aide">Première connexion ? Choisis ton NIP maintenant et garde-le en tête.</p>
+        <label class="enseignant" hidden>Matière <input name="matiere" placeholder="Mathématiques"></label>
+        <label>Code de l'école <input name="code" required autocomplete="off" autocapitalize="off">
+          <small class="eleve">Ton enseignant te le donne.</small></label>
         <p class="erreur" hidden></p>
+        <button class="principal plein" type="submit">Se connecter</button>
       </form>
     </section>
   </template>
 
-  <!-- Boîte : déclarer une absence (élève) -->
-  <dialog id="dlg-absence">
-    <form id="form-absence" method="dialog">
-      <h2>Déclarer une absence</h2>
-      <label>Tournoi
-        <select name="tournoi_id" required></select>
-      </label>
-      <fieldset id="nouveau-tournoi">
-        <label>Nom du tournoi <input name="nom" placeholder="ex. Championnat provincial de volleyball"></label>
-        <div class="deux">
-          <label>Sport <input name="sport" placeholder="ex. Volleyball"></label>
-          <label>Ville <input name="lieu" placeholder="ex. Sherbrooke"></label>
-        </div>
-        <div class="deux">
-          <label>Premier jour d'absence <input type="date" name="debut"></label>
-          <label>Dernier jour d'absence <input type="date" name="fin"></label>
-        </div>
-      </fieldset>
-      <p id="avert-preavis" class="avert" hidden></p>
-      <label>Message pour les enseignants (facultatif)
-        <textarea name="note" rows="2" placeholder="ex. Je pars jeudi midi, je serai là le matin."></textarea></label>
-      <p class="erreur" hidden></p>
-      <div class="boutons">
+  <!-- Feuille : déclarer une absence (élève) -->
+  <dialog id="dlg-absence" class="feuille">
+    <form id="form-absence" novalidate>
+      <header class="feuille-tete">
+        <h2>Déclarer une absence</h2>
+        <button type="button" class="icone-btn" data-fermer aria-label="Fermer"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      </header>
+      <div class="feuille-corps">
+        <label>Tournoi <select name="tournoi_id" required></select></label>
+        <fieldset id="nouveau-tournoi" class="groupe-champs">
+          <label>Nom du tournoi <input name="nom" placeholder="Championnat provincial de volleyball"></label>
+          <div class="deux">
+            <label>Sport <input name="sport" placeholder="Volleyball"></label>
+            <label>Ville <input name="lieu" placeholder="Sherbrooke"></label>
+          </div>
+          <div class="deux">
+            <label>Premier jour <input type="date" name="debut"></label>
+            <label>Dernier jour <input type="date" name="fin"></label>
+          </div>
+        </fieldset>
+        <p id="avert-preavis" class="avert" hidden></p>
+        <label>Message aux enseignants <span class="facultatif">facultatif</span>
+          <textarea name="note" rows="2" placeholder="Je pars jeudi midi, je serai là le matin."></textarea></label>
+        <p class="erreur" hidden></p>
+      </div>
+      <footer class="feuille-pied">
         <button type="button" class="secondaire" data-fermer>Annuler</button>
         <button type="submit" class="principal">Déclarer</button>
-      </div>
+      </footer>
     </form>
   </dialog>
 
-  <!-- Boîte : demander du travail / une reprise d'examen (enseignant) -->
-  <dialog id="dlg-tache">
-    <form id="form-tache" method="dialog">
-      <h2>Travail pour <span id="tache-tournoi"></span></h2>
-      <fieldset>
-        <legend>Élèves concernés</legend>
-        <div id="tache-eleves" class="cases"></div>
-      </fieldset>
-      <label>Travail à faire
-        <textarea name="travail" rows="3" placeholder="ex. Lire le chapitre 4 et faire les exercices p. 112 à 115."></textarea></label>
-      <label>À remettre le <input type="date" name="remise"></label>
-      <label class="case"><input type="checkbox" name="examen"> Il y a un examen à reprendre</label>
-      <fieldset id="bloc-examen" hidden>
-        <label>Examen <input name="examen_nom" placeholder="ex. Examen de l'étape 2 — fonctions"></label>
-        <div class="deux">
-          <label>Date de reprise <input type="date" name="reprise_date"></label>
-          <label>Heure et local <input name="reprise_info" placeholder="ex. 8 h 15, local B-204"></label>
+  <!-- Feuille : demander du travail / une reprise d'examen (enseignant) -->
+  <dialog id="dlg-tache" class="feuille">
+    <form id="form-tache" novalidate>
+      <header class="feuille-tete">
+        <div>
+          <h2>Travail à faire</h2>
+          <p class="details" id="tache-tournoi"></p>
         </div>
-      </fieldset>
-      <p class="erreur" hidden></p>
-      <div class="boutons">
-        <button type="button" class="secondaire" data-fermer>Annuler</button>
-        <button type="submit" class="principal">Envoyer aux élèves</button>
+        <button type="button" class="icone-btn" data-fermer aria-label="Fermer"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      </header>
+      <div class="feuille-corps">
+        <fieldset class="groupe-champs">
+          <legend>Élèves <button type="button" class="lien" id="tache-tous">Tout décocher</button></legend>
+          <div id="tache-eleves" class="cases"></div>
+        </fieldset>
+        <label>Travail <textarea name="travail" rows="3" placeholder="Lire le chapitre 4 et faire les exercices p. 112 à 115."></textarea></label>
+        <label>À remettre le <input type="date" name="remise"></label>
+        <label class="interrupteur"><input type="checkbox" name="examen" role="switch"> <span>Un examen est à reprendre</span></label>
+        <fieldset id="bloc-examen" class="groupe-champs" hidden>
+          <label>Examen <input name="examen_nom" placeholder="Examen de l'étape 2"></label>
+          <div class="deux">
+            <label>Date de reprise <input type="date" name="reprise_date"></label>
+            <label>Heure et local <input name="reprise_info" placeholder="8 h 15, B-204"></label>
+          </div>
+        </fieldset>
+        <p class="erreur" hidden></p>
       </div>
+      <footer class="feuille-pied">
+        <button type="button" class="secondaire" data-fermer>Annuler</button>
+        <button type="submit" class="principal">Envoyer</button>
+      </footer>
     </form>
   </dialog>
+
+  <!-- Confirmation -->
+  <dialog id="dlg-confirmer" class="feuille petite">
+    <form method="dialog">
+      <div class="feuille-corps"><p id="confirmer-texte" class="confirmer-texte"></p></div>
+      <footer class="feuille-pied">
+        <button value="non" class="secondaire">Annuler</button>
+        <button value="oui" class="danger-plein" id="confirmer-oui">Confirmer</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" hidden></div>
 
   <script src="app.js"></script>
 </body>
