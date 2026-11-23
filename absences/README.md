@@ -8,6 +8,7 @@ Application web toute simple pour les écoles sport-études :
 - **Enseignants** : voient, tournoi par tournoi, quels élèves seront absents (filtre par groupe, recherche, impression),
   avec le préavis donné par l'élève (vert : 7 jours ou plus, orange : moins de 7, rouge : moins de 3 ou en retard).
   Ils demandent du travail ou fixent une reprise d'examen pour un ou plusieurs élèves d'un coup.
+  L’onglet « Calendrier » montre, jour par jour, combien d’élèves sont absents (clic sur un jour : qui et pour quel tournoi).
   L'onglet « Reprises d'examen » liste toutes les reprises à venir, toutes matières confondues.
 
 Connexion sans courriel ni mot de passe à retenir :
@@ -43,3 +44,4 @@ Puis ouvrez http://localhost:8787.
 - `public/` : l'interface (`index.html`, `app.js`, `style.css`), sans dépendance.
 - `src/worker.js` : le serveur (connexion, absences, travaux, reprises).
 - `schema.sql` : la base de données.
+- `demo/` : version de démonstration en une seule page (données fictives, sans serveur). `node demo/construire.mjs` régénère `demo/demo.html`.

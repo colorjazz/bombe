@@ -222,10 +222,10 @@ async function ouvrirDeclaration() {
 
 // ---------- Enseignant ----------
 
-const vue = { onglet: 'tournois', groupe: '', recherche: '', passes: false };
+const vue = { onglet: 'tournois', groupe: '', recherche: '', passes: false, mois: auj().slice(0, 7), jour: null };
 
 async function ecranEnseignant() {
-  const [tab, liste] = await Promise.all([api('tableau' + (vue.passes ? '?passes=1' : '')), vue.onglet === 'eleves' ? api('eleves') : null]);
+  const [tab, liste] = await Promise.all([api('tableau' + (vue.passes || vue.onglet === 'calendrier' ? '?passes=1' : '')), vue.onglet === 'eleves' ? api('eleves') : null]);
   const groupes = [...new Set(tab.tournois.flatMap((t) => t.eleves.map((e) => e.groupe)).filter(Boolean))].sort();
   const enCours = tab.tournois.filter((t) => joursAvant(t.debut) <= 0 && joursAvant(t.fin) >= 0);
   const nbAbsentsAuj = new Set(enCours.flatMap((t) => t.eleves.map((e) => e.eleve_id))).size;
@@ -233,6 +233,7 @@ async function ecranEnseignant() {
   app.innerHTML = `
     <nav class="onglets">
       <button data-onglet="tournois">🏆 Tournois et absents</button>
+      <button data-onglet="calendrier">📅 Calendrier</button>
       <button data-onglet="reprises">📝 Reprises d'examen (${tab.reprises.length})</button>
       <button data-onglet="eleves">👥 Élèves</button>
     </nav>
@@ -247,6 +248,7 @@ async function ecranEnseignant() {
   });
   const contenu = $('#contenu');
   if (vue.onglet === 'tournois') ongletTournois(contenu, tab.tournois, groupes);
+  else if (vue.onglet === 'calendrier') ongletCalendrier(contenu, tab.tournois, groupes);
   else if (vue.onglet === 'reprises') ongletReprises(contenu, tab.reprises);
   else ongletEleves(contenu, liste.eleves);
 }
@@ -344,6 +346,91 @@ function ouvrirTache(t, eleves) {
     } catch (err) { montrerErreur(form, err.message); }
   };
   ouvrir(dlg);
+}
+
+// Calendrier du mois : nombre d'élèves absents chaque jour ; un clic sur un jour montre qui et pour quel tournoi.
+function ongletCalendrier(contenu, tournois, groupes) {
+  const [an, mo] = vue.mois.split('-').map(Number);
+  const iso = (d) => d.toLocaleDateString('en-CA');
+  const premier = new Date(an, mo - 1, 1, 12);
+  const nbJours = new Date(an, mo, 0).getDate();
+  const decalage = (premier.getDay() + 6) % 7; // semaine commençant le lundi
+  // Absences de chaque jour du mois
+  const parJour = {};
+  for (let j = 1; j <= nbJours; j++) parJour[iso(new Date(an, mo - 1, j, 12))] = [];
+  for (const t of tournois) {
+    for (const e of t.eleves) {
+      if (vue.groupe && e.groupe !== vue.groupe) continue;
+      for (const jour in parJour) if (jour >= t.debut && jour <= t.fin) parJour[jour].push({ ...e, tournoi: t });
+    }
+  }
+  const max = Math.max(1, ...Object.values(parJour).map((l) => l.length));
+  const total = new Set(Object.values(parJour).flat().map((e) => e.eleve_id)).size;
+  const titre = premier.toLocaleDateString('fr-CA', { month: 'long', year: 'numeric' });
+  if (vue.jour && !parJour[vue.jour]) vue.jour = null;
+
+  let cases = '<div class="cal-vide"></div>'.repeat(decalage);
+  for (const [jour, liste] of Object.entries(parJour)) {
+    const d = new Date(jour + 'T12:00');
+    const fds = d.getDay() === 0 || d.getDay() === 6;
+    const n = new Set(liste.map((e) => e.eleve_id)).size;
+    const intens = n ? 0.15 + 0.75 * (n / max) : 0;
+    cases += `<button class="cal-jour${fds ? ' fds' : ''}${jour === auj() ? ' auj' : ''}${jour === vue.jour ? ' choisi' : ''}"
+      data-jour="${jour}" style="${n ? `background: rgba(29,78,216,${intens.toFixed(2)}); color: ${intens > 0.5 ? '#fff' : 'inherit'}` : ''}"
+      title="${n} élève${n > 1 ? 's' : ''} absent${n > 1 ? 's' : ''}">
+      <span class="cal-num">${d.getDate()}</span>
+      ${n ? `<span class="cal-nb">${n}</span><span class="cal-lib">absent${n > 1 ? 's' : ''}</span>` : ''}
+    </button>`;
+  }
+
+  contenu.innerHTML = `
+    <div class="filtres">
+      <button class="secondaire" id="mois-prec" aria-label="Mois précédent">◀</button>
+      <h2 class="cal-titre">${titre}</h2>
+      <button class="secondaire" id="mois-suiv" aria-label="Mois suivant">▶</button>
+      <button class="secondaire" id="mois-auj">Aujourd'hui</button>
+      <select id="filtre-groupe"><option value="">Tous les groupes</option>
+        ${groupes.map((g) => `<option ${g === vue.groupe ? 'selected' : ''}>${esc(g)}</option>`).join('')}</select>
+    </div>
+    <p class="aide">${total} élève${total > 1 ? 's' : ''} absent${total > 1 ? 's' : ''} au moins un jour ce mois-ci.
+      Plus la case est foncée, plus il y a d'absents. Cliquez sur un jour pour voir qui.</p>
+    <article class="carte">
+      <div class="calendrier">
+        ${['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'].map((j) => `<div class="cal-entete">${j}</div>`).join('')}
+        ${cases}
+      </div>
+    </article>
+    <div id="detail-jour"></div>`;
+
+  const changerMois = (delta) => {
+    const d = new Date(an, mo - 1 + delta, 1, 12);
+    vue.mois = iso(d).slice(0, 7);
+    vue.jour = null;
+    ongletCalendrier(contenu, tournois, groupes);
+  };
+  $('#mois-prec').onclick = () => changerMois(-1);
+  $('#mois-suiv').onclick = () => changerMois(1);
+  $('#mois-auj').onclick = () => { vue.mois = auj().slice(0, 7); vue.jour = auj(); ongletCalendrier(contenu, tournois, groupes); };
+  $('#filtre-groupe').onchange = (e) => { vue.groupe = e.target.value; ongletCalendrier(contenu, tournois, groupes); };
+  contenu.querySelectorAll('[data-jour]').forEach((b) => {
+    b.onclick = () => { vue.jour = b.dataset.jour; ongletCalendrier(contenu, tournois, groupes); };
+  });
+
+  if (vue.jour) {
+    const liste = parJour[vue.jour];
+    const groupesT = new Map();
+    for (const e of liste) {
+      if (!groupesT.has(e.tournoi.id)) groupesT.set(e.tournoi.id, { t: e.tournoi, eleves: [] });
+      groupesT.get(e.tournoi.id).eleves.push(e);
+    }
+    $('#detail-jour').innerHTML = `
+      <article class="carte">
+        <h3>${dateFr(vue.jour)} : ${liste.length ? `${new Set(liste.map((e) => e.eleve_id)).size} élève(s) absent(s)` : 'aucun absent'}</h3>
+        ${[...groupesT.values()].map(({ t, eleves }) => `
+          <h4>${esc(t.nom)} <span class="details">${t.sport ? esc(t.sport) + ' · ' : ''}${t.lieu ? esc(t.lieu) + ' · ' : ''}${periode(t.debut, t.fin)}</span></h4>
+          <ul class="mini">${eleves.map((e) => `<li><strong>${esc(e.nom)}</strong> <span class="details">${esc(e.groupe)}</span></li>`).join('')}</ul>`).join('')}
+      </article>`;
+  }
 }
 
 function ongletReprises(contenu, reprises) {

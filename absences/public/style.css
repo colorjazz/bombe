@@ -106,3 +106,22 @@ ul.mini .examen { margin-top: 2px; font-size: .9rem; }
   body { background: #fff; }
   .carte { box-shadow: none; border: 1px solid #ccc; break-inside: avoid; }
 }
+
+/* Calendrier */
+.cal-titre { margin: 0 8px; min-width: 180px; text-align: center; text-transform: capitalize; }
+.calendrier { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.cal-entete { text-align: center; font-weight: 600; color: var(--gris); font-size: .85rem; padding: 4px 0; }
+.cal-jour { min-height: 74px; padding: 6px; border-radius: 8px; background: #f8fafc; border: 1px solid #e5e7eb;
+  display: flex; flex-direction: column; align-items: flex-start; text-align: left; color: inherit; }
+.cal-jour.fds { background: #f1f5f9; }
+.cal-jour.auj { outline: 3px solid var(--orange); }
+.cal-jour.choisi { outline: 3px solid var(--texte); }
+.cal-num { font-size: .85rem; font-weight: 600; }
+.cal-nb { font-size: 1.4rem; font-weight: 700; line-height: 1.1; margin-top: auto; }
+.cal-lib { font-size: .7rem; }
+@media (max-width: 640px) {
+  .cal-jour { min-height: 52px; padding: 3px; }
+  .cal-lib { display: none; }
+  .cal-nb { font-size: 1.1rem; }
+  .cal-titre { min-width: 0; font-size: 1rem; }
+}
