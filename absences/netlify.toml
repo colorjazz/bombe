@@ -1,0 +1,15 @@
+# Netlify publie la démo (une seule page, données fictives gardées dans le navigateur).
+# Le vrai serveur (src/worker.js + base D1) se déploie sur Cloudflare avec ./deploy.sh.
+[build]
+  publish = "site"
+  command = ""
+
+[build.environment]
+  # Rien à installer pour publier la démo
+  NPM_FLAGS = "--omit=dev"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    Referrer-Policy = "strict-origin-when-cross-origin"

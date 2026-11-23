@@ -1,6 +1,6 @@
 // Construit demo/demo.html : l'application en une seule page, avec le faux serveur (aucune mise en ligne nécessaire).
-// Usage : node demo/construire.mjs
-import { readFileSync, writeFileSync } from 'node:fs';
+// Usage : node demo/construire.mjs  (écrit aussi site/index.html, la page publiée par Netlify)
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 const ici = new URL('.', import.meta.url);
 const lire = (f) => readFileSync(new URL(f, ici), 'utf8');
 const bandeau = `<div class="demo-bandeau">
@@ -41,4 +41,7 @@ let html = lire('../public/index.html')
   .replace('<script src="app.js"></script>', `<script>\n${lire('faux-serveur.js')}\n</script>\n<script>\n${lire('../public/app.js')}\n</script>\n${raccourcis}`)
   .replace('<title>Absences Sport-études</title>', '<title>Absences Sport-études</title>\n  <meta name="color-scheme" content="light">');
 writeFileSync(new URL('demo.html', ici), html);
-console.log('demo/demo.html :', html.length, 'caractères');
+// Copie pour Netlify (dossier « site », publié tel quel)
+mkdirSync(new URL('../site/', ici), { recursive: true });
+writeFileSync(new URL('../site/index.html', ici), html);
+console.log('demo/demo.html et site/index.html :', html.length, 'caractères');

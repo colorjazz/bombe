@@ -52,7 +52,8 @@ Puis ouvrez http://localhost:8787.
 - `public/` : l'interface (`index.html`, `app.js`, `style.css`), sans dépendance.
 - `src/worker.js` : le serveur (connexion, absences, travaux, reprises).
 - `schema.sql` : la base de données.
-- `demo/` : version de démonstration en une seule page (données fictives, sans serveur). `node demo/construire.mjs` régénère `demo/demo.html`.
+- `demo/` : version de démonstration en une seule page (données fictives, sans serveur). `node demo/construire.mjs` régénère `demo/demo.html` et `site/index.html`.
+- `site/` + `netlify.toml` : la démo prête pour Netlify (dossier publié tel quel, aucune compilation).
 
 ## Où sont les données
 
