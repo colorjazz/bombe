@@ -1,0 +1,24 @@
+name = "absences-sport-etudes"
+main = "src/worker.js"
+compatibility_date = "2025-09-01"
+# Garder les variables ajoutées dans le tableau de bord Cloudflare.
+keep_vars = true
+
+# Le serveur lit schema.sql pour créer les tables au premier démarrage.
+[[rules]]
+type = "Text"
+globs = ["**/*.sql"]
+fallthrough = true
+
+[assets]
+directory = "public"
+binding = "ASSETS"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "absences-sport-etudes"
+database_id = "REMPLACER_PAR_L_ID_DE_VOTRE_BASE"
+
+# Secrets à définir (type « Secret ») :
+#   CODE_ELEVE      : code donné aux élèves (ex. affiché en classe)
+#   CODE_ENSEIGNANT : code réservé aux enseignants

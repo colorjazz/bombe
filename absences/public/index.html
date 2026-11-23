@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Absences Sport-études</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏆</text></svg>">
+</head>
+<body>
+  <header class="barre">
+    <h1>🏆 Absences Sport-études</h1>
+    <div id="qui" hidden>
+      <span id="qui-nom"></span>
+      <button id="deconnexion" class="lien">Se déconnecter</button>
+    </div>
+  </header>
+
+  <main id="app"><p class="centre">Chargement…</p></main>
+
+  <!-- Écran de connexion -->
+  <template id="tpl-connexion">
+    <section class="carte etroite">
+      <h2>Bienvenue</h2>
+      <div class="choix-role">
+        <button data-role="eleve" class="gros actif">🎒 Je suis élève</button>
+        <button data-role="enseignant" class="gros">📚 Je suis enseignant·e</button>
+      </div>
+      <form id="form-connexion">
+        <label>Prénom et nom <input name="nom" autocomplete="name" required placeholder="ex. Léa Tremblay"></label>
+        <label class="eleve">Groupe <input name="groupe" placeholder="ex. 3-02" autocomplete="off"></label>
+        <label class="eleve">NIP (4 chiffres)
+          <input name="nip" inputmode="numeric" pattern="\d{4}" maxlength="4" autocomplete="current-password">
+          <small>Première fois ? Choisis ton NIP maintenant et retiens-le.</small>
+        </label>
+        <label class="enseignant" hidden>Matière <input name="matiere" placeholder="ex. Mathématiques"></label>
+        <label>Code de l'école <input name="code" required autocomplete="off">
+          <small class="eleve">Donné par ton enseignant.</small></label>
+        <button class="principal" type="submit">Entrer</button>
+        <p class="erreur" hidden></p>
+      </form>
+    </section>
+  </template>
+
+  <!-- Boîte : déclarer une absence (élève) -->
+  <dialog id="dlg-absence">
+    <form id="form-absence" method="dialog">
+      <h2>Déclarer une absence</h2>
+      <label>Tournoi
+        <select name="tournoi_id" required></select>
+      </label>
+      <fieldset id="nouveau-tournoi">
+        <label>Nom du tournoi <input name="nom" placeholder="ex. Championnat provincial de volleyball"></label>
+        <div class="deux">
+          <label>Sport <input name="sport" placeholder="ex. Volleyball"></label>
+          <label>Ville <input name="lieu" placeholder="ex. Sherbrooke"></label>
+        </div>
+        <div class="deux">
+          <label>Premier jour d'absence <input type="date" name="debut"></label>
+          <label>Dernier jour d'absence <input type="date" name="fin"></label>
+        </div>
+      </fieldset>
+      <p id="avert-preavis" class="avert" hidden></p>
+      <label>Message pour les enseignants (facultatif)
+        <textarea name="note" rows="2" placeholder="ex. Je pars jeudi midi, je serai là le matin."></textarea></label>
+      <p class="erreur" hidden></p>
+      <div class="boutons">
+        <button type="button" class="secondaire" data-fermer>Annuler</button>
+        <button type="submit" class="principal">Déclarer</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Boîte : demander du travail / une reprise d'examen (enseignant) -->
+  <dialog id="dlg-tache">
+    <form id="form-tache" method="dialog">
+      <h2>Travail pour <span id="tache-tournoi"></span></h2>
+      <fieldset>
+        <legend>Élèves concernés</legend>
+        <div id="tache-eleves" class="cases"></div>
+      </fieldset>
+      <label>Travail à faire
+        <textarea name="travail" rows="3" placeholder="ex. Lire le chapitre 4 et faire les exercices p. 112 à 115."></textarea></label>
+      <label>À remettre le <input type="date" name="remise"></label>
+      <label class="case"><input type="checkbox" name="examen"> Il y a un examen à reprendre</label>
+      <fieldset id="bloc-examen" hidden>
+        <label>Examen <input name="examen_nom" placeholder="ex. Examen de l'étape 2 — fonctions"></label>
+        <div class="deux">
+          <label>Date de reprise <input type="date" name="reprise_date"></label>
+          <label>Heure et local <input name="reprise_info" placeholder="ex. 8 h 15, local B-204"></label>
+        </div>
+      </fieldset>
+      <p class="erreur" hidden></p>
+      <div class="boutons">
+        <button type="button" class="secondaire" data-fermer>Annuler</button>
+        <button type="submit" class="principal">Envoyer aux élèves</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>

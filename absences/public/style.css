@@ -1,0 +1,108 @@
+:root {
+  --bleu: #1d4ed8; --bleu-pale: #dbeafe; --fond: #f4f6fb; --texte: #1f2937; --gris: #6b7280;
+  --rouge: #b91c1c; --rouge-pale: #fee2e2; --orange: #b45309; --orange-pale: #fef3c7; --vert: #047857; --vert-pale: #d1fae5;
+}
+* { box-sizing: border-box; }
+body { margin: 0; font-family: system-ui, 'Segoe UI', Roboto, Arial, sans-serif; background: var(--fond); color: var(--texte); font-size: 16px; }
+main { max-width: 1000px; margin: 0 auto; padding: 16px; }
+h1 { font-size: 1.25rem; margin: 0; }
+h2 { font-size: 1.2rem; }
+h3 { margin: 0; font-size: 1.1rem; }
+h4 { margin: 14px 0 6px; font-size: .95rem; color: var(--gris); text-transform: uppercase; letter-spacing: .03em; }
+
+.barre { background: var(--bleu); color: #fff; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+.barre .lien { color: #fff; }
+
+.carte { background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.carte.passee { opacity: .65; }
+.etroite { max-width: 440px; margin: 24px auto; }
+.titre-carte { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.details { color: var(--gris); font-size: .9rem; margin: 4px 0 0; }
+.note { font-style: italic; color: var(--gris); font-size: .9rem; }
+.vide { color: var(--gris); }
+.aide { color: var(--gris); }
+.centre { text-align: center; }
+
+button { font: inherit; cursor: pointer; border-radius: 8px; border: 0; padding: 10px 16px; }
+.principal { background: var(--bleu); color: #fff; font-weight: 600; }
+.principal:hover { filter: brightness(1.1); }
+.secondaire { background: #e5e7eb; color: var(--texte); }
+.gros { padding: 14px 18px; font-size: 1.05rem; width: 100%; }
+.lien { background: none; padding: 2px 4px; color: var(--bleu); text-decoration: underline; }
+.danger { color: var(--rouge); }
+
+.choix-role { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+.choix-role button { background: #eef2ff; color: var(--texte); border: 2px solid transparent; }
+.choix-role button.actif { border-color: var(--bleu); background: var(--bleu-pale); font-weight: 600; }
+
+form label { display: block; margin-bottom: 12px; font-weight: 600; font-size: .95rem; }
+form label small { display: block; font-weight: 400; color: var(--gris); margin-top: 2px; }
+input:not([type=checkbox]), select, textarea {
+  display: block; width: 100%; margin-top: 4px; padding: 10px; font: inherit; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff;
+}
+label.case, .case-fait { display: flex; align-items: center; gap: 8px; font-weight: 400; }
+input[type=checkbox] { width: 20px; height: 20px; }
+fieldset { border: 1px solid #e5e7eb; border-radius: 8px; margin: 0 0 12px; padding: 12px; }
+fieldset[hidden] { display: none; }
+legend { font-weight: 600; padding: 0 4px; }
+.deux { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.cases { max-height: 200px; overflow: auto; }
+.cases .case { margin-bottom: 6px; }
+.boutons { display: flex; justify-content: flex-end; gap: 8px; }
+.erreur { color: var(--rouge); background: var(--rouge-pale); padding: 8px 12px; border-radius: 8px; }
+.avert { color: var(--orange); background: var(--orange-pale); padding: 8px 12px; border-radius: 8px; }
+
+dialog { border: 0; border-radius: 12px; padding: 20px; width: min(560px, 94vw); box-shadow: 0 10px 40px rgba(0,0,0,.25); }
+dialog::backdrop { background: rgba(15,23,42,.5); }
+dialog h2 { margin-top: 0; }
+
+.pastille { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: .8rem; font-weight: 600; white-space: nowrap; }
+.pastille.rouge { background: var(--rouge-pale); color: var(--rouge); }
+.pastille.orange { background: var(--orange-pale); color: var(--orange); }
+.pastille.verte { background: var(--vert-pale); color: var(--vert); }
+.pastille.bleue { background: var(--bleu-pale); color: var(--bleu); }
+.pastille.grise { background: #e5e7eb; color: var(--gris); }
+
+.entete-eleve { margin-bottom: 12px; }
+.resume { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+.chiffre { background: #fff; border-radius: 12px; padding: 12px 16px; flex: 1; min-width: 200px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.chiffre strong { font-size: 1.6rem; color: var(--bleu); margin-right: 4px; }
+.chiffre small { display: block; color: var(--gris); }
+
+.taches { list-style: none; padding: 0; margin: 0; }
+.taches li { display: flex; gap: 12px; align-items: flex-start; padding: 10px; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 8px; }
+.taches li.fait { background: #f9fafb; }
+.taches li.fait .travail { text-decoration: line-through; color: var(--gris); }
+.taches p { margin: 4px 0; }
+.case-fait { flex-direction: column; font-size: .75rem; color: var(--gris); gap: 2px; min-width: 56px; }
+.examen { background: var(--orange-pale); color: #7c2d12; padding: 6px 8px; border-radius: 6px; }
+.travail { white-space: pre-wrap; }
+
+.onglets { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+.onglets button { background: #fff; color: var(--texte); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.onglets button.actif { background: var(--bleu); color: #fff; }
+.filtres { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
+.filtres input[type=search] { flex: 2; min-width: 200px; margin: 0; }
+.filtres select { flex: 1; min-width: 150px; width: auto; margin: 0; }
+
+table.eleves { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: .95rem; }
+table.eleves th { text-align: left; color: var(--gris); font-weight: 600; font-size: .85rem; border-bottom: 2px solid #e5e7eb; padding: 6px; }
+table.eleves td { border-bottom: 1px solid #eef0f3; padding: 8px 6px; vertical-align: top; }
+ul.mini { margin: 0; padding-left: 0; list-style: none; }
+ul.mini li { margin-bottom: 6px; }
+ul.mini .examen { margin-top: 2px; font-size: .9rem; }
+
+/* Téléphone : les tableaux deviennent des fiches */
+@media (max-width: 640px) {
+  .deux { grid-template-columns: 1fr; }
+  table.eleves thead { display: none; }
+  table.eleves tr { display: block; border-bottom: 2px solid #e5e7eb; padding: 6px 0; }
+  table.eleves td { display: block; border: 0; padding: 3px 0; }
+  table.eleves td[data-titre]::before { content: attr(data-titre) " : "; color: var(--gris); font-size: .85rem; }
+}
+
+@media print {
+  .barre, .onglets, .filtres, .resume, button { display: none !important; }
+  body { background: #fff; }
+  .carte { box-shadow: none; border: 1px solid #ccc; break-inside: avoid; }
+}
