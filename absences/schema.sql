@@ -1,4 +1,4 @@
--- Absences Sport-études : élèves, enseignants, tournois, absences et travaux demandés.
+-- Absences Sport-études : élèves, personnel (enseignants et direction), tournois, absences, travaux demandés, commentaires.
 -- Les dates (debut, fin, remise, reprise_date) sont au format AAAA-MM-JJ ; les heures (created_at…) en millisecondes.
 
 CREATE TABLE IF NOT EXISTS eleves (
@@ -32,6 +32,8 @@ CREATE TABLE IF NOT EXISTS tournois (
   lieu       TEXT NOT NULL DEFAULT '',
   debut      TEXT NOT NULL,
   fin        TEXT NOT NULL,
+  note       TEXT NOT NULL DEFAULT '', -- consignes de la direction (transport, horaire…)
+  officiel   INTEGER NOT NULL DEFAULT 0, -- 1 = inscrit par la direction : reste même sans élève
   created_at INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS tournois_fin ON tournois (fin);
@@ -62,3 +64,21 @@ CREATE TABLE IF NOT EXISTS taches (
   created_at    INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS taches_absence ON taches (absence_id);
+
+-- Commentaires du personnel sur une absence ; visible_eleve = 1 : l'élève le voit aussi.
+CREATE TABLE IF NOT EXISTS commentaires (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  absence_id    INTEGER NOT NULL,
+  auteur_id     INTEGER NOT NULL,   -- enseignants.id (la direction y figure aussi)
+  auteur_role   TEXT NOT NULL,      -- 'enseignant' | 'direction'
+  texte         TEXT NOT NULL,
+  visible_eleve INTEGER NOT NULL DEFAULT 0,
+  created_at    INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS commentaires_absence ON commentaires (absence_id);
+
+-- Réglages de la direction : preavis_min, nom_ecole, code_eleve, code_enseignant.
+CREATE TABLE IF NOT EXISTS reglages (
+  nom    TEXT PRIMARY KEY,
+  valeur TEXT
+);

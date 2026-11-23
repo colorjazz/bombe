@@ -1,7 +1,7 @@
 // Absences Sport-études — application (navigateur). Aucune dépendance.
 'use strict';
 
-const PREAVIS_MIN = 7; // jours d'avance demandés aux élèves
+let PREAVIS_MIN = 7; // jours d'avance demandés aux élèves (réglable par la direction)
 const $ = (sel, el = document) => el.querySelector(sel);
 const app = $('#app');
 const navBas = $('#nav-bas');
@@ -23,6 +23,12 @@ const ICONES = {
   recherche: '<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/>',
   imprimer: '<path d="M7 9V3.5h10V9M7 17H4.5V10a1 1 0 0 1 1-1h13a1 1 0 0 1 1 1v7H17"/><rect x="7" y="14" width="10" height="6.5" rx="1"/>',
   corbeille: '<path d="M4.5 7h15M10 4h4M6.5 7l1 13h9l1-13"/>',
+  plus_actions: '<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>',
+  crayon: '<path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z"/><path d="m13.5 6.5 4 4"/>',
+  bulle: '<path d="M5 18.5V6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v7a2.5 2.5 0 0 1-2.5 2.5H9l-4 2.5Z"/>',
+  ajout_eleve: '<circle cx="10" cy="8" r="3.5"/><path d="M3.5 20c.8-3.6 3.4-5.5 6.5-5.5 1.4 0 2.7.4 3.8 1.1M18 14v6M15 17h6"/>',
+  info: '<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5M12 8h.01"/>',
+  reglages: '<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/>',
   cle: '<circle cx="8" cy="15" r="4"/><path d="m11 12 8.5-8.5M16 7l2.5 2.5"/>',
 };
 const ico = (nom, cls = '') => `<svg class="ico ${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONES[nom]}</svg>`;
@@ -153,6 +159,7 @@ function ecranConnexion() {
     app.querySelectorAll('[data-role]').forEach((b) => b.setAttribute('aria-selected', b.dataset.role === r));
     form.querySelectorAll('.eleve').forEach((el) => { el.hidden = r !== 'eleve'; });
     form.querySelectorAll('.enseignant').forEach((el) => { el.hidden = r !== 'enseignant'; });
+    form.querySelectorAll('.personnel').forEach((el) => { el.hidden = r === 'eleve'; });
   };
   app.querySelectorAll('[data-role]').forEach((b) => { b.onclick = () => choisir(b.dataset.role); });
   choisir(role);
@@ -171,6 +178,7 @@ function ecranConnexion() {
       localStorage.setItem('nom', f.nom);
       if (f.groupe) localStorage.setItem('groupe', f.groupe);
       moi = r.moi;
+      reglages = r.reglages || reglages;
       afficher();
     } catch (err) { montrerErreur(form, err.message); } finally { bouton.disabled = false; }
   };
@@ -222,7 +230,12 @@ async function ecranEleve() {
           <div class="etat">${etat(a.debut, a.fin)}</div>
         </div>
       </div>
+      ${a.tournoi_note ? `<p class="consigne">${ico('info')}<span>${esc(a.tournoi_note)}</span></p>` : ''}
       ${a.note ? `<p class="note">${esc(a.note)}</p>` : ''}
+      ${a.commentaires?.length ? `<ul class="commentaires eleve-comm">${a.commentaires.map((c) => `<li>
+        <div class="comm-tete"><strong>${esc(c.auteur)}</strong>${c.auteur_role === 'direction' ? '<span class="pastille encre">Direction</span>' : ''}
+        <span class="details">${new Date(c.created_at).toLocaleDateString('fr-CA', { day: 'numeric', month: 'short' })}</span></div>
+        <p>${esc(c.texte)}</p></li>`).join('')}</ul>` : ''}
       <div class="carte-section">
         <h4>Travail demandé <span class="compte">${a.taches.filter((t) => t.fait_at).length}/${a.taches.length}</span></h4>
         ${a.taches.length ? `<ul class="taches">${a.taches.map(tacheEleve).join('')}</ul>`
@@ -305,27 +318,33 @@ async function ouvrirDeclaration() {
   ouvrir(dlg);
 }
 
-// ---------- Enseignant ----------
+// ---------- Personnel (enseignants et direction) ----------
 
+const estDirection = () => moi?.role === 'direction';
 const ONGLETS = [
   ['tournois', 'liste', 'Tournois'],
   ['calendrier', 'calendrier', 'Calendrier'],
   ['reprises', 'examen', 'Reprises'],
   ['eleves', 'eleves', 'Élèves'],
+  ['reglages', 'reglages', 'Réglages', true], // direction seulement
 ];
 const vue = { onglet: 'tournois', groupe: '', recherche: '', passes: false, mois: auj().slice(0, 7), jour: null };
 
 async function ecranEnseignant() {
   document.body.className = 'page-enseignant';
-  const [tab, liste] = await Promise.all([
+  const onglets = ONGLETS.filter((o) => !o[3] || estDirection());
+  if (!onglets.some((o) => o[0] === vue.onglet)) vue.onglet = 'tournois';
+  const [tab, liste, reg] = await Promise.all([
     api('tableau' + (vue.passes || vue.onglet === 'calendrier' ? '?passes=1' : '')),
     vue.onglet === 'eleves' ? api('eleves') : null,
+    vue.onglet === 'reglages' ? api('reglages') : null,
   ]);
   const groupes = [...new Set(tab.tournois.flatMap((t) => t.eleves.map((e) => e.groupe)).filter(Boolean))].sort();
 
   navBas.classList.remove('nav-action');
   navBas.hidden = false;
-  navBas.innerHTML = ONGLETS.map(([id, icone, lib]) => `
+  navBas.style.setProperty('--nb-onglets', onglets.length);
+  navBas.innerHTML = onglets.map(([id, icone, lib]) => `
     <button data-onglet="${id}" ${id === vue.onglet ? 'aria-current="page"' : ''}>
       ${ico(icone)}<span>${lib}${id === 'reprises' && tab.reprises.length ? ` <b class="badge">${tab.reprises.length}</b>` : ''}</span>
     </button>`).join('');
@@ -338,7 +357,8 @@ async function ecranEnseignant() {
   if (vue.onglet === 'tournois') ongletTournois(contenu, tab.tournois, groupes);
   else if (vue.onglet === 'calendrier') ongletCalendrier(contenu, tab.tournois, groupes);
   else if (vue.onglet === 'reprises') ongletReprises(contenu, tab.reprises);
-  else ongletEleves(contenu, liste.eleves);
+  else if (vue.onglet === 'eleves') ongletEleves(contenu, liste.eleves);
+  else ongletReglages(contenu, reg.reglages);
 }
 
 function filtreGroupe(groupes) {
@@ -347,21 +367,27 @@ function filtreGroupe(groupes) {
 }
 
 function ongletTournois(contenu, tournois, groupes) {
-  const enCours = tournois.filter((t) => joursAvant(t.debut) <= 0 && joursAvant(t.fin) >= 0);
+  const actifs = tournois.filter((t) => joursAvant(t.fin) >= 0);
+  const enCours = actifs.filter((t) => joursAvant(t.debut) <= 0);
   const absentsAuj = new Set(enCours.flatMap((t) => t.eleves.map((e) => e.eleve_id))).size;
   const prochains = tournois.filter((t) => joursAvant(t.debut) > 0 && joursAvant(t.debut) <= 14);
-  const sansTravail = tournois.filter((t) => joursAvant(t.fin) >= 0)
-    .flatMap((t) => t.eleves).filter((e) => !e.taches.some((ta) => ta.enseignant_id === moi.id)).length;
+  const troisieme = estDirection()
+    ? [actifs.flatMap((t) => t.eleves).filter((e) => e.preavis < 3).length, 'déclaration', 'tardive', 's']
+    : [actifs.flatMap((t) => t.eleves).filter((e) => !e.taches.some((ta) => ta.enseignant_id === moi.id)).length, 'élève', 'sans votre travail', 's'];
+  const pl = (n, mot) => mot + (n > 1 ? 's' : '');
 
   contenu.innerHTML = `
     <div class="entete-page">
       <h1>Tournois et absents</h1>
-      <button class="secondaire large-seulement" id="imprimer">${ico('imprimer')} Imprimer</button>
+      <div class="entete-actions">
+        <button class="secondaire large-seulement" id="imprimer">${ico('imprimer')} Imprimer</button>
+        ${estDirection() ? `<button class="principal" id="nouveau-tournoi-btn">${ico('plus')} Tournoi</button>` : ''}
+      </div>
     </div>
     <section class="stats">
-      <div class="stat"><span class="stat-nb">${absentsAuj}</span><span class="stat-lib">absent${absentsAuj > 1 ? 's' : ''} aujourd'hui</span></div>
-      <div class="stat"><span class="stat-nb">${prochains.length}</span><span class="stat-lib">tournoi${prochains.length > 1 ? 's' : ''} d'ici 14 jours</span></div>
-      <div class="stat"><span class="stat-nb">${sansTravail}</span><span class="stat-lib">élève${sansTravail > 1 ? 's' : ''} sans votre travail</span></div>
+      <div class="stat"><span class="stat-nb">${absentsAuj}</span><span class="stat-lib">${pl(absentsAuj, 'absent')} aujourd'hui</span></div>
+      <div class="stat"><span class="stat-nb">${prochains.length}</span><span class="stat-lib">${pl(prochains.length, 'tournoi')} d'ici 14 jours</span></div>
+      <div class="stat"><span class="stat-nb">${troisieme[0]}</span><span class="stat-lib">${pl(troisieme[0], troisieme[1])} ${troisieme[0] > 1 && estDirection() ? 'tardives' : troisieme[2]}</span></div>
     </section>
     <div class="filtres collant">
       <label class="recherche">${ico('recherche')}<input type="search" id="recherche" placeholder="Élève ou tournoi" value="${esc(vue.recherche)}" aria-label="Rechercher"></label>
@@ -373,58 +399,120 @@ function ongletTournois(contenu, tournois, groupes) {
   $('#filtre-groupe').onchange = (e) => { vue.groupe = e.target.value; dessiner(); };
   $('#passes').onclick = () => { vue.passes = !vue.passes; ecranEnseignant(); };
   $('#imprimer').onclick = () => window.print();
+  if (estDirection()) $('#nouveau-tournoi-btn').onclick = () => editerTournoi();
 
   function dessiner() {
     const zone = $('#tournois');
     zone.replaceChildren();
     const q = vue.recherche.trim().toLowerCase();
+    const filtre = !!(q || vue.groupe);
     let n = 0;
     const ordre = [...tournois].sort((a, b) => (joursAvant(a.fin) < 0) - (joursAvant(b.fin) < 0)
       || (joursAvant(a.fin) < 0 ? b.debut.localeCompare(a.debut) : a.debut.localeCompare(b.debut)));
     for (const t of ordre) {
-      const eleves = t.eleves.filter((e) => (!vue.groupe || e.groupe === vue.groupe)
-        && (!q || e.nom.toLowerCase().includes(q) || t.nom.toLowerCase().includes(q) || (t.sport || '').toLowerCase().includes(q)));
-      if (!eleves.length) continue;
+      const tournoiCorrespond = !q || t.nom.toLowerCase().includes(q) || (t.sport || '').toLowerCase().includes(q);
+      const eleves = t.eleves.filter((e) => (!vue.groupe || e.groupe === vue.groupe) && (tournoiCorrespond || e.nom.toLowerCase().includes(q)));
+      if (!eleves.length && (filtre || !estDirection())) continue; // la direction voit aussi les tournois encore vides
       n++;
-      const carte = document.createElement('article');
-      carte.className = 'carte' + (joursAvant(t.fin) < 0 ? ' passee' : '');
-      carte.innerHTML = `
-        <div class="carte-tete">
-          ${blocDate(t.debut, t.fin)}
-          <div class="carte-titre">
-            <h3>${esc(t.nom)}</h3>
-            <p class="meta">${meta(periode(t.debut, t.fin), esc(t.sport), esc(t.lieu))}</p>
-            <div class="etat">${etat(t.debut, t.fin)}<span class="details">${eleves.length} élève${eleves.length > 1 ? 's' : ''}</span></div>
-          </div>
-        </div>
-        <ul class="rangees">${eleves.map((e) => `
-          <li>
-            <div class="rangee-tete">
-              <span class="avatar petit">${initiales(e.nom)}</span>
-              <div class="rangee-nom"><strong>${esc(e.nom)}</strong><span class="details">${esc(e.groupe)}</span></div>
-              ${preavisPastille(e.preavis)}
-            </div>
-            ${e.note ? `<p class="note">${esc(e.note)}</p>` : ''}
-            ${e.taches.length ? `<ul class="mini">${e.taches.map(tacheProf).join('')}</ul>` : ''}
-          </li>`).join('')}
-        </ul>
-        <div class="carte-pied">
-          <button class="principal" data-ajouter>${ico('plus')} Travail ou reprise d'examen</button>
-        </div>`;
-      $('[data-ajouter]', carte).onclick = () => ouvrirTache(t, eleves);
-      carte.querySelectorAll('[data-retirer]').forEach((b) => {
-        b.onclick = async () => {
-          if (!await demander('Retirer ce travail ? L\'élève ne le verra plus.', 'Retirer')) return;
-          await api('taches/' + b.dataset.retirer, { method: 'DELETE' });
-          toast('Travail retiré');
-          ecranEnseignant();
-        };
-      });
-      zone.append(carte);
+      zone.append(carteTournoi(t, eleves));
     }
-    if (!n) zone.innerHTML = `<div class="vide-grand">${ico('liste')}<p>${q || vue.groupe ? 'Aucun résultat pour ce filtre.' : 'Aucune absence déclarée pour les tournois à venir.'}</p></div>`;
+    if (!n) zone.innerHTML = `<div class="vide-grand">${ico('liste')}<p>${filtre ? 'Aucun résultat pour ce filtre.' : 'Aucune absence déclarée pour les tournois à venir.'}</p>
+      ${estDirection() && !filtre ? '<p class="aide">Inscrivez un tournoi avec le bouton « Tournoi ».</p>' : ''}</div>`;
   }
   dessiner();
+}
+
+function carteTournoi(t, eleves) {
+  const carte = document.createElement('article');
+  carte.className = 'carte' + (joursAvant(t.fin) < 0 ? ' passee' : '');
+  carte.innerHTML = `
+    <div class="carte-tete">
+      ${blocDate(t.debut, t.fin)}
+      <div class="carte-titre">
+        <h3>${esc(t.nom)}</h3>
+        <p class="meta">${meta(periode(t.debut, t.fin), esc(t.sport), esc(t.lieu))}</p>
+        <div class="etat">${etat(t.debut, t.fin)}<span class="details">${eleves.length} élève${eleves.length > 1 ? 's' : ''}</span></div>
+      </div>
+      ${estDirection() ? `<button class="icone-btn" data-menu-tournoi aria-label="Actions sur le tournoi">${ico('plus_actions')}</button>` : ''}
+    </div>
+    ${t.note ? `<p class="consigne">${ico('info')}<span>${esc(t.note)}</span></p>` : ''}
+    ${eleves.length ? `<ul class="rangees">${eleves.map(rangeeEleve).join('')}</ul>` : '<p class="vide sans-eleve">Aucun élève inscrit pour l\'instant.</p>'}
+    <div class="carte-pied">
+      ${estDirection() ? `<button class="secondaire" data-inscrire>${ico('ajout_eleve')} Inscrire des élèves</button>` : ''}
+      ${eleves.length ? `<button class="principal" data-ajouter>${ico('plus')} Travail ou reprise</button>` : ''}
+    </div>`;
+  $('[data-ajouter]', carte)?.addEventListener('click', () => ouvrirTache(t, eleves));
+  $('[data-inscrire]', carte)?.addEventListener('click', () => inscrireEleves(t));
+  $('[data-menu-tournoi]', carte)?.addEventListener('click', () => actions(t.nom, [
+    ['Inscrire des élèves', 'ajout_eleve', () => inscrireEleves(t)],
+    ['Modifier le tournoi', 'crayon', () => editerTournoi(t)],
+    ['Supprimer le tournoi', 'corbeille', async () => {
+      if (!await demander(`Supprimer « ${t.nom} » ? Les ${t.eleves.length} absence(s), le travail et les commentaires liés seront effacés.`, 'Supprimer')) return;
+      await api('tournois/' + t.id, { method: 'DELETE' });
+      toast('Tournoi supprimé');
+      ecranEnseignant();
+    }, true],
+  ]));
+  carte.querySelectorAll('[data-retirer]').forEach((b) => {
+    b.onclick = async () => {
+      if (!await demander('Retirer ce travail ? L\'élève ne le verra plus.', 'Retirer')) return;
+      await api('taches/' + b.dataset.retirer, { method: 'DELETE' });
+      toast('Travail retiré');
+      ecranEnseignant();
+    };
+  });
+  carte.querySelectorAll('[data-retirer-comm]').forEach((b) => {
+    b.onclick = async () => {
+      if (!await demander('Retirer ce commentaire ?', 'Retirer')) return;
+      await api('commentaires/' + b.dataset.retirerComm, { method: 'DELETE' });
+      toast('Commentaire retiré');
+      ecranEnseignant();
+    };
+  });
+  carte.querySelectorAll('[data-eleve]').forEach((b) => {
+    const e = eleves.find((x) => x.absence_id === Number(b.dataset.eleve));
+    b.onclick = () => {
+      if (!estDirection()) return commenter(e, t);
+      actions(`${e.nom} · ${t.nom}`, [
+        ['Ajouter un commentaire', 'bulle', () => commenter(e, t)],
+        ['Modifier le message de l\'absence', 'crayon', () => editerNoteAbsence(e)],
+        ['Retirer du tournoi', 'corbeille', async () => {
+          if (!await demander(`Retirer ${e.nom} de « ${t.nom} » ? Son travail et les commentaires liés seront effacés.`, 'Retirer')) return;
+          await api('absences/' + e.absence_id, { method: 'DELETE' });
+          toast(`${e.nom} retiré du tournoi`);
+          ecranEnseignant();
+        }, true],
+      ]);
+    };
+  });
+  return carte;
+}
+
+function rangeeEleve(e) {
+  return `<li>
+    <div class="rangee-tete">
+      <span class="avatar petit">${initiales(e.nom)}</span>
+      <div class="rangee-nom"><strong>${esc(e.nom)}</strong><span class="details">${esc(e.groupe)}</span></div>
+      ${preavisPastille(e.preavis)}
+      <button class="icone-btn petit" data-eleve="${e.absence_id}" aria-label="${estDirection() ? 'Actions' : 'Commenter'}">${ico(estDirection() ? 'plus_actions' : 'bulle')}</button>
+    </div>
+    ${e.note ? `<p class="note">${esc(e.note)}</p>` : ''}
+    ${e.taches.length ? `<ul class="mini">${e.taches.map(tacheProf).join('')}</ul>` : ''}
+    ${e.commentaires?.length ? `<ul class="commentaires">${e.commentaires.map(commentaireProf).join('')}</ul>` : ''}
+  </li>`;
+}
+
+function commentaireProf(c) {
+  const peut = estDirection() || c.auteur_id === moi.id;
+  return `<li>
+    <div class="comm-tete">
+      <strong>${esc(c.auteur)}</strong>${c.auteur_role === 'direction' ? '<span class="pastille encre">Direction</span>' : ''}
+      <span class="details">${new Date(c.created_at).toLocaleDateString('fr-CA', { day: 'numeric', month: 'short' })}</span>
+      <span class="pastille ${c.visible_eleve ? 'neutre' : 'grise'}">${c.visible_eleve ? 'Vu par l\'élève' : 'Interne'}</span>
+      ${peut ? `<button class="icone-btn petit" data-retirer-comm="${c.id}" aria-label="Retirer le commentaire">${ico('corbeille')}</button>` : ''}
+    </div>
+    <p>${esc(c.texte)}</p>
+  </li>`;
 }
 
 function initiales(nom) {
@@ -432,17 +520,176 @@ function initiales(nom) {
 }
 
 function tacheProf(t) {
-  const mien = t.enseignant_id === moi.id;
-  return `<li class="${mien ? 'mien' : ''}">
+  const peut = t.enseignant_id === moi.id || estDirection();
+  return `<li class="${t.enseignant_id === moi.id ? 'mien' : ''}">
     <div class="mini-tete">
       <strong>${esc(t.matiere || t.enseignant)}</strong>
       ${t.fait_at ? '<span class="pastille verte">Terminé</span>' : ''}
-      ${mien ? `<button class="icone-btn petit" data-retirer="${t.id}" aria-label="Retirer ce travail">${ico('corbeille')}</button>` : ''}
+      ${peut ? `<button class="icone-btn petit" data-retirer="${t.id}" aria-label="Retirer ce travail">${ico('corbeille')}</button>` : ''}
     </div>
     ${t.travail ? `<p>${esc(t.travail)}</p>` : ''}
     ${t.remise ? `<p class="details">À remettre le ${dateFr(t.remise)}</p>` : ''}
     ${t.examen ? `<p class="reprise-ligne">${ico('examen')} Reprise${t.examen_nom ? ' · ' + esc(t.examen_nom) : ''} : ${t.reprise_date ? dateFr(t.reprise_date) : 'date à fixer'}${t.reprise_info ? ', ' + esc(t.reprise_info) : ''}</p>` : ''}
   </li>`;
+}
+
+// ---------- Formulaires génériques et menu d'actions ----------
+
+// champs : [{ nom, type: text|date|number|textarea|switch|cases, label, valeur, placeholder, demi, aide, options }]
+function formulaire({ titre, sousTitre = '', champs, bouton = 'Enregistrer', envoyer }) {
+  const dlg = $('#dlg-gen');
+  const form = $('#form-gen');
+  $('#gen-titre').textContent = titre;
+  $('#gen-sous').textContent = sousTitre;
+  $('#gen-sous').hidden = !sousTitre;
+  $('#gen-ok').textContent = bouton;
+  let html = '';
+  for (let i = 0; i < champs.length; i++) {
+    const c = champs[i];
+    if (c.demi && champs[i + 1]?.demi) { html += `<div class="deux">${champ(c)}${champ(champs[i + 1])}</div>`; i++; } else html += champ(c);
+  }
+  $('#gen-champs').innerHTML = html;
+  form.querySelectorAll('[data-filtre-cases]').forEach((inp) => {
+    inp.oninput = () => {
+      const q = inp.value.trim().toLowerCase();
+      inp.closest('fieldset').querySelectorAll('label.case').forEach((l) => { l.hidden = q && !l.textContent.toLowerCase().includes(q); });
+    };
+  });
+  form.onsubmit = async (e) => {
+    e.preventDefault();
+    const v = {};
+    for (const c of champs) {
+      if (c.type === 'cases') v[c.nom] = [...form.querySelectorAll(`[name="${c.nom}"]:checked`)].map((x) => x.value);
+      else if (c.type === 'switch') v[c.nom] = form.elements[c.nom].checked;
+      else v[c.nom] = form.elements[c.nom].value;
+    }
+    const ok = $('#gen-ok');
+    ok.disabled = true;
+    try { await envoyer(v); dlg.close(); } catch (err) { montrerErreur(form, err.message); } finally { ok.disabled = false; }
+  };
+  ouvrir(dlg);
+}
+
+function champ(c) {
+  const val = esc(c.valeur ?? '');
+  const ph = c.placeholder ? ` placeholder="${esc(c.placeholder)}"` : '';
+  const aide = c.aide ? `<small>${c.aide}</small>` : '';
+  if (c.type === 'textarea') return `<label>${c.label}<textarea name="${c.nom}" rows="${c.lignes || 3}"${ph}>${val}</textarea>${aide}</label>`;
+  if (c.type === 'switch') return `<label class="interrupteur"><input type="checkbox" name="${c.nom}" role="switch" ${c.valeur ? 'checked' : ''}><span>${c.label}</span></label>`;
+  if (c.type === 'cases') {
+    return `<fieldset class="groupe-champs"><legend>${c.label}</legend>
+      ${c.options.length > 6 ? `<label class="recherche cases-recherche">${ico('recherche')}<input type="search" data-filtre-cases placeholder="Rechercher" aria-label="Rechercher"></label>` : ''}
+      <div class="cases defile">${c.options.length ? c.options.map((o) => `<label class="case"><input type="checkbox" name="${c.nom}" value="${o.valeur}" ${o.coche ? 'checked' : ''}><span>${esc(o.lib)}</span><span class="details">${esc(o.detail || '')}</span></label>`).join('')
+        : `<p class="vide">${c.vide || 'Aucun choix.'}</p>`}</div></fieldset>`;
+  }
+  return `<label>${c.label}<input type="${c.type || 'text'}" name="${c.nom}" value="${val}"${ph}${c.type === 'number' ? ' inputmode="numeric" min="0"' : ''}>${aide}</label>`;
+}
+
+function actions(titre, liste) {
+  const dlg = $('#dlg-actions');
+  $('#actions-titre').textContent = titre;
+  const zone = $('#actions-liste');
+  zone.innerHTML = liste.map(([lib, icone, , danger], i) => `<button data-action="${i}" class="${danger ? 'danger' : ''}">${ico(icone)}<span>${lib}</span></button>`).join('');
+  zone.querySelectorAll('[data-action]').forEach((b) => {
+    b.onclick = () => { dlg.close(); liste[Number(b.dataset.action)][2](); };
+  });
+  dlg.showModal();
+}
+
+// ---------- Actions de la direction ----------
+
+function editerTournoi(t) {
+  formulaire({
+    titre: t ? 'Modifier le tournoi' : 'Nouveau tournoi',
+    sousTitre: t ? '' : 'Les élèves pourront le choisir dans leur liste.',
+    bouton: t ? 'Enregistrer' : 'Créer le tournoi',
+    champs: [
+      { nom: 'nom', label: 'Nom du tournoi', valeur: t?.nom, placeholder: 'Championnat provincial de volleyball' },
+      { nom: 'sport', label: 'Sport', valeur: t?.sport, placeholder: 'Volleyball', demi: true },
+      { nom: 'lieu', label: 'Ville', valeur: t?.lieu, placeholder: 'Sherbrooke', demi: true },
+      { nom: 'debut', type: 'date', label: 'Premier jour', valeur: t?.debut, demi: true },
+      { nom: 'fin', type: 'date', label: 'Dernier jour', valeur: t?.fin, demi: true },
+      { nom: 'note', type: 'textarea', label: 'Consignes <span class="facultatif">facultatif, vues par tous</span>', valeur: t?.note, lignes: 2, placeholder: 'Départ en autobus jeudi 7 h devant l\'école.' },
+    ],
+    envoyer: async (v) => {
+      await api(t ? 'tournois/' + t.id : 'tournois', { method: t ? 'PUT' : 'POST', body: v });
+      toast(t ? 'Tournoi modifié' : 'Tournoi créé');
+      ecranEnseignant();
+    },
+  });
+}
+
+async function inscrireEleves(t) {
+  const { eleves } = await api('eleves');
+  const deja = new Set(t.eleves.map((e) => e.eleve_id));
+  formulaire({
+    titre: 'Inscrire des élèves',
+    sousTitre: `${t.nom} · ${periode(t.debut, t.fin)}`,
+    bouton: 'Inscrire',
+    champs: [
+      { nom: 'eleve_ids', type: 'cases', label: 'Élèves déjà inscrits dans l\'application', vide: 'Aucun autre élève pour l\'instant.',
+        options: eleves.filter((e) => !deja.has(e.id)).map((e) => ({ valeur: e.id, lib: e.nom, detail: e.groupe })) },
+      { nom: 'nouveaux', type: 'textarea', label: 'Autres élèves <span class="facultatif">un par ligne</span>', lignes: 3,
+        placeholder: 'Léa Tremblay, 3-02\nNoah Côté, 3-01', aide: 'Prénom et nom, une virgule, puis le groupe. Pratique pour coller la liste d\'une équipe.' },
+      { nom: 'note', type: 'textarea', label: 'Message pour les enseignants <span class="facultatif">facultatif</span>', lignes: 2 },
+    ],
+    envoyer: async (v) => {
+      const nouveaux = v.nouveaux.split('\n').map((l) => l.trim()).filter(Boolean).map((l) => {
+        const [nom, groupe = ''] = l.split(/[,;\t]/).map((x) => x.trim());
+        return { nom, groupe };
+      });
+      const r = await api('inscriptions', { method: 'POST', body: { tournoi_id: t.id, eleve_ids: v.eleve_ids.map(Number), nouveaux, note: v.note } });
+      toast(`${r.nb} élève${r.nb > 1 ? 's' : ''} inscrit${r.nb > 1 ? 's' : ''}`);
+      ecranEnseignant();
+    },
+  });
+}
+
+function commenter(e, t) {
+  formulaire({
+    titre: 'Commentaire',
+    sousTitre: `${e.nom} · ${t.nom}`,
+    bouton: 'Publier',
+    champs: [
+      { nom: 'texte', type: 'textarea', label: 'Commentaire', lignes: 4, placeholder: 'Ex. : a remis son travail en avance ; à revoir avant la reprise.' },
+      { nom: 'visible_eleve', type: 'switch', label: 'L\'élève peut le lire' },
+    ],
+    envoyer: async (v) => {
+      await api(`absences/${e.absence_id}/commentaires`, { method: 'POST', body: v });
+      toast('Commentaire publié');
+      ecranEnseignant();
+    },
+  });
+}
+
+function editerNoteAbsence(e) {
+  formulaire({
+    titre: 'Message de l\'absence',
+    sousTitre: e.nom,
+    champs: [{ nom: 'note', type: 'textarea', label: 'Message vu par les enseignants', valeur: e.note, lignes: 3 }],
+    envoyer: async (v) => {
+      await api('absences/' + e.absence_id, { method: 'PUT', body: v });
+      toast('Message modifié');
+      ecranEnseignant();
+    },
+  });
+}
+
+function editerEleve(e) {
+  formulaire({
+    titre: e ? 'Modifier l\'élève' : 'Ajouter un élève',
+    sousTitre: e ? '' : 'L\'élève choisira son NIP à sa première connexion.',
+    bouton: e ? 'Enregistrer' : 'Ajouter',
+    champs: [
+      { nom: 'nom', label: 'Prénom et nom', valeur: e?.nom, placeholder: 'Léa Tremblay' },
+      { nom: 'groupe', label: 'Groupe', valeur: e?.groupe, placeholder: '3-02' },
+    ],
+    envoyer: async (v) => {
+      await api(e ? 'eleves/' + e.id : 'eleves', { method: e ? 'PUT' : 'POST', body: v });
+      toast(e ? 'Élève modifié' : 'Élève ajouté');
+      ecranEnseignant();
+    },
+  });
 }
 
 function ouvrirTache(t, eleves) {
@@ -608,25 +855,42 @@ function ongletReprises(contenu, reprises) {
 
 function ongletEleves(contenu, eleves) {
   contenu.innerHTML = `
-    <div class="entete-page"><h1>Élèves</h1></div>
+    <div class="entete-page"><h1>Élèves</h1>
+      ${estDirection() ? `<button class="principal" id="ajout-eleve">${ico('plus')} Élève</button>` : ''}</div>
     <div class="filtres">
-      <label class="recherche">${ico('recherche')}<input type="search" id="recherche-eleve" placeholder="Rechercher un élève" aria-label="Rechercher un élève"></label>
+      <label class="recherche">${ico('recherche')}<input type="search" id="recherche-eleve" placeholder="Nom ou groupe" aria-label="Rechercher un élève"></label>
     </div>
     <p class="aide">Un élève a oublié son NIP ? Effacez-le : il en choisira un nouveau à sa prochaine connexion.</p>
     <ul class="carte rangees" id="liste-eleves"></ul>`;
+  if (estDirection()) $('#ajout-eleve').onclick = () => editerEleve();
+  const effacerNip = async (e) => {
+    if (!await demander(`Effacer le NIP de ${e.nom} ?`, 'Effacer')) return;
+    await api(`eleves/${e.id}/effacer-nip`, { method: 'POST' });
+    toast(`NIP de ${e.nom} effacé`);
+    ecranEnseignant();
+  };
   const dessiner = (q = '') => {
     const l = eleves.filter((e) => !q || e.nom.toLowerCase().includes(q.toLowerCase()) || e.groupe.includes(q));
     $('#liste-eleves').innerHTML = l.length ? l.map((e) => `<li><div class="rangee-tete">
       <span class="avatar petit">${initiales(e.nom)}</span>
-      <div class="rangee-nom"><strong>${esc(e.nom)}</strong><span class="details">${esc(e.groupe)} · ${e.nb} absence${e.nb > 1 ? 's' : ''}</span></div>
-      <button class="secondaire petit" data-nip="${e.id}" data-nom="${esc(e.nom)}">${ico('cle')} Effacer le NIP</button>
+      <div class="rangee-nom"><strong>${esc(e.nom)}</strong><span class="details">${esc(e.groupe)} · ${e.nb} absence${e.nb > 1 ? 's' : ''}${e.a_nip ? '' : ' · sans NIP'}</span></div>
+      ${estDirection() ? `<button class="icone-btn petit" data-el="${e.id}" aria-label="Actions">${ico('plus_actions')}</button>`
+        : `<button class="secondaire petit" data-el="${e.id}" ${e.a_nip ? '' : 'disabled'}>${ico('cle')} Effacer le NIP</button>`}
     </div></li>`).join('') : '<li class="vide">Aucun élève.</li>';
-    contenu.querySelectorAll('[data-nip]').forEach((b) => {
-      b.onclick = async () => {
-        if (!await demander(`Effacer le NIP de ${b.dataset.nom} ?`, 'Effacer')) return;
-        await api(`eleves/${b.dataset.nip}/effacer-nip`, { method: 'POST' });
-        toast(`NIP de ${b.dataset.nom} effacé`);
-        b.disabled = true;
+    contenu.querySelectorAll('[data-el]').forEach((b) => {
+      const e = eleves.find((x) => x.id === Number(b.dataset.el));
+      b.onclick = () => {
+        if (!estDirection()) return effacerNip(e);
+        actions(e.nom, [
+          ['Modifier le nom ou le groupe', 'crayon', () => editerEleve(e)],
+          ['Effacer le NIP', 'cle', () => effacerNip(e)],
+          ['Supprimer l\'élève', 'corbeille', async () => {
+            if (!await demander(`Supprimer ${e.nom} et ses ${e.nb} absence(s) ? Cette action est définitive.`, 'Supprimer')) return;
+            await api('eleves/' + e.id, { method: 'DELETE' });
+            toast(`${e.nom} supprimé`);
+            ecranEnseignant();
+          }, true],
+        ]);
       };
     });
   };
@@ -634,13 +898,51 @@ function ongletEleves(contenu, eleves) {
   dessiner();
 }
 
+function ongletReglages(contenu, r) {
+  contenu.innerHTML = `
+    <div class="entete-page"><h1>Réglages</h1></div>
+    <form id="form-reglages" class="carte reglages" novalidate>
+      <h2>École</h2>
+      <label>Nom affiché <input name="nom_ecole" value="${esc(r.nom_ecole)}" placeholder="Sport-études"></label>
+      <label>Préavis demandé aux élèves <span class="avec-unite"><input name="preavis_min" type="number" inputmode="numeric" min="0" max="60" value="${r.preavis_min}"> jours</span>
+        <small>En dessous, l'élève est averti et l'absence apparaît en orange ou en rouge.</small></label>
+      <h2>Codes de connexion</h2>
+      <div class="deux">
+        <label>Code élève <input name="code_eleve" value="${esc(r.code_eleve)}" autocomplete="off" autocapitalize="off"></label>
+        <label>Code enseignant <input name="code_enseignant" value="${esc(r.code_enseignant)}" autocomplete="off" autocapitalize="off"></label>
+      </div>
+      <p class="aide">Changer un code ne déconnecte personne ; il sert aux prochaines connexions. Le code de la direction se change dans Cloudflare (secret CODE_DIRECTION).</p>
+      <p class="erreur" hidden></p>
+      <div class="carte-pied"><button class="principal" type="submit">Enregistrer</button></div>
+    </form>`;
+  const form = $('#form-reglages');
+  form.onsubmit = async (e) => {
+    e.preventDefault();
+    montrerErreur(form, '');
+    try {
+      await api('reglages', { method: 'PUT', body: Object.fromEntries(new FormData(form)) });
+      const m = await api('moi');
+      reglages = m.reglages;
+      appliquerReglages();
+      toast('Réglages enregistrés');
+    } catch (err) { montrerErreur(form, err.message); }
+  };
+}
+
 // ---------- Démarrage ----------
 
+let reglages = { preavis_min: 7, nom_ecole: '' };
+function appliquerReglages() {
+  PREAVIS_MIN = reglages.preavis_min;
+  $('.nom-appli .sous').textContent = reglages.nom_ecole || 'Sport-études';
+}
+
 function afficher() {
+  appliquerReglages();
   $('#qui').hidden = false;
   $('#qui-initiales').innerHTML = initiales(moi.nom);
   $('#qui-nom').textContent = moi.nom;
-  $('#qui-detail').textContent = moi.role === 'eleve' ? `Groupe ${moi.groupe || ''}` : (moi.matiere || 'Enseignant');
+  $('#qui-detail').textContent = moi.role === 'eleve' ? `Groupe ${moi.groupe || ''}` : moi.role === 'direction' ? 'Direction' : (moi.matiere || 'Enseignant');
   $('#menu-nom').textContent = moi.nom;
   (moi.role === 'eleve' ? ecranEleve() : ecranEnseignant()).catch((err) => {
     app.innerHTML = `<p class="erreur">${esc(err.message)}</p>`;
@@ -650,7 +952,9 @@ function afficher() {
 async function demarrer() {
   if (!localStorage.getItem('jeton')) return ecranConnexion();
   try {
-    moi = (await api('moi')).moi;
+    const r = await api('moi');
+    moi = r.moi;
+    reglages = r.reglages || reglages;
     afficher();
   } catch { ecranConnexion(); }
 }

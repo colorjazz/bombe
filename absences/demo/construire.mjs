@@ -5,10 +5,11 @@ const ici = new URL('.', import.meta.url);
 const lire = (f) => readFileSync(new URL(f, ici), 'utf8');
 const bandeau = `<div class="demo-bandeau">
   <span class="demo-etiquette">Démo</span>
-  <span class="demo-texte">Données fictives, gardées dans ce navigateur. Codes : élève <code>sport</code>, enseignant <code>prof</code>.</span>
+  <span class="demo-texte">Données fictives, gardées dans ce navigateur. Codes : élève <code>sport</code>, enseignant <code>prof</code>, direction <code>dir</code>.</span>
   <span class="demo-acces">
-    <button data-demo="eleve">Vue élève</button>
-    <button data-demo="enseignant">Vue enseignant</button>
+    <button data-demo="eleve">Élève</button>
+    <button data-demo="enseignant">Enseignant</button>
+    <button data-demo="direction">Direction</button>
     <button data-demo="reset" class="demo-reset">Réinitialiser</button>
   </span>
 </div>`;
@@ -17,6 +18,7 @@ document.querySelectorAll('[data-demo]').forEach((b) => b.onclick = async () => 
   if (b.dataset.demo === 'reset') { reinitialiserDemo(); localStorage.removeItem('jeton'); return location.reload(); }
   const corps = b.dataset.demo === 'eleve'
     ? { role: 'eleve', nom: 'Léa Tremblay', groupe: '3-02', nip: '1234', code: 'sport' }
+    : b.dataset.demo === 'direction' ? { role: 'direction', nom: 'Sophie Martin', code: 'dir' }
     : { role: 'enseignant', nom: 'Marc Gagnon', matiere: 'Mathématiques', code: 'prof' };
   const r = await (await fetch('/api/login', { method: 'POST', headers: {}, body: JSON.stringify(corps) })).json();
   localStorage.setItem('jeton', r.token); localStorage.setItem('role', corps.role); location.reload();

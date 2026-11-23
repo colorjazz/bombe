@@ -39,6 +39,7 @@
       <div class="segment" role="tablist">
         <button type="button" data-role="eleve" role="tab">Élève</button>
         <button type="button" data-role="enseignant" role="tab">Enseignant</button>
+        <button type="button" data-role="direction" role="tab">Direction</button>
       </div>
       <form id="form-connexion" novalidate>
         <label>Prénom et nom <input name="nom" autocomplete="name" required placeholder="Léa Tremblay"></label>
@@ -120,6 +121,34 @@
         <button type="submit" class="principal">Envoyer</button>
       </footer>
     </form>
+  </dialog>
+
+  <!-- Feuille générique : formulaires de la direction, commentaires… (remplie par formulaire() dans app.js) -->
+  <dialog id="dlg-gen" class="feuille">
+    <form id="form-gen" novalidate>
+      <header class="feuille-tete">
+        <div>
+          <h2 id="gen-titre"></h2>
+          <p class="details" id="gen-sous"></p>
+        </div>
+        <button type="button" class="icone-btn" data-fermer aria-label="Fermer"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      </header>
+      <div class="feuille-corps">
+        <div id="gen-champs"></div>
+        <p class="erreur" hidden></p>
+      </div>
+      <footer class="feuille-pied">
+        <button type="button" class="secondaire" data-fermer>Annuler</button>
+        <button type="submit" class="principal" id="gen-ok">Enregistrer</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- Menu d'actions (feuille du bas sur téléphone) -->
+  <dialog id="dlg-actions" class="feuille petite actions">
+    <div class="actions-tete" id="actions-titre"></div>
+    <div id="actions-liste" class="actions-liste"></div>
+    <div class="actions-pied"><button type="button" class="secondaire plein" data-fermer>Fermer</button></div>
   </dialog>
 
   <!-- Confirmation -->

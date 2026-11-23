@@ -34,6 +34,7 @@ ask_secret() {
 }
 ask_secret CODE_ELEVE "Choisissez le code que vous donnerez aux élèves (ex. volley2026) :"
 ask_secret CODE_ENSEIGNANT "Choisissez le code réservé aux enseignants (différent du code élève) :"
+ask_secret CODE_DIRECTION "Choisissez le code de la direction (accès complet, à garder pour vous) :"
 
 echo
 echo "Terminé ! L'adresse du site est affichée ci-dessus (…workers.dev)."

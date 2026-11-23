@@ -115,7 +115,7 @@ label.case .details { margin-left: auto; }
 .connexion { max-width: 420px; margin: 8px auto 0; }
 .connexion h1 { font-size: 1.9rem; margin-bottom: 8px; }
 .connexion .intro { color: var(--gris); margin-bottom: 24px; }
-.segment { display: grid; grid-template-columns: 1fr 1fr; background: #e7e7e3; border-radius: 12px; padding: 4px; margin-bottom: 20px; }
+.segment { display: grid; grid-template-columns: repeat(3, 1fr); background: #e7e7e3; border-radius: 12px; padding: 4px; margin-bottom: 20px; }
 .segment button { border-radius: 9px; font-weight: 600; color: var(--gris); }
 .segment button[aria-selected=true] { background: #fff; color: var(--encre); box-shadow: var(--ombre); }
 .connexion form { background: var(--carte); border-radius: var(--rayon); padding: 20px; box-shadow: var(--ombre); }
@@ -244,6 +244,38 @@ ul.mini p { margin-top: 2px; }
 .rangees .reprise-ligne { margin-left: 46px; color: var(--texte); }
 .rangees .reprise-ligne .ico { color: var(--ambre); }
 
+/* Direction : consignes, commentaires, réglages */
+.entete-actions { display: flex; gap: 8px; }
+.consigne { display: flex; gap: 10px; margin-top: 12px; padding: 10px 12px; background: var(--action-pale); color: #1b2f73; border-radius: 10px; font-size: .9rem; }
+.consigne .ico { color: var(--action); width: 18px; height: 18px; margin-top: 1px; }
+.sans-eleve { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--ligne); }
+.carte-pied { gap: 8px; flex-wrap: wrap; }
+.pastille.encre { background: var(--encre); color: #fff; }
+.commentaires { list-style: none; padding: 0; margin: 10px 0 0 46px; display: grid; gap: 8px; }
+.commentaires li { border-left: 3px solid var(--ligne-forte); padding: 4px 0 4px 12px; font-size: .9rem; }
+.comm-tete { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-height: 28px; }
+.comm-tete .icone-btn { margin-left: auto; }
+.comm-tete .pastille { font-size: .7rem; padding: 1px 8px; }
+.eleve-comm { margin: 12px 0 0; }
+.eleve-comm li { border-left-color: var(--action); }
+.rangee-tete > .icone-btn { margin-right: -6px; }
+.defile { max-height: 260px; overflow-y: auto; }
+.cases-recherche { margin: 0 0 6px; clear: both; }
+.cases-recherche input { min-height: 40px; padding-top: 8px; padding-bottom: 8px; }
+.reglages { max-width: 640px; padding: 20px; }
+.reglages h2 { font-size: 1rem; margin: 4px 0 12px; }
+.reglages h2:not(:first-child) { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--ligne); }
+.avec-unite { display: flex; align-items: center; gap: 10px; font-weight: 400; }
+.avec-unite input { width: 96px !important; }
+.actions { padding: 0; }
+.actions[open] { flex-direction: column; }
+.actions-tete { padding: 18px 20px 10px; font-weight: 700; color: var(--encre); border-bottom: 1px solid var(--ligne); }
+.actions-liste { display: grid; padding: 6px; }
+.actions-liste button { justify-content: flex-start; gap: 14px; min-height: 52px; font-weight: 500; border-radius: 10px; padding: 0 14px; }
+.actions-liste button:hover { background: #f3f3f1; }
+.actions-liste button.danger { color: var(--rouge); }
+.actions-pied { padding: 6px 12px calc(12px + var(--bas-sur)); }
+
 /* ---------- Feuilles (dialogues) ---------- */
 dialog { border: 0; padding: 0; border-radius: 16px; width: min(560px, 94vw); max-height: 90dvh; box-shadow: 0 24px 64px rgba(20,33,61,.3); color: var(--texte); overflow: hidden; }
 dialog::backdrop { background: rgba(20,33,61,.45); }
@@ -283,7 +315,7 @@ dialog form { display: flex; flex-direction: column; width: 100%; max-height: 90
 @media (max-width: 900px) {
   body.page-enseignant, body.page-eleve { padding-bottom: calc(var(--nav-h) + var(--bas-sur) + 12px); }
   .nav-bas { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; background: rgba(255,255,255,.96); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-    border-top: 1px solid var(--ligne); display: grid; grid-template-columns: repeat(4, 1fr); padding: 0 max(4px, env(safe-area-inset-left)) var(--bas-sur); }
+    border-top: 1px solid var(--ligne); display: grid; grid-template-columns: repeat(var(--nb-onglets, 4), minmax(0, 1fr)); padding: 0 max(4px, env(safe-area-inset-left)) var(--bas-sur); }
   .nav-bas button { flex-direction: column; gap: 3px; min-height: var(--nav-h); border-radius: 0; color: var(--gris-clair); font-size: .72rem; font-weight: 600; padding: 6px 0; }
   .nav-bas button .ico { width: 24px; height: 24px; }
   .nav-bas button[aria-current=page] { color: var(--action); }
@@ -310,7 +342,9 @@ dialog form { display: flex; flex-direction: column; width: 100%; max-height: 90
   ul.carte.rangees { padding: 2px 14px; }
   .carte-tete { gap: 12px; }
   .carte-pied .principal { width: 100%; }
-  ul.mini, .rangees .note, .rangees .reprise-ligne { margin-left: 0; }
+  ul.mini, .rangees .note, .rangees .reprise-ligne, .commentaires { margin-left: 0; }
+  .nav-bas button { font-size: .68rem; }
+  .entete-page { align-items: center; }
   .rangee-tete .pastille { font-size: .72rem; padding: 2px 8px; }
   .filtres select { flex: 1; min-width: 0; }
   .collant { top: 56px; margin-left: -12px; margin-right: -12px; padding: 8px 12px; }
@@ -331,7 +365,7 @@ dialog form { display: flex; flex-direction: column; width: 100%; max-height: 90
   .rangee-tete .secondaire.petit { padding: 0 10px; font-size: .8rem; }
 
   /* Les dialogues deviennent des feuilles qui montent du bas */
-  dialog.feuille { width: 100%; max-width: 100%; margin: auto 0 0; border-radius: 18px 18px 0 0; max-height: 94dvh; animation: monter .22s ease-out; }
+  dialog.feuille, dialog.feuille.petite { width: 100%; max-width: 100%; margin: auto 0 0; border-radius: 18px 18px 0 0; max-height: 94dvh; animation: monter .22s ease-out; }
   dialog.feuille form { max-height: 94dvh; }
   dialog.feuille::before { content: ''; position: absolute; top: 6px; left: 50%; transform: translateX(-50%); width: 40px; height: 4px; border-radius: 2px; background: var(--ligne-forte); }
   .feuille-tete { padding-top: 20px; }
@@ -364,10 +398,11 @@ dialog form { display: flex; flex-direction: column; width: 100%; max-height: 90
 <body>
 <div class="demo-bandeau">
   <span class="demo-etiquette">Démo</span>
-  <span class="demo-texte">Données fictives, gardées dans ce navigateur. Codes : élève <code>sport</code>, enseignant <code>prof</code>.</span>
+  <span class="demo-texte">Données fictives, gardées dans ce navigateur. Codes : élève <code>sport</code>, enseignant <code>prof</code>, direction <code>dir</code>.</span>
   <span class="demo-acces">
-    <button data-demo="eleve">Vue élève</button>
-    <button data-demo="enseignant">Vue enseignant</button>
+    <button data-demo="eleve">Élève</button>
+    <button data-demo="enseignant">Enseignant</button>
+    <button data-demo="direction">Direction</button>
     <button data-demo="reset" class="demo-reset">Réinitialiser</button>
   </span>
 </div>
@@ -397,6 +432,7 @@ dialog form { display: flex; flex-direction: column; width: 100%; max-height: 90
       <div class="segment" role="tablist">
         <button type="button" data-role="eleve" role="tab">Élève</button>
         <button type="button" data-role="enseignant" role="tab">Enseignant</button>
+        <button type="button" data-role="direction" role="tab">Direction</button>
       </div>
       <form id="form-connexion" novalidate>
         <label>Prénom et nom <input name="nom" autocomplete="name" required placeholder="Léa Tremblay"></label>
@@ -480,6 +516,34 @@ dialog form { display: flex; flex-direction: column; width: 100%; max-height: 90
     </form>
   </dialog>
 
+  <!-- Feuille générique : formulaires de la direction, commentaires… (remplie par formulaire() dans app.js) -->
+  <dialog id="dlg-gen" class="feuille">
+    <form id="form-gen" novalidate>
+      <header class="feuille-tete">
+        <div>
+          <h2 id="gen-titre"></h2>
+          <p class="details" id="gen-sous"></p>
+        </div>
+        <button type="button" class="icone-btn" data-fermer aria-label="Fermer"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      </header>
+      <div class="feuille-corps">
+        <div id="gen-champs"></div>
+        <p class="erreur" hidden></p>
+      </div>
+      <footer class="feuille-pied">
+        <button type="button" class="secondaire" data-fermer>Annuler</button>
+        <button type="submit" class="principal" id="gen-ok">Enregistrer</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- Menu d'actions (feuille du bas sur téléphone) -->
+  <dialog id="dlg-actions" class="feuille petite actions">
+    <div class="actions-tete" id="actions-titre"></div>
+    <div id="actions-liste" class="actions-liste"></div>
+    <div class="actions-pied"><button type="button" class="secondaire plein" data-fermer>Fermer</button></div>
+  </dialog>
+
   <!-- Confirmation -->
   <dialog id="dlg-confirmer" class="feuille petite">
     <form method="dialog">
@@ -497,7 +561,7 @@ dialog form { display: flex; flex-direction: column; width: 100%; max-height: 90
 // Démonstration : remplace le serveur par des données fictives gardées dans le navigateur (localStorage).
 // Mêmes routes que src/worker.js, pour montrer l'application sans la mettre en ligne.
 (() => {
-  const CLE = 'absences-demo-v1';
+  const CLE = 'absences-demo-v2';
   const JOUR = 864e5;
   const iso = (dec) => new Date(Date.now() + dec * JOUR).toLocaleDateString('en-CA');
   const cle = (n) => n.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
@@ -506,10 +570,12 @@ dialog form { display: flex; flex-direction: column; width: 100%; max-height: 90
     const noms = [['Léa Tremblay', '3-02'], ['Noah Côté', '3-01'], ['Emma Gagnon', '3-02'], ['William Roy', '4-01'],
       ['Florence Bouchard', '4-01'], ['Thomas Gauthier', '3-01'], ['Alice Morin', '4-02'], ['Jacob Lavoie', '4-02'],
       ['Zoé Fortin', '3-02'], ['Liam Pelletier', '4-01'], ['Rosalie Bélanger', '3-01'], ['Nathan Lévesque', '4-02']];
-    const d = { n: 100, eleves: [], enseignants: [], tournois: [], absences: [], taches: [], sessions: {} };
+    const d = { n: 100, eleves: [], enseignants: [], tournois: [], absences: [], taches: [], commentaires: [], sessions: {},
+      reglages: { preavis_min: 7, nom_ecole: 'École secondaire du Boisé', code_eleve: 'sport', code_enseignant: 'prof' } };
     noms.forEach(([nom, groupe], i) => d.eleves.push({ id: i + 1, nom, nom_cle: cle(nom), groupe, nip: i === 0 ? '1234' : null }));
     d.enseignants.push({ id: 1, nom: 'Marc Gagnon', nom_cle: cle('Marc Gagnon'), matiere: 'Mathématiques' },
-      { id: 2, nom: 'Julie Roy', nom_cle: cle('Julie Roy'), matiere: 'Français' });
+      { id: 2, nom: 'Julie Roy', nom_cle: cle('Julie Roy'), matiere: 'Français' },
+      { id: 3, nom: 'Sophie Martin', nom_cle: cle('Sophie Martin'), matiere: '' });
     const T = [
       ['Coupe Québec de volleyball', 'Volleyball', 'Sherbrooke', 4, 6, [1, 2, 3, 9, 11]],
       ['Omnium de tennis junior', 'Tennis', 'Gatineau', 17, 17, [1, 7]],
@@ -519,7 +585,8 @@ dialog form { display: flex; flex-direction: column; width: 100%; max-height: 90
       ['Invitation de gymnastique', 'Gymnastique', 'Trois-Rivières', -12, -11, [7, 9]],
     ];
     T.forEach(([nom, sport, lieu, a, b, el], i) => {
-      d.tournois.push({ id: i + 1, nom, sport, lieu, debut: iso(a), fin: iso(b) });
+      d.tournois.push({ id: i + 1, nom, sport, lieu, debut: iso(a), fin: iso(b), officiel: i === 0 ? 1 : 0,
+        note: i === 0 ? 'Départ en autobus jeudi 7 h devant l\'école. Retour dimanche vers 18 h.' : '' });
       el.forEach((e, k) => d.absences.push({ id: d.n++, eleve_id: e, tournoi_id: i + 1, note: e === 1 && i === 0 ? 'Je pars jeudi midi.' : '',
         created_at: Date.now() + (a - [12, 9, 5, 2, 1, 15][(e + k) % 6]) * JOUR }));
     });
@@ -531,6 +598,11 @@ dialog form { display: flex; flex-direction: column; width: 100%; max-height: 90
       tache(abs(1, e), 2, { travail: 'Lire le chapitre 5 du roman et répondre aux questions 1 à 8.', remise: iso(8), fait_at: e === 3 ? Date.now() : null });
     });
     [6, 8, 12].forEach((e) => tache(abs(4, e), 2, { travail: 'Rédiger le plan du texte argumentatif.', remise: iso(3) }));
+    d.tournois.push({ id: 7, nom: 'Championnat régional de badminton', sport: 'Badminton', lieu: 'Longueuil', debut: iso(31), fin: iso(32), officiel: 1, note: 'Inscriptions confirmées par l\'entraîneur le 1er décembre.' });
+    const comm = (a, auteur, role, texte, vis) => d.commentaires.push({ id: d.n++, absence_id: a, auteur_id: auteur, auteur_role: role, texte, visible_eleve: vis, created_at: Date.now() - 864e5 });
+    comm(abs(1, 1), 3, 'direction', 'Autorisation parentale reçue.', 0);
+    comm(abs(1, 2), 1, 'enseignant', 'Noah a déjà pris de l\'avance sur les exercices, bravo.', 1);
+    comm(abs(4, 8), 3, 'direction', 'Déclaré la veille du départ : rencontre prévue avec l\'élève.', 0);
     return d;
   }
 
@@ -545,11 +617,36 @@ dialog form { display: flex; flex-direction: column; width: 100%; max-height: 90
   const ens = (id) => db.enseignants.find((e) => e.id === id);
   const avecProf = (t) => ({ ...t, enseignant: ens(t.enseignant_id).nom, matiere: ens(t.enseignant_id).matiere });
   const tournoi = (id) => db.tournois.find((t) => t.id === id);
+  const avecAuteur = (c) => ({ ...c, auteur: ens(c.auteur_id).nom });
+  const champsT = (n) => {
+    if (!(n.nom || '').trim()) throw new E(400, 'Indiquez le nom du tournoi.');
+    if (!n.debut) throw new E(400, 'Date invalide : premier jour.');
+    const fin = n.fin || n.debut;
+    if (fin < n.debut) throw new E(400, 'Le dernier jour est avant le premier jour.');
+    return { nom: n.nom.trim(), sport: (n.sport || '').trim(), lieu: (n.lieu || '').trim(), debut: n.debut, fin, note: (n.note || '').trim() };
+  };
+  const nomOk = (nom) => { if (!(nom || '').trim().includes(' ')) throw new E(400, 'Prénom et nom, s’il vous plaît.'); };
+  const eleveDe = (n) => {
+    nomOk(n.nom);
+    let e = db.eleves.find((x) => x.nom_cle === cle(n.nom));
+    if (!e) {
+      if (!(n.groupe || '').trim()) throw new E(400, `Indiquez le groupe de ${n.nom}.`);
+      e = { id: db.n++, nom: n.nom.trim(), nom_cle: cle(n.nom), groupe: n.groupe.trim(), nip: null };
+      db.eleves.push(e);
+    }
+    return e;
+  };
+  const effacerAbsences = (ids) => {
+    db.taches = db.taches.filter((t) => !ids.includes(t.absence_id));
+    db.commentaires = db.commentaires.filter((c) => !ids.includes(c.absence_id));
+    db.absences = db.absences.filter((a) => !ids.includes(a.id));
+  };
+  const publics = () => ({ preavis_min: db.reglages.preavis_min, nom_ecole: db.reglages.nom_ecole });
 
   function qui(h, role) {
     const s = db.sessions[(h.Authorization || '').replace('Bearer ', '')];
     if (!s) throw new E(401, 'Connectez-vous.');
-    if (role && s.role !== role) throw new E(403, 'Action réservée.');
+    if (role && s.role !== role && !(role === 'enseignant' && s.role === 'direction')) throw new E(403, 'Action réservée.');
     const p = (s.role === 'eleve' ? db.eleves : db.enseignants).find((x) => x.id === s.id);
     return { role: s.role, ...p };
   }
@@ -557,8 +654,9 @@ dialog form { display: flex; flex-direction: column; width: 100%; max-height: 90
 
   const routes = {
     'POST login': (h, b) => {
-      const role = b.role === 'enseignant' ? 'enseignant' : 'eleve';
-      if ((b.code || '').trim().toLowerCase() !== (role === 'eleve' ? 'sport' : 'prof')) throw new E(403, role === 'eleve' ? 'Code de l\'école incorrect (démo : sport).' : 'Code enseignant incorrect (démo : prof).');
+      const role = ['enseignant', 'direction'].includes(b.role) ? b.role : 'eleve';
+      const code = { eleve: db.reglages.code_eleve, enseignant: db.reglages.code_enseignant, direction: 'dir' }[role];
+      if ((b.code || '').trim().toLowerCase() !== code.toLowerCase()) throw new E(403, `Code incorrect (démo : ${code}).`);
       const nom = (b.nom || '').trim().replace(/\s+/g, ' ');
       if (!nom.includes(' ')) throw new E(400, 'Prénom et nom, s’il vous plaît.');
       let p;
@@ -570,15 +668,69 @@ dialog form { display: flex; flex-direction: column; width: 100%; max-height: 90
         if (b.groupe) p.groupe = b.groupe.trim();
       } else {
         p = db.enseignants.find((e) => e.nom_cle === cle(nom));
-        if (!p) { p = { id: db.n++, nom, nom_cle: cle(nom), matiere: (b.matiere || '').trim() }; db.enseignants.push(p); }
-        else if (b.matiere) p.matiere = b.matiere.trim();
+        const matiere = role === 'enseignant' ? (b.matiere || '').trim() : '';
+        if (!p) { p = { id: db.n++, nom, nom_cle: cle(nom), matiere }; db.enseignants.push(p); }
+        else if (matiere) p.matiere = matiere;
       }
       const token = 'demo' + Math.random().toString(36).slice(2);
       db.sessions[token] = { role, id: p.id };
-      return { token, moi: profil({ role, ...p }) };
+      return { token, moi: profil({ role, ...p }), reglages: publics() };
     },
     'POST logout': () => ({ ok: true }),
-    'GET moi': (h) => ({ moi: profil(qui(h)) }),
+    'GET moi': (h) => ({ moi: profil(qui(h)), reglages: publics() }),
+    'POST tournois': (h, b) => { qui(h, 'direction'); const t = { id: db.n++, ...champsT(b), officiel: 1 }; db.tournois.push(t); return { ok: true, id: t.id }; },
+    'PUT tournois': (h, b, id) => { qui(h, 'direction'); Object.assign(tournoi(id), champsT(b), { officiel: 1 }); return { ok: true }; },
+    'DELETE tournois': (h, b, id) => {
+      qui(h, 'direction');
+      effacerAbsences(db.absences.filter((a) => a.tournoi_id === id).map((a) => a.id));
+      db.tournois = db.tournois.filter((t) => t.id !== id);
+      return { ok: true };
+    },
+    'POST inscriptions': (h, b) => {
+      qui(h, 'direction');
+      const ids = new Set((b.eleve_ids || []).map(Number));
+      (b.nouveaux || []).forEach((n) => ids.add(eleveDe(n).id));
+      if (!ids.size) throw new E(400, 'Choisissez au moins un élève.');
+      ids.forEach((eid) => {
+        if (!db.absences.some((a) => a.eleve_id === eid && a.tournoi_id === b.tournoi_id)) {
+          db.absences.push({ id: db.n++, eleve_id: eid, tournoi_id: b.tournoi_id, note: (b.note || '').trim(), created_at: Date.now() });
+        }
+      });
+      return { ok: true, nb: ids.size };
+    },
+    'PUT absences': (h, b, id) => { qui(h, 'direction'); db.absences.find((a) => a.id === id).note = (b.note || '').trim(); return { ok: true }; },
+    'POST absences-comm': (h, b, id) => {
+      const p = qui(h, 'enseignant');
+      if (!(b.texte || '').trim()) throw new E(400, 'Le commentaire est vide.');
+      db.commentaires.push({ id: db.n++, absence_id: id, auteur_id: p.id, auteur_role: p.role, texte: b.texte.trim(), visible_eleve: b.visible_eleve ? 1 : 0, created_at: Date.now() });
+      return { ok: true };
+    },
+    'DELETE commentaires': (h, b, id) => { qui(h, 'enseignant'); db.commentaires = db.commentaires.filter((c) => c.id !== id); return { ok: true }; },
+    'POST eleves': (h, b) => {
+      qui(h, 'direction');
+      if (db.eleves.some((e) => e.nom_cle === cle(b.nom || ''))) throw new E(409, `${b.nom} est déjà inscrit.`);
+      return { ok: true, id: eleveDe(b).id };
+    },
+    'PUT eleves': (h, b, id) => {
+      qui(h, 'direction'); nomOk(b.nom);
+      Object.assign(db.eleves.find((e) => e.id === id), { nom: b.nom.trim(), nom_cle: cle(b.nom), groupe: (b.groupe || '').trim() });
+      return { ok: true };
+    },
+    'DELETE eleves': (h, b, id) => {
+      qui(h, 'direction');
+      effacerAbsences(db.absences.filter((a) => a.eleve_id === id).map((a) => a.id));
+      db.eleves = db.eleves.filter((e) => e.id !== id);
+      return { ok: true };
+    },
+    'GET reglages': (h) => { qui(h, 'direction'); return { reglages: db.reglages }; },
+    'PUT reglages': (h, b) => {
+      qui(h, 'direction');
+      const preavis = Math.round(Number(b.preavis_min));
+      if (!(preavis >= 0 && preavis <= 60)) throw new E(400, 'Le préavis doit être entre 0 et 60 jours.');
+      if ((b.code_eleve || '').trim().length < 4 || (b.code_enseignant || '').trim().length < 4) throw new E(400, 'Chaque code doit avoir au moins 4 caractères.');
+      db.reglages = { preavis_min: preavis, nom_ecole: (b.nom_ecole || '').trim(), code_eleve: b.code_eleve.trim(), code_enseignant: b.code_enseignant.trim() };
+      return { ok: true };
+    },
     'GET tournois': (h) => { qui(h); return { tournois: db.tournois.filter((t) => t.fin >= auj()).sort((a, b) => a.debut.localeCompare(b.debut))
       .map((t) => ({ ...t, nb: db.absences.filter((a) => a.tournoi_id === t.id).length })) }; },
     'POST absences': (h, b) => {
@@ -598,11 +750,11 @@ dialog form { display: flex; flex-direction: column; width: 100%; max-height: 90
       return { ok: true };
     },
     'DELETE absences': (h, b, id) => {
-      qui(h);
+      const p = qui(h);
+      if (p.role === 'enseignant') throw new E(403, 'Seuls l’élève et la direction peuvent retirer une absence.');
       const a = db.absences.find((x) => x.id === id);
-      db.absences = db.absences.filter((x) => x.id !== id);
-      db.taches = db.taches.filter((t) => t.absence_id !== id);
-      if (a && !db.absences.some((x) => x.tournoi_id === a.tournoi_id)) db.tournois = db.tournois.filter((t) => t.id !== a.tournoi_id);
+      effacerAbsences([id]);
+      if (a && !tournoi(a.tournoi_id).officiel && !db.absences.some((x) => x.tournoi_id === a.tournoi_id)) db.tournois = db.tournois.filter((t) => t.id !== a.tournoi_id);
       return { ok: true };
     },
     'GET mes-absences': (h) => {
@@ -610,22 +762,24 @@ dialog form { display: flex; flex-direction: column; width: 100%; max-height: 90
       return { absences: db.absences.filter((a) => a.eleve_id === el.id).map((a) => {
         const t = tournoi(a.tournoi_id);
         return { id: a.id, note: a.note, created_at: a.created_at, tournoi_id: t.id, tournoi: t.nom, sport: t.sport, lieu: t.lieu, debut: t.debut, fin: t.fin,
-          taches: db.taches.filter((x) => x.absence_id === a.id).map(avecProf) };
+          tournoi_note: t.note || '', taches: db.taches.filter((x) => x.absence_id === a.id).map(avecProf),
+          commentaires: db.commentaires.filter((c) => c.absence_id === a.id && c.visible_eleve).map(avecAuteur) };
       }).sort((a, b) => b.debut.localeCompare(a.debut)) };
     },
     'POST taches-fait': (h, b, id) => { qui(h, 'eleve'); const t = db.taches.find((x) => x.id === id); t.fait_at = t.fait_at ? null : Date.now(); return { ok: true }; },
     'GET tableau': (h, b, id, q) => {
-      qui(h, 'enseignant');
+      const p = qui(h, 'enseignant');
       const depuis = iso(q.get('passes') === '1' ? -365 : -14);
       const tournois = db.tournois.filter((t) => t.fin >= depuis).sort((a, b) => a.debut.localeCompare(b.debut)).map((t) => ({
-        ...t,
+        ...t, officiel: !!t.officiel, note: t.note || '',
         eleves: db.absences.filter((a) => a.tournoi_id === t.id).map((a) => {
           const e = db.eleves.find((x) => x.id === a.eleve_id);
           return { absence_id: a.id, eleve_id: e.id, nom: e.nom, groupe: e.groupe, note: a.note, declare_le: a.created_at,
             preavis: Math.floor((Date.parse(t.debut + 'T00:00:00') - a.created_at) / JOUR),
-            taches: db.taches.filter((x) => x.absence_id === a.id).map(avecProf) };
+            taches: db.taches.filter((x) => x.absence_id === a.id).map(avecProf),
+            commentaires: db.commentaires.filter((c) => c.absence_id === a.id).map(avecAuteur) };
         }).sort((x, y) => (x.groupe + x.nom).localeCompare(y.groupe + y.nom)),
-      })).filter((t) => t.eleves.length);
+      })).filter((t) => p.role === 'direction' || t.eleves.length);
       const reprises = db.taches.filter((t) => t.examen && t.reprise_date >= auj()).map((t) => {
         const a = db.absences.find((x) => x.id === t.absence_id), e = db.eleves.find((x) => x.id === a.eleve_id);
         return { ...avecProf(t), eleve: e.nom, groupe: e.groupe, tournoi: tournoi(a.tournoi_id).nom };
@@ -643,7 +797,7 @@ dialog form { display: flex; flex-direction: column; width: 100%; max-height: 90
       return { ok: true, nb: ids.length };
     },
     'DELETE taches': (h, b, id) => { qui(h, 'enseignant'); db.taches = db.taches.filter((t) => t.id !== id); return { ok: true }; },
-    'GET eleves': (h) => { qui(h, 'enseignant'); return { eleves: db.eleves.map((e) => ({ ...e, nb: db.absences.filter((a) => a.eleve_id === e.id).length }))
+    'GET eleves': (h) => { qui(h, 'enseignant'); return { eleves: db.eleves.map((e) => ({ ...e, a_nip: !!e.nip, nb: db.absences.filter((a) => a.eleve_id === e.id).length }))
       .sort((a, b) => (a.groupe + a.nom).localeCompare(b.groupe + b.nom)) }; },
     'POST eleves-nip': (h, b, id) => { qui(h, 'enseignant'); db.eleves.find((e) => e.id === id).nip = null; return { ok: true }; },
   };
@@ -652,7 +806,12 @@ dialog form { display: flex; flex-direction: column; width: 100%; max-height: 90
     const u = new URL(url, 'http://demo');
     const parts = u.pathname.replace('/api/', '').split('/');
     let nom = parts[0], id = null;
-    if (parts[1]) { id = Number(parts[1]); if (parts[2] === 'fait') nom = 'taches-fait'; if (parts[2] === 'effacer-nip') nom = 'eleves-nip'; }
+    if (parts[1]) {
+      id = Number(parts[1]);
+      if (parts[2] === 'fait') nom = 'taches-fait';
+      if (parts[2] === 'effacer-nip') nom = 'eleves-nip';
+      if (parts[2] === 'commentaires') nom = 'absences-comm';
+    }
     const route = routes[`${opt.method || 'GET'} ${nom}`];
     let status = 200, data;
     try {
@@ -670,7 +829,7 @@ dialog form { display: flex; flex-direction: column; width: 100%; max-height: 90
 // Absences Sport-études — application (navigateur). Aucune dépendance.
 'use strict';
 
-const PREAVIS_MIN = 7; // jours d'avance demandés aux élèves
+let PREAVIS_MIN = 7; // jours d'avance demandés aux élèves (réglable par la direction)
 const $ = (sel, el = document) => el.querySelector(sel);
 const app = $('#app');
 const navBas = $('#nav-bas');
@@ -692,6 +851,12 @@ const ICONES = {
   recherche: '<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/>',
   imprimer: '<path d="M7 9V3.5h10V9M7 17H4.5V10a1 1 0 0 1 1-1h13a1 1 0 0 1 1 1v7H17"/><rect x="7" y="14" width="10" height="6.5" rx="1"/>',
   corbeille: '<path d="M4.5 7h15M10 4h4M6.5 7l1 13h9l1-13"/>',
+  plus_actions: '<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>',
+  crayon: '<path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z"/><path d="m13.5 6.5 4 4"/>',
+  bulle: '<path d="M5 18.5V6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v7a2.5 2.5 0 0 1-2.5 2.5H9l-4 2.5Z"/>',
+  ajout_eleve: '<circle cx="10" cy="8" r="3.5"/><path d="M3.5 20c.8-3.6 3.4-5.5 6.5-5.5 1.4 0 2.7.4 3.8 1.1M18 14v6M15 17h6"/>',
+  info: '<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5M12 8h.01"/>',
+  reglages: '<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/>',
   cle: '<circle cx="8" cy="15" r="4"/><path d="m11 12 8.5-8.5M16 7l2.5 2.5"/>',
 };
 const ico = (nom, cls = '') => `<svg class="ico ${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONES[nom]}</svg>`;
@@ -822,6 +987,7 @@ function ecranConnexion() {
     app.querySelectorAll('[data-role]').forEach((b) => b.setAttribute('aria-selected', b.dataset.role === r));
     form.querySelectorAll('.eleve').forEach((el) => { el.hidden = r !== 'eleve'; });
     form.querySelectorAll('.enseignant').forEach((el) => { el.hidden = r !== 'enseignant'; });
+    form.querySelectorAll('.personnel').forEach((el) => { el.hidden = r === 'eleve'; });
   };
   app.querySelectorAll('[data-role]').forEach((b) => { b.onclick = () => choisir(b.dataset.role); });
   choisir(role);
@@ -840,6 +1006,7 @@ function ecranConnexion() {
       localStorage.setItem('nom', f.nom);
       if (f.groupe) localStorage.setItem('groupe', f.groupe);
       moi = r.moi;
+      reglages = r.reglages || reglages;
       afficher();
     } catch (err) { montrerErreur(form, err.message); } finally { bouton.disabled = false; }
   };
@@ -891,7 +1058,12 @@ async function ecranEleve() {
           <div class="etat">${etat(a.debut, a.fin)}</div>
         </div>
       </div>
+      ${a.tournoi_note ? `<p class="consigne">${ico('info')}<span>${esc(a.tournoi_note)}</span></p>` : ''}
       ${a.note ? `<p class="note">${esc(a.note)}</p>` : ''}
+      ${a.commentaires?.length ? `<ul class="commentaires eleve-comm">${a.commentaires.map((c) => `<li>
+        <div class="comm-tete"><strong>${esc(c.auteur)}</strong>${c.auteur_role === 'direction' ? '<span class="pastille encre">Direction</span>' : ''}
+        <span class="details">${new Date(c.created_at).toLocaleDateString('fr-CA', { day: 'numeric', month: 'short' })}</span></div>
+        <p>${esc(c.texte)}</p></li>`).join('')}</ul>` : ''}
       <div class="carte-section">
         <h4>Travail demandé <span class="compte">${a.taches.filter((t) => t.fait_at).length}/${a.taches.length}</span></h4>
         ${a.taches.length ? `<ul class="taches">${a.taches.map(tacheEleve).join('')}</ul>`
@@ -974,27 +1146,33 @@ async function ouvrirDeclaration() {
   ouvrir(dlg);
 }
 
-// ---------- Enseignant ----------
+// ---------- Personnel (enseignants et direction) ----------
 
+const estDirection = () => moi?.role === 'direction';
 const ONGLETS = [
   ['tournois', 'liste', 'Tournois'],
   ['calendrier', 'calendrier', 'Calendrier'],
   ['reprises', 'examen', 'Reprises'],
   ['eleves', 'eleves', 'Élèves'],
+  ['reglages', 'reglages', 'Réglages', true], // direction seulement
 ];
 const vue = { onglet: 'tournois', groupe: '', recherche: '', passes: false, mois: auj().slice(0, 7), jour: null };
 
 async function ecranEnseignant() {
   document.body.className = 'page-enseignant';
-  const [tab, liste] = await Promise.all([
+  const onglets = ONGLETS.filter((o) => !o[3] || estDirection());
+  if (!onglets.some((o) => o[0] === vue.onglet)) vue.onglet = 'tournois';
+  const [tab, liste, reg] = await Promise.all([
     api('tableau' + (vue.passes || vue.onglet === 'calendrier' ? '?passes=1' : '')),
     vue.onglet === 'eleves' ? api('eleves') : null,
+    vue.onglet === 'reglages' ? api('reglages') : null,
   ]);
   const groupes = [...new Set(tab.tournois.flatMap((t) => t.eleves.map((e) => e.groupe)).filter(Boolean))].sort();
 
   navBas.classList.remove('nav-action');
   navBas.hidden = false;
-  navBas.innerHTML = ONGLETS.map(([id, icone, lib]) => `
+  navBas.style.setProperty('--nb-onglets', onglets.length);
+  navBas.innerHTML = onglets.map(([id, icone, lib]) => `
     <button data-onglet="${id}" ${id === vue.onglet ? 'aria-current="page"' : ''}>
       ${ico(icone)}<span>${lib}${id === 'reprises' && tab.reprises.length ? ` <b class="badge">${tab.reprises.length}</b>` : ''}</span>
     </button>`).join('');
@@ -1007,7 +1185,8 @@ async function ecranEnseignant() {
   if (vue.onglet === 'tournois') ongletTournois(contenu, tab.tournois, groupes);
   else if (vue.onglet === 'calendrier') ongletCalendrier(contenu, tab.tournois, groupes);
   else if (vue.onglet === 'reprises') ongletReprises(contenu, tab.reprises);
-  else ongletEleves(contenu, liste.eleves);
+  else if (vue.onglet === 'eleves') ongletEleves(contenu, liste.eleves);
+  else ongletReglages(contenu, reg.reglages);
 }
 
 function filtreGroupe(groupes) {
@@ -1016,21 +1195,27 @@ function filtreGroupe(groupes) {
 }
 
 function ongletTournois(contenu, tournois, groupes) {
-  const enCours = tournois.filter((t) => joursAvant(t.debut) <= 0 && joursAvant(t.fin) >= 0);
+  const actifs = tournois.filter((t) => joursAvant(t.fin) >= 0);
+  const enCours = actifs.filter((t) => joursAvant(t.debut) <= 0);
   const absentsAuj = new Set(enCours.flatMap((t) => t.eleves.map((e) => e.eleve_id))).size;
   const prochains = tournois.filter((t) => joursAvant(t.debut) > 0 && joursAvant(t.debut) <= 14);
-  const sansTravail = tournois.filter((t) => joursAvant(t.fin) >= 0)
-    .flatMap((t) => t.eleves).filter((e) => !e.taches.some((ta) => ta.enseignant_id === moi.id)).length;
+  const troisieme = estDirection()
+    ? [actifs.flatMap((t) => t.eleves).filter((e) => e.preavis < 3).length, 'déclaration', 'tardive', 's']
+    : [actifs.flatMap((t) => t.eleves).filter((e) => !e.taches.some((ta) => ta.enseignant_id === moi.id)).length, 'élève', 'sans votre travail', 's'];
+  const pl = (n, mot) => mot + (n > 1 ? 's' : '');
 
   contenu.innerHTML = `
     <div class="entete-page">
       <h1>Tournois et absents</h1>
-      <button class="secondaire large-seulement" id="imprimer">${ico('imprimer')} Imprimer</button>
+      <div class="entete-actions">
+        <button class="secondaire large-seulement" id="imprimer">${ico('imprimer')} Imprimer</button>
+        ${estDirection() ? `<button class="principal" id="nouveau-tournoi-btn">${ico('plus')} Tournoi</button>` : ''}
+      </div>
     </div>
     <section class="stats">
-      <div class="stat"><span class="stat-nb">${absentsAuj}</span><span class="stat-lib">absent${absentsAuj > 1 ? 's' : ''} aujourd'hui</span></div>
-      <div class="stat"><span class="stat-nb">${prochains.length}</span><span class="stat-lib">tournoi${prochains.length > 1 ? 's' : ''} d'ici 14 jours</span></div>
-      <div class="stat"><span class="stat-nb">${sansTravail}</span><span class="stat-lib">élève${sansTravail > 1 ? 's' : ''} sans votre travail</span></div>
+      <div class="stat"><span class="stat-nb">${absentsAuj}</span><span class="stat-lib">${pl(absentsAuj, 'absent')} aujourd'hui</span></div>
+      <div class="stat"><span class="stat-nb">${prochains.length}</span><span class="stat-lib">${pl(prochains.length, 'tournoi')} d'ici 14 jours</span></div>
+      <div class="stat"><span class="stat-nb">${troisieme[0]}</span><span class="stat-lib">${pl(troisieme[0], troisieme[1])} ${troisieme[0] > 1 && estDirection() ? 'tardives' : troisieme[2]}</span></div>
     </section>
     <div class="filtres collant">
       <label class="recherche">${ico('recherche')}<input type="search" id="recherche" placeholder="Élève ou tournoi" value="${esc(vue.recherche)}" aria-label="Rechercher"></label>
@@ -1042,58 +1227,120 @@ function ongletTournois(contenu, tournois, groupes) {
   $('#filtre-groupe').onchange = (e) => { vue.groupe = e.target.value; dessiner(); };
   $('#passes').onclick = () => { vue.passes = !vue.passes; ecranEnseignant(); };
   $('#imprimer').onclick = () => window.print();
+  if (estDirection()) $('#nouveau-tournoi-btn').onclick = () => editerTournoi();
 
   function dessiner() {
     const zone = $('#tournois');
     zone.replaceChildren();
     const q = vue.recherche.trim().toLowerCase();
+    const filtre = !!(q || vue.groupe);
     let n = 0;
     const ordre = [...tournois].sort((a, b) => (joursAvant(a.fin) < 0) - (joursAvant(b.fin) < 0)
       || (joursAvant(a.fin) < 0 ? b.debut.localeCompare(a.debut) : a.debut.localeCompare(b.debut)));
     for (const t of ordre) {
-      const eleves = t.eleves.filter((e) => (!vue.groupe || e.groupe === vue.groupe)
-        && (!q || e.nom.toLowerCase().includes(q) || t.nom.toLowerCase().includes(q) || (t.sport || '').toLowerCase().includes(q)));
-      if (!eleves.length) continue;
+      const tournoiCorrespond = !q || t.nom.toLowerCase().includes(q) || (t.sport || '').toLowerCase().includes(q);
+      const eleves = t.eleves.filter((e) => (!vue.groupe || e.groupe === vue.groupe) && (tournoiCorrespond || e.nom.toLowerCase().includes(q)));
+      if (!eleves.length && (filtre || !estDirection())) continue; // la direction voit aussi les tournois encore vides
       n++;
-      const carte = document.createElement('article');
-      carte.className = 'carte' + (joursAvant(t.fin) < 0 ? ' passee' : '');
-      carte.innerHTML = `
-        <div class="carte-tete">
-          ${blocDate(t.debut, t.fin)}
-          <div class="carte-titre">
-            <h3>${esc(t.nom)}</h3>
-            <p class="meta">${meta(periode(t.debut, t.fin), esc(t.sport), esc(t.lieu))}</p>
-            <div class="etat">${etat(t.debut, t.fin)}<span class="details">${eleves.length} élève${eleves.length > 1 ? 's' : ''}</span></div>
-          </div>
-        </div>
-        <ul class="rangees">${eleves.map((e) => `
-          <li>
-            <div class="rangee-tete">
-              <span class="avatar petit">${initiales(e.nom)}</span>
-              <div class="rangee-nom"><strong>${esc(e.nom)}</strong><span class="details">${esc(e.groupe)}</span></div>
-              ${preavisPastille(e.preavis)}
-            </div>
-            ${e.note ? `<p class="note">${esc(e.note)}</p>` : ''}
-            ${e.taches.length ? `<ul class="mini">${e.taches.map(tacheProf).join('')}</ul>` : ''}
-          </li>`).join('')}
-        </ul>
-        <div class="carte-pied">
-          <button class="principal" data-ajouter>${ico('plus')} Travail ou reprise d'examen</button>
-        </div>`;
-      $('[data-ajouter]', carte).onclick = () => ouvrirTache(t, eleves);
-      carte.querySelectorAll('[data-retirer]').forEach((b) => {
-        b.onclick = async () => {
-          if (!await demander('Retirer ce travail ? L\'élève ne le verra plus.', 'Retirer')) return;
-          await api('taches/' + b.dataset.retirer, { method: 'DELETE' });
-          toast('Travail retiré');
-          ecranEnseignant();
-        };
-      });
-      zone.append(carte);
+      zone.append(carteTournoi(t, eleves));
     }
-    if (!n) zone.innerHTML = `<div class="vide-grand">${ico('liste')}<p>${q || vue.groupe ? 'Aucun résultat pour ce filtre.' : 'Aucune absence déclarée pour les tournois à venir.'}</p></div>`;
+    if (!n) zone.innerHTML = `<div class="vide-grand">${ico('liste')}<p>${filtre ? 'Aucun résultat pour ce filtre.' : 'Aucune absence déclarée pour les tournois à venir.'}</p>
+      ${estDirection() && !filtre ? '<p class="aide">Inscrivez un tournoi avec le bouton « Tournoi ».</p>' : ''}</div>`;
   }
   dessiner();
+}
+
+function carteTournoi(t, eleves) {
+  const carte = document.createElement('article');
+  carte.className = 'carte' + (joursAvant(t.fin) < 0 ? ' passee' : '');
+  carte.innerHTML = `
+    <div class="carte-tete">
+      ${blocDate(t.debut, t.fin)}
+      <div class="carte-titre">
+        <h3>${esc(t.nom)}</h3>
+        <p class="meta">${meta(periode(t.debut, t.fin), esc(t.sport), esc(t.lieu))}</p>
+        <div class="etat">${etat(t.debut, t.fin)}<span class="details">${eleves.length} élève${eleves.length > 1 ? 's' : ''}</span></div>
+      </div>
+      ${estDirection() ? `<button class="icone-btn" data-menu-tournoi aria-label="Actions sur le tournoi">${ico('plus_actions')}</button>` : ''}
+    </div>
+    ${t.note ? `<p class="consigne">${ico('info')}<span>${esc(t.note)}</span></p>` : ''}
+    ${eleves.length ? `<ul class="rangees">${eleves.map(rangeeEleve).join('')}</ul>` : '<p class="vide sans-eleve">Aucun élève inscrit pour l\'instant.</p>'}
+    <div class="carte-pied">
+      ${estDirection() ? `<button class="secondaire" data-inscrire>${ico('ajout_eleve')} Inscrire des élèves</button>` : ''}
+      ${eleves.length ? `<button class="principal" data-ajouter>${ico('plus')} Travail ou reprise</button>` : ''}
+    </div>`;
+  $('[data-ajouter]', carte)?.addEventListener('click', () => ouvrirTache(t, eleves));
+  $('[data-inscrire]', carte)?.addEventListener('click', () => inscrireEleves(t));
+  $('[data-menu-tournoi]', carte)?.addEventListener('click', () => actions(t.nom, [
+    ['Inscrire des élèves', 'ajout_eleve', () => inscrireEleves(t)],
+    ['Modifier le tournoi', 'crayon', () => editerTournoi(t)],
+    ['Supprimer le tournoi', 'corbeille', async () => {
+      if (!await demander(`Supprimer « ${t.nom} » ? Les ${t.eleves.length} absence(s), le travail et les commentaires liés seront effacés.`, 'Supprimer')) return;
+      await api('tournois/' + t.id, { method: 'DELETE' });
+      toast('Tournoi supprimé');
+      ecranEnseignant();
+    }, true],
+  ]));
+  carte.querySelectorAll('[data-retirer]').forEach((b) => {
+    b.onclick = async () => {
+      if (!await demander('Retirer ce travail ? L\'élève ne le verra plus.', 'Retirer')) return;
+      await api('taches/' + b.dataset.retirer, { method: 'DELETE' });
+      toast('Travail retiré');
+      ecranEnseignant();
+    };
+  });
+  carte.querySelectorAll('[data-retirer-comm]').forEach((b) => {
+    b.onclick = async () => {
+      if (!await demander('Retirer ce commentaire ?', 'Retirer')) return;
+      await api('commentaires/' + b.dataset.retirerComm, { method: 'DELETE' });
+      toast('Commentaire retiré');
+      ecranEnseignant();
+    };
+  });
+  carte.querySelectorAll('[data-eleve]').forEach((b) => {
+    const e = eleves.find((x) => x.absence_id === Number(b.dataset.eleve));
+    b.onclick = () => {
+      if (!estDirection()) return commenter(e, t);
+      actions(`${e.nom} · ${t.nom}`, [
+        ['Ajouter un commentaire', 'bulle', () => commenter(e, t)],
+        ['Modifier le message de l\'absence', 'crayon', () => editerNoteAbsence(e)],
+        ['Retirer du tournoi', 'corbeille', async () => {
+          if (!await demander(`Retirer ${e.nom} de « ${t.nom} » ? Son travail et les commentaires liés seront effacés.`, 'Retirer')) return;
+          await api('absences/' + e.absence_id, { method: 'DELETE' });
+          toast(`${e.nom} retiré du tournoi`);
+          ecranEnseignant();
+        }, true],
+      ]);
+    };
+  });
+  return carte;
+}
+
+function rangeeEleve(e) {
+  return `<li>
+    <div class="rangee-tete">
+      <span class="avatar petit">${initiales(e.nom)}</span>
+      <div class="rangee-nom"><strong>${esc(e.nom)}</strong><span class="details">${esc(e.groupe)}</span></div>
+      ${preavisPastille(e.preavis)}
+      <button class="icone-btn petit" data-eleve="${e.absence_id}" aria-label="${estDirection() ? 'Actions' : 'Commenter'}">${ico(estDirection() ? 'plus_actions' : 'bulle')}</button>
+    </div>
+    ${e.note ? `<p class="note">${esc(e.note)}</p>` : ''}
+    ${e.taches.length ? `<ul class="mini">${e.taches.map(tacheProf).join('')}</ul>` : ''}
+    ${e.commentaires?.length ? `<ul class="commentaires">${e.commentaires.map(commentaireProf).join('')}</ul>` : ''}
+  </li>`;
+}
+
+function commentaireProf(c) {
+  const peut = estDirection() || c.auteur_id === moi.id;
+  return `<li>
+    <div class="comm-tete">
+      <strong>${esc(c.auteur)}</strong>${c.auteur_role === 'direction' ? '<span class="pastille encre">Direction</span>' : ''}
+      <span class="details">${new Date(c.created_at).toLocaleDateString('fr-CA', { day: 'numeric', month: 'short' })}</span>
+      <span class="pastille ${c.visible_eleve ? 'neutre' : 'grise'}">${c.visible_eleve ? 'Vu par l\'élève' : 'Interne'}</span>
+      ${peut ? `<button class="icone-btn petit" data-retirer-comm="${c.id}" aria-label="Retirer le commentaire">${ico('corbeille')}</button>` : ''}
+    </div>
+    <p>${esc(c.texte)}</p>
+  </li>`;
 }
 
 function initiales(nom) {
@@ -1101,17 +1348,176 @@ function initiales(nom) {
 }
 
 function tacheProf(t) {
-  const mien = t.enseignant_id === moi.id;
-  return `<li class="${mien ? 'mien' : ''}">
+  const peut = t.enseignant_id === moi.id || estDirection();
+  return `<li class="${t.enseignant_id === moi.id ? 'mien' : ''}">
     <div class="mini-tete">
       <strong>${esc(t.matiere || t.enseignant)}</strong>
       ${t.fait_at ? '<span class="pastille verte">Terminé</span>' : ''}
-      ${mien ? `<button class="icone-btn petit" data-retirer="${t.id}" aria-label="Retirer ce travail">${ico('corbeille')}</button>` : ''}
+      ${peut ? `<button class="icone-btn petit" data-retirer="${t.id}" aria-label="Retirer ce travail">${ico('corbeille')}</button>` : ''}
     </div>
     ${t.travail ? `<p>${esc(t.travail)}</p>` : ''}
     ${t.remise ? `<p class="details">À remettre le ${dateFr(t.remise)}</p>` : ''}
     ${t.examen ? `<p class="reprise-ligne">${ico('examen')} Reprise${t.examen_nom ? ' · ' + esc(t.examen_nom) : ''} : ${t.reprise_date ? dateFr(t.reprise_date) : 'date à fixer'}${t.reprise_info ? ', ' + esc(t.reprise_info) : ''}</p>` : ''}
   </li>`;
+}
+
+// ---------- Formulaires génériques et menu d'actions ----------
+
+// champs : [{ nom, type: text|date|number|textarea|switch|cases, label, valeur, placeholder, demi, aide, options }]
+function formulaire({ titre, sousTitre = '', champs, bouton = 'Enregistrer', envoyer }) {
+  const dlg = $('#dlg-gen');
+  const form = $('#form-gen');
+  $('#gen-titre').textContent = titre;
+  $('#gen-sous').textContent = sousTitre;
+  $('#gen-sous').hidden = !sousTitre;
+  $('#gen-ok').textContent = bouton;
+  let html = '';
+  for (let i = 0; i < champs.length; i++) {
+    const c = champs[i];
+    if (c.demi && champs[i + 1]?.demi) { html += `<div class="deux">${champ(c)}${champ(champs[i + 1])}</div>`; i++; } else html += champ(c);
+  }
+  $('#gen-champs').innerHTML = html;
+  form.querySelectorAll('[data-filtre-cases]').forEach((inp) => {
+    inp.oninput = () => {
+      const q = inp.value.trim().toLowerCase();
+      inp.closest('fieldset').querySelectorAll('label.case').forEach((l) => { l.hidden = q && !l.textContent.toLowerCase().includes(q); });
+    };
+  });
+  form.onsubmit = async (e) => {
+    e.preventDefault();
+    const v = {};
+    for (const c of champs) {
+      if (c.type === 'cases') v[c.nom] = [...form.querySelectorAll(`[name="${c.nom}"]:checked`)].map((x) => x.value);
+      else if (c.type === 'switch') v[c.nom] = form.elements[c.nom].checked;
+      else v[c.nom] = form.elements[c.nom].value;
+    }
+    const ok = $('#gen-ok');
+    ok.disabled = true;
+    try { await envoyer(v); dlg.close(); } catch (err) { montrerErreur(form, err.message); } finally { ok.disabled = false; }
+  };
+  ouvrir(dlg);
+}
+
+function champ(c) {
+  const val = esc(c.valeur ?? '');
+  const ph = c.placeholder ? ` placeholder="${esc(c.placeholder)}"` : '';
+  const aide = c.aide ? `<small>${c.aide}</small>` : '';
+  if (c.type === 'textarea') return `<label>${c.label}<textarea name="${c.nom}" rows="${c.lignes || 3}"${ph}>${val}</textarea>${aide}</label>`;
+  if (c.type === 'switch') return `<label class="interrupteur"><input type="checkbox" name="${c.nom}" role="switch" ${c.valeur ? 'checked' : ''}><span>${c.label}</span></label>`;
+  if (c.type === 'cases') {
+    return `<fieldset class="groupe-champs"><legend>${c.label}</legend>
+      ${c.options.length > 6 ? `<label class="recherche cases-recherche">${ico('recherche')}<input type="search" data-filtre-cases placeholder="Rechercher" aria-label="Rechercher"></label>` : ''}
+      <div class="cases defile">${c.options.length ? c.options.map((o) => `<label class="case"><input type="checkbox" name="${c.nom}" value="${o.valeur}" ${o.coche ? 'checked' : ''}><span>${esc(o.lib)}</span><span class="details">${esc(o.detail || '')}</span></label>`).join('')
+        : `<p class="vide">${c.vide || 'Aucun choix.'}</p>`}</div></fieldset>`;
+  }
+  return `<label>${c.label}<input type="${c.type || 'text'}" name="${c.nom}" value="${val}"${ph}${c.type === 'number' ? ' inputmode="numeric" min="0"' : ''}>${aide}</label>`;
+}
+
+function actions(titre, liste) {
+  const dlg = $('#dlg-actions');
+  $('#actions-titre').textContent = titre;
+  const zone = $('#actions-liste');
+  zone.innerHTML = liste.map(([lib, icone, , danger], i) => `<button data-action="${i}" class="${danger ? 'danger' : ''}">${ico(icone)}<span>${lib}</span></button>`).join('');
+  zone.querySelectorAll('[data-action]').forEach((b) => {
+    b.onclick = () => { dlg.close(); liste[Number(b.dataset.action)][2](); };
+  });
+  dlg.showModal();
+}
+
+// ---------- Actions de la direction ----------
+
+function editerTournoi(t) {
+  formulaire({
+    titre: t ? 'Modifier le tournoi' : 'Nouveau tournoi',
+    sousTitre: t ? '' : 'Les élèves pourront le choisir dans leur liste.',
+    bouton: t ? 'Enregistrer' : 'Créer le tournoi',
+    champs: [
+      { nom: 'nom', label: 'Nom du tournoi', valeur: t?.nom, placeholder: 'Championnat provincial de volleyball' },
+      { nom: 'sport', label: 'Sport', valeur: t?.sport, placeholder: 'Volleyball', demi: true },
+      { nom: 'lieu', label: 'Ville', valeur: t?.lieu, placeholder: 'Sherbrooke', demi: true },
+      { nom: 'debut', type: 'date', label: 'Premier jour', valeur: t?.debut, demi: true },
+      { nom: 'fin', type: 'date', label: 'Dernier jour', valeur: t?.fin, demi: true },
+      { nom: 'note', type: 'textarea', label: 'Consignes <span class="facultatif">facultatif, vues par tous</span>', valeur: t?.note, lignes: 2, placeholder: 'Départ en autobus jeudi 7 h devant l\'école.' },
+    ],
+    envoyer: async (v) => {
+      await api(t ? 'tournois/' + t.id : 'tournois', { method: t ? 'PUT' : 'POST', body: v });
+      toast(t ? 'Tournoi modifié' : 'Tournoi créé');
+      ecranEnseignant();
+    },
+  });
+}
+
+async function inscrireEleves(t) {
+  const { eleves } = await api('eleves');
+  const deja = new Set(t.eleves.map((e) => e.eleve_id));
+  formulaire({
+    titre: 'Inscrire des élèves',
+    sousTitre: `${t.nom} · ${periode(t.debut, t.fin)}`,
+    bouton: 'Inscrire',
+    champs: [
+      { nom: 'eleve_ids', type: 'cases', label: 'Élèves déjà inscrits dans l\'application', vide: 'Aucun autre élève pour l\'instant.',
+        options: eleves.filter((e) => !deja.has(e.id)).map((e) => ({ valeur: e.id, lib: e.nom, detail: e.groupe })) },
+      { nom: 'nouveaux', type: 'textarea', label: 'Autres élèves <span class="facultatif">un par ligne</span>', lignes: 3,
+        placeholder: 'Léa Tremblay, 3-02\nNoah Côté, 3-01', aide: 'Prénom et nom, une virgule, puis le groupe. Pratique pour coller la liste d\'une équipe.' },
+      { nom: 'note', type: 'textarea', label: 'Message pour les enseignants <span class="facultatif">facultatif</span>', lignes: 2 },
+    ],
+    envoyer: async (v) => {
+      const nouveaux = v.nouveaux.split('\n').map((l) => l.trim()).filter(Boolean).map((l) => {
+        const [nom, groupe = ''] = l.split(/[,;\t]/).map((x) => x.trim());
+        return { nom, groupe };
+      });
+      const r = await api('inscriptions', { method: 'POST', body: { tournoi_id: t.id, eleve_ids: v.eleve_ids.map(Number), nouveaux, note: v.note } });
+      toast(`${r.nb} élève${r.nb > 1 ? 's' : ''} inscrit${r.nb > 1 ? 's' : ''}`);
+      ecranEnseignant();
+    },
+  });
+}
+
+function commenter(e, t) {
+  formulaire({
+    titre: 'Commentaire',
+    sousTitre: `${e.nom} · ${t.nom}`,
+    bouton: 'Publier',
+    champs: [
+      { nom: 'texte', type: 'textarea', label: 'Commentaire', lignes: 4, placeholder: 'Ex. : a remis son travail en avance ; à revoir avant la reprise.' },
+      { nom: 'visible_eleve', type: 'switch', label: 'L\'élève peut le lire' },
+    ],
+    envoyer: async (v) => {
+      await api(`absences/${e.absence_id}/commentaires`, { method: 'POST', body: v });
+      toast('Commentaire publié');
+      ecranEnseignant();
+    },
+  });
+}
+
+function editerNoteAbsence(e) {
+  formulaire({
+    titre: 'Message de l\'absence',
+    sousTitre: e.nom,
+    champs: [{ nom: 'note', type: 'textarea', label: 'Message vu par les enseignants', valeur: e.note, lignes: 3 }],
+    envoyer: async (v) => {
+      await api('absences/' + e.absence_id, { method: 'PUT', body: v });
+      toast('Message modifié');
+      ecranEnseignant();
+    },
+  });
+}
+
+function editerEleve(e) {
+  formulaire({
+    titre: e ? 'Modifier l\'élève' : 'Ajouter un élève',
+    sousTitre: e ? '' : 'L\'élève choisira son NIP à sa première connexion.',
+    bouton: e ? 'Enregistrer' : 'Ajouter',
+    champs: [
+      { nom: 'nom', label: 'Prénom et nom', valeur: e?.nom, placeholder: 'Léa Tremblay' },
+      { nom: 'groupe', label: 'Groupe', valeur: e?.groupe, placeholder: '3-02' },
+    ],
+    envoyer: async (v) => {
+      await api(e ? 'eleves/' + e.id : 'eleves', { method: e ? 'PUT' : 'POST', body: v });
+      toast(e ? 'Élève modifié' : 'Élève ajouté');
+      ecranEnseignant();
+    },
+  });
 }
 
 function ouvrirTache(t, eleves) {
@@ -1277,25 +1683,42 @@ function ongletReprises(contenu, reprises) {
 
 function ongletEleves(contenu, eleves) {
   contenu.innerHTML = `
-    <div class="entete-page"><h1>Élèves</h1></div>
+    <div class="entete-page"><h1>Élèves</h1>
+      ${estDirection() ? `<button class="principal" id="ajout-eleve">${ico('plus')} Élève</button>` : ''}</div>
     <div class="filtres">
-      <label class="recherche">${ico('recherche')}<input type="search" id="recherche-eleve" placeholder="Rechercher un élève" aria-label="Rechercher un élève"></label>
+      <label class="recherche">${ico('recherche')}<input type="search" id="recherche-eleve" placeholder="Nom ou groupe" aria-label="Rechercher un élève"></label>
     </div>
     <p class="aide">Un élève a oublié son NIP ? Effacez-le : il en choisira un nouveau à sa prochaine connexion.</p>
     <ul class="carte rangees" id="liste-eleves"></ul>`;
+  if (estDirection()) $('#ajout-eleve').onclick = () => editerEleve();
+  const effacerNip = async (e) => {
+    if (!await demander(`Effacer le NIP de ${e.nom} ?`, 'Effacer')) return;
+    await api(`eleves/${e.id}/effacer-nip`, { method: 'POST' });
+    toast(`NIP de ${e.nom} effacé`);
+    ecranEnseignant();
+  };
   const dessiner = (q = '') => {
     const l = eleves.filter((e) => !q || e.nom.toLowerCase().includes(q.toLowerCase()) || e.groupe.includes(q));
     $('#liste-eleves').innerHTML = l.length ? l.map((e) => `<li><div class="rangee-tete">
       <span class="avatar petit">${initiales(e.nom)}</span>
-      <div class="rangee-nom"><strong>${esc(e.nom)}</strong><span class="details">${esc(e.groupe)} · ${e.nb} absence${e.nb > 1 ? 's' : ''}</span></div>
-      <button class="secondaire petit" data-nip="${e.id}" data-nom="${esc(e.nom)}">${ico('cle')} Effacer le NIP</button>
+      <div class="rangee-nom"><strong>${esc(e.nom)}</strong><span class="details">${esc(e.groupe)} · ${e.nb} absence${e.nb > 1 ? 's' : ''}${e.a_nip ? '' : ' · sans NIP'}</span></div>
+      ${estDirection() ? `<button class="icone-btn petit" data-el="${e.id}" aria-label="Actions">${ico('plus_actions')}</button>`
+        : `<button class="secondaire petit" data-el="${e.id}" ${e.a_nip ? '' : 'disabled'}>${ico('cle')} Effacer le NIP</button>`}
     </div></li>`).join('') : '<li class="vide">Aucun élève.</li>';
-    contenu.querySelectorAll('[data-nip]').forEach((b) => {
-      b.onclick = async () => {
-        if (!await demander(`Effacer le NIP de ${b.dataset.nom} ?`, 'Effacer')) return;
-        await api(`eleves/${b.dataset.nip}/effacer-nip`, { method: 'POST' });
-        toast(`NIP de ${b.dataset.nom} effacé`);
-        b.disabled = true;
+    contenu.querySelectorAll('[data-el]').forEach((b) => {
+      const e = eleves.find((x) => x.id === Number(b.dataset.el));
+      b.onclick = () => {
+        if (!estDirection()) return effacerNip(e);
+        actions(e.nom, [
+          ['Modifier le nom ou le groupe', 'crayon', () => editerEleve(e)],
+          ['Effacer le NIP', 'cle', () => effacerNip(e)],
+          ['Supprimer l\'élève', 'corbeille', async () => {
+            if (!await demander(`Supprimer ${e.nom} et ses ${e.nb} absence(s) ? Cette action est définitive.`, 'Supprimer')) return;
+            await api('eleves/' + e.id, { method: 'DELETE' });
+            toast(`${e.nom} supprimé`);
+            ecranEnseignant();
+          }, true],
+        ]);
       };
     });
   };
@@ -1303,13 +1726,51 @@ function ongletEleves(contenu, eleves) {
   dessiner();
 }
 
+function ongletReglages(contenu, r) {
+  contenu.innerHTML = `
+    <div class="entete-page"><h1>Réglages</h1></div>
+    <form id="form-reglages" class="carte reglages" novalidate>
+      <h2>École</h2>
+      <label>Nom affiché <input name="nom_ecole" value="${esc(r.nom_ecole)}" placeholder="Sport-études"></label>
+      <label>Préavis demandé aux élèves <span class="avec-unite"><input name="preavis_min" type="number" inputmode="numeric" min="0" max="60" value="${r.preavis_min}"> jours</span>
+        <small>En dessous, l'élève est averti et l'absence apparaît en orange ou en rouge.</small></label>
+      <h2>Codes de connexion</h2>
+      <div class="deux">
+        <label>Code élève <input name="code_eleve" value="${esc(r.code_eleve)}" autocomplete="off" autocapitalize="off"></label>
+        <label>Code enseignant <input name="code_enseignant" value="${esc(r.code_enseignant)}" autocomplete="off" autocapitalize="off"></label>
+      </div>
+      <p class="aide">Changer un code ne déconnecte personne ; il sert aux prochaines connexions. Le code de la direction se change dans Cloudflare (secret CODE_DIRECTION).</p>
+      <p class="erreur" hidden></p>
+      <div class="carte-pied"><button class="principal" type="submit">Enregistrer</button></div>
+    </form>`;
+  const form = $('#form-reglages');
+  form.onsubmit = async (e) => {
+    e.preventDefault();
+    montrerErreur(form, '');
+    try {
+      await api('reglages', { method: 'PUT', body: Object.fromEntries(new FormData(form)) });
+      const m = await api('moi');
+      reglages = m.reglages;
+      appliquerReglages();
+      toast('Réglages enregistrés');
+    } catch (err) { montrerErreur(form, err.message); }
+  };
+}
+
 // ---------- Démarrage ----------
 
+let reglages = { preavis_min: 7, nom_ecole: '' };
+function appliquerReglages() {
+  PREAVIS_MIN = reglages.preavis_min;
+  $('.nom-appli .sous').textContent = reglages.nom_ecole || 'Sport-études';
+}
+
 function afficher() {
+  appliquerReglages();
   $('#qui').hidden = false;
   $('#qui-initiales').innerHTML = initiales(moi.nom);
   $('#qui-nom').textContent = moi.nom;
-  $('#qui-detail').textContent = moi.role === 'eleve' ? `Groupe ${moi.groupe || ''}` : (moi.matiere || 'Enseignant');
+  $('#qui-detail').textContent = moi.role === 'eleve' ? `Groupe ${moi.groupe || ''}` : moi.role === 'direction' ? 'Direction' : (moi.matiere || 'Enseignant');
   $('#menu-nom').textContent = moi.nom;
   (moi.role === 'eleve' ? ecranEleve() : ecranEnseignant()).catch((err) => {
     app.innerHTML = `<p class="erreur">${esc(err.message)}</p>`;
@@ -1319,7 +1780,9 @@ function afficher() {
 async function demarrer() {
   if (!localStorage.getItem('jeton')) return ecranConnexion();
   try {
-    moi = (await api('moi')).moi;
+    const r = await api('moi');
+    moi = r.moi;
+    reglages = r.reglages || reglages;
     afficher();
   } catch { ecranConnexion(); }
 }
@@ -1332,6 +1795,7 @@ document.querySelectorAll('[data-demo]').forEach((b) => b.onclick = async () => 
   if (b.dataset.demo === 'reset') { reinitialiserDemo(); localStorage.removeItem('jeton'); return location.reload(); }
   const corps = b.dataset.demo === 'eleve'
     ? { role: 'eleve', nom: 'Léa Tremblay', groupe: '3-02', nip: '1234', code: 'sport' }
+    : b.dataset.demo === 'direction' ? { role: 'direction', nom: 'Sophie Martin', code: 'dir' }
     : { role: 'enseignant', nom: 'Marc Gagnon', matiere: 'Mathématiques', code: 'prof' };
   const r = await (await fetch('/api/login', { method: 'POST', headers: {}, body: JSON.stringify(corps) })).json();
   localStorage.setItem('jeton', r.token); localStorage.setItem('role', corps.role); location.reload();

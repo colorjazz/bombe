@@ -1,7 +1,7 @@
 // Démonstration : remplace le serveur par des données fictives gardées dans le navigateur (localStorage).
 // Mêmes routes que src/worker.js, pour montrer l'application sans la mettre en ligne.
 (() => {
-  const CLE = 'absences-demo-v1';
+  const CLE = 'absences-demo-v2';
   const JOUR = 864e5;
   const iso = (dec) => new Date(Date.now() + dec * JOUR).toLocaleDateString('en-CA');
   const cle = (n) => n.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
@@ -10,10 +10,12 @@
     const noms = [['Léa Tremblay', '3-02'], ['Noah Côté', '3-01'], ['Emma Gagnon', '3-02'], ['William Roy', '4-01'],
       ['Florence Bouchard', '4-01'], ['Thomas Gauthier', '3-01'], ['Alice Morin', '4-02'], ['Jacob Lavoie', '4-02'],
       ['Zoé Fortin', '3-02'], ['Liam Pelletier', '4-01'], ['Rosalie Bélanger', '3-01'], ['Nathan Lévesque', '4-02']];
-    const d = { n: 100, eleves: [], enseignants: [], tournois: [], absences: [], taches: [], sessions: {} };
+    const d = { n: 100, eleves: [], enseignants: [], tournois: [], absences: [], taches: [], commentaires: [], sessions: {},
+      reglages: { preavis_min: 7, nom_ecole: 'École secondaire du Boisé', code_eleve: 'sport', code_enseignant: 'prof' } };
     noms.forEach(([nom, groupe], i) => d.eleves.push({ id: i + 1, nom, nom_cle: cle(nom), groupe, nip: i === 0 ? '1234' : null }));
     d.enseignants.push({ id: 1, nom: 'Marc Gagnon', nom_cle: cle('Marc Gagnon'), matiere: 'Mathématiques' },
-      { id: 2, nom: 'Julie Roy', nom_cle: cle('Julie Roy'), matiere: 'Français' });
+      { id: 2, nom: 'Julie Roy', nom_cle: cle('Julie Roy'), matiere: 'Français' },
+      { id: 3, nom: 'Sophie Martin', nom_cle: cle('Sophie Martin'), matiere: '' });
     const T = [
       ['Coupe Québec de volleyball', 'Volleyball', 'Sherbrooke', 4, 6, [1, 2, 3, 9, 11]],
       ['Omnium de tennis junior', 'Tennis', 'Gatineau', 17, 17, [1, 7]],
@@ -23,7 +25,8 @@
       ['Invitation de gymnastique', 'Gymnastique', 'Trois-Rivières', -12, -11, [7, 9]],
     ];
     T.forEach(([nom, sport, lieu, a, b, el], i) => {
-      d.tournois.push({ id: i + 1, nom, sport, lieu, debut: iso(a), fin: iso(b) });
+      d.tournois.push({ id: i + 1, nom, sport, lieu, debut: iso(a), fin: iso(b), officiel: i === 0 ? 1 : 0,
+        note: i === 0 ? 'Départ en autobus jeudi 7 h devant l\'école. Retour dimanche vers 18 h.' : '' });
       el.forEach((e, k) => d.absences.push({ id: d.n++, eleve_id: e, tournoi_id: i + 1, note: e === 1 && i === 0 ? 'Je pars jeudi midi.' : '',
         created_at: Date.now() + (a - [12, 9, 5, 2, 1, 15][(e + k) % 6]) * JOUR }));
     });
@@ -35,6 +38,11 @@
       tache(abs(1, e), 2, { travail: 'Lire le chapitre 5 du roman et répondre aux questions 1 à 8.', remise: iso(8), fait_at: e === 3 ? Date.now() : null });
     });
     [6, 8, 12].forEach((e) => tache(abs(4, e), 2, { travail: 'Rédiger le plan du texte argumentatif.', remise: iso(3) }));
+    d.tournois.push({ id: 7, nom: 'Championnat régional de badminton', sport: 'Badminton', lieu: 'Longueuil', debut: iso(31), fin: iso(32), officiel: 1, note: 'Inscriptions confirmées par l\'entraîneur le 1er décembre.' });
+    const comm = (a, auteur, role, texte, vis) => d.commentaires.push({ id: d.n++, absence_id: a, auteur_id: auteur, auteur_role: role, texte, visible_eleve: vis, created_at: Date.now() - 864e5 });
+    comm(abs(1, 1), 3, 'direction', 'Autorisation parentale reçue.', 0);
+    comm(abs(1, 2), 1, 'enseignant', 'Noah a déjà pris de l\'avance sur les exercices, bravo.', 1);
+    comm(abs(4, 8), 3, 'direction', 'Déclaré la veille du départ : rencontre prévue avec l\'élève.', 0);
     return d;
   }
 
@@ -49,11 +57,36 @@
   const ens = (id) => db.enseignants.find((e) => e.id === id);
   const avecProf = (t) => ({ ...t, enseignant: ens(t.enseignant_id).nom, matiere: ens(t.enseignant_id).matiere });
   const tournoi = (id) => db.tournois.find((t) => t.id === id);
+  const avecAuteur = (c) => ({ ...c, auteur: ens(c.auteur_id).nom });
+  const champsT = (n) => {
+    if (!(n.nom || '').trim()) throw new E(400, 'Indiquez le nom du tournoi.');
+    if (!n.debut) throw new E(400, 'Date invalide : premier jour.');
+    const fin = n.fin || n.debut;
+    if (fin < n.debut) throw new E(400, 'Le dernier jour est avant le premier jour.');
+    return { nom: n.nom.trim(), sport: (n.sport || '').trim(), lieu: (n.lieu || '').trim(), debut: n.debut, fin, note: (n.note || '').trim() };
+  };
+  const nomOk = (nom) => { if (!(nom || '').trim().includes(' ')) throw new E(400, 'Prénom et nom, s’il vous plaît.'); };
+  const eleveDe = (n) => {
+    nomOk(n.nom);
+    let e = db.eleves.find((x) => x.nom_cle === cle(n.nom));
+    if (!e) {
+      if (!(n.groupe || '').trim()) throw new E(400, `Indiquez le groupe de ${n.nom}.`);
+      e = { id: db.n++, nom: n.nom.trim(), nom_cle: cle(n.nom), groupe: n.groupe.trim(), nip: null };
+      db.eleves.push(e);
+    }
+    return e;
+  };
+  const effacerAbsences = (ids) => {
+    db.taches = db.taches.filter((t) => !ids.includes(t.absence_id));
+    db.commentaires = db.commentaires.filter((c) => !ids.includes(c.absence_id));
+    db.absences = db.absences.filter((a) => !ids.includes(a.id));
+  };
+  const publics = () => ({ preavis_min: db.reglages.preavis_min, nom_ecole: db.reglages.nom_ecole });
 
   function qui(h, role) {
     const s = db.sessions[(h.Authorization || '').replace('Bearer ', '')];
     if (!s) throw new E(401, 'Connectez-vous.');
-    if (role && s.role !== role) throw new E(403, 'Action réservée.');
+    if (role && s.role !== role && !(role === 'enseignant' && s.role === 'direction')) throw new E(403, 'Action réservée.');
     const p = (s.role === 'eleve' ? db.eleves : db.enseignants).find((x) => x.id === s.id);
     return { role: s.role, ...p };
   }
@@ -61,8 +94,9 @@
 
   const routes = {
     'POST login': (h, b) => {
-      const role = b.role === 'enseignant' ? 'enseignant' : 'eleve';
-      if ((b.code || '').trim().toLowerCase() !== (role === 'eleve' ? 'sport' : 'prof')) throw new E(403, role === 'eleve' ? 'Code de l\'école incorrect (démo : sport).' : 'Code enseignant incorrect (démo : prof).');
+      const role = ['enseignant', 'direction'].includes(b.role) ? b.role : 'eleve';
+      const code = { eleve: db.reglages.code_eleve, enseignant: db.reglages.code_enseignant, direction: 'dir' }[role];
+      if ((b.code || '').trim().toLowerCase() !== code.toLowerCase()) throw new E(403, `Code incorrect (démo : ${code}).`);
       const nom = (b.nom || '').trim().replace(/\s+/g, ' ');
       if (!nom.includes(' ')) throw new E(400, 'Prénom et nom, s’il vous plaît.');
       let p;
@@ -74,15 +108,69 @@
         if (b.groupe) p.groupe = b.groupe.trim();
       } else {
         p = db.enseignants.find((e) => e.nom_cle === cle(nom));
-        if (!p) { p = { id: db.n++, nom, nom_cle: cle(nom), matiere: (b.matiere || '').trim() }; db.enseignants.push(p); }
-        else if (b.matiere) p.matiere = b.matiere.trim();
+        const matiere = role === 'enseignant' ? (b.matiere || '').trim() : '';
+        if (!p) { p = { id: db.n++, nom, nom_cle: cle(nom), matiere }; db.enseignants.push(p); }
+        else if (matiere) p.matiere = matiere;
       }
       const token = 'demo' + Math.random().toString(36).slice(2);
       db.sessions[token] = { role, id: p.id };
-      return { token, moi: profil({ role, ...p }) };
+      return { token, moi: profil({ role, ...p }), reglages: publics() };
     },
     'POST logout': () => ({ ok: true }),
-    'GET moi': (h) => ({ moi: profil(qui(h)) }),
+    'GET moi': (h) => ({ moi: profil(qui(h)), reglages: publics() }),
+    'POST tournois': (h, b) => { qui(h, 'direction'); const t = { id: db.n++, ...champsT(b), officiel: 1 }; db.tournois.push(t); return { ok: true, id: t.id }; },
+    'PUT tournois': (h, b, id) => { qui(h, 'direction'); Object.assign(tournoi(id), champsT(b), { officiel: 1 }); return { ok: true }; },
+    'DELETE tournois': (h, b, id) => {
+      qui(h, 'direction');
+      effacerAbsences(db.absences.filter((a) => a.tournoi_id === id).map((a) => a.id));
+      db.tournois = db.tournois.filter((t) => t.id !== id);
+      return { ok: true };
+    },
+    'POST inscriptions': (h, b) => {
+      qui(h, 'direction');
+      const ids = new Set((b.eleve_ids || []).map(Number));
+      (b.nouveaux || []).forEach((n) => ids.add(eleveDe(n).id));
+      if (!ids.size) throw new E(400, 'Choisissez au moins un élève.');
+      ids.forEach((eid) => {
+        if (!db.absences.some((a) => a.eleve_id === eid && a.tournoi_id === b.tournoi_id)) {
+          db.absences.push({ id: db.n++, eleve_id: eid, tournoi_id: b.tournoi_id, note: (b.note || '').trim(), created_at: Date.now() });
+        }
+      });
+      return { ok: true, nb: ids.size };
+    },
+    'PUT absences': (h, b, id) => { qui(h, 'direction'); db.absences.find((a) => a.id === id).note = (b.note || '').trim(); return { ok: true }; },
+    'POST absences-comm': (h, b, id) => {
+      const p = qui(h, 'enseignant');
+      if (!(b.texte || '').trim()) throw new E(400, 'Le commentaire est vide.');
+      db.commentaires.push({ id: db.n++, absence_id: id, auteur_id: p.id, auteur_role: p.role, texte: b.texte.trim(), visible_eleve: b.visible_eleve ? 1 : 0, created_at: Date.now() });
+      return { ok: true };
+    },
+    'DELETE commentaires': (h, b, id) => { qui(h, 'enseignant'); db.commentaires = db.commentaires.filter((c) => c.id !== id); return { ok: true }; },
+    'POST eleves': (h, b) => {
+      qui(h, 'direction');
+      if (db.eleves.some((e) => e.nom_cle === cle(b.nom || ''))) throw new E(409, `${b.nom} est déjà inscrit.`);
+      return { ok: true, id: eleveDe(b).id };
+    },
+    'PUT eleves': (h, b, id) => {
+      qui(h, 'direction'); nomOk(b.nom);
+      Object.assign(db.eleves.find((e) => e.id === id), { nom: b.nom.trim(), nom_cle: cle(b.nom), groupe: (b.groupe || '').trim() });
+      return { ok: true };
+    },
+    'DELETE eleves': (h, b, id) => {
+      qui(h, 'direction');
+      effacerAbsences(db.absences.filter((a) => a.eleve_id === id).map((a) => a.id));
+      db.eleves = db.eleves.filter((e) => e.id !== id);
+      return { ok: true };
+    },
+    'GET reglages': (h) => { qui(h, 'direction'); return { reglages: db.reglages }; },
+    'PUT reglages': (h, b) => {
+      qui(h, 'direction');
+      const preavis = Math.round(Number(b.preavis_min));
+      if (!(preavis >= 0 && preavis <= 60)) throw new E(400, 'Le préavis doit être entre 0 et 60 jours.');
+      if ((b.code_eleve || '').trim().length < 4 || (b.code_enseignant || '').trim().length < 4) throw new E(400, 'Chaque code doit avoir au moins 4 caractères.');
+      db.reglages = { preavis_min: preavis, nom_ecole: (b.nom_ecole || '').trim(), code_eleve: b.code_eleve.trim(), code_enseignant: b.code_enseignant.trim() };
+      return { ok: true };
+    },
     'GET tournois': (h) => { qui(h); return { tournois: db.tournois.filter((t) => t.fin >= auj()).sort((a, b) => a.debut.localeCompare(b.debut))
       .map((t) => ({ ...t, nb: db.absences.filter((a) => a.tournoi_id === t.id).length })) }; },
     'POST absences': (h, b) => {
@@ -102,11 +190,11 @@
       return { ok: true };
     },
     'DELETE absences': (h, b, id) => {
-      qui(h);
+      const p = qui(h);
+      if (p.role === 'enseignant') throw new E(403, 'Seuls l’élève et la direction peuvent retirer une absence.');
       const a = db.absences.find((x) => x.id === id);
-      db.absences = db.absences.filter((x) => x.id !== id);
-      db.taches = db.taches.filter((t) => t.absence_id !== id);
-      if (a && !db.absences.some((x) => x.tournoi_id === a.tournoi_id)) db.tournois = db.tournois.filter((t) => t.id !== a.tournoi_id);
+      effacerAbsences([id]);
+      if (a && !tournoi(a.tournoi_id).officiel && !db.absences.some((x) => x.tournoi_id === a.tournoi_id)) db.tournois = db.tournois.filter((t) => t.id !== a.tournoi_id);
       return { ok: true };
     },
     'GET mes-absences': (h) => {
@@ -114,22 +202,24 @@
       return { absences: db.absences.filter((a) => a.eleve_id === el.id).map((a) => {
         const t = tournoi(a.tournoi_id);
         return { id: a.id, note: a.note, created_at: a.created_at, tournoi_id: t.id, tournoi: t.nom, sport: t.sport, lieu: t.lieu, debut: t.debut, fin: t.fin,
-          taches: db.taches.filter((x) => x.absence_id === a.id).map(avecProf) };
+          tournoi_note: t.note || '', taches: db.taches.filter((x) => x.absence_id === a.id).map(avecProf),
+          commentaires: db.commentaires.filter((c) => c.absence_id === a.id && c.visible_eleve).map(avecAuteur) };
       }).sort((a, b) => b.debut.localeCompare(a.debut)) };
     },
     'POST taches-fait': (h, b, id) => { qui(h, 'eleve'); const t = db.taches.find((x) => x.id === id); t.fait_at = t.fait_at ? null : Date.now(); return { ok: true }; },
     'GET tableau': (h, b, id, q) => {
-      qui(h, 'enseignant');
+      const p = qui(h, 'enseignant');
       const depuis = iso(q.get('passes') === '1' ? -365 : -14);
       const tournois = db.tournois.filter((t) => t.fin >= depuis).sort((a, b) => a.debut.localeCompare(b.debut)).map((t) => ({
-        ...t,
+        ...t, officiel: !!t.officiel, note: t.note || '',
         eleves: db.absences.filter((a) => a.tournoi_id === t.id).map((a) => {
           const e = db.eleves.find((x) => x.id === a.eleve_id);
           return { absence_id: a.id, eleve_id: e.id, nom: e.nom, groupe: e.groupe, note: a.note, declare_le: a.created_at,
             preavis: Math.floor((Date.parse(t.debut + 'T00:00:00') - a.created_at) / JOUR),
-            taches: db.taches.filter((x) => x.absence_id === a.id).map(avecProf) };
+            taches: db.taches.filter((x) => x.absence_id === a.id).map(avecProf),
+            commentaires: db.commentaires.filter((c) => c.absence_id === a.id).map(avecAuteur) };
         }).sort((x, y) => (x.groupe + x.nom).localeCompare(y.groupe + y.nom)),
-      })).filter((t) => t.eleves.length);
+      })).filter((t) => p.role === 'direction' || t.eleves.length);
       const reprises = db.taches.filter((t) => t.examen && t.reprise_date >= auj()).map((t) => {
         const a = db.absences.find((x) => x.id === t.absence_id), e = db.eleves.find((x) => x.id === a.eleve_id);
         return { ...avecProf(t), eleve: e.nom, groupe: e.groupe, tournoi: tournoi(a.tournoi_id).nom };
@@ -147,7 +237,7 @@
       return { ok: true, nb: ids.length };
     },
     'DELETE taches': (h, b, id) => { qui(h, 'enseignant'); db.taches = db.taches.filter((t) => t.id !== id); return { ok: true }; },
-    'GET eleves': (h) => { qui(h, 'enseignant'); return { eleves: db.eleves.map((e) => ({ ...e, nb: db.absences.filter((a) => a.eleve_id === e.id).length }))
+    'GET eleves': (h) => { qui(h, 'enseignant'); return { eleves: db.eleves.map((e) => ({ ...e, a_nip: !!e.nip, nb: db.absences.filter((a) => a.eleve_id === e.id).length }))
       .sort((a, b) => (a.groupe + a.nom).localeCompare(b.groupe + b.nom)) }; },
     'POST eleves-nip': (h, b, id) => { qui(h, 'enseignant'); db.eleves.find((e) => e.id === id).nip = null; return { ok: true }; },
   };
@@ -156,7 +246,12 @@
     const u = new URL(url, 'http://demo');
     const parts = u.pathname.replace('/api/', '').split('/');
     let nom = parts[0], id = null;
-    if (parts[1]) { id = Number(parts[1]); if (parts[2] === 'fait') nom = 'taches-fait'; if (parts[2] === 'effacer-nip') nom = 'eleves-nip'; }
+    if (parts[1]) {
+      id = Number(parts[1]);
+      if (parts[2] === 'fait') nom = 'taches-fait';
+      if (parts[2] === 'effacer-nip') nom = 'eleves-nip';
+      if (parts[2] === 'commentaires') nom = 'absences-comm';
+    }
     const route = routes[`${opt.method || 'GET'} ${nom}`];
     let status = 200, data;
     try {

@@ -102,7 +102,7 @@ label.case .details { margin-left: auto; }
 .connexion { max-width: 420px; margin: 8px auto 0; }
 .connexion h1 { font-size: 1.9rem; margin-bottom: 8px; }
 .connexion .intro { color: var(--gris); margin-bottom: 24px; }
-.segment { display: grid; grid-template-columns: 1fr 1fr; background: #e7e7e3; border-radius: 12px; padding: 4px; margin-bottom: 20px; }
+.segment { display: grid; grid-template-columns: repeat(3, 1fr); background: #e7e7e3; border-radius: 12px; padding: 4px; margin-bottom: 20px; }
 .segment button { border-radius: 9px; font-weight: 600; color: var(--gris); }
 .segment button[aria-selected=true] { background: #fff; color: var(--encre); box-shadow: var(--ombre); }
 .connexion form { background: var(--carte); border-radius: var(--rayon); padding: 20px; box-shadow: var(--ombre); }
@@ -231,6 +231,38 @@ ul.mini p { margin-top: 2px; }
 .rangees .reprise-ligne { margin-left: 46px; color: var(--texte); }
 .rangees .reprise-ligne .ico { color: var(--ambre); }
 
+/* Direction : consignes, commentaires, réglages */
+.entete-actions { display: flex; gap: 8px; }
+.consigne { display: flex; gap: 10px; margin-top: 12px; padding: 10px 12px; background: var(--action-pale); color: #1b2f73; border-radius: 10px; font-size: .9rem; }
+.consigne .ico { color: var(--action); width: 18px; height: 18px; margin-top: 1px; }
+.sans-eleve { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--ligne); }
+.carte-pied { gap: 8px; flex-wrap: wrap; }
+.pastille.encre { background: var(--encre); color: #fff; }
+.commentaires { list-style: none; padding: 0; margin: 10px 0 0 46px; display: grid; gap: 8px; }
+.commentaires li { border-left: 3px solid var(--ligne-forte); padding: 4px 0 4px 12px; font-size: .9rem; }
+.comm-tete { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-height: 28px; }
+.comm-tete .icone-btn { margin-left: auto; }
+.comm-tete .pastille { font-size: .7rem; padding: 1px 8px; }
+.eleve-comm { margin: 12px 0 0; }
+.eleve-comm li { border-left-color: var(--action); }
+.rangee-tete > .icone-btn { margin-right: -6px; }
+.defile { max-height: 260px; overflow-y: auto; }
+.cases-recherche { margin: 0 0 6px; clear: both; }
+.cases-recherche input { min-height: 40px; padding-top: 8px; padding-bottom: 8px; }
+.reglages { max-width: 640px; padding: 20px; }
+.reglages h2 { font-size: 1rem; margin: 4px 0 12px; }
+.reglages h2:not(:first-child) { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--ligne); }
+.avec-unite { display: flex; align-items: center; gap: 10px; font-weight: 400; }
+.avec-unite input { width: 96px !important; }
+.actions { padding: 0; }
+.actions[open] { flex-direction: column; }
+.actions-tete { padding: 18px 20px 10px; font-weight: 700; color: var(--encre); border-bottom: 1px solid var(--ligne); }
+.actions-liste { display: grid; padding: 6px; }
+.actions-liste button { justify-content: flex-start; gap: 14px; min-height: 52px; font-weight: 500; border-radius: 10px; padding: 0 14px; }
+.actions-liste button:hover { background: #f3f3f1; }
+.actions-liste button.danger { color: var(--rouge); }
+.actions-pied { padding: 6px 12px calc(12px + var(--bas-sur)); }
+
 /* ---------- Feuilles (dialogues) ---------- */
 dialog { border: 0; padding: 0; border-radius: 16px; width: min(560px, 94vw); max-height: 90dvh; box-shadow: 0 24px 64px rgba(20,33,61,.3); color: var(--texte); overflow: hidden; }
 dialog::backdrop { background: rgba(20,33,61,.45); }
@@ -270,7 +302,7 @@ dialog form { display: flex; flex-direction: column; width: 100%; max-height: 90
 @media (max-width: 900px) {
   body.page-enseignant, body.page-eleve { padding-bottom: calc(var(--nav-h) + var(--bas-sur) + 12px); }
   .nav-bas { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; background: rgba(255,255,255,.96); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-    border-top: 1px solid var(--ligne); display: grid; grid-template-columns: repeat(4, 1fr); padding: 0 max(4px, env(safe-area-inset-left)) var(--bas-sur); }
+    border-top: 1px solid var(--ligne); display: grid; grid-template-columns: repeat(var(--nb-onglets, 4), minmax(0, 1fr)); padding: 0 max(4px, env(safe-area-inset-left)) var(--bas-sur); }
   .nav-bas button { flex-direction: column; gap: 3px; min-height: var(--nav-h); border-radius: 0; color: var(--gris-clair); font-size: .72rem; font-weight: 600; padding: 6px 0; }
   .nav-bas button .ico { width: 24px; height: 24px; }
   .nav-bas button[aria-current=page] { color: var(--action); }
@@ -297,7 +329,9 @@ dialog form { display: flex; flex-direction: column; width: 100%; max-height: 90
   ul.carte.rangees { padding: 2px 14px; }
   .carte-tete { gap: 12px; }
   .carte-pied .principal { width: 100%; }
-  ul.mini, .rangees .note, .rangees .reprise-ligne { margin-left: 0; }
+  ul.mini, .rangees .note, .rangees .reprise-ligne, .commentaires { margin-left: 0; }
+  .nav-bas button { font-size: .68rem; }
+  .entete-page { align-items: center; }
   .rangee-tete .pastille { font-size: .72rem; padding: 2px 8px; }
   .filtres select { flex: 1; min-width: 0; }
   .collant { top: 56px; margin-left: -12px; margin-right: -12px; padding: 8px 12px; }
@@ -318,7 +352,7 @@ dialog form { display: flex; flex-direction: column; width: 100%; max-height: 90
   .rangee-tete .secondaire.petit { padding: 0 10px; font-size: .8rem; }
 
   /* Les dialogues deviennent des feuilles qui montent du bas */
-  dialog.feuille { width: 100%; max-width: 100%; margin: auto 0 0; border-radius: 18px 18px 0 0; max-height: 94dvh; animation: monter .22s ease-out; }
+  dialog.feuille, dialog.feuille.petite { width: 100%; max-width: 100%; margin: auto 0 0; border-radius: 18px 18px 0 0; max-height: 94dvh; animation: monter .22s ease-out; }
   dialog.feuille form { max-height: 94dvh; }
   dialog.feuille::before { content: ''; position: absolute; top: 6px; left: 50%; transform: translateX(-50%); width: 40px; height: 4px; border-radius: 2px; background: var(--ligne-forte); }
   .feuille-tete { padding-top: 20px; }
