@@ -39,7 +39,7 @@ let html = lire('../public/index.html')
   .replace('<link rel="stylesheet" href="style.css">', `<style>\n${css}\n</style>`)
   .replace('<body>', '<body>\n' + bandeau)
   .replace('<script src="app.js"></script>', `<script>\n${lire('faux-serveur.js')}\n</script>\n<script>\n${lire('../public/app.js')}\n</script>\n${raccourcis}`)
-  .replace('<title>Absences Sport-études</title>', '<title>Absences Sport-études</title>\n  <meta name="color-scheme" content="light">');
+  .replace('<title>Transmission · Antoine Saint-Exupéry</title>', '<title>Transmission · Antoine Saint-Exupéry</title>\n  <meta name="color-scheme" content="light">');
 writeFileSync(new URL('demo.html', ici), html);
 // Copie pour Netlify (dossier « site », publié tel quel)
 mkdirSync(new URL('../site/', ici), { recursive: true });

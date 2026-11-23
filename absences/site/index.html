@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#14213d">
   <meta name="color-scheme" content="light">
-  <title>Absences Sport-études</title>
+  <title>Transmission · Antoine Saint-Exupéry</title>
   <meta name="color-scheme" content="light">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -113,7 +113,8 @@ label.case .details { margin-left: auto; }
 
 /* ---------- Connexion ---------- */
 .connexion { max-width: 420px; margin: 8px auto 0; }
-.connexion h1 { font-size: 1.9rem; margin-bottom: 8px; }
+.connexion h1 { font-size: 2.2rem; margin-bottom: 2px; }
+.connexion .ecole { color: var(--action-fonce); font-weight: 600; margin-bottom: 12px; }
 .connexion .intro { color: var(--gris); margin-bottom: 24px; }
 .segment { display: grid; grid-template-columns: repeat(3, 1fr); background: #e7e7e3; border-radius: 12px; padding: 4px; margin-bottom: 20px; }
 .segment button { border-radius: 9px; font-weight: 600; color: var(--gris); }
@@ -409,7 +410,7 @@ dialog form { display: flex; flex-direction: column; width: 100%; max-height: 90
   <header class="barre">
     <div class="marque">
       <span class="logo" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="m9 15 2 2 4-4"/></svg></span>
-      <span class="nom-appli">Absences <span class="sous">Sport-études</span></span>
+      <span class="nom-appli">Transmission <span class="sous">Antoine Saint-Exupéry</span></span>
     </div>
     <button id="qui" class="qui" hidden aria-haspopup="true">
       <span class="avatar" id="qui-initiales"></span>
@@ -427,7 +428,8 @@ dialog form { display: flex; flex-direction: column; width: 100%; max-height: 90
   <!-- Écran de connexion -->
   <template id="tpl-connexion">
     <section class="connexion">
-      <h1>Absences pour tournois</h1>
+      <h1>Transmission</h1>
+      <p class="ecole">Sport-études · Antoine Saint-Exupéry</p>
       <p class="intro">Les élèves déclarent leurs tournois. Les enseignants y joignent le travail à faire et les reprises d'examen.</p>
       <div class="segment" role="tablist">
         <button type="button" data-role="eleve" role="tab">Élève</button>
@@ -561,7 +563,7 @@ dialog form { display: flex; flex-direction: column; width: 100%; max-height: 90
 // Démonstration : remplace le serveur par des données fictives gardées dans le navigateur (localStorage).
 // Mêmes routes que src/worker.js, pour montrer l'application sans la mettre en ligne.
 (() => {
-  const CLE = 'absences-demo-v2';
+  const CLE = 'transmission-demo-v1';
   const JOUR = 864e5;
   const iso = (dec) => new Date(Date.now() + dec * JOUR).toLocaleDateString('en-CA');
   const cle = (n) => n.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
@@ -571,7 +573,7 @@ dialog form { display: flex; flex-direction: column; width: 100%; max-height: 90
       ['Florence Bouchard', '4-01'], ['Thomas Gauthier', '3-01'], ['Alice Morin', '4-02'], ['Jacob Lavoie', '4-02'],
       ['Zoé Fortin', '3-02'], ['Liam Pelletier', '4-01'], ['Rosalie Bélanger', '3-01'], ['Nathan Lévesque', '4-02']];
     const d = { n: 100, eleves: [], enseignants: [], tournois: [], absences: [], taches: [], commentaires: [], sessions: {},
-      reglages: { preavis_min: 7, nom_ecole: 'École secondaire du Boisé', code_eleve: 'sport', code_enseignant: 'prof' } };
+      reglages: { preavis_min: 7, nom_ecole: 'Antoine Saint-Exupéry', code_eleve: 'sport', code_enseignant: 'prof' } };
     noms.forEach(([nom, groupe], i) => d.eleves.push({ id: i + 1, nom, nom_cle: cle(nom), groupe, nip: i === 0 ? '1234' : null }));
     d.enseignants.push({ id: 1, nom: 'Marc Gagnon', nom_cle: cle('Marc Gagnon'), matiere: 'Mathématiques' },
       { id: 2, nom: 'Julie Roy', nom_cle: cle('Julie Roy'), matiere: 'Français' },
@@ -826,7 +828,7 @@ dialog form { display: flex; flex-direction: column; width: 100%; max-height: 90
 
 </script>
 <script>
-// Absences Sport-études — application (navigateur). Aucune dépendance.
+// Transmission (Sport-études, Antoine Saint-Exupéry) — application (navigateur). Aucune dépendance.
 'use strict';
 
 let PREAVIS_MIN = 7; // jours d'avance demandés aux élèves (réglable par la direction)
@@ -1731,7 +1733,7 @@ function ongletReglages(contenu, r) {
     <div class="entete-page"><h1>Réglages</h1></div>
     <form id="form-reglages" class="carte reglages" novalidate>
       <h2>École</h2>
-      <label>Nom affiché <input name="nom_ecole" value="${esc(r.nom_ecole)}" placeholder="Sport-études"></label>
+      <label>Nom affiché <input name="nom_ecole" value="${esc(r.nom_ecole)}" placeholder="Antoine Saint-Exupéry"></label>
       <label>Préavis demandé aux élèves <span class="avec-unite"><input name="preavis_min" type="number" inputmode="numeric" min="0" max="60" value="${r.preavis_min}"> jours</span>
         <small>En dessous, l'élève est averti et l'absence apparaît en orange ou en rouge.</small></label>
       <h2>Codes de connexion</h2>
@@ -1759,10 +1761,10 @@ function ongletReglages(contenu, r) {
 
 // ---------- Démarrage ----------
 
-let reglages = { preavis_min: 7, nom_ecole: '' };
+let reglages = { preavis_min: 7, nom_ecole: 'Antoine Saint-Exupéry' };
 function appliquerReglages() {
   PREAVIS_MIN = reglages.preavis_min;
-  $('.nom-appli .sous').textContent = reglages.nom_ecole || 'Sport-études';
+  $('.nom-appli .sous').textContent = reglages.nom_ecole || 'Antoine Saint-Exupéry';
 }
 
 function afficher() {

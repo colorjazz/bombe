@@ -1,4 +1,4 @@
-// Absences Sport-études — serveur (Cloudflare Worker + base D1).
+// Transmission (Sport-études, Antoine Saint-Exupéry) — serveur (Cloudflare Worker + base D1).
 //
 // Les élèves déclarent leurs absences pour un tournoi ; les enseignants y ajoutent le travail demandé
 // et la date de reprise d'un examen manqué ; la direction gère tout (tournois, absences, élèves, réglages).
@@ -111,7 +111,7 @@ async function lireReglages(env) {
   const r = Object.fromEntries(results.map((x) => [x.nom, x.valeur]));
   return {
     preavis_min: Number(r.preavis_min) || PREAVIS_DEFAUT,
-    nom_ecole: r.nom_ecole || '',
+    nom_ecole: r.nom_ecole || 'Antoine Saint-Exupéry',
     code_eleve: r.code_eleve || env.CODE_ELEVE || '',
     code_enseignant: r.code_enseignant || env.CODE_ENSEIGNANT || '',
   };

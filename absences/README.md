@@ -1,4 +1,6 @@
-# Absences Sport-études
+# Transmission
+
+Application du programme Sport-études de l'école Antoine Saint-Exupéry.
 
 Application web toute simple pour les écoles sport-études :
 

@@ -1,4 +1,4 @@
-// Absences Sport-études — application (navigateur). Aucune dépendance.
+// Transmission (Sport-études, Antoine Saint-Exupéry) — application (navigateur). Aucune dépendance.
 'use strict';
 
 let PREAVIS_MIN = 7; // jours d'avance demandés aux élèves (réglable par la direction)
@@ -903,7 +903,7 @@ function ongletReglages(contenu, r) {
     <div class="entete-page"><h1>Réglages</h1></div>
     <form id="form-reglages" class="carte reglages" novalidate>
       <h2>École</h2>
-      <label>Nom affiché <input name="nom_ecole" value="${esc(r.nom_ecole)}" placeholder="Sport-études"></label>
+      <label>Nom affiché <input name="nom_ecole" value="${esc(r.nom_ecole)}" placeholder="Antoine Saint-Exupéry"></label>
       <label>Préavis demandé aux élèves <span class="avec-unite"><input name="preavis_min" type="number" inputmode="numeric" min="0" max="60" value="${r.preavis_min}"> jours</span>
         <small>En dessous, l'élève est averti et l'absence apparaît en orange ou en rouge.</small></label>
       <h2>Codes de connexion</h2>
@@ -931,10 +931,10 @@ function ongletReglages(contenu, r) {
 
 // ---------- Démarrage ----------
 
-let reglages = { preavis_min: 7, nom_ecole: '' };
+let reglages = { preavis_min: 7, nom_ecole: 'Antoine Saint-Exupéry' };
 function appliquerReglages() {
   PREAVIS_MIN = reglages.preavis_min;
-  $('.nom-appli .sous').textContent = reglages.nom_ecole || 'Sport-études';
+  $('.nom-appli .sous').textContent = reglages.nom_ecole || 'Antoine Saint-Exupéry';
 }
 
 function afficher() {

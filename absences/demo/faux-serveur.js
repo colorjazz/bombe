@@ -1,7 +1,7 @@
 // Démonstration : remplace le serveur par des données fictives gardées dans le navigateur (localStorage).
 // Mêmes routes que src/worker.js, pour montrer l'application sans la mettre en ligne.
 (() => {
-  const CLE = 'absences-demo-v2';
+  const CLE = 'transmission-demo-v1';
   const JOUR = 864e5;
   const iso = (dec) => new Date(Date.now() + dec * JOUR).toLocaleDateString('en-CA');
   const cle = (n) => n.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
@@ -11,7 +11,7 @@
       ['Florence Bouchard', '4-01'], ['Thomas Gauthier', '3-01'], ['Alice Morin', '4-02'], ['Jacob Lavoie', '4-02'],
       ['Zoé Fortin', '3-02'], ['Liam Pelletier', '4-01'], ['Rosalie Bélanger', '3-01'], ['Nathan Lévesque', '4-02']];
     const d = { n: 100, eleves: [], enseignants: [], tournois: [], absences: [], taches: [], commentaires: [], sessions: {},
-      reglages: { preavis_min: 7, nom_ecole: 'École secondaire du Boisé', code_eleve: 'sport', code_enseignant: 'prof' } };
+      reglages: { preavis_min: 7, nom_ecole: 'Antoine Saint-Exupéry', code_eleve: 'sport', code_enseignant: 'prof' } };
     noms.forEach(([nom, groupe], i) => d.eleves.push({ id: i + 1, nom, nom_cle: cle(nom), groupe, nip: i === 0 ? '1234' : null }));
     d.enseignants.push({ id: 1, nom: 'Marc Gagnon', nom_cle: cle('Marc Gagnon'), matiere: 'Mathématiques' },
       { id: 2, nom: 'Julie Roy', nom_cle: cle('Julie Roy'), matiere: 'Français' },
