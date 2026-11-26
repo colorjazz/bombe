@@ -385,7 +385,7 @@ function extractFeatures(data, model, day) {
 
   const freezingAt = i => {
     if (FREEZING_CODES.has(wc[i])) return pr[i] || 0;
-    if ((ra[i] || 0) > 0.1 && tt[i] != null && tt[i] <= 0.5) return ra[i];
+    if ((ra[i] || 0) > 0.1 && tt[i] != null && tt[i] <= 0) return ra[i];
     return 0;
   };
   const frzIdx = win(-6, 10);
@@ -414,7 +414,7 @@ function hourlyMean(data, day, models) {
       const ra = series(data, "rain", m.id)[i] || 0;
       const t = series(data, "temperature_2m", m.id)[i];
       const pr = series(data, "precipitation", m.id)[i] || 0;
-      const frz = FREEZING_CODES.has(wc) ? pr : (ra > 0.1 && t != null && t <= 0.5 ? ra : 0);
+      const frz = FREEZING_CODES.has(wc) ? pr : (ra > 0.1 && t != null && t <= 0 ? ra : 0);
       return { sn, frz, t };
     });
     const avg = k => vals.reduce((s, v) => s + (v[k] ?? 0), 0) / vals.length;
