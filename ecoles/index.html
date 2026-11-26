@@ -99,6 +99,15 @@
   .gauge { width: 180px; height: 180px; }
   .verdict { font-size: 1.25rem; font-weight: 600; margin: 0 0 6px; }
   .meta { color: var(--text-2); font-size: .92rem; margin: 2px 0; }
+  .alerts { margin-top: 16px; }
+  .alert { border: 1px solid var(--border); border-left: 6px solid var(--warn); border-radius: 8px;
+    padding: 10px 12px; margin-top: 8px; background: var(--bg); }
+  .alert.red { border-left-color: var(--crit); }
+  .alert.orange { border-left-color: #e0701f; }
+  .alert.yellow { border-left-color: #e2b200; }
+  .alert strong { display: block; }
+  .alert .when { font-size: .82rem; color: var(--text-2); }
+  .alert p { margin: 6px 0 0; font-size: .88rem; }
   .pill { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: .82rem; border: 1px solid var(--border); }
   table { width: 100%; border-collapse: collapse; font-size: .92rem; }
   th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); }
@@ -171,6 +180,7 @@
         <p class="verdict" id="verdict"></p>
         <p class="meta" id="range"></p>
         <p class="meta" id="confidence"></p>
+        <div class="alerts" id="alerts" aria-live="polite"></div>
       </div>
     </div>
   </section>
@@ -606,6 +616,95 @@ function renderChart(rows) {
 function ruralText(v) { return v < 0.25 ? "urbain" : v < 0.6 ? "mixte" : v < 0.85 ? "rural" : "très rural"; }
 
 // ==========================================================
+// ENVIRONMENT CANADA ALERTS
+// ==========================================================
+// MSC GeoMet OGC API, collection "weather-alerts" (GeoJSON polygons).
+// Field names are read defensively because several spellings exist.
+const ALERTS_URL = "https://api.weather.gc.ca/collections/weather-alerts/items";
+const alertCache = new Map();
+
+const ecPage = place => `https://meteo.gc.ca/fr/location/index.html?coords=${place.lat.toFixed(3)},${place.lon.toFixed(3)}`;
+const pick = (o, keys) => { for (const k of keys) if (o[k] != null && o[k] !== "") return o[k]; return null; };
+
+function inRing(lon, lat, ring) {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [xi, yi] = ring[i], [xj, yj] = ring[j];
+    if ((yi > lat) !== (yj > lat) && lon < (xj - xi) * (lat - yi) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+function inGeometry(lon, lat, g) {
+  if (!g) return true; // no geometry: trust the bbox filter
+  const polys = g.type === "Polygon" ? [g.coordinates] : g.type === "MultiPolygon" ? g.coordinates : null;
+  if (!polys) return true;
+  return polys.some(([outer, ...holes]) => inRing(lon, lat, outer) && !holes.some(h => inRing(lon, lat, h)));
+}
+
+async function fetchAlerts(place) {
+  const key = `${place.lat.toFixed(2)},${place.lon.toFixed(2)}`;
+  const hit = alertCache.get(key);
+  if (hit && Date.now() - hit.at < 10 * 60e3) return hit.alerts;
+  const d = 0.02;
+  const u = new URL(ALERTS_URL);
+  u.search = new URLSearchParams({ f: "json", lang: "fr", limit: "50",
+    bbox: [place.lon - d, place.lat - d, place.lon + d, place.lat + d].map(v => v.toFixed(3)).join(",") });
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 10000);
+  try {
+    const r = await fetch(u, { signal: ctrl.signal });
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    const data = await r.json();
+    const now = Date.now(), seen = new Set();
+    const alerts = (data.features || [])
+      .filter(ft => inGeometry(place.lon, place.lat, ft.geometry))
+      .map(ft => {
+        const p = ft.properties || {};
+        return {
+          name: pick(p, ["alert_name_fr", "alert_short_name_fr", "headline_fr", "alert_name", "alert_name_en", "headline"]) || "Alerte météo",
+          type: String(pick(p, ["alert_type", "alert_type_fr", "type"]) || ""),
+          colour: String(pick(p, ["risk_colour_en", "risk_colour", "colour_en", "colour"]) || "").toLowerCase(),
+          status: String(pick(p, ["status_en", "status", "msg_type"]) || ""),
+          area: pick(p, ["feature_name_fr", "area_name_fr", "feature_name", "area_name"]),
+          start: pick(p, ["validity_datetime", "effective", "onset_datetime", "publication_datetime"]),
+          end: pick(p, ["expiration_datetime", "expires", "event_end_datetime"]),
+          text: pick(p, ["alert_text_fr", "description_fr", "text_fr", "alert_text", "description"]),
+        };
+      })
+      .filter(a => !/ended|cancel|termin|annul/i.test(a.status))
+      .filter(a => !a.end || isNaN(Date.parse(a.end)) || Date.parse(a.end) > now)
+      .filter(a => { const k = a.name + "|" + a.end; if (seen.has(k)) return false; seen.add(k); return true; });
+    alertCache.set(key, { at: Date.now(), alerts });
+    return alerts;
+  } finally { clearTimeout(timer); }
+}
+
+const fmtWhen = iso => { const t = Date.parse(iso); return isNaN(t) ? "" : new Date(t).toLocaleString("fr-CA", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }); };
+
+async function renderAlerts(place) {
+  const el = $("alerts");
+  const link = `<a href="${ecPage(place)}" target="_blank" rel="noopener">Environnement Canada</a>`;
+  el.innerHTML = `<p class="note">Vérification des avertissements d'Environnement Canada…</p>`;
+  try {
+    const alerts = await fetchAlerts(place);
+    if (state.place !== place) return; // the user picked another city meanwhile
+    el.innerHTML = alerts.length
+      ? alerts.map(a => {
+          const colour = /red|rouge/.test(a.colour) ? "red" : /orange/.test(a.colour) ? "orange" : /yellow|jaune/.test(a.colour) ? "yellow" : "";
+          const when = [a.start && "depuis " + fmtWhen(a.start), a.end && "jusqu'à " + fmtWhen(a.end)].filter(Boolean).join(" · ");
+          const text = a.text ? String(a.text).trim().split(/\n\s*\n/)[0].slice(0, 400) : "";
+          return `<div class="alert ${colour}" role="alert"><strong>⚠️ ${esc(a.name.charAt(0).toUpperCase() + a.name.slice(1))}</strong>
+            <span class="when">${esc([a.area, when].filter(Boolean).join(" · "))}</span>
+            ${text ? `<p>${esc(text)}${text.length >= 400 ? "…" : ""}</p>` : ""}</div>`;
+        }).join("") + `<p class="note">Source : ${link} (avertissements officiels).</p>`
+      : `<p class="note">✅ Aucun avertissement d'${link} en vigueur pour ce secteur.</p>`;
+  } catch (e) {
+    if (state.place !== place) return;
+    el.innerHTML = `<p class="note">Avertissements indisponibles (${esc(e.name === "AbortError" ? "délai dépassé" : e.message)}). Vérifiez sur ${link}.</p>`;
+  }
+}
+
+// ==========================================================
 // "WHAT ARE THE ODDS" SIDEBAR
 // ==========================================================
 // perYear: estimated yearly probability; converted to "by tomorrow".
@@ -869,6 +968,7 @@ async function selectPlace(place) {
     renderPrediction();
     renderMap();
     if (regionChanged) focusRegion(place.regionId);
+    renderAlerts(place);
   } catch (e) {
     $("placeLabel").innerHTML = `<span class="error">Impossible de charger les prévisions (${esc(e.message)}).</span>`;
   }

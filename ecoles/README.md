@@ -20,6 +20,13 @@ la probabilité (%) que les écoles ferment un jour donné à cause de la mété
 4. **Poids du modèle** : fixés à partir de règles d'expert (≈15 cm la nuit ≈ 65 %,
    ≈10 mm de verglas ≈ 85 %).
 
+## Avertissements d'Environnement Canada
+
+Sous le pourcentage, l'application affiche les avertissements officiels en vigueur pour la ville
+choisie (pluie verglaçante, neige, etc.), lus sur le service ouvert MSC GeoMet
+(`api.weather.gc.ca`, collection `weather-alerts`). S'ils ne peuvent pas être chargés, un lien
+mène à la page d'Environnement Canada de la ville.
+
 ## Régions et carte
 
 - Choisissez l'une des **17 régions administratives du Québec**, puis une ville de la région
