@@ -213,7 +213,7 @@
     <h2>Précipitations heure par heure (moyenne des modèles)</h2>
     <div class="legend">
       <span><span class="sw" style="background:var(--snow)"></span>Neige (cm)</span>
-      <span><span class="sw" style="background:var(--ice)"></span>Pluie verglaçante (mm)</span>
+      <span><span class="sw" style="background:var(--ice)"></span>Verglas : glace estimée (mm)</span>
       <span><span class="sw" style="background:var(--track);border:1px solid var(--border)"></span>Zone 6 h – 9 h (transport scolaire)</span>
     </div>
     <div class="chart-wrap" id="chartWrap"><div class="tip" id="tip"></div></div>
@@ -263,13 +263,45 @@ const FEATURES = [
   { key: "snowNight", label: "Neige 18 h – 7 h",                    weight: 2.2 },
   { key: "snowDay",   label: "Neige 7 h – 15 h",                    weight: 1.0 },
   { key: "peakRate",  label: "Intensité max 4 h – 8 h",             weight: 0.8 },
-  { key: "freezing",  label: "Pluie verglaçante",                   weight: 3.0 },
+  { key: "freezing",  label: "Verglas (glace estimée 18 h – 8 h)",  weight: 2.5 },
   { key: "cold",      label: "Froid extrême (refroidissement éolien)", weight: 2.5 },
   { key: "wind",      label: "Rafales",                             weight: 1.0 },
   { key: "snowPrev",  label: "Neige de la veille",                  weight: 0.6 },
   { key: "rural",     label: "Territoire rural",                    weight: 1.0 },
 ];
 const WEIGHTS = FEATURES.map(f => f.weight);
+
+// Reference days used to set the weights (outcome → what the model must reproduce).
+// Add each new storm here with its official outcome.
+//   2026-03-11  Montréal  EC: 20–30 mm freezing rain   → schools CLOSED (model ≈ 90 %)
+//   2026-11-27  Montréal  EC: 2–10 mm freezing rain    → schools OPEN   (model ≈ 25 %)
+// The freezing-rain weight (2.5) is the one that separates these two days.
+
+// The weights are expert estimates, not fitted on many outcomes, so the
+// final probability is shrunk into 2–90 % rather than claiming certainty.
+const calibrate = p => 0.02 + 0.88 * p;
+
+// Share of freezing precipitation that actually stays as ice on surfaces
+// (runoff and latent heat stop part of it from accreting). Piecewise linear
+// in the 2 m temperature.
+function iceFactor(t) {
+  const pts = [[-3, 0.6], [-1, 0.5], [0, 0.4], [0.5, 0.2], [1, 0]];
+  if (t == null) return 0.4;
+  if (t <= pts[0][0]) return pts[0][1];
+  for (let k = 1; k < pts.length; k++) {
+    const [x0, y0] = pts[k - 1], [x1, y1] = pts[k];
+    if (t <= x1) return y0 + (y1 - y0) * (t - x0) / (x1 - x0);
+  }
+  return 0;
+}
+
+// Ice accretion (mm) for one hour: model-coded freezing rain always counts
+// (at least 30 %), plain rain only when the air is at or below +1 °C.
+function iceAt(code, precip, rain, t) {
+  if (FREEZING_CODES.has(code)) return (precip || 0) * Math.max(0.3, iceFactor(t));
+  if ((rain || 0) > 0.1 && t != null && t <= 1) return rain * iceFactor(t);
+  return 0;
+}
 
 // Quebec's 17 administrative regions. Each city is a forecast point for
 // the map; the first one is the default for the region. `rural` is the
@@ -310,6 +342,9 @@ let state = {
   ruralByRegion: store.get(K.rural, {}),
   rural: 0.3,
   mapData: null,
+  mapFetchedAt: null,
+  fetchedAt: null,
+  ecIce: null,
   forecast: null,
   day: null,
 };
@@ -393,12 +428,7 @@ function extractFeatures(data, model, day) {
   const max = (arr, idx, d = 0) => idx.reduce((m, i) => arr[i] == null ? m : Math.max(m, arr[i]), d);
   const min = (arr, idx, d = 0) => { const v = idx.map(i => arr[i]).filter(x => x != null); return v.length ? Math.min(...v) : d; };
 
-  const freezingAt = i => {
-    if (FREEZING_CODES.has(wc[i])) return pr[i] || 0;
-    if ((ra[i] || 0) > 0.1 && tt[i] != null && tt[i] <= 0.5) return ra[i];
-    return 0;
-  };
-  const frzIdx = win(-6, 10);
+  const frzIdx = win(-6, 8); // up to the end of the school-bus window
   const windIdx = win(-6, 9);
   const morning = win(5, 9);
 
@@ -406,7 +436,7 @@ function extractFeatures(data, model, day) {
     snowNight: sum(sn, win(-6, 7)),
     snowDay: sum(sn, win(7, 15)),
     peakRate: max(sn, win(4, 8)),
-    freezing: frzIdx.reduce((s, i) => s + freezingAt(i), 0),
+    freezing: frzIdx.reduce((s, i) => s + iceAt(wc[i], pr[i], ra[i], tt[i]), 0),
     windchill: min(at, morning, 0),
     gust: max(gu, windIdx),
     snowPrev: sum(sn, win(-30, -6)),
@@ -424,7 +454,7 @@ function hourlyMean(data, day, models) {
       const ra = series(data, "rain", m.id)[i] || 0;
       const t = series(data, "temperature_2m", m.id)[i];
       const pr = series(data, "precipitation", m.id)[i] || 0;
-      const frz = FREEZING_CODES.has(wc) ? pr : (ra > 0.1 && t != null && t <= 0.5 ? ra : 0);
+      const frz = iceAt(wc, pr, ra, t);
       return { sn, frz, t };
     });
     const avg = k => vals.reduce((s, v) => s + (v[k] ?? 0), 0) / vals.length;
@@ -435,7 +465,16 @@ function hourlyMean(data, day, models) {
 // ==========================================================
 // PREDICTION
 // ==========================================================
-function predict(data, day, rural = state.rural) {
+// Environment Canada's announced freezing-rain amount, when an alert for the
+// selected place gives one and covers the night before `day`.
+function ecIceFor(day) {
+  const ec = state.ecIce;
+  if (!ec || ec.placeKey !== placeKey(state.place)) return null;
+  const night0 = new Date(day + "T00:00:00").getTime() - 6 * H, night1 = night0 + 14 * H;
+  return ec.items.find(a => (!a.end || a.end > night0) && (!a.start || a.start < night1)) || null;
+}
+
+function predict(data, day, rural = state.rural, ecIce = null) {
   const d0 = dayMs(day);
   const winIdx = indicesBetween(data.hourly.time, d0 - 6 * H, d0 + 15 * H);
   const active = WEATHER_MODELS.filter(m => modelHasData(data, m.id, winIdx));
@@ -443,7 +482,9 @@ function predict(data, day, rural = state.rural) {
 
   const perModel = active.map(m => {
     const f = extractFeatures(data, m.id, day);
-    const p = sigmoid(dot(WEIGHTS, featureVector(f, rural)));
+    f.modelIce = f.freezing;
+    if (ecIce) f.freezing = ecIce.mid; // official amount beats raw model output
+    const p = calibrate(sigmoid(dot(WEIGHTS, featureVector(f, rural))));
     return { ...m, f, p };
   });
   const wsum = perModel.reduce((s, m) => s + m.weight, 0);
@@ -457,7 +498,9 @@ function predict(data, day, rural = state.rural) {
   const contrib = FEATURES.map((ft, j) => ({ ...ft, value: WEIGHTS[j] * x[j] }));
 
   const leadDays = Math.round((d0 - dayMs(todayStr())) / 864e5);
-  return { p, sd, perModel, f, contrib, active, leadDays, lo: Math.max(0, p - 1.5 * sd), hi: Math.min(1, p + 1.5 * sd) };
+  // Interval: model spread plus a fixed share for the formula's own uncertainty.
+  const half = 1.5 * sd + 0.1;
+  return { p, sd, perModel, f, contrib, active, leadDays, ecIce, lo: Math.max(0, p - half), hi: Math.min(1, p + half) };
 }
 
 // ==========================================================
@@ -512,7 +555,7 @@ function renderDays() {
 function renderPrediction() {
   if (!state.forecast || !state.day) return;
   let r;
-  try { r = predict(state.forecast, state.day); }
+  try { r = predict(state.forecast, state.day, state.rural, ecIceFor(state.day)); }
   catch (e) { $("verdict").textContent = e.message; return; }
 
   ["predCard", "detailGrid", "chartCard"].forEach(id => $(id).classList.remove("hidden"));
@@ -527,15 +570,16 @@ function renderPrediction() {
 
   // Confidence mixes model disagreement and forecast lead time.
   const leadPenalty = Math.max(0, r.leadDays - 1) * 0.05;
-  const u = r.sd + leadPenalty;
+  const u = r.sd + leadPenalty + (r.ecIce ? 0 : 0.04);
   const conf = u < 0.07 ? "élevée" : u < 0.16 ? "moyenne" : "faible";
-  $("confidence").innerHTML = `Confiance : <span class="pill">${conf}</span> · écart entre modèles ±${Math.round(r.sd * 100)} pts · échéance J+${Math.max(0, r.leadDays)}`;
+  $("confidence").innerHTML = `Confiance : <span class="pill">${conf}</span> · écart entre modèles ±${Math.round(r.sd * 100)} pts · échéance J+${Math.max(0, r.leadDays)}` +
+    (state.fetchedAt ? ` · prévisions de ${new Date(state.fetchedAt).toLocaleTimeString("fr-CA", { hour: "2-digit", minute: "2-digit" })}` : "");
 
   // Factors
   const f = r.f;
   const shown = {
     snowNight: `${f.snowNight.toFixed(1)} cm`, snowDay: `${f.snowDay.toFixed(1)} cm`,
-    peakRate: `${f.peakRate.toFixed(1)} cm/h`, freezing: `${f.freezing.toFixed(1)} mm`,
+    peakRate: `${f.peakRate.toFixed(1)} cm/h`, freezing: r.ecIce ? `${r.ecIce.label} (EC)` : `${f.freezing.toFixed(1)} mm`,
     cold: `${Math.round(f.windchill)} °C`, wind: `${Math.round(f.gust)} km/h`,
     snowPrev: `${f.snowPrev.toFixed(1)} cm`, rural: ruralText(state.rural), bias: "",
   };
@@ -548,9 +592,9 @@ function renderPrediction() {
         <td><div class="bar" title="${c.value >= 0 ? "+" : ""}${c.value.toFixed(2)}"><span style="left:0;width:${w}%;background:${col}"></span></div></td></tr>`;
     }).join("") + "</tbody>";
 
-  $("models").innerHTML = `<thead><tr><th>Modèle</th><th class="num">Neige nuit</th><th class="num">Verglas</th><th class="num">Fermeture</th></tr></thead><tbody>` +
+  $("models").innerHTML = `<thead><tr><th>Modèle</th><th class="num">Neige nuit</th><th class="num">Glace est.</th><th class="num">Fermeture</th></tr></thead><tbody>` +
     r.perModel.map(m => `<tr><td>${esc(m.name)}</td><td class="num">${m.f.snowNight.toFixed(1)} cm</td>
-      <td class="num">${m.f.freezing.toFixed(1)} mm</td><td class="num"><strong style="color:${riskColor(m.p)}">${pct(m.p)}</strong></td></tr>`).join("") +
+      <td class="num">${m.f.modelIce.toFixed(1)} mm</td><td class="num"><strong style="color:${riskColor(m.p)}">${pct(m.p)}</strong></td></tr>`).join("") +
     `</tbody>` + (r.active.length < WEATHER_MODELS.length ? `<caption class="note" style="caption-side:bottom;text-align:left">Modèles sans données à cette échéance : ${WEATHER_MODELS.filter(m => !r.active.includes(m)).map(m => m.name).join(", ")}</caption>` : "");
 
   renderChart(hourlyMean(state.forecast, state.day, r.active));
@@ -679,6 +723,24 @@ async function fetchAlerts(place) {
   } finally { clearTimeout(timer); }
 }
 
+const placeKey = place => `${place.lat.toFixed(2)},${place.lon.toFixed(2)}`;
+
+// Pulls the announced freezing-rain amount out of an alert ("2 à 10 mm",
+// "10 à 15 millimètres", "au moins 10 mm", ...). Returns null when the alert
+// is not about freezing rain or gives no amount.
+function parseIceAmount(a) {
+  const txt = `${a.name} ${a.text || ""}`;
+  if (!/verglas|verglaç|freezing/i.test(txt)) return null;
+  const num = v => parseFloat(v.replace(",", "."));
+  const range = txt.match(/(\d+(?:[.,]\d+)?)\s*(?:à|a|-|–|to)\s*(\d+(?:[.,]\d+)?)\s*(?:mm|millim)/i);
+  if (range) {
+    const lo = num(range[1]), hi = num(range[2]);
+    return { mid: (lo + hi) / 2, label: `${range[1]} à ${range[2]} mm` };
+  }
+  const one = txt.match(/(\d+(?:[.,]\d+)?)\s*(?:mm|millim)/i);
+  return one ? { mid: num(one[1]), label: `${one[1]} mm` } : null;
+}
+
 const fmtWhen = iso => { const t = Date.parse(iso); return isNaN(t) ? "" : new Date(t).toLocaleString("fr-CA", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }); };
 
 async function renderAlerts(place) {
@@ -688,6 +750,12 @@ async function renderAlerts(place) {
   try {
     const alerts = await fetchAlerts(place);
     if (state.place !== place) return; // the user picked another city meanwhile
+    const items = alerts.map(a => {
+      const amt = parseIceAmount(a);
+      return amt && { ...amt, start: Date.parse(a.start) || null, end: Date.parse(a.end) || null };
+    }).filter(Boolean);
+    state.ecIce = items.length ? { placeKey: placeKey(place), items } : null;
+    if (items.length) { renderPrediction(); renderMap(); }
     el.innerHTML = alerts.length
       ? alerts.map(a => {
           const colour = /red|rouge/.test(a.colour) ? "red" : /orange/.test(a.colour) ? "orange" : /yellow|jaune/.test(a.colour) ? "yellow" : "";
@@ -828,7 +896,8 @@ function renderMap() {
   if (!state.mapData || !state.day) return;
   $("mapTitle").textContent = `Carte des probabilités de fermeture · ${fmtDay(state.day)}`;
   mapPreds = POINTS.map((pt, i) => {
-    try { return { ...pt, p: predict(state.mapData[i], state.day, regionRural(pt.regionId)).p }; }
+    const isCur = pt.regionId === state.place.regionId && pt.ci === state.place.ci;
+    try { return { ...pt, p: predict(state.mapData[i], state.day, regionRural(pt.regionId), isCur ? ecIceFor(state.day) : null).p }; }
     catch { return null; }
   }).filter(Boolean);
   renderRegionTable();
@@ -887,7 +956,7 @@ const CHUNK = 15;
 async function loadMapData() {
   const cached = store.get(MAP_CACHE, null);
   const fresh = cached && cached.n === POINTS.length && Date.now() - cached.at < MAP_CACHE_TTL;
-  if (fresh) { state.mapData = cached.data; return; }
+  if (fresh) { state.mapData = cached.data; state.mapFetchedAt = cached.at; return; }
 
   setMapStatus("Chargement des prévisions pour les 17 régions…");
   const chunks = [];
@@ -901,6 +970,7 @@ async function loadMapData() {
   if (failed.length === results.length) {
     if (cached && cached.n === POINTS.length) {
       state.mapData = cached.data;
+      state.mapFetchedAt = cached.at;
       setMapStatus(`Prévisions de ${new Date(cached.at).toLocaleTimeString("fr-CA", { hour: "2-digit", minute: "2-digit" })} affichées (${failed[0].reason.message}).`, true);
     } else {
       setMapStatus(`Prévisions de la carte indisponibles (${failed[0].reason.message}).`, true);
@@ -908,6 +978,7 @@ async function loadMapData() {
     return;
   }
   state.mapData = data;
+  state.mapFetchedAt = Date.now();
   if (failed.length) setMapStatus(`Certaines villes manquent (${failed[0].reason.message}).`, true);
   else {
     setMapStatus("");
@@ -962,7 +1033,8 @@ async function selectPlace(place) {
   $("placeLabel").textContent = "Chargement des modèles météo pour " + placeText(place) + "…";
   try {
     const pi = POINTS.findIndex(p => p.regionId === place.regionId && p.ci === place.ci);
-    state.forecast = (pi >= 0 && state.mapData?.[pi]) || await loadForecast(place);
+    if (pi >= 0 && state.mapData?.[pi]) { state.forecast = state.mapData[pi]; state.fetchedAt = state.mapFetchedAt; }
+    else { state.forecast = await loadForecast(place); state.fetchedAt = Date.now(); }
     $("placeLabel").textContent = `${placeText(place)} (${place.lat.toFixed(2)}, ${place.lon.toFixed(2)})`;
     renderDays();
     renderPrediction();

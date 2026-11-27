@@ -45,6 +45,25 @@ demain : pandémie mondiale, troisième guerre mondiale, gros lot du Lotto Max, 
 d'astéroïde, bouilloire électrique. Ce sont des ordres de grandeur (statistiques publiques et
 estimations d'experts), affichés sur une échelle logarithmique, pour le plaisir.
 
+## Calibration et journées de référence
+
+- **Verglas réel plutôt que pluie totale** : seule une partie de la pluie verglaçante reste en glace
+  (≈ 60 % sous −3 °C, 40 % à 0 °C, 20 % à +0,5 °C, 0 % à +1 °C). Seule la glace tombée
+  entre 18 h et 8 h compte : après, les autobus sont déjà partis.
+- **Avertissement d'Environnement Canada en priorité** : quand un avertissement de pluie
+  verglaçante donne une quantité (« 2 à 10 mm »), c'est elle qui est utilisée à la place des
+  modèles bruts.
+- **Pas de fausse certitude** : la probabilité est ramenée dans l'intervalle 2 à 90 % et la
+  fourchette affichée inclut une marge pour l'incertitude de la formule elle-même.
+
+| Date | Lieu | Prévision officielle | Résultat réel | SOS Congé |
+|---|---|---|---|---|
+| 11 mars 2026 | Montréal | EC : 20 à 30 mm de pluie verglaçante | Écoles **fermées** | ≈ 81 % |
+| 27 nov. 2026 | Montréal | EC : 2 à 10 mm de pluie verglaçante | Écoles **ouvertes** | ≈ 24 % (97 % avant la recalibration) |
+
+Chaque nouvelle tempête dont on connaît le résultat doit être ajoutée à ce tableau (et en commentaire
+dans `index.html`) pour vérifier que les poids la reproduisent.
+
 ## Précision
 
 Les pourcentages sont des estimations raisonnables, pas des certitudes : les poids n'ont
